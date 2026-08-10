@@ -9,6 +9,8 @@ import { RunnerEngine } from "../games/neon-runner/engine";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay";
 import { DashEngine } from "../games/pixel-ninja-dash/engine";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay";
+import { SkyDodgeEngine } from "../games/sky-dodge/engine";
+import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -205,6 +207,38 @@ console.log("\nTest 3: Pixel Ninja Dash 300-Frame Headless Canvas draw() Suite\n
 }
 
 // ---------------------------------------------------------------------------
+// Test 3.5: Sky Dodge 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.5: Sky Dodge 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new SkyDodgeEngine(987654);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  let thrownError: Error | null = null;
+  const initialCallCount = totalVerifiedDrawCalls;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, {
+        moveLeft: frame % 40 < 20,
+        moveRight: frame % 40 >= 20,
+        boostPressed: frame % 50 === 0,
+      });
+      engine.draw(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Sky Dodge 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Sky Dodge verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+}
+
+// ---------------------------------------------------------------------------
 // Test 4: Replay Canvas Integration Test
 // ---------------------------------------------------------------------------
 console.log("\nTest 4: Replay Canvas Integration Test\n");
@@ -266,6 +300,34 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
     console.error("Pixel Ninja Dash replay render error:", err);
   }
   check("Pixel Ninja Dash replay rendering completes 100 ticks with zero draw errors", replayPassDash);
+
+  // Test Sky Dodge Replay Adapter rendering
+  const skyEngine = skyDodgeReplayAdapter.createEngine(555444);
+  skyDodgeReplayAdapter.resize(skyEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  skyEngine.reset();
+  const skyInput = skyDodgeReplayAdapter.createInitialInput();
+  const sampleLogSky = [
+    { tick: 10, action: "moveLeftDown" },
+    { tick: 30, action: "moveLeftUp" },
+    { tick: 50, action: "boostPressed" },
+  ];
+
+  let replayPassSky = true;
+  try {
+    for (let tick = 0; tick < 100; tick++) {
+      const actions = sampleLogSky.filter((e) => e.tick === tick);
+      for (const act of actions) {
+        skyDodgeReplayAdapter.applyAction(skyInput, act.action);
+      }
+      skyDodgeReplayAdapter.update(skyEngine, 1 / 60, skyInput);
+      skyDodgeReplayAdapter.clearPulses(skyInput);
+      skyEngine.draw(mockCtx);
+    }
+  } catch (err) {
+    replayPassSky = false;
+    console.error("Sky Dodge replay render error:", err);
+  }
+  check("Sky Dodge replay rendering completes 100 ticks with zero draw errors", replayPassSky);
 }
 
 // ---------------------------------------------------------------------------

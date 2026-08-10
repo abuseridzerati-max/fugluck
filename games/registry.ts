@@ -23,4 +23,10 @@ export const gameRegistry: GameRegistryEntry[] = [
     engine: "reflex-timing",
     modulePath: "./pixel-ninja-dash/index.ts",
   },
+  {
+    id: "sky-dodge",
+    name: "Sky Dodge",
+    engine: "arena-shooter",
+    modulePath: "./sky-dodge/index.ts",
+  },
 ];

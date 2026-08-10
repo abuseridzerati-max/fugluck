@@ -31,6 +31,7 @@ import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC, replayEngine, type InputLo
 import { RunnerEngine } from "../games/neon-runner/engine.ts";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
+import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
@@ -71,6 +72,10 @@ function runPixelNinjaDash(seed: number, inputLog: InputLogEntry[], ticks: numbe
   return snapshotFrom(replayEngine(pixelNinjaDashReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
+function runSkyDodge(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
+  return snapshotFrom(replayEngine(skyDodgeReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
+}
+
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
 
 const neonRunnerLog: InputLogEntry[] = [
@@ -95,6 +100,18 @@ const b1 = runPixelNinjaDash(SEED, dashLog, 900);
 const b2 = runPixelNinjaDash(SEED, dashLog, 900);
 check("pixel-ninja-dash: score matches", b1.score === b2.score, `${b1.score} vs ${b2.score}`);
 check("pixel-ninja-dash: full state matches", b1.json === b2.json);
+
+const skyLog: InputLogEntry[] = [
+  { tick: 10, action: "moveLeftDown" },
+  { tick: 30, action: "moveLeftUp" },
+  { tick: 50, action: "boostPressed" },
+  { tick: 120, action: "moveRightDown" },
+  { tick: 150, action: "moveRightUp" },
+];
+const c1 = runSkyDodge(SEED, skyLog, 600);
+const c2 = runSkyDodge(SEED, skyLog, 600);
+check("sky-dodge: score matches", c1.score === c2.score, `${c1.score} vs ${c2.score}`);
+check("sky-dodge: full state matches", c1.json === c2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine
@@ -250,6 +267,11 @@ const dashRandomWall = runPixelNinjaDash(SEED, withRandomWallMs(dashLog), 900);
 const dashNoWall = runPixelNinjaDash(SEED, withoutWallMs(dashLog), 900);
 check("pixel-ninja-dash: randomized wallMs doesn't change replay state", b1.json === dashRandomWall.json);
 check("pixel-ninja-dash: stripped wallMs doesn't change replay state", b1.json === dashNoWall.json);
+
+const skyRandomWall = runSkyDodge(SEED, withRandomWallMs(skyLog), 600);
+const skyNoWall = runSkyDodge(SEED, withoutWallMs(skyLog), 600);
+check("sky-dodge: randomized wallMs doesn't change replay state", c1.json === skyRandomWall.json);
+check("sky-dodge: stripped wallMs doesn't change replay state", c1.json === skyNoWall.json);
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

@@ -3353,12 +3353,41 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/score-validation-check.ts`: **22 / 22 passed**
   - `scripts/canvas-render-check.ts`: **8 / 8 passed** (65,289 canvas draw calls verified)
 
+## Session 36 (2026-08-11) — Game Module #3 ("Sky Dodge") Expansion
+
+### What Was Done
+1. **Game Engine & Renderer (`games/sky-dodge/`)**:
+   - Built `SkyDodgeEngine` (`games/sky-dodge/engine.ts`) with fixed 16:9 (`1280x720`) viewport, lateral movement, thruster boost mechanics, plasma meteorite obstacle arrays, explosion particles, and deterministic RNG streams.
+   - Built `SkyDodgeModule` (`games/sky-dodge/index.ts`) implementing `GameModule` interface with keyboard/touch input handlers, countdown overlay, fixed-timestep physics loop, and canvas rendering.
+2. **Replay Adapter & Headless Score Validator**:
+   - Created `skyDodgeReplayAdapter` (`games/sky-dodge/replay.ts`) mapping input actions (`moveLeftDown`, `moveLeftUp`, `moveRightDown`, `moveRightUp`, `boostPressed`).
+   - Registered `sky-dodge` in `games/registry.ts` and `games/replayAdapters.ts`, automatically hooking into `validateScore()` with zero backend logic modifications.
+3. **Client UI & Game Registry Integration**:
+   - Registered `"sky-dodge": () => import("@arcadeclash/games/sky-dodge")` in `gameFactories.ts`.
+   - Added `Sky Dodge` to `trendingGames` in `homeData.ts` and `GAME_TITLES` map across `App.tsx` and `LiveQueueList.tsx`.
+4. **Test Suite Integrity & Integration**:
+   - Updated `determinism-check.ts` (added Sky Dodge replay determinism & wallMs independence tests).
+   - Updated `score-validation-check.ts` (added Sky Dodge honest run, tampered score, and inputLog validation tests).
+   - Updated `canvas-render-check.ts` (added Sky Dodge 300-frame draw & replay rendering tests).
+5. **Git Safety Tagging & Remote Sync**:
+   - Tagged `backup-post-game-3-expansion` and pushed all tags to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: Clean compilation across all packages and game modules.
+- **Test Scripts Breakdown (118 Total Assertions — 100% Pass Rate)**:
+  - `scripts/wallet-friends-check.ts`: **10 / 10 passed**
+  - `scripts/financial-reconnection-check.ts`: **19 / 19 passed**
+  - `scripts/matchmaking-check.ts`: **37 / 37 passed**
+  - `scripts/determinism-check.ts`: **17 / 17 passed**
+  - `scripts/score-validation-check.ts`: **24 / 24 passed**
+  - `scripts/canvas-render-check.ts`: **11 / 11 passed** (106,420 canvas draw calls verified)
+
 ## How to resume
 
 ```bash
 cd C:/Users/abuse/arcadeclash
 git status
-npm test                            # Runs all 6 test scripts (109 assertions)
+npm test                            # Runs all 6 test scripts (118 assertions)
 npm run dev -w packages/client   # http://localhost:5173 (frontend)
 npm run dev -w packages/server   # http://localhost:4000 (backend API)
 ```
