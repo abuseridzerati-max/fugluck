@@ -3265,6 +3265,27 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
   - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
 
+## Session 32 (2026-08-10) — Supabase Auth Session Persistence on Refresh & Post-Match Balance Rehydration
+
+### What Was Done
+1. **Supabase Auth Session Persistence (`localStorage` Rehydration)**:
+   - Updated `AuthContext.tsx` to rehydrate user state from `localStorage` (`arcadeclash_auth_user`) on mount before executing background `/api/auth/me` verification.
+   - Fixed page refresh (`F5`) so signed-in users remain logged in seamlessly without session drops or unauthenticated flashes.
+2. **Post-Match UI Balance Rehydration**:
+   - Updated `MatchLoader.tsx` to invoke `refreshUser()` when a match reaches `resolved` state.
+   - Ensures live derived PostgreSQL wallet balances (COINS & DIAMONDS) re-fetch and update in the UI immediately without requiring a manual page refresh.
+3. **Git Safety Tagging & Remote Sync**:
+   - Created local tag `backup-post-auth-persistence-and-coin-fix` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (93 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **31 / 31 passed**
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **6 / 6 passed** (includes auth session rehydration assertion)
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+
 ## How to resume
 
 ```bash

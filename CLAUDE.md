@@ -104,3 +104,8 @@ in `PROGRESS.md`.
 - **Queue Isolation**: Matchmaking queues in `queue.ts` are bucketed by composite key `${gameId}:${currency}:${stake}`. Players pair ONLY if `gameId`, `currency`, and `stake` match identically.
 - **Escrow Debit**: When a match starts (`createMatch()`), `escrowStake` debits both players' ledger balances (`stake_escrow:${matchId}`).
 - **Winner Payout**: Upon match resolution (`emitResolved()`), `payoutWinner` credits the winning player `stake * 2` for COINS (0% rake) or `stake * 2 * 0.95` for DIAMONDS (5% rake to platform).
+
+## Architecture Invariant: Auth Session Persistence & Post-Match Balance Rehydration (added 2026-08-10)
+
+- **LocalStorage Session Rehydration**: `AuthContext.tsx` rehydrates user identity from `localStorage` (`arcadeclash_auth_user`) on initial mount, preventing session drops or unauthenticated flashes on page refreshes (`F5`).
+- **Post-Match UI Balance Refetch**: Upon receiving `matchResolved` in `MatchLoader.tsx`, `refreshUser()` is called automatically to re-fetch live derived PostgreSQL balances, updating COINS and DIAMONDS in the UI immediately without requiring a manual refresh.
