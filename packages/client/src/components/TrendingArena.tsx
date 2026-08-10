@@ -6,7 +6,7 @@ import { TrendingIcon } from './icons'
 
 type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
-  onFindOpponent: (id: string, title: string) => void
+  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   loadingGameId: string | null
 }
 
@@ -48,7 +48,9 @@ export default function TrendingArena({ onPlayGame, onFindOpponent, loadingGameI
             loading={loadingGameId === game.id}
             onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
             onFindOpponent={
-              user && game.id in gameFactories ? () => onFindOpponent(game.id, game.title) : undefined
+              user && game.id in gameFactories
+                ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                : undefined
             }
           />
         ))}

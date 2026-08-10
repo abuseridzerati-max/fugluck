@@ -11,7 +11,7 @@ type GameCardProps = {
   plays: number
   rating: number
   onPlay?: () => void
-  onFindOpponent?: () => void
+  onFindOpponent?: (stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   loading?: boolean
 }
 
@@ -83,11 +83,11 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
             void navigator.clipboard.writeText('http://localhost:5173')
             alert(`Instant invite link for ${title} copied to clipboard! Share with anyone to play instantly.`)
           }}
-          onLaunchCoinsMatch={() => {
-            onFindOpponent?.()
+          onLaunchCoinsMatch={(stake) => {
+            onFindOpponent?.(stake, 'COINS')
           }}
-          onLaunchDiamondsMatch={() => {
-            onFindOpponent?.()
+          onLaunchDiamondsMatch={(stake) => {
+            onFindOpponent?.(stake, 'DIAMONDS')
           }}
         />
       )}

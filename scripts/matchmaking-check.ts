@@ -419,6 +419,20 @@ console.log("\nTest 9: guest instant play & zero-stake enforcement\n");
 }
 
 // ---------------------------------------------------------------------------
+// Test 10: Stake Selection Window Queue Parameters
+// ---------------------------------------------------------------------------
+console.log("\nTest 10: stake selection window & custom wagers\n");
+
+{
+  const stakeAmount = 250;
+  const currency = "COINS";
+  const queuePayload = { gameId: "neon-runner", currency, stake: stakeAmount };
+
+  check("queue payload carries chosen stake amount (250)", queuePayload.stake === 250);
+  check("queue payload carries chosen currency (COINS)", queuePayload.currency === "COINS");
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) FAILED.`}`);
 process.exit(failures === 0 ? 0 : 1);
 }

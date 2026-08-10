@@ -11,6 +11,8 @@ import type { InputLogEntry } from "./gameModule";
 // never trusts a client-supplied display name.
 export type JoinQueuePayload = {
   gameId: string;
+  currency?: "COINS" | "DIAMONDS";
+  stake?: number;
 };
 
 export type MatchedPayload = {

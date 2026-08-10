@@ -48,8 +48,8 @@ function AppShell() {
     return loadGame(id, title, 'practice')
   }
 
-  function handleFindOpponent(id: string, title: string) {
-    return loadGame(id, title, 'match', { kind: 'queue' })
+  function handleFindOpponent(id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') {
+    return loadGame(id, title, 'match', { kind: 'queue', stake, currency })
   }
 
   function handleInviteFriend(friendUserId: string, gameId: string, gameTitle: string) {

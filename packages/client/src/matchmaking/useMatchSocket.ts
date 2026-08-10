@@ -12,7 +12,7 @@ import { API_URL } from '../lib/api'
 export type MatchmakingConnectionState = 'connecting' | 'queued' | 'matched' | 'closed'
 
 export type MatchSocketMode =
-  | { kind: 'queue' }
+  | { kind: 'queue'; stake?: number; currency?: 'COINS' | 'DIAMONDS' }
   | { kind: 'sendInvite'; friendUserId: string }
   | { kind: 'acceptInvite'; inviteId: string }
 
@@ -49,7 +49,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       setConnectionState('queued')
       if (mode.kind === 'queue') {
         setWaitingLabel('Looking for an opponent…')
-        socket.emit('joinQueue', { gameId })
+        socket.emit('joinQueue', { gameId, currency: mode.currency, stake: mode.stake })
       } else if (mode.kind === 'sendInvite') {
         setWaitingLabel('Sending invite…')
         socket.emit('inviteFriend', { friendUserId: mode.friendUserId, gameId })
