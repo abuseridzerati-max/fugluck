@@ -433,6 +433,27 @@ console.log("\nTest 10: stake selection window & custom wagers\n");
 }
 
 // ---------------------------------------------------------------------------
+// Test 11: Strict Queue Stake & Currency Isolation
+// ---------------------------------------------------------------------------
+console.log("\nTest 11: strict queue stake & currency isolation\n");
+
+{
+  const p100_a = fakeSocket("user_100a", "Bettor100A");
+  const p25 = fakeSocket("user_25", "Bettor25");
+  const p100_b = fakeSocket("user_100b", "Bettor100B");
+
+  enqueue("neon-runner", p100_a, "COINS", 100);
+  enqueue("neon-runner", p25, "COINS", 25);
+
+  const pairMismatch = tryPair("neon-runner", "COINS", 100);
+  check("100-coin bettor does NOT pair with 25-coin bettor", pairMismatch === null);
+
+  enqueue("neon-runner", p100_b, "COINS", 100);
+  const pairMatch = tryPair("neon-runner", "COINS", 100);
+  check("100-coin bettor pairs immediately with second 100-coin bettor", Boolean(pairMatch && pairMatch[0].userId === "user_100a" && pairMatch[1].userId === "user_100b"));
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) FAILED.`}`);
 process.exit(failures === 0 ? 0 : 1);
 }

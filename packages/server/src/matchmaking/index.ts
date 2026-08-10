@@ -36,8 +36,11 @@ export function attachMatchmaking(httpServer: HttpServer, opts: { clientOrigin: 
         return;
       }
 
-      enqueue(payload.gameId, socket);
-      const pair = tryPair(payload.gameId);
+      const currency = payload.currency === "DIAMONDS" ? "DIAMONDS" : "COINS";
+      const stake = typeof payload.stake === "number" && payload.stake > 0 ? Math.floor(payload.stake) : 0;
+
+      enqueue(payload.gameId, socket, currency, stake);
+      const pair = tryPair(payload.gameId, currency, stake);
       if (pair) {
         const [a, b] = pair;
         createMatch(payload.gameId, a, b, generateSeed());

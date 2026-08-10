@@ -4,6 +4,7 @@ import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission
 import { validateScore } from "../validation/scoreValidator";
 import { db } from "../db/client";
 import { matchesHistory } from "../db/schema";
+import { escrowStake, payoutWinner } from "../wallet/ledger";
 import type { MatchmakingSocket } from "./socketAuth";
 import { removeFromQueue, type QueueEntry } from "./queue";
 
@@ -45,6 +46,8 @@ type MatchState = {
   id: string;
   gameId: string;
   seed: number;
+  currency: "COINS" | "DIAMONDS";
+  stake: number;
   players: [MatchPlayer, MatchPlayer];
   forfeitTimer: ReturnType<typeof setTimeout> | null;
 };
@@ -132,6 +135,16 @@ function emitResolved(match: MatchState): void {
     p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1 });
   }
 
+  const winnerId = outcome.a === "win" ? p1.userId : outcome.b === "win" ? p2.userId : null;
+  const loserId = outcome.a === "win" ? p2.userId : outcome.b === "win" ? p1.userId : null;
+
+  // FINANCIAL INVARIANT: Payout winner if match had stake > 0 and ended with a winner
+  if (winnerId && loserId && match.stake > 0) {
+    void payoutWinner(winnerId, loserId, match.currency, match.stake, match.id).catch((err) => {
+      console.error(`[matches] Failed to payout winner ${winnerId} in match ${match.id}:`, err);
+    });
+  }
+
   // Persist completed match record to database for Profile Match History & Replaying
   void db
     .insert(matchesHistory)
@@ -140,9 +153,9 @@ function emitResolved(match: MatchState): void {
       gameId: match.gameId,
       player1Id: p1.userId,
       player2Id: p2.userId,
-      winnerId: outcome.a === "win" ? p1.userId : outcome.b === "win" ? p2.userId : null,
-      currency: "COINS",
-      stake: 0,
+      winnerId,
+      currency: match.currency,
+      stake: match.stake,
       seed: match.seed,
       inputLogP1: p1.result?.inputLog ?? null,
       inputLogP2: p2.result?.inputLog ?? null,
@@ -166,8 +179,11 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
   // Both sides share the exact same server-issued match.seed.
   // GUEST INVARIANT: Matches involving an unauthenticated guest strictly enforce stake = 0 (Free Play).
   const isGuestMatch = Boolean(a.socket.data.isGuest || b.socket.data.isGuest);
+  const currency = isGuestMatch ? "COINS" : (a.currency ?? "COINS");
+  const stake = isGuestMatch ? 0 : (a.stake ?? 0);
+
   console.log(
-    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch}`,
+    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch} currency=${currency} stake=${stake}`,
   );
 
   const matchId = randomUUID();
@@ -175,6 +191,8 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
     id: matchId,
     gameId,
     seed,
+    currency,
+    stake,
     players: [
       { socket: a.socket, userId: a.userId, username: a.username, result: null },
       { socket: b.socket, userId: b.userId, username: b.username, result: null },
@@ -185,6 +203,16 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
   matches.set(matchId, match);
   socketToMatch.set(a.socket, matchId);
   socketToMatch.set(b.socket, matchId);
+
+  // FINANCIAL INVARIANT: Escrow debits both players' ledger balances when match starts if stake > 0
+  if (stake > 0 && !isGuestMatch) {
+    void escrowStake(a.userId, currency, stake, matchId).catch((err) => {
+      console.error(`[matches] Failed to escrow stake for ${a.userId} in match ${matchId}:`, err);
+    });
+    void escrowStake(b.userId, currency, stake, matchId).catch((err) => {
+      console.error(`[matches] Failed to escrow stake for ${b.userId} in match ${matchId}:`, err);
+    });
+  }
 
   a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
   b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });

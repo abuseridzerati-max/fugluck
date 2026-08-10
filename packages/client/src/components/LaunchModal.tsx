@@ -24,9 +24,14 @@ export default function LaunchModal({
   const { user } = useAuth()
   const [stakeCurrency, setStakeCurrency] = useState<'COINS' | 'DIAMONDS' | null>(null)
   const [selectedStake, setSelectedStake] = useState<number>(100)
+  const [customInput, setCustomInput] = useState<string>('')
 
   const currentBalance = stakeCurrency === 'COINS' ? (user?.balances.coins ?? 0) : (user?.balances.diamonds ?? 0)
   const stakeOptions = stakeCurrency === 'COINS' ? COIN_STAKE_OPTIONS : DIAMOND_STAKE_OPTIONS
+
+  const parsedCustom = customInput ? parseInt(customInput, 10) : NaN
+  const isCustomExceeding = !isNaN(parsedCustom) && parsedCustom > currentBalance
+  const canSubmit = selectedStake > 0 && selectedStake <= currentBalance && !isCustomExceeding
 
   return (
     <div
@@ -72,7 +77,7 @@ export default function LaunchModal({
           /* Stake Selection Step */
           <div>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
-              Choose your wager amount for <strong>{gameTitle}</strong>.
+              Choose preset or enter custom wager for <strong>{gameTitle}</strong>.
             </p>
 
             <div
@@ -92,17 +97,20 @@ export default function LaunchModal({
               </strong>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
               {stakeOptions.map((amount) => {
                 const canAfford = currentBalance >= amount
-                const isSelected = selectedStake === amount
+                const isSelected = selectedStake === amount && !customInput
 
                 return (
                   <button
                     key={amount}
                     type="button"
                     disabled={!canAfford}
-                    onClick={() => setSelectedStake(amount)}
+                    onClick={() => {
+                      setCustomInput('')
+                      setSelectedStake(amount)
+                    }}
                     className={`ac-btn ${isSelected ? 'ac-btn--primary' : 'ac-btn--ghost'}`}
                     style={{
                       justify: 'center',
@@ -124,11 +132,51 @@ export default function LaunchModal({
               })}
             </div>
 
+            {/* Custom Amount Input Field */}
+            <div style={{ marginBottom: 'var(--space-5)' }}>
+              <label style={{ fontSize: 'var(--font-size-xs)', display: 'block', color: 'var(--color-text-muted)', marginBottom: 4 }}>
+                Or enter Custom Wager ({stakeCurrency}):
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={currentBalance}
+                placeholder={`e.g. 175`}
+                value={customInput}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setCustomInput(val)
+                  const num = parseInt(val, 10)
+                  if (!isNaN(num) && num > 0) {
+                    setSelectedStake(num)
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--color-bg)',
+                  border: isCustomExceeding ? '1px solid #f87171' : '1px solid var(--color-border)',
+                  color: 'var(--color-text)',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              />
+              {isCustomExceeding && (
+                <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginTop: 4 }}>
+                  Custom bet cannot exceed your available balance of {currentBalance} {stakeCurrency}.
+                </span>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
               <button
                 type="button"
                 className="ac-btn ac-btn--ghost"
-                onClick={() => setStakeCurrency(null)}
+                onClick={() => {
+                  setStakeCurrency(null)
+                  setCustomInput('')
+                }}
                 style={{ flex: 1 }}
               >
                 ← Back
@@ -136,12 +184,14 @@ export default function LaunchModal({
               <button
                 type="button"
                 className="ac-btn ac-btn--primary"
+                disabled={!canSubmit}
                 onClick={() => {
+                  if (!canSubmit) return
                   if (stakeCurrency === 'COINS') onLaunchCoinsMatch?.(selectedStake)
                   else onLaunchDiamondsMatch?.(selectedStake)
                   onClose()
                 }}
-                style={{ flex: 2, fontWeight: 'bold' }}
+                style={{ flex: 2, fontWeight: 'bold', opacity: canSubmit ? 1 : 0.4 }}
               >
                 Enter Queue ({selectedStake} {stakeCurrency})
               </button>
@@ -197,6 +247,7 @@ export default function LaunchModal({
                     onClick={() => {
                       setStakeCurrency('COINS')
                       setSelectedStake(100)
+                      setCustomInput('')
                     }}
                     style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
                   >
@@ -209,6 +260,7 @@ export default function LaunchModal({
                     onClick={() => {
                       setStakeCurrency('DIAMONDS')
                       setSelectedStake(10)
+                      setCustomInput('')
                     }}
                     style={{
                       width: '100%',

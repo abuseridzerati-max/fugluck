@@ -159,11 +159,15 @@ export function handleRespondInvite(
     socket: invite.from,
     userId: invite.from.data.userId,
     username: invite.from.data.username,
+    currency: "COINS",
+    stake: 0,
   };
   const b: QueueEntry = {
     socket,
     userId: socket.data.userId,
     username: socket.data.username,
+    currency: "COINS",
+    stake: 0,
   };
 
   clearInvite(invite, false);
@@ -234,11 +238,15 @@ export function handleJoinGuestLink(socket: MatchmakingSocket, payload: { code?:
     socket: link.hostSocket,
     userId: link.hostSocket.data.userId,
     username: link.hostSocket.data.username,
+    currency: "COINS",
+    stake: 0,
   };
   const b: QueueEntry = {
     socket,
     userId: socket.data.userId,
     username: socket.data.username,
+    currency: "COINS",
+    stake: 0,
   };
 
   guestLinksByCode.delete(payload.code);
