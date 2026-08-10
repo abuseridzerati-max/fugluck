@@ -68,3 +68,10 @@ in `PROGRESS.md`.
 
 - **Server-Side Pacing Enforcement**: `validateScore()` rejects submissions with `verdict: "invalid"` and `reason: "freeze_frame_detected"` whenever real-world duration (`durationMs` or intra-log `wallMs` gaps) exceeds simulated tick progress by more than `FREEZE_FRAME_THRESHOLD_SEC = 3.0` seconds.
 - **Reconnection Window Independence**: Legitimate socket disconnects re-authenticating within the 10-second grace window (`RECONNECT_GRACE_MS = 10_000`) resume match synchronization cleanly without triggering freeze-frame auto-forfeit.
+
+## Architecture Invariant: 4-Tier Platform Match Modes (added 2026-08-10)
+
+- **Solo Practice Mode**: Offline local canvas play without server queueing or ledger transaction.
+- **COINS Mode (In-Game Fun)**: 0% Platform Rake (`COINS_RAKE_PERCENT = 0`). Winner receives 100% of pot (`stake * 2`). No fee entry created.
+- **DIAMONDS Mode (Competitive Staking)**: 5% Platform Rake (`DIAMONDS_RAKE_PERCENT = 5`). Winner receives 95% of pot (`stake * 2 * 0.95`). 5% is credited to `platform_rake_account`.
+- **Zero-Registration Guest Instant Play**: Unauthenticated guests (`guest_<id>`) can create or join instant matches via `/play/invite/:code`. All guest matches strictly enforce `stake = 0` (Free Play). Sockets flagged with `isGuest = true` attempting to join wagering matches are rejected with `reason: "guests_cannot_wager"`.

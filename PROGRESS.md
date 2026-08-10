@@ -3124,12 +3124,36 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/score-validation-check.ts`: **23 / 23 passed** (verified server `validateScore` and anti-tamper log replaying)
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified signup coin grants, diamond packs, and user balances)
 
+## Session 26 (2026-08-10) — 4-Tier Match Modes Architecture (Practice, 0% Rake COINS, 5% Rake DIAMONDS, Guest Instant Play)
+
+### What Was Done
+1. **Rake Policy Refactor**:
+   - Updated `payoutWinner` in `packages/server/src/wallet/ledger.ts`.
+   - `COINS` matches: `COINS_RAKE_PERCENT = 0`. Winner receives 100% of pot (`stake * 2`). No fee entry created.
+   - `DIAMONDS` matches: `DIAMONDS_RAKE_PERCENT = 5`. Winner receives 95% of pot (`stake * 2 * 0.95`). 5% credited to `platform_rake_account`.
+2. **Zero-Registration Guest Instant Play**:
+   - Allowed unauthenticated guests (`guest_<id>`) in `socketAuthMiddleware` for `/play/invite/:code` instant matches.
+   - Enforced `stake = 0` (Free Play) for all guest matches.
+   - Server explicitly blocks guests from joining wagering matches with `reason: "guests_cannot_wager"`.
+3. **Client UI Mode Alignment**:
+   - Updated `GameCard.tsx` to display clear tier badges: "Fun Play (0% Fee)", "Competitive Staking (5% Fee)", and "Play Instantly (No Login Required)".
+4. **Git Safety Tagging & Sync**:
+   - Created local tag `backup-post-4tier-modes` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (86 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **27 / 27 passed** (includes guest instant link creation and zero-stake assertions)
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
+  - `scripts/financial-reconnection-check.ts`: **16 / 16 passed** (verified COINS 0% rake vs DIAMONDS 5% rake payouts)
+
 ## How to resume
 
 ```bash
 cd C:/Users/abuse/arcadeclash
-# PowerShell only, until PATH is fixed:
-$env:Path = "C:\Program Files\nodejs;" + $env:Path
+git status
 npm run dev -w packages/client   # http://localhost:5173 (frontend)
 npm run dev -w packages/server   # http://localhost:4000 (backend API)
 ```
