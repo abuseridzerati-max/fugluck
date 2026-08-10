@@ -95,6 +95,12 @@ in `PROGRESS.md`.
 
 ## Architecture Invariant: Interactive Betting Window & Stake Selection (added 2026-08-10)
 
-- **Stake Picker Step**: Clicking "Play with COINS" or "Play with DIAMONDS" in `LaunchModal.tsx` opens a dedicated Stake Selection Step with preset wager buttons (COINS: 25, 50, 100, 250, 500; DIAMONDS: 5, 10, 25, 50, 100).
-- **Balance Validation**: Preset buttons check user balance against selected stake; options exceeding balance are disabled with "Too low" warning.
+- **Stake Picker Step**: Clicking "Play with COINS" or "Play with DIAMONDS" in `LaunchModal.tsx` opens a dedicated Stake Selection Step with preset wager buttons (COINS: 25, 50, 100, 250, 500; DIAMONDS: 5, 10, 25, 50, 100) and a Custom Wager input field.
+- **Balance Validation**: Real-time validation disables submission if wager exceeds available user balance.
 - **Socket Queue Emission**: The chosen `stake` and `currency` are emitted cleanly in `joinQueue` (`{ gameId, currency, stake }`).
+
+## Architecture Invariant: Strict Queue Stake Isolation & Financial Settlement (added 2026-08-10)
+
+- **Queue Isolation**: Matchmaking queues in `queue.ts` are bucketed by composite key `${gameId}:${currency}:${stake}`. Players pair ONLY if `gameId`, `currency`, and `stake` match identically.
+- **Escrow Debit**: When a match starts (`createMatch()`), `escrowStake` debits both players' ledger balances (`stake_escrow:${matchId}`).
+- **Winner Payout**: Upon match resolution (`emitResolved()`), `payoutWinner` credits the winning player `stake * 2` for COINS (0% rake) or `stake * 2 * 0.95` for DIAMONDS (5% rake to platform).

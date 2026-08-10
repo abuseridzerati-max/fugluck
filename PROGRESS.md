@@ -3241,6 +3241,30 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
   - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
 
+## Session 31 (2026-08-10) — Stake Matchmaking Isolation, Custom Bet Input, and Financial Settlement Integration
+
+### What Was Done
+1. **Strict Queue Stake & Currency Isolation**:
+   - Updated `queue.ts` to key queue buckets by composite key `${gameId}:${currency}:${stake}`.
+   - Enforced that players pair ONLY if `gameId`, `currency`, AND exact `stake` match identically.
+2. **Custom Bet Selection Input**:
+   - Added a numeric Custom Wager input field to `LaunchModal.tsx` alongside preset buttons.
+   - Validated custom input against user balance in real-time, disabling submission if custom wager exceeds available balance.
+3. **Complete Financial Ledger Escrow & Payout Execution**:
+   - In `matches.ts`, called `escrowStake` on `createMatch()` for both players (`stake_escrow:${matchId}`).
+   - Called `payoutWinner` on `emitResolved()` for the winning player (`stake_payout:${matchId}`).
+4. **Git Safety Tagging & Remote Sync**:
+   - Created local tag `backup-post-stake-matching-and-ledger-fix` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (92 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **31 / 31 passed** (includes strict queue isolation test assertions)
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+
 ## How to resume
 
 ```bash
