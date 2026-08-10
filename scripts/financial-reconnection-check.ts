@@ -8,9 +8,12 @@ import type { QueueEntry } from "../packages/server/src/matchmaking/queue.ts";
 import type { MatchmakingSocket } from "../packages/server/src/matchmaking/socketAuth.ts";
 
 async function main() {
-  const { DEFAULT_RAKE_PERCENT, PLATFORM_RAKE_ACCOUNT } = await import(
-    "../packages/server/src/wallet/ledger.ts"
-  );
+  const {
+    COINS_RAKE_PERCENT,
+    DEFAULT_RAKE_PERCENT,
+    DIAMONDS_RAKE_PERCENT,
+    PLATFORM_RAKE_ACCOUNT,
+  } = await import("../packages/server/src/wallet/ledger.ts");
   const {
     createMatch,
     FORFEIT_GRACE_MS,
@@ -31,35 +34,41 @@ async function main() {
     }
   }
 
-function fakeSocket(userId: string, username: string): MatchmakingSocket {
-  const emitted: Array<{ event: string; payload: unknown }> = [];
-  const socket = {
-    id: `socket-${userId}`,
-    data: { userId, username },
-    connected: true,
-    emit: (event: string, payload: unknown) => {
-      emitted.push({ event, payload });
-      return true;
-    },
-    // @ts-expect-error test stub helper
-    emitted,
-  } as unknown as MatchmakingSocket;
-  return socket;
-}
+  function fakeSocket(userId: string, username: string): MatchmakingSocket {
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const socket = {
+      id: `socket-${userId}`,
+      data: { userId, username },
+      connected: true,
+      emit: (event: string, payload: unknown) => {
+        emitted.push({ event, payload });
+        return true;
+      },
+      // @ts-expect-error test stub helper
+      emitted,
+    } as unknown as MatchmakingSocket;
+    return socket;
+  }
 
-console.log("Test 1: Platform Rake Calculation & Ledger Idempotency Reasoning\n");
+  console.log("Test 1: 4-Tier Rake Policy & Ledger Idempotency Reasoning\n");
 
-// Rake test calculations
-const stakeAmount = 100; // 100 coins stake per player
-const totalPot = stakeAmount * 2; // 200 coins total pot
-const expectedRake = Math.floor((totalPot * DEFAULT_RAKE_PERCENT) / 100); // 20 coins rake (10%)
-const expectedWinnerPayout = totalPot - expectedRake; // 180 coins payout
+  check("COINS rake percent is 0%", COINS_RAKE_PERCENT === 0);
+  check("DIAMONDS rake percent is 5%", DIAMONDS_RAKE_PERCENT === 5);
+  check("Platform rake account identifier exists", PLATFORM_RAKE_ACCOUNT === "platform_rake_account");
 
-check("Default rake percent is 10%", DEFAULT_RAKE_PERCENT === 10);
-check("Platform rake account identifier exists", PLATFORM_RAKE_ACCOUNT === "platform_rake_account");
-check("Total pot for 100 coin stake is 200 coins", totalPot === 200);
-check("10% rake on 200 coin pot yields 20 coins fee", expectedRake === 20);
-check("Winner payout after 10% rake is 180 coins", expectedWinnerPayout === 180);
+  const stakeAmount = 100;
+  const totalPot = stakeAmount * 2; // 200 total pot
+  const coinsRakeFee = Math.floor((totalPot * COINS_RAKE_PERCENT) / 100); // 0 coins
+  const coinsWinnerPayout = totalPot - coinsRakeFee; // 200 coins
+
+  const diamondsRakeFee = Math.floor((totalPot * DIAMONDS_RAKE_PERCENT) / 100); // 10 diamonds (5%)
+  const diamondsWinnerPayout = totalPot - diamondsRakeFee; // 190 diamonds (95%)
+
+  check("COINS 100-stake match has 0 coins rake fee (0%)", coinsRakeFee === 0);
+  check("COINS 100-stake winner receives full 200 coins pot", coinsWinnerPayout === 200);
+
+  check("DIAMONDS 100-stake match has 10 diamonds rake fee (5%)", diamondsRakeFee === 10);
+  check("DIAMONDS 100-stake winner receives 190 diamonds payout (95%)", diamondsWinnerPayout === 190);
 
 const matchId = "test-match-12345";
 const winnerId = "user-winner";

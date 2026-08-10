@@ -6,6 +6,8 @@ import { ledgerEntries } from "../db/schema";
 
 export const PLATFORM_RAKE_ACCOUNT = "platform_rake_account";
 export const DEFAULT_RAKE_PERCENT = 10;
+export const COINS_RAKE_PERCENT = 0;
+export const DIAMONDS_RAKE_PERCENT = 5;
 
 export async function getBalances(userId: string): Promise<WalletBalances> {
   const rows = await db
@@ -94,13 +96,20 @@ export async function payoutWinner(
   currency: Currency,
   stakeAmount: number,
   matchId: string,
-  rakePercent: number = DEFAULT_RAKE_PERCENT,
+  rakePercent?: number,
 ): Promise<{ winnerBalances: WalletBalances; rakeFee: number; winnerPayout: number }> {
   if (!Number.isInteger(stakeAmount) || stakeAmount <= 0) {
     throw new Error("Stake amount must be a positive integer.");
   }
+  const effectiveRake =
+    rakePercent !== undefined
+      ? rakePercent
+      : currency === "COINS"
+      ? COINS_RAKE_PERCENT
+      : DIAMONDS_RAKE_PERCENT;
+
   const totalPot = stakeAmount * 2;
-  const rakeFee = Math.floor((totalPot * rakePercent) / 100);
+  const rakeFee = Math.floor((totalPot * effectiveRake) / 100);
   const winnerPayout = totalPot - rakeFee;
 
   const winnerReason = `stake_payout:${matchId}`;

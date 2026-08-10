@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ClientToServerEvents, ServerToClientEvents } from "@arcadeclash/shared";
 import { eq } from "drizzle-orm";
 import type { DefaultEventsMap, Socket } from "socket.io";
@@ -7,11 +8,12 @@ import { users } from "../db/schema";
 
 // The trust boundary: userId comes from the verified session cookie, and
 // username is looked up here from that same verified userId — never taken
-// from anything the client sends over the socket. A client can't put words
-// in another player's mouth by claiming their display name.
+// from anything the client sends over the socket. Unauthenticated guests
+// are issued ephemeral guest_ IDs for zero-registration instant play.
 export type MatchmakingSocketData = {
   userId: string;
   username: string;
+  isGuest?: boolean;
 };
 
 export type MatchmakingSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
@@ -29,12 +31,22 @@ function extractSessionCookie(cookieHeader: string | undefined): string | null {
 
 // Socket.IO connection middleware — mirrors attachSession + requireAuth from
 // the Express auth middleware, applied to the handshake instead of a request.
-// Rejects the connection outright rather than letting an unauthenticated
-// socket through, since every event in this namespace requires a real player.
+// Allows unauthenticated guests with ephemeral IDs for Free-Play instant matches.
 export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err?: Error) => void): Promise<void> {
   const token = extractSessionCookie(socket.handshake.headers.cookie);
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) {
+    const handshakeAuth = socket.handshake.auth as { isGuest?: boolean; guestId?: string } | undefined;
+    const handshakeQuery = socket.handshake.query as { guestId?: string } | undefined;
+    const isGuest = Boolean(handshakeAuth?.isGuest || handshakeQuery?.guestId);
+    if (isGuest) {
+      const rawId = handshakeAuth?.guestId || handshakeQuery?.guestId || randomUUID().slice(0, 6);
+      socket.data.userId = `guest_${rawId}`;
+      socket.data.username = `Guest_${rawId.slice(0, 4)}`;
+      socket.data.isGuest = true;
+      next();
+      return;
+    }
     next(new Error("unauthorized"));
     return;
   }
@@ -47,5 +59,6 @@ export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err
 
   socket.data.userId = user.id;
   socket.data.username = user.username;
+  socket.data.isGuest = false;
   next();
 }

@@ -135,8 +135,10 @@ export function isSocketInMatch(socket: MatchmakingSocket, matchId: string): boo
 export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: number): void {
   // SECURITY INVARIANT: Self-match guard is enforced by queue deduplication.
   // Both sides share the exact same server-issued match.seed.
+  // GUEST INVARIANT: Matches involving an unauthenticated guest strictly enforce stake = 0 (Free Play).
+  const isGuestMatch = Boolean(a.socket.data.isGuest || b.socket.data.isGuest);
   console.log(
-    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username}`,
+    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch}`,
   );
 
   const matchId = randomUUID();

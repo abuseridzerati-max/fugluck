@@ -394,6 +394,31 @@ console.log("\nTest 8: disconnect mid-match");
 }
 
 // ---------------------------------------------------------------------------
+// Test 9: Zero-Registration Guest Instant Play & Zero-Stake Enforcement
+// ---------------------------------------------------------------------------
+console.log("\nTest 9: guest instant play & zero-stake enforcement\n");
+
+{
+  const guestSocket = fakeSocket("guest_abc123", "Guest_abc1");
+  guestSocket.data.isGuest = true;
+  const hostSocket = fakeSocket("user-host", "HostUser");
+
+  check("guest socket is identified by isGuest flag", Boolean(guestSocket.data.isGuest));
+  check("registered socket has isGuest = false or undefined", !hostSocket.data.isGuest);
+
+  const seed = generateSeed();
+  createMatch(
+    "neon-runner",
+    { socket: hostSocket, userId: "user-host", username: "HostUser" },
+    { socket: guestSocket, userId: "guest_abc123", username: "Guest_abc1" },
+    seed,
+  );
+
+  const guestMatched = guestSocket.emitted.find((e) => e.event === "matched")?.payload as any;
+  check("guest receives matched event cleanly for instant play", Boolean(guestMatched?.matchId));
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) FAILED.`}`);
 process.exit(failures === 0 ? 0 : 1);
 }

@@ -57,17 +57,29 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
           </span>
         </div>
         {onFindOpponent && (
-          <button
-            type="button"
-            className="ac-pill"
-            onClick={(e) => {
-              e.stopPropagation()
-              onFindOpponent()
-            }}
-            style={{ marginTop: 'var(--space-3)', width: '100%', justifyContent: 'center' }}
-          >
-            Find Opponent
-          </button>
+          <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <button
+              type="button"
+              className="ac-pill"
+              onClick={(e) => {
+                e.stopPropagation()
+                onFindOpponent()
+              }}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Find Opponent — Fun Play (0% Fee)
+            </button>
+            <div
+              style={{
+                fontSize: '10px',
+                textAlign: 'center',
+                color: 'var(--color-text-muted, #94a3b8)',
+                marginTop: '2px',
+              }}
+            >
+              💎 Competitive Staking (5% Fee) | ⚡ Play Instantly (No Login Required)
+            </div>
+          </div>
         )}
       </div>
     </div>

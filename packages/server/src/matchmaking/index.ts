@@ -4,7 +4,9 @@ import { Server, type DefaultEventsMap } from "socket.io";
 import {
   cancelInvitesForSocket,
   handleCancelInvite,
+  handleCreateGuestLink,
   handleInviteFriend,
+  handleJoinGuestLink,
   handleRespondInvite,
 } from "./invites";
 import { createMatch, handleDisconnect, handleReconnect, isSocketInMatch, submitScore } from "./matches";
@@ -52,6 +54,14 @@ export function attachMatchmaking(httpServer: HttpServer, opts: { clientOrigin: 
 
     socket.on("cancelInvite", (payload) => {
       handleCancelInvite(socket, payload);
+    });
+
+    socket.on("createGuestLink" as any, (payload: any) => {
+      handleCreateGuestLink(socket, payload);
+    });
+
+    socket.on("joinGuestLink" as any, (payload: any) => {
+      handleJoinGuestLink(socket, payload);
     });
 
     socket.on("submitScore", (payload) => {

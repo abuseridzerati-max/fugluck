@@ -178,3 +178,69 @@ export function handleCancelInvite(socket: MatchmakingSocket, payload: { inviteI
   clearInvite(invite, false);
   target?.emit("inviteRejected", { inviteId: payload.inviteId, reason: "Invite cancelled." });
 }
+
+type GuestInviteLink = {
+  code: string;
+  hostSocket: MatchmakingSocket;
+  gameId: string;
+  createdAt: number;
+};
+
+const guestLinksByCode = new Map<string, GuestInviteLink>();
+
+export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { gameId?: unknown }): void {
+  if (!payload || typeof payload.gameId !== "string" || !isValidGameId(payload.gameId)) {
+    socket.emit("inviteError", { message: "Invalid game for guest link." });
+    return;
+  }
+
+  const code = randomUUID().slice(0, 8);
+  const link: GuestInviteLink = {
+    code,
+    hostSocket: socket,
+    gameId: payload.gameId,
+    createdAt: Date.now(),
+  };
+  guestLinksByCode.set(code, link);
+
+  socket.emit("inviteSent", {
+    inviteId: code,
+    gameId: payload.gameId,
+    toUsername: "Guest Link",
+  });
+}
+
+export function handleJoinGuestLink(socket: MatchmakingSocket, payload: { code?: unknown }): void {
+  if (!payload || typeof payload.code !== "string") {
+    socket.emit("inviteError", { message: "Invalid guest link code." });
+    return;
+  }
+
+  const link = guestLinksByCode.get(payload.code);
+  if (!link || !link.hostSocket.connected) {
+    socket.emit("inviteError", { message: "Guest invite link expired or host is offline." });
+    return;
+  }
+
+  if (link.hostSocket === socket) {
+    socket.emit("inviteError", { message: "You cannot join your own guest link." });
+    return;
+  }
+
+  removeFromQueue(link.hostSocket);
+  removeFromQueue(socket);
+
+  const a: QueueEntry = {
+    socket: link.hostSocket,
+    userId: link.hostSocket.data.userId,
+    username: link.hostSocket.data.username,
+  };
+  const b: QueueEntry = {
+    socket,
+    userId: socket.data.userId,
+    username: socket.data.username,
+  };
+
+  guestLinksByCode.delete(payload.code);
+  createMatch(link.gameId, a, b, generateSeed());
+}
