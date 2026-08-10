@@ -7,6 +7,7 @@ import type {
   MatchResolvedPayload,
   PlayerResult,
 } from '@arcadeclash/shared'
+import { useAuth } from '../auth/AuthContext'
 import { useMatchSocket, type MatchSocketMode } from '../matchmaking/useMatchSocket'
 
 type MatchLoaderProps = {
@@ -137,15 +138,18 @@ export default function MatchLoader({
     return () => clearTimeout(timeoutId)
   }, [phase, createModule, submitScore])
 
+  const { refreshUser } = useAuth()
+
   // Can arrive from any non-terminal phase — see the Phase type's comment.
   useEffect(() => {
     if (!resolution) return
+    void refreshUser()
     setPhase((prev) => {
       if (isTerminal(prev)) return prev
       destroyModule()
       return { kind: 'resolved', resolution }
     })
-  }, [resolution])
+  }, [resolution, refreshUser])
 
   // Unexpected drop — a real error, or the socket closing before either
   // terminal server event arrived (e.g. a server restart mid-match).

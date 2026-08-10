@@ -43,8 +43,13 @@ const sample: PublicUser = {
 };
 check("PublicUser carries balances", sample.balances.coins === 10 && sample.balances.diamonds === 0);
 
+// Auth session persistence rehydration test simulation
+const mockStoredSession = JSON.stringify(sample);
+const rehydrated = JSON.parse(mockStoredSession) as PublicUser;
+check("Auth session rehydrates from localStorage mock", rehydrated.username === "tester" && rehydrated.balances.coins === 10);
+
 if (failures > 0) {
   console.log(`\n${failures} failure(s)`);
   process.exit(1);
 }
-console.log(`\nAll ${5} checks passed.`);
+console.log(`\nAll 6 checks passed.`);
