@@ -111,3 +111,9 @@ in `PROGRESS.md`.
 - **Socket Token Attachment**: Sockets pass session JWT tokens in `auth: { token }` upon connection (`useMatchSocket.ts`), and `socketAuthMiddleware` in `socketAuth.ts` verifies token payload to attach authenticated `userId` (preventing forced guest 0-stake matches).
 - **Financial Ledger Settlement**: `escrowStake` inserts `stake_escrow:${matchId}` on match start; `payoutWinner` inserts `stake_payout:${matchId}` on match completion (`stake * 2` for COINS, 0% rake) with explicit `.returning()` row validation and real-time `balanceUpdate` socket emissions.
 - **Post-Match UI Balance Refetch**: Upon receiving `matchResolved` in `MatchLoader.tsx`, `refreshUser()` is called automatically to re-fetch live derived PostgreSQL balances, updating COINS and DIAMONDS in the UI immediately without requiring a manual refresh.
+
+## Architecture Invariant: Live Public Queue Broadcast & 1-Click Lobby Matchmaking (added 2026-08-11)
+
+- **Real-Time Queue Broadcast**: `queue.ts` compiles sanitized public queue entries (`socketId`, `userId`, `username`, `avatarUrl`, `gameId`, `currency`, `stake`, `queuedAt`) and triggers `io.emit("queueStateUpdate", ...)` whenever players join, pair, cancel, or disconnect.
+- **Client Lobby Widget (`LiveQueueList.tsx`)**: Reactive widget mounted on `HomePage.tsx` displaying live searching players, wager badges, and running `00:15` search timers.
+- **1-Click Match Acceptance**: Clicking "Match" on a waiting player card checks user balances and automatically emits `joinQueue` pre-configured with matching `gameId`, `currency`, and `stake` to trigger instant pairing.

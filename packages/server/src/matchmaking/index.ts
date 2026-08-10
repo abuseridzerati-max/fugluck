@@ -11,7 +11,7 @@ import {
 } from "./invites";
 import { createMatch, handleDisconnect, handleReconnect, isSocketInMatch, submitScore } from "./matches";
 import { registerPresence, unregisterPresence } from "./presence";
-import { enqueue, generateSeed, isValidGameId, tryPair } from "./queue";
+import { enqueue, generateSeed, getPublicQueueState, isValidGameId, setOnQueueChange, tryPair } from "./queue";
 import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
 
 export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
@@ -26,9 +26,14 @@ export function attachMatchmaking(httpServer: HttpServer, opts: { clientOrigin: 
 
   io.use(socketAuthMiddleware);
 
+  setOnQueueChange(() => {
+    io.emit("queueStateUpdate", { entries: getPublicQueueState() });
+  });
+
   io.on("connection", (socket: MatchmakingSocket) => {
     registerPresence(socket);
     handleReconnect(socket.data.userId, socket);
+    socket.emit("queueStateUpdate", { entries: getPublicQueueState() });
 
     socket.on("joinQueue", (payload) => {
       if (!payload || typeof payload.gameId !== "string" || !isValidGameId(payload.gameId)) {

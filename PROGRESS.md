@@ -3302,6 +3302,30 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/determinism-check.ts`: **13 / 13 passed**
   - `scripts/score-validation-check.ts`: **22 / 22 passed**
 
+## Session 34 (2026-08-11) — Live Public Queue Tracker & 1-Click Lobby Matchmaking
+
+### What Was Done
+1. **Server Queue State Broadcast**:
+   - Added `QueueStateEntry` and `QueueStateUpdatePayload` types to `@arcadeclash/shared`.
+   - Updated `queue.ts` with `getPublicQueueState()` and `setOnQueueChange()` broadcast hooks.
+   - Connected `io.emit("queueStateUpdate", ...)` in `packages/server/src/matchmaking/index.ts` so queue joins, matches, cancels, and socket disconnects immediately broadcast live searching state.
+2. **Client Live Queue Lobby Widget (`LiveQueueList.tsx`)**:
+   - Built reactive `<LiveQueueList />` component mounted on the main dashboard (`HomePage.tsx`).
+   - Listens to `queueStateUpdate` events and renders waiting players with avatars, usernames, game titles, wager badges (`COINS` / `DIAMONDS` / `Free Play`), and live `00:15` search timers.
+3. **1-Click Direct Match Acceptance**:
+   - Clicking "Match" on a waiting player card checks user balances and automatically initiates queueing pre-configured with matching `gameId`, `currency`, and `stake`, instantly pairing players.
+4. **Git Safety Tagging & Remote Sync**:
+   - Created local git tag `backup-post-live-queue-lobby` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/shared`, `packages/client`, and `packages/server` compile cleanly.
+- **Test Scripts Breakdown (101 Total Assertions — 100% Pass Rate)**:
+  - `scripts/wallet-friends-check.ts`: **10 / 10 passed**
+  - `scripts/financial-reconnection-check.ts`: **19 / 19 passed**
+  - `scripts/matchmaking-check.ts`: **37 / 37 passed** (includes live queue state broadcast & 1-click lobby assertions)
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/score-validation-check.ts`: **22 / 22 passed**
+
 ## How to resume
 
 ```bash
@@ -3320,4 +3344,5 @@ why) — use PowerShell's `Get-CimInstance`/`Stop-Process`, and confirm via
 
 Check `git log --oneline` for the checkpoint history if you need more detail
 than this file provides.
+
 

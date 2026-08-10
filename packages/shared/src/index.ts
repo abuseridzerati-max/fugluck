@@ -17,6 +17,8 @@ export type {
   MatchResolvedPayload,
   PlayerResult,
   QueueErrorPayload,
+  QueueStateEntry,
+  QueueStateUpdatePayload,
   RespondInvitePayload,
   ScoreVerdict,
   ServerToClientEvents,

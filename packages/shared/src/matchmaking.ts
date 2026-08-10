@@ -124,6 +124,21 @@ export type InviteErrorPayload = {
   message: string;
 };
 
+export type QueueStateEntry = {
+  socketId: string;
+  userId: string;
+  username: string;
+  avatarUrl?: string | null;
+  gameId: string;
+  currency: "COINS" | "DIAMONDS";
+  stake: number;
+  queuedAt: number;
+};
+
+export type QueueStateUpdatePayload = {
+  entries: QueueStateEntry[];
+};
+
 export interface ClientToServerEvents {
   joinQueue: (payload: JoinQueuePayload) => void;
   submitScore: (payload: SubmitScorePayload) => void;
@@ -143,4 +158,6 @@ export interface ServerToClientEvents {
   inviteError: (payload: InviteErrorPayload) => void;
   // Echoed to the inviter so the waiting UI knows which inviteId to cancel.
   inviteSent: (payload: { inviteId: string; gameId: string; toUsername: string }) => void;
+  // Real-time broadcast of waiting players in the public matchmaking lobby.
+  queueStateUpdate: (payload: QueueStateUpdatePayload) => void;
 }

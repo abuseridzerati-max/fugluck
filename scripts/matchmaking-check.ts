@@ -25,7 +25,15 @@ import {
   handleDisconnect,
   submitScore,
 } from "../packages/server/src/matchmaking/matches.ts";
-import { enqueue, generateSeed, isValidGameId, removeFromQueue, tryPair } from "../packages/server/src/matchmaking/queue.ts";
+import {
+  enqueue,
+  generateSeed,
+  getPublicQueueState,
+  isValidGameId,
+  removeFromQueue,
+  setOnQueueChange,
+  tryPair,
+} from "../packages/server/src/matchmaking/queue.ts";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
 import { replayEngine, type InputLogEntry } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
@@ -451,6 +459,38 @@ console.log("\nTest 11: strict queue stake & currency isolation\n");
   enqueue("neon-runner", p100_b, "COINS", 100);
   const pairMatch = tryPair("neon-runner", "COINS", 100);
   check("100-coin bettor pairs immediately with second 100-coin bettor", Boolean(pairMatch && pairMatch[0].userId === "user_100a" && pairMatch[1].userId === "user_100b"));
+}
+
+// ---------------------------------------------------------------------------
+// Test 12: Live Public Queue State Broadcast & 1-Click Lobby Matchmaking
+// ---------------------------------------------------------------------------
+console.log("\nTest 12: live public queue state broadcast & 1-click lobby\n");
+
+{
+  let queueChangeCount = 0;
+  setOnQueueChange(() => {
+    queueChangeCount++;
+  });
+
+  const lobbyPlayer = fakeSocket("user_lobby1", "LobbyPlayer");
+  enqueue("neon-runner", lobbyPlayer, "COINS", 100);
+
+  const publicState = getPublicQueueState();
+  check("queueStateUpdate callback fired on enqueue", queueChangeCount > 0);
+  check("getPublicQueueState returns entry in public list", publicState.some((e) => e.userId === "user_lobby1" && e.gameId === "neon-runner" && e.stake === 100));
+  
+  const publicEntry = publicState.find((e) => e.userId === "user_lobby1");
+  check("public entry contains username, currency, stake, queuedAt", Boolean(publicEntry && publicEntry.username === "LobbyPlayer" && publicEntry.currency === "COINS" && publicEntry.stake === 100 && publicEntry.queuedAt > 0));
+
+  // 1-Click Direct Match Pairing simulation
+  const challenger = fakeSocket("user_challenger", "Challenger");
+  enqueue(publicEntry!.gameId, challenger, publicEntry!.currency, publicEntry!.stake);
+  const pair = tryPair(publicEntry!.gameId, publicEntry!.currency, publicEntry!.stake);
+
+  check("1-click match queueing pairs challenger with lobby player instantly", Boolean(pair && pair[0].userId === "user_lobby1" && pair[1].userId === "user_challenger"));
+  check("queue cleans up paired users after match creation", !getPublicQueueState().some((e) => e.userId === "user_lobby1" || e.userId === "user_challenger"));
+
+  setOnQueueChange(null);
 }
 
 // ---------------------------------------------------------------------------
