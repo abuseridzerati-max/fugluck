@@ -57,3 +57,9 @@ in `PROGRESS.md`.
   (no Find Opponent, cannot log in), not as an error message.
   Third occurrence of an environment-state false alarm — see sessions
   9, 12, and 20.
+
+## Architecture Invariant: Fixed Virtual Resolution (added 2026-08-10)
+
+- **Canonical Virtual Viewport**: All game engines (`RunnerEngine`, `DashEngine`) and replay adapters MUST run strictly against `VIRTUAL_VIEWPORT = { width: 1280, height: 720 }` (`@arcadeclash/shared`).
+- **Letterboxed Client Rendering**: Physical canvas elements MUST letterbox (`object-fit: contain`, 16:9 aspect ratio) inside host containers.
+- **Equal Stakes Integrity**: `engine.resize()` MUST always receive `1280x720` to guarantee identical physics, obstacle travel distance, and scoring regardless of client monitor resolution or display width.

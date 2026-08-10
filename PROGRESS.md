@@ -3104,6 +3104,26 @@ kept unedited below as a historical record, not current status.**
 The homepage's "LIVE ARENA" player count and "View Leaderboards →" link
 stay mock/dead until matchmaking and leaderboards are eventually built.
 
+## Session 24 (2026-08-10) — Repository Recovery, Sky Dodge Removal & Fixed Virtual Resolution (Letterboxed)
+
+### What Was Done
+1. **Repository Recovery**: Restored `ARCADECLASH` from `C:\Users\abuse\OneDrive\Desktop\friend version` into `C:\Users\abuse\arcadeclash`. Restored `packages/server/.env` and ran clean `npm install` on Windows to rebuild native binaries (`esbuild`).
+2. **Sky Dodge Removal**: Archived Sky Dodge on branch `sky-dodge-archive` (tagged `sky-dodge-before-removal`). Removed `games/sky-dodge/` directory and all module references in `registry.ts`, `replayAdapters.ts`, `gameFactories.ts`, `homeData.ts`, and test scripts. Test baseline adjusted from 73 to 65 assertions. Committed as `f32c5ee`.
+3. **Fixed Virtual Resolution (Letterboxed)**:
+   - Defined `VIRTUAL_VIEWPORT = { width: 1280, height: 720 }` in `@arcadeclash/shared` (`gameModule.ts`, `index.ts`).
+   - Locked `RunnerEngine` and `DashEngine` to 1280x720 coordinates during `engine.resize()`.
+   - Implemented 16:9 canvas letterboxing in `games/neon-runner/index.ts` and `games/pixel-ninja-dash/index.ts` using flex centering and CSS aspect-ratio containment (`object-fit: contain`).
+   - Completely eliminated monitor resolution scoring advantage (~33% score gap on wider displays).
+   - Committed as `2bd9956`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (65 Total Assertions)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed** (verified replay determinism, loop jitter, and `wallMs` timestamp independence)
+  - `scripts/matchmaking-check.ts`: **24 / 24 passed** (verified pairing, seed generation, resolution, forfeit timers, and disconnect policies)
+  - `scripts/score-validation-check.ts`: **23 / 23 passed** (verified server `validateScore` and anti-tamper log replaying)
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified signup coin grants, diamond packs, and user balances)
+
 ## How to resume
 
 ```bash
