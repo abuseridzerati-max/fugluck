@@ -4,6 +4,12 @@
 // they receive it (see PROGRESS.md "Current phase").
 export type GameMode = "practice" | "match";
 
+// Canonical virtual viewport across all games — physics, obstacle spawn,
+// and server-side validation are locked to this 16:9 resolution (1280x720).
+// Client containers letterbox this viewport to guarantee identical physics
+// and scoring regardless of client monitor size or aspect ratio.
+export const VIRTUAL_VIEWPORT = { width: 1280, height: 720 };
+
 // One recorded input transition, tagged with the fixed-timestep tick it
 // occurred on (not wall-clock time — see PROGRESS.md's determinism brief
 // for why tick is the correct key: replay steps ticks, not real time).

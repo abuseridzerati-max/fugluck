@@ -1,6 +1,7 @@
 import {
   createFixedTimestepLoop,
   FIXED_TIMESTEP_SEC,
+  VIRTUAL_VIEWPORT,
   type FixedTimestepLoop,
   type GameMode,
   type GameModule,
@@ -109,10 +110,10 @@ export class PixelNinjaDashModule extends EventTarget implements GameModule {
 
     this.root = document.createElement("div");
     this.root.style.cssText =
-      "position:relative;width:100%;height:100%;overflow:hidden;background:#05060a;touch-action:none;";
+      "position:relative;width:100%;height:100%;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;touch-action:none;";
 
     this.canvas = document.createElement("canvas");
-    this.canvas.style.cssText = "display:block;width:100%;height:100%;";
+    this.canvas.style.cssText = "display:block;object-fit:contain;";
     this.root.appendChild(this.canvas);
     this.ctx = this.canvas.getContext("2d");
 
@@ -214,14 +215,26 @@ export class PixelNinjaDashModule extends EventTarget implements GameModule {
   private handleResize = () => {
     if (!this.canvas || !this.root || !this.ctx) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = this.root.clientWidth;
-    const h = this.root.clientHeight;
-    this.canvas.width = w * dpr;
-    this.canvas.height = h * dpr;
+    const w = this.root.clientWidth || VIRTUAL_VIEWPORT.width;
+    const h = this.root.clientHeight || VIRTUAL_VIEWPORT.height;
+    const targetRatio = VIRTUAL_VIEWPORT.width / VIRTUAL_VIEWPORT.height;
+    const containerRatio = w / h;
+    let displayW: number, displayH: number;
+    if (containerRatio > targetRatio) {
+      displayH = h;
+      displayW = h * targetRatio;
+    } else {
+      displayW = w;
+      displayH = w / targetRatio;
+    }
+    this.canvas.style.width = `${displayW}px`;
+    this.canvas.style.height = `${displayH}px`;
+    this.canvas.width = VIRTUAL_VIEWPORT.width * dpr;
+    this.canvas.height = VIRTUAL_VIEWPORT.height * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.engine.resize(w, h);
-    this.lastResizeWidth = w;
-    this.lastResizeHeight = h;
+    this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    this.lastResizeWidth = VIRTUAL_VIEWPORT.width;
+    this.lastResizeHeight = VIRTUAL_VIEWPORT.height;
   };
 
   start(): void {
