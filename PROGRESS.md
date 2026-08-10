@@ -3172,6 +3172,30 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified `SIGNUP_COIN_GRANT === 1000`)
   - `scripts/financial-reconnection-check.ts`: **18 / 18 passed** (verified monthly allowance top-off logic)
 
+## Session 28 (2026-08-10) — Main Navigation Clean (Embedded Profile Friends Access) & Unified 4-Tier Architecture
+
+### What Was Done
+1. **Frontend Main Navigation Cleanup**:
+   - Removed standalone "Friends" and "Invites" buttons from top header (`Navbar.tsx`).
+   - Integrated a clean "Friends & Invites 👥" section inside `ProfilePage.tsx` so users can manage friends directly from their profile view.
+   - Preserved backend `friendships` schema, API routes, and Socket.IO friend invite handlers 100%.
+2. **Maintained Core Architecture Invariants**:
+   - Launch Modal (`LaunchModal.tsx`) on every game card (Guest: 2 options; Registered: 4 options).
+   - Monthly 1,000 COIN Allowance Refill Engine (`checkAndApplyMonthlyAllowance(userId)` on login/me).
+   - Rake Rules: 0% COINS vs 5% DIAMONDS rake.
+   - Instant guest link matches locked to `stake = 0` (Free Play).
+3. **Git Safety Tagging & Sync**:
+   - Updated tag `backup-post-ui-modal-refill-4tier` and pushed to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (88 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **27 / 27 passed**
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+
 ## How to resume
 
 ```bash

@@ -80,3 +80,9 @@ in `PROGRESS.md`.
 
 - **Starting Grant**: New user registration issues 1,000 COINS (`SIGNUP_COIN_GRANT = 1000`).
 - **Monthly Refill Engine**: Executed on login/me (`checkAndApplyMonthlyAllowance(userId)`). Uses month key `monthly_allowance_refill:YYYY-MM`. If COINS balance < 1,000, grants `1000 - balance` to top off balance to 1,000 COINS. If COINS balance ≥ 1,000, grants 0 COINS to leave balance untouched.
+
+## Architecture Invariant: Navigation Layout & Profile Social Access (added 2026-08-10)
+
+- **Clean Top Header Navigation**: Primary navbar (`Navbar.tsx`) is kept clean and un-cluttered without standalone "Friends" or "Invites" header buttons.
+- **Profile-Embedded Social Management**: Full friends management (friend requests, friend list, inviting friends to matches) remains accessible via the User Profile view (`ProfilePage.tsx`) when clicking an avatar or profile.
+- **Backend Schema Preservation**: The `friendships` database schema, backend API routes (`/api/friends`), and Socket.IO friend invite handlers remain 100% intact.
