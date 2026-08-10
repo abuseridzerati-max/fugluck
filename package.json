@@ -2,6 +2,9 @@
   "name": "arcadeclash",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "test": "npx tsx scripts/wallet-friends-check.ts && npx tsx scripts/financial-reconnection-check.ts && npx tsx scripts/matchmaking-check.ts && npx tsx scripts/determinism-check.ts && npx tsx scripts/score-validation-check.ts && npx tsx scripts/canvas-render-check.ts"
+  },
   "workspaces": [
     "packages/*",
     "games"

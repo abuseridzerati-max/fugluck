@@ -3326,11 +3326,39 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/determinism-check.ts`: **13 / 13 passed**
   - `scripts/score-validation-check.ts`: **22 / 22 passed**
 
+## Session 35 (2026-08-11) — Headless Canvas draw() Visual Regression & Rendering Assertion Test Suite
+
+### What Was Done
+1. **Headless Canvas Context Mock & Finite Coordinate Guard**:
+   - Created `scripts/canvas-render-check.ts` with a mock `CanvasRenderingContext2D` proxy capturing all drawing calls (`fillRect`, `clearRect`, `drawImage`, `arc`, `lineTo`, `fillText`, `setTransform`).
+   - Intercepted all numeric arguments to assert `Number.isFinite(val) === true`, guaranteeing zero `NaN`, `Infinity`, `null`, or `undefined` coordinate calculations.
+2. **Game Render Loop Execution Coverage (`draw()` Suite)**:
+   - Evaluated 300 simulated frames (5 seconds of gameplay) for both `Neon Runner` (`RunnerEngine`) and `Pixel Ninja Dash` (`DashEngine`).
+   - Verified 65,000+ canvas draw operations executing without thrown exceptions or canvas crashes.
+3. **Fixed Virtual Resolution Letterboxing Math Validation**:
+   - Verified canvas scaling maintains strict 16:9 logical aspect ratio (`1280x720` canonical constant) across Desktop 1080p, Tablet 4:3, Mobile Portrait 19.5:9, and Ultrawide 21:9 viewports.
+4. **Replay Canvas Integration Test**:
+   - Driven `draw()` on each frame of 100-tick replay logs using `neonRunnerReplayAdapter` and `pixelNinjaDashReplayAdapter`.
+5. **Root Script Configuration & Remote Sync**:
+   - Added `"scripts": { "test": "..." }` to root `package.json` chaining all 6 test scripts.
+   - Tagged `backup-post-canvas-render-tests` and pushed all tags to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: Clean compilation across all packages.
+- **Test Scripts Breakdown (109 Total Assertions — 100% Pass Rate)**:
+  - `scripts/wallet-friends-check.ts`: **10 / 10 passed**
+  - `scripts/financial-reconnection-check.ts`: **19 / 19 passed**
+  - `scripts/matchmaking-check.ts`: **37 / 37 passed**
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/score-validation-check.ts`: **22 / 22 passed**
+  - `scripts/canvas-render-check.ts`: **8 / 8 passed** (65,289 canvas draw calls verified)
+
 ## How to resume
 
 ```bash
 cd C:/Users/abuse/arcadeclash
 git status
+npm test                            # Runs all 6 test scripts (109 assertions)
 npm run dev -w packages/client   # http://localhost:5173 (frontend)
 npm run dev -w packages/server   # http://localhost:4000 (backend API)
 ```

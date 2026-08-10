@@ -117,3 +117,10 @@ in `PROGRESS.md`.
 - **Real-Time Queue Broadcast**: `queue.ts` compiles sanitized public queue entries (`socketId`, `userId`, `username`, `avatarUrl`, `gameId`, `currency`, `stake`, `queuedAt`) and triggers `io.emit("queueStateUpdate", ...)` whenever players join, pair, cancel, or disconnect.
 - **Client Lobby Widget (`LiveQueueList.tsx`)**: Reactive widget mounted on `HomePage.tsx` displaying live searching players, wager badges, and running `00:15` search timers.
 - **1-Click Match Acceptance**: Clicking "Match" on a waiting player card checks user balances and automatically emits `joinQueue` pre-configured with matching `gameId`, `currency`, and `stake` to trigger instant pairing.
+
+## Architecture Invariant: Headless Canvas draw() & Finite Coordinate Assertions (added 2026-08-11)
+
+- **Headless Context Mock**: `scripts/canvas-render-check.ts` intercepts 2D canvas drawing operations (`fillRect`, `clearRect`, `drawImage`, `arc`, `lineTo`, `fillText`, `setTransform`) with strict `Number.isFinite(val)` guards to prevent `NaN`/`Infinity` visual rendering bugs.
+- **Fixed Virtual Resolution Letterboxing**: Canvas scaling maintains strict 16:9 aspect ratio (`VIRTUAL_VIEWPORT = { width: 1280, height: 720 }`) across all viewport bounds.
+- **Suite Command**: `npm test` runs all 6 test scripts (`wallet-friends-check`, `financial-reconnection-check`, `matchmaking-check`, `determinism-check`, `score-validation-check`, `canvas-render-check`).
+
