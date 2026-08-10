@@ -105,7 +105,9 @@ in `PROGRESS.md`.
 - **Escrow Debit**: When a match starts (`createMatch()`), `escrowStake` debits both players' ledger balances (`stake_escrow:${matchId}`).
 - **Winner Payout**: Upon match resolution (`emitResolved()`), `payoutWinner` credits the winning player `stake * 2` for COINS (0% rake) or `stake * 2 * 0.95` for DIAMONDS (5% rake to platform).
 
-## Architecture Invariant: Auth Session Persistence & Post-Match Balance Rehydration (added 2026-08-10)
+## Architecture Invariant: Auth Session Persistence & Post-Match Balance Rehydration (updated 2026-08-11)
 
-- **LocalStorage Session Rehydration**: `AuthContext.tsx` rehydrates user identity from `localStorage` (`arcadeclash_auth_user`) on initial mount, preventing session drops or unauthenticated flashes on page refreshes (`F5`).
+- **Supabase LocalStorage Session Rehydration**: `AuthContext.tsx` integrates Supabase client (`lib/supabase.ts`) with `auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }` and calls `supabase.auth.getSession()` + `onAuthStateChange()`, preserving user identity on page refreshes (`F5`).
+- **Socket Token Attachment**: Sockets pass session JWT tokens in `auth: { token }` upon connection (`useMatchSocket.ts`), and `socketAuthMiddleware` in `socketAuth.ts` verifies token payload to attach authenticated `userId` (preventing forced guest 0-stake matches).
+- **Financial Ledger Settlement**: `escrowStake` inserts `stake_escrow:${matchId}` on match start; `payoutWinner` inserts `stake_payout:${matchId}` on match completion (`stake * 2` for COINS, 0% rake) with explicit `.returning()` row validation and real-time `balanceUpdate` socket emissions.
 - **Post-Match UI Balance Refetch**: Upon receiving `matchResolved` in `MatchLoader.tsx`, `refreshUser()` is called automatically to re-fetch live derived PostgreSQL balances, updating COINS and DIAMONDS in the UI immediately without requiring a manual refresh.

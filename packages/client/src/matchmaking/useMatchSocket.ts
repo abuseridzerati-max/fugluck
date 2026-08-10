@@ -8,6 +8,7 @@ import type {
 } from '@arcadeclash/shared'
 import { io, type Socket } from 'socket.io-client'
 import { API_URL } from '../lib/api'
+import { getStoredAuthToken } from '../auth/AuthContext'
 
 export type MatchmakingConnectionState = 'connecting' | 'queued' | 'matched' | 'closed'
 
@@ -42,7 +43,11 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
   const [waitingLabel, setWaitingLabel] = useState<string | null>(null)
 
   useEffect(() => {
-    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, { withCredentials: true })
+    const token = getStoredAuthToken()
+    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
+      withCredentials: true,
+      auth: { token: token || undefined },
+    })
     socketRef.current = socket
 
     socket.on('connect', () => {

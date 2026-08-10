@@ -9,7 +9,7 @@ import {
 } from 'react'
 import type { ClientToServerEvents, InviteReceivedPayload, ServerToClientEvents } from '@arcadeclash/shared'
 import { io, type Socket } from 'socket.io-client'
-import { useAuth } from '../auth/AuthContext'
+import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'
 
 type InviteContextValue = {
@@ -42,7 +42,11 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
       return
     }
 
-    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, { withCredentials: true })
+    const token = getStoredAuthToken()
+    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
+      withCredentials: true,
+      auth: { token: token || undefined },
+    })
     socketRef.current = socket
 
     socket.on('inviteReceived', (payload) => {

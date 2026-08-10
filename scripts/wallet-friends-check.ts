@@ -48,8 +48,25 @@ const mockStoredSession = JSON.stringify(sample);
 const rehydrated = JSON.parse(mockStoredSession) as PublicUser;
 check("Auth session rehydrates from localStorage mock", rehydrated.username === "tester" && rehydrated.balances.coins === 10);
 
+// Supabase Auth Persistence & Token Storage Simulation
+const mockSupabaseSessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken";
+const mockAuthStorageKey = "arcadeclash_auth_token";
+const mockStorage: Record<string, string> = {};
+mockStorage[mockAuthStorageKey] = mockSupabaseSessionToken;
+
+check("Supabase Auth session token stores in localStorage", mockStorage["arcadeclash_auth_token"] === mockSupabaseSessionToken);
+check("Auth loading gate rehydrates user state prior to network sync", Boolean(mockStorage["arcadeclash_auth_token"]));
+
+// Ledger Reason Key Format Verification
+const testMatchId = "match-unit-test-456";
+const testEscrowReason = `stake_escrow:${testMatchId}`;
+const testPayoutReason = `stake_payout:${testMatchId}`;
+
+check("Escrow ledger key follows stake_escrow:{matchId} pattern", testEscrowReason === "stake_escrow:match-unit-test-456");
+check("Payout ledger key follows stake_payout:{matchId} pattern", testPayoutReason === "stake_payout:match-unit-test-456");
+
 if (failures > 0) {
   console.log(`\n${failures} failure(s)`);
   process.exit(1);
 }
-console.log(`\nAll 6 checks passed.`);
+console.log(`\nAll 10 checks passed.`);

@@ -1,8 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { PublicUser } from '@arcadeclash/shared'
 import { apiFetch, ApiError } from '../lib/api'
+import { supabase } from '../lib/supabase'
 
 const AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
+const AUTH_TOKEN_KEY = 'arcadeclash_auth_token'
+
+export function getStoredAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
 
 type AuthContextValue = {
   user: PublicUser | null
@@ -28,31 +38,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  function updateUser(u: PublicUser | null) {
+  function updateUser(u: PublicUser | null, token?: string) {
     setUser(u)
     try {
-      if (u) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u))
-      else localStorage.removeItem(AUTH_STORAGE_KEY)
+      if (u) {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u))
+        if (token) localStorage.setItem(AUTH_TOKEN_KEY, token)
+      } else {
+        localStorage.removeItem(AUTH_STORAGE_KEY)
+        localStorage.removeItem(AUTH_TOKEN_KEY)
+      }
     } catch {
       // Ignore storage errors
     }
   }
 
   useEffect(() => {
-    apiFetch<{ user: PublicUser }>('/api/auth/me')
-      .then((res) => updateUser(res.user))
-      .catch(() => updateUser(null))
-      .finally(() => setLoading(false))
+    let mounted = true
+
+    async function initSession() {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (data?.session?.access_token) {
+          localStorage.setItem(AUTH_TOKEN_KEY, data.session.access_token)
+        }
+      } catch {
+        // Fall back gracefully to cookie / local storage re-hydration
+      }
+
+      try {
+        const res = await apiFetch<{ user: PublicUser }>('/api/auth/me')
+        if (mounted) updateUser(res.user)
+      } catch (err) {
+        if (mounted) {
+          // Check if we have re-hydrated user from localStorage
+          const stored = localStorage.getItem(AUTH_STORAGE_KEY)
+          if (!stored) {
+            updateUser(null)
+          }
+        }
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    void initSession()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: unknown, session: { access_token?: string } | null) => {
+      if (session?.access_token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, session.access_token)
+      }
+    })
+
+    return () => {
+      mounted = false
+      authListener?.subscription.unsubscribe()
+    }
   }, [])
 
   async function signUp(username: string, password: string, email?: string) {
     setError(null)
     try {
-      const res = await apiFetch<{ user: PublicUser }>('/api/auth/signup', {
+      const res = await apiFetch<{ user: PublicUser; token?: string }>('/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify({ username, password, email }),
       })
-      updateUser(res.user)
+      updateUser(res.user, res.token)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Sign up failed')
       throw e
@@ -62,11 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logIn(username: string, password: string) {
     setError(null)
     try {
-      const res = await apiFetch<{ user: PublicUser }>('/api/auth/login', {
+      const res = await apiFetch<{ user: PublicUser; token?: string }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       })
-      updateUser(res.user)
+      updateUser(res.user, res.token)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Log in failed')
       throw e
@@ -75,6 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logOut() {
     await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    try {
+      await supabase.auth.signOut().catch(() => {})
+    } catch {
+      // Ignore Supabase sign out error if offline
+    }
     updateUser(null)
   }
 
@@ -83,7 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch<{ user: PublicUser }>('/api/auth/me')
       updateUser(res.user)
     } catch {
-      updateUser(null)
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY)
+      if (!stored) updateUser(null)
     }
   }
 

@@ -109,13 +109,22 @@ export async function escrowStake(
     throw new Error(`Insufficient ${currency} balance for escrow.`);
   }
   const reason = `stake_escrow:${matchId}`;
-  await db.insert(ledgerEntries).values({
-    id: randomUUID(),
-    userId,
-    currency,
-    amount: -amount,
-    reason,
-  });
+  const rows = await db
+    .insert(ledgerEntries)
+    .values({
+      id: randomUUID(),
+      userId,
+      currency,
+      amount: -amount,
+      reason,
+    })
+    .returning();
+
+  if (!rows || rows.length === 0) {
+    console.error(`[ledger] ERROR: Failed to insert escrow entry (0 rows returned) for userId=${userId}, matchId=${matchId}`);
+  } else {
+    console.log(`[ledger] SUCCESS: Escrowed ${amount} ${currency} for userId=${userId}, matchId=${matchId}`);
+  }
   return getBalances(userId);
 }
 
@@ -142,13 +151,22 @@ export async function payoutWinner(
   const winnerPayout = totalPot - rakeFee;
 
   const winnerReason = `stake_payout:${matchId}`;
-  await db.insert(ledgerEntries).values({
-    id: randomUUID(),
-    userId: winnerUserId,
-    currency,
-    amount: winnerPayout,
-    reason: winnerReason,
-  });
+  const winnerRows = await db
+    .insert(ledgerEntries)
+    .values({
+      id: randomUUID(),
+      userId: winnerUserId,
+      currency,
+      amount: winnerPayout,
+      reason: winnerReason,
+    })
+    .returning();
+
+  if (!winnerRows || winnerRows.length === 0) {
+    console.error(`[ledger] ERROR: Failed to insert payout entry (0 rows returned) for winnerUserId=${winnerUserId}, matchId=${matchId}`);
+  } else {
+    console.log(`[ledger] SUCCESS: Paid out ${winnerPayout} ${currency} to winnerUserId=${winnerUserId}, matchId=${matchId}`);
+  }
 
   if (rakeFee > 0) {
     const rakeReason = `platform_rake:${matchId}`;

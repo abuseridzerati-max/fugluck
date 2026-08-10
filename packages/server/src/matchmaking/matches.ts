@@ -140,9 +140,17 @@ function emitResolved(match: MatchState): void {
 
   // FINANCIAL INVARIANT: Payout winner if match had stake > 0 and ended with a winner
   if (winnerId && loserId && match.stake > 0) {
-    void payoutWinner(winnerId, loserId, match.currency, match.stake, match.id).catch((err) => {
-      console.error(`[matches] Failed to payout winner ${winnerId} in match ${match.id}:`, err);
-    });
+    void payoutWinner(winnerId, loserId, match.currency, match.stake, match.id)
+      .then(({ winnerBalances }) => {
+        const winnerPlayer = p1.userId === winnerId ? p1 : p2;
+        if (winnerPlayer.socket.connected) {
+          // @ts-expect-error custom event emission for live balance update
+          winnerPlayer.socket.emit("balanceUpdate", { balances: winnerBalances });
+        }
+      })
+      .catch((err) => {
+        console.error(`[matches] Failed to payout winner ${winnerId} in match ${match.id}:`, err);
+      });
   }
 
   // Persist completed match record to database for Profile Match History & Replaying

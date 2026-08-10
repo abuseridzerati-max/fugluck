@@ -3277,14 +3277,30 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
 3. **Git Safety Tagging & Remote Sync**:
    - Created local tag `backup-post-auth-persistence-and-coin-fix` and pushed all tags/branches to `origin`.
 
+## Session 33 (2026-08-11) — Supabase Auth Session Persistence & Financial Coin Settlement Repair
+
+### What Was Done
+1. **Supabase Auth Session Persistence on Refresh**:
+   - Created `packages/client/src/lib/supabase.ts` with `createClient` using `auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }`.
+   - Updated `AuthContext.tsx` to handle `supabase.auth.getSession()` and `supabase.auth.onAuthStateChange()`, maintaining `localStorage` user state across page refreshes (`F5`) without session drops.
+2. **Socket Authentication & Identity Attachment**:
+   - Updated `useMatchSocket.ts` and `InviteProvider.tsx` to pass the stored session JWT token in `auth: { token }` upon connection.
+   - Enhanced `socketAuthMiddleware` in `packages/server/src/matchmaking/socketAuth.ts` to extract tokens from `handshake.auth.token`, `Authorization: Bearer`, or cookies, ensuring matches are recognized as registered user matches (not forced guest 0-stake matches).
+3. **Financial Ledger Escrow & Payout Settlement**:
+   - Updated `ledger.ts` `escrowStake` and `payoutWinner` with `.returning()` row checks and explicit error logging.
+   - Updated `matches.ts` to emit real-time `balanceUpdate` socket events upon match payout resolution.
+   - Ensured `refreshUser()` in `MatchLoader.tsx` re-fetches derived PostgreSQL balances immediately post-match.
+4. **Test Suite Integrity & Integration**:
+   - Added explicit integration test assertions in `scripts/wallet-friends-check.ts` for Supabase auth persistence, token storage, and escrow/payout ledger reason keys.
+
 ### Verification Results
-- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
-- **Test Scripts Breakdown (93 Total Assertions — 100% Pass Rate)**:
+- **TypeScript Compilation**: `packages/client` and `packages/server` compile cleanly.
+- **Test Scripts Breakdown (96 Total Assertions — 100% Pass Rate)**:
+  - `scripts/wallet-friends-check.ts`: **10 / 10 passed**
+  - `scripts/financial-reconnection-check.ts`: **19 / 19 passed**
+  - `scripts/matchmaking-check.ts`: **32 / 32 passed**
   - `scripts/determinism-check.ts`: **13 / 13 passed**
-  - `scripts/matchmaking-check.ts`: **31 / 31 passed**
-  - `scripts/score-validation-check.ts`: **25 / 25 passed**
-  - `scripts/wallet-friends-check.ts`: **6 / 6 passed** (includes auth session rehydration assertion)
-  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+  - `scripts/score-validation-check.ts`: **22 / 22 passed**
 
 ## How to resume
 
@@ -3304,3 +3320,4 @@ why) — use PowerShell's `Get-CimInstance`/`Stop-Process`, and confirm via
 
 Check `git log --oneline` for the checkpoint history if you need more detail
 than this file provides.
+

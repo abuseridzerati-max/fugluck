@@ -29,11 +29,26 @@ function extractSessionCookie(cookieHeader: string | undefined): string | null {
   return null;
 }
 
+function extractSessionToken(socket: MatchmakingSocket): string | null {
+  const cookieToken = extractSessionCookie(socket.handshake.headers.cookie);
+  if (cookieToken) return cookieToken;
+
+  const handshakeAuth = socket.handshake.auth as { token?: string } | undefined;
+  if (handshakeAuth?.token) return handshakeAuth.token;
+
+  const authHeader = socket.handshake.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7);
+  }
+
+  return null;
+}
+
 // Socket.IO connection middleware — mirrors attachSession + requireAuth from
 // the Express auth middleware, applied to the handshake instead of a request.
 // Allows unauthenticated guests with ephemeral IDs for Free-Play instant matches.
 export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err?: Error) => void): Promise<void> {
-  const token = extractSessionCookie(socket.handshake.headers.cookie);
+  const token = extractSessionToken(socket);
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) {
     const handshakeAuth = socket.handshake.auth as { isGuest?: boolean; guestId?: string } | undefined;
