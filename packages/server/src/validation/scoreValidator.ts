@@ -45,9 +45,12 @@ export type ValidateScoreResult = {
     | "unsorted_log"
     | "unrecognized_action"
     | "did_not_terminate"
-    | "score_mismatch";
+    | "score_mismatch"
+    | "freeze_frame_detected";
   replayedScore?: number;
 };
+
+export const FREEZE_FRAME_THRESHOLD_SEC = 3.0;
 
 export function validateScore(input: ValidateScoreInput): ValidateScoreResult {
   const adapter = replayAdapters[input.gameId];
@@ -76,7 +79,10 @@ export function validateScore(input: ValidateScoreInput): ValidateScoreResult {
     throw err; // a real bug in the adapter, not tampering — let it surface
   }
 
-  warnIfImplausiblePacing(input.gameId, input.inputLog, input.durationMs, outcome.finalTick);
+  const freezeError = checkFreezeFrameViolation(input.gameId, input.inputLog, input.durationMs, outcome.finalTick);
+  if (freezeError) {
+    return { verdict: "invalid", reason: "freeze_frame_detected", replayedScore: outcome.finalScore };
+  }
 
   if (!outcome.terminal) {
     return { verdict: "invalid", reason: "did_not_terminate", replayedScore: outcome.finalScore };
@@ -87,29 +93,16 @@ export function validateScore(input: ValidateScoreInput): ValidateScoreResult {
   return { verdict: "valid", reason: "ok", replayedScore: outcome.finalScore };
 }
 
-// Detection only, no enforcement (see PROGRESS.md's freeze-frame Known Gaps
-// entry) — logs a warning, never affects the verdict above.
-//
-// IMPORTANT CAVEAT, not just a implementation detail: durationMs and each
-// inputLog entry's wallMs are both `performance.now() - runStartTime`, and
-// that clock keeps running while the game is paused (pause() stops the tick
-// loop, not the clock). A real freeze-frame exploit and an ordinary
-// legitimate mid-run pause produce the EXACT same signature here — a
-// wall-clock gap with no matching tick advancement. This check cannot tell
-// them apart with the data currently captured; it will fire on legitimate
-// pausing too. Match mode disables the pause button this session (see
-// games/*/index.ts), which narrows how a real player would even produce a
-// pause-shaped gap, but a backgrounded/throttled tab still can (that's the
-// underlying gap this is meant to surface). Treat this log line as "worth a
-// human look," not as a cheat signal on its own.
-function warnIfImplausiblePacing(
+// Server-side enforcement for freeze-frame and tab-backgrounding stalls.
+// Rejects submissions where real-world elapsed time (durationMs or wallMs gaps)
+// exceeds simulated tick progress by more than FREEZE_FRAME_THRESHOLD_SEC (3.0s).
+function checkFreezeFrameViolation(
   gameId: string,
   inputLog: InputLogEntry[],
   durationMs: number,
   finalTick: number,
-): void {
+): "freeze_frame_detected" | null {
   const TICK_HZ = 60;
-  const GAP_THRESHOLD_SEC = 5; // generous — see caveat above on false positives
 
   for (let i = 1; i < inputLog.length; i++) {
     const prev = inputLog[i - 1];
@@ -117,20 +110,24 @@ function warnIfImplausiblePacing(
     if (prev.wallMs === undefined || cur.wallMs === undefined) continue;
     const tickDeltaSec = (cur.tick - prev.tick) / TICK_HZ;
     const wallDeltaSec = (cur.wallMs - prev.wallMs) / 1000;
-    if (wallDeltaSec - tickDeltaSec > GAP_THRESHOLD_SEC) {
+    if (wallDeltaSec - tickDeltaSec > FREEZE_FRAME_THRESHOLD_SEC) {
       console.warn(
-        `[scoreValidator] ${gameId}: implausible pacing between ticks ${prev.tick}-${cur.tick} — ` +
-          `${wallDeltaSec.toFixed(1)}s of real time for ${tickDeltaSec.toFixed(2)}s of simulated time`,
+        `[scoreValidator] ${gameId}: freeze-frame detected between ticks ${prev.tick}-${cur.tick} — ` +
+          `${wallDeltaSec.toFixed(1)}s real time for ${tickDeltaSec.toFixed(2)}s simulated time`,
       );
+      return "freeze_frame_detected";
     }
   }
 
   const expectedSec = finalTick / TICK_HZ;
   const actualSec = durationMs / 1000;
-  if (actualSec - expectedSec > GAP_THRESHOLD_SEC) {
+  if (actualSec - expectedSec > FREEZE_FRAME_THRESHOLD_SEC) {
     console.warn(
-      `[scoreValidator] ${gameId}: whole-run pacing implausible — ${actualSec.toFixed(1)}s real time for ` +
+      `[scoreValidator] ${gameId}: whole-run freeze-frame detected — ${actualSec.toFixed(1)}s real time for ` +
         `${finalTick} ticks (${expectedSec.toFixed(1)}s expected)`,
     );
+    return "freeze_frame_detected";
   }
+
+  return null;
 }

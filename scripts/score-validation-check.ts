@@ -277,5 +277,48 @@ console.log("\nTest 6: disconnect resolution (matches.ts's handleDisconnect poli
   );
 }
 
+// ---------------------------------------------------------------------------
+// Test 7: freeze-frame / background tab auto-forfeit enforcement
+// ---------------------------------------------------------------------------
+console.log("\nTest 7: freeze-frame / tab-switching auto-forfeit enforcement\n");
+
+{
+  const runnerBaseline = honestBaselines.get("neon-runner")!;
+  // Whole-run duration stalled by 4 seconds (4000ms delay)
+  const frozenResult = validateScore({
+    gameId: "neon-runner",
+    seed: SEED,
+    inputLog: GAMES[0].log,
+    claimedScore: runnerBaseline.score,
+    durationMs: runnerBaseline.durationMs + 4000,
+    viewport: VIEWPORT,
+  });
+  check(
+    "whole-run duration stall (>3s delay) rejected as freeze_frame_detected",
+    frozenResult.verdict === "invalid" && frozenResult.reason === "freeze_frame_detected",
+    JSON.stringify(frozenResult),
+  );
+
+  // Intra-log wallMs gap stalled by 4 seconds
+  const stalledLog: InputLogEntry[] = [
+    { tick: 10, action: "jumpPressed", wallMs: 100 },
+    { tick: 20, action: "jumpReleased", wallMs: 4500 }, // 4.4s real time vs 0.16s tick time
+  ];
+  const stalledOutcome = replayEngine(neonRunnerReplayAdapter, SEED, stalledLog, VIEWPORT);
+  const stalledResult = validateScore({
+    gameId: "neon-runner",
+    seed: SEED,
+    inputLog: stalledLog,
+    claimedScore: stalledOutcome.finalScore,
+    durationMs: Math.round((stalledOutcome.finalTick / 60) * 1000) + 4000,
+    viewport: VIEWPORT,
+  });
+  check(
+    "intra-log wallMs gap (>3s delay) rejected as freeze_frame_detected",
+    stalledResult.verdict === "invalid" && stalledResult.reason === "freeze_frame_detected",
+    JSON.stringify(stalledResult),
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

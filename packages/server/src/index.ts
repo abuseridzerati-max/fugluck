@@ -19,6 +19,15 @@ app.use("/api/auth", authRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "ArcadeClash API Server",
+    status: "online",
+    health: `http://localhost:${port}/api/health`,
+    endpoints: ["/api/auth", "/api/wallet", "/api/friends"],
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
