@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -54,7 +54,24 @@ export const friendships = pgTable(
   }),
 );
 
+export const matchesHistory = pgTable("matches_history", {
+  id: text("id").primaryKey(),
+  gameId: text("game_id").notNull(),
+  player1Id: text("player1_id").notNull(),
+  player2Id: text("player2_id").notNull(),
+  winnerId: text("winner_id"),
+  currency: varchar("currency", { length: 16 }).notNull().default("COINS"),
+  stake: integer("stake").notNull().default(0),
+  seed: integer("seed").notNull(),
+  inputLogP1: jsonb("input_log_p1"),
+  inputLogP2: jsonb("input_log_p2"),
+  scoreP1: integer("score_p1").notNull().default(0),
+  scoreP2: integer("score_p2").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type Friendship = typeof friendships.$inferSelect;
+export type MatchHistoryRecord = typeof matchesHistory.$inferSelect;

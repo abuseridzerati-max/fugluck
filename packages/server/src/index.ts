@@ -6,6 +6,7 @@ import express, { type ErrorRequestHandler } from "express";
 import { attachMatchmaking } from "./matchmaking";
 import { authRouter } from "./routes/auth";
 import { friendsRouter } from "./routes/friends";
+import { matchesRouter } from "./routes/matches";
 import { walletRouter } from "./routes/wallet";
 
 const app = express();
@@ -18,13 +19,14 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
+app.use("/api/matches", matchesRouter);
 
 app.get("/", (_req, res) => {
   res.json({
     name: "ArcadeClash API Server",
     status: "online",
     health: `http://localhost:${port}/api/health`,
-    endpoints: ["/api/auth", "/api/wallet", "/api/friends"],
+    endpoints: ["/api/auth", "/api/wallet", "/api/friends", "/api/matches"],
   });
 });
 

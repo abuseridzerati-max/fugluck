@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@arcadeclash/shared";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
 import { validateScore } from "../validation/scoreValidator";
+import { db } from "../db/client";
+import { matchesHistory } from "../db/schema";
 import type { MatchmakingSocket } from "./socketAuth";
 import { removeFromQueue, type QueueEntry } from "./queue";
 
@@ -24,7 +26,13 @@ import { removeFromQueue, type QueueEntry } from "./queue";
 export const FORFEIT_GRACE_MS = 120_000;
 export const RECONNECT_GRACE_MS = 10_000;
 
-type SubmittedResult = { score: number; reason: string; durationMs: number; verdict: ScoreVerdict };
+type SubmittedResult = {
+  score: number;
+  reason: string;
+  durationMs: number;
+  verdict: ScoreVerdict;
+  inputLog?: Array<{ tick: number; action: string }>;
+};
 
 type MatchPlayer = {
   socket: MatchmakingSocket;
@@ -123,6 +131,27 @@ function emitResolved(match: MatchState): void {
   if (p2.socket.connected) {
     p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1 });
   }
+
+  // Persist completed match record to database for Profile Match History & Replaying
+  void db
+    .insert(matchesHistory)
+    .values({
+      id: match.id,
+      gameId: match.gameId,
+      player1Id: p1.userId,
+      player2Id: p2.userId,
+      winnerId: outcome.a === "win" ? p1.userId : outcome.b === "win" ? p2.userId : null,
+      currency: "COINS",
+      stake: 0,
+      seed: match.seed,
+      inputLogP1: p1.result?.inputLog ?? null,
+      inputLogP2: p2.result?.inputLog ?? null,
+      scoreP1: p1.result?.score ?? 0,
+      scoreP2: p2.result?.score ?? 0,
+    })
+    .catch((err) => {
+      console.error(`[matches] Failed to persist match history record ${match.id}:`, err);
+    });
 }
 
 // Used by index.ts to validate a visibilityHidden report actually belongs
@@ -192,6 +221,7 @@ export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePaylo
     reason: payload.reason,
     durationMs: payload.durationMs,
     verdict: validation.verdict,
+    inputLog: payload.inputLog,
   };
 
   const opponent = otherPlayer(match, socket);

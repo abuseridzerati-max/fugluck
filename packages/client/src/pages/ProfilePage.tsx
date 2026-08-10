@@ -1,9 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DIAMOND_PACKS } from '@arcadeclash/shared'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import ReplayModal from '../components/ReplayModal'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
+
+type MatchHistoryItem = {
+  id: string
+  gameId: string
+  opponentUsername: string
+  outcome: string
+  currency: string
+  stake: number
+  userScore: number
+  opponentScore: number
+  seed: number
+  inputLog: Array<{ tick: number; action: string }>
+  createdAt: string
+}
 
 type ProfilePageProps = {
   onNavigateHome: () => void
@@ -14,6 +29,17 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
   const { user, refreshUser } = useAuth()
   const [shopError, setShopError] = useState<string | null>(null)
   const [buyingId, setBuyingId] = useState<string | null>(null)
+  const [matches, setMatches] = useState<MatchHistoryItem[]>([])
+  const [loadingMatches, setLoadingMatches] = useState(true)
+  const [activeReplay, setActiveReplay] = useState<MatchHistoryItem | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    apiFetch<{ matches: MatchHistoryItem[] }>('/api/matches/history')
+      .then((res) => setMatches(res.matches))
+      .catch(() => setMatches([]))
+      .finally(() => setLoadingMatches(false))
+  }, [user])
 
   if (!user) {
     return (
@@ -98,6 +124,52 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
           New accounts start with 1,000 coins and 0 diamonds. Coin balances are play money and automatically top off to 1,000 every month!
         </p>
 
+        {/* Match History Section */}
+        <section style={{ marginBottom: 'var(--space-8)' }}>
+          <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>🎮 Match History & Replays</h2>
+          {loadingMatches ? (
+            <p className="ac-text-muted">Loading match history…</p>
+          ) : matches.length === 0 ? (
+            <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+              No matches recorded yet. Play a match to record engine inputLogs and watch 60 FPS replays!
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {matches.map((m) => (
+                <div
+                  key={m.id}
+                  className="ac-panel"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'space-between',
+                    padding: 'var(--space-3) var(--space-4)',
+                  }}
+                >
+                  <div>
+                    <strong style={{ color: m.outcome === 'win' ? '#22c55e' : m.outcome === 'loss' ? '#f87171' : '#fbbf24' }}>
+                      {m.outcome.toUpperCase()}
+                    </strong>{' '}
+                    — {m.gameId} vs <strong>{m.opponentUsername}</strong>
+                    <div className="ac-text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                      Score: {m.userScore} vs {m.opponentScore} | {new Date(m.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ac-btn ac-btn--ghost"
+                    onClick={() => setActiveReplay(m)}
+                    style={{ fontSize: 'var(--font-size-xs)', border: '1px solid var(--color-border)' }}
+                  >
+                    📼 Watch Replay
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {onNavigateFriends && (
           <div className="ac-panel" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
@@ -139,6 +211,19 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
           ))}
         </div>
       </main>
+
+      {activeReplay && (
+        <ReplayModal
+          gameId={activeReplay.gameId}
+          opponentUsername={activeReplay.opponentUsername}
+          seed={activeReplay.seed}
+          inputLog={activeReplay.inputLog}
+          userScore={activeReplay.userScore}
+          opponentScore={activeReplay.opponentScore}
+          outcome={activeReplay.outcome}
+          onClose={() => setActiveReplay(null)}
+        />
+      )}
     </>
   )
 }
