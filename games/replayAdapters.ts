@@ -14,7 +14,6 @@ import type { ReplayAdapter } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "./neon-runner/replay";
 import { pixelNinjaDashReplayAdapter } from "./pixel-ninja-dash/replay";
 import { gameRegistry } from "./registry";
-import { skyDodgeReplayAdapter } from "./sky-dodge/replay";
 
 // `any` here is deliberate type erasure — each game's adapter has its own
 // concrete TInput/TEngine, and this map has to hold all of them uniformly;
@@ -23,7 +22,6 @@ import { skyDodgeReplayAdapter } from "./sky-dodge/replay";
 export const replayAdapters: Record<string, ReplayAdapter<any, any>> = {
   "neon-runner": neonRunnerReplayAdapter,
   "pixel-ninja-dash": pixelNinjaDashReplayAdapter,
-  "sky-dodge": skyDodgeReplayAdapter,
 };
 
 // Fails fast at module load if a registry entry has no matching adapter (or

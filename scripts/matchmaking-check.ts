@@ -30,7 +30,6 @@ import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/serve
 import { replayEngine, type InputLogEntry } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
-import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 
 let failures = 0;
 
@@ -291,14 +290,14 @@ console.log("\nTest 8: disconnect mid-match");
   const fay = fakeSocket("user-fay", "Fay");
   const seed = generateSeed();
   createMatch(
-    "sky-dodge",
+    "neon-runner",
     { socket: eli, userId: "user-eli", username: "Eli" },
     { socket: fay, userId: "user-fay", username: "Fay" },
     seed,
   );
   const eliMatchId = (eli.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
-  const eliLog = periodicLog("moveLeftDown", "moveLeftUp", 20, 10);
-  const eliScore = replayEngine(skyDodgeReplayAdapter, seed, eliLog, VIEWPORT).finalScore;
+  const eliLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
+  const eliScore = replayEngine(neonRunnerReplayAdapter, seed, eliLog, VIEWPORT).finalScore;
 
   submitScore(eli, {
     matchId: eliMatchId,
@@ -312,8 +311,8 @@ console.log("\nTest 8: disconnect mid-match");
   handleDisconnect(eli);
   check("8a: disconnect after already submitting emits nothing new", !eli.emitted.some((e) => e.event === "matchResolved"));
 
-  const fayLog = periodicLog("moveRightDown", "moveRightUp", 25, 10);
-  const fayScore = replayEngine(skyDodgeReplayAdapter, seed, fayLog, VIEWPORT).finalScore;
+  const fayLog = periodicLog("slidePressed", null, 25, 10);
+  const fayScore = replayEngine(neonRunnerReplayAdapter, seed, fayLog, VIEWPORT).finalScore;
   submitScore(fay, {
     matchId: eliMatchId,
     score: fayScore,
@@ -337,14 +336,14 @@ console.log("\nTest 8: disconnect mid-match");
   const hana = fakeSocket("user-hana", "Hana");
   const seed = generateSeed();
   createMatch(
-    "sky-dodge",
+    "neon-runner",
     { socket: gus, userId: "user-gus", username: "Gus" },
     { socket: hana, userId: "user-hana", username: "Hana" },
     seed,
   );
   const gusMatchId = (gus.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
-  const gusLog = periodicLog("moveLeftDown", "moveLeftUp", 20, 10);
-  const gusScore = replayEngine(skyDodgeReplayAdapter, seed, gusLog, VIEWPORT).finalScore;
+  const gusLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
+  const gusScore = replayEngine(neonRunnerReplayAdapter, seed, gusLog, VIEWPORT).finalScore;
 
   submitScore(gus, {
     matchId: gusMatchId,
@@ -377,7 +376,7 @@ console.log("\nTest 8: disconnect mid-match");
   const ivy = fakeSocket("user-ivy", "Ivy");
   const jack = fakeSocket("user-jack", "Jack");
   createMatch(
-    "sky-dodge",
+    "neon-runner",
     { socket: ivy, userId: "user-ivy", username: "Ivy" },
     { socket: jack, userId: "user-jack", username: "Jack" },
     generateSeed(),

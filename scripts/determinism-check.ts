@@ -31,12 +31,11 @@ import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC, replayEngine, type InputLo
 import { RunnerEngine } from "../games/neon-runner/engine.ts";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
-import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
 // happens at width=0 (a real ResizeObserver always fires with the actual
-// container size before start()), and RunnerEngine/DodgeEngine's spawn and
+// container size before start()), and RunnerEngine's spawn and
 // collision math are functions of width (see PROGRESS.md's viewport/
 // determinism Known Gaps entry) — so a nonzero, consistent size is what
 // actually exercises that path. The exact value doesn't matter for these
@@ -55,7 +54,7 @@ function check(label: string, pass: boolean, detail?: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Test 1: engine replay determinism, all 3 games
+// Test 1: engine replay determinism, 2 games
 // ---------------------------------------------------------------------------
 
 type EngineSnapshot = { score: number; json: string };
@@ -64,26 +63,12 @@ function snapshotFrom(engine: { score: number }): EngineSnapshot {
   return { score: engine.score, json: JSON.stringify(engine) };
 }
 
-// All 3 of these now just call the same shared driver + per-game adapter the
-// real server validator uses (packages/server/src/validation/
-// scoreValidator.ts) — previously each of these hand-rolled its own copy of
-// the action->input mapping games/<id>/index.ts already implements live.
-// early-exiting on a terminal result (replayEngine's behavior) vs. always
-// running the full `ticks` count (this file's old behavior) produce
-// identical final snapshots either way: every engine's update() is a no-op
-// once ended, so looping past the terminal tick never changes captured
-// state — confirmed by reading RunnerEngine/DashEngine/DodgeEngine's
-// `if (this.ended) return ...` guards.
 function runNeonRunner(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
   return snapshotFrom(replayEngine(neonRunnerReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
 function runPixelNinjaDash(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
   return snapshotFrom(replayEngine(pixelNinjaDashReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
-}
-
-function runSkyDodge(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
-  return snapshotFrom(replayEngine(skyDodgeReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
@@ -110,18 +95,6 @@ const b1 = runPixelNinjaDash(SEED, dashLog, 900);
 const b2 = runPixelNinjaDash(SEED, dashLog, 900);
 check("pixel-ninja-dash: score matches", b1.score === b2.score, `${b1.score} vs ${b2.score}`);
 check("pixel-ninja-dash: full state matches", b1.json === b2.json);
-
-const dodgeLog: InputLogEntry[] = [
-  { tick: 10, action: "moveLeftDown" },
-  { tick: 70, action: "moveLeftUp" },
-  { tick: 75, action: "moveRightDown" },
-  { tick: 200, action: "shieldPressed" },
-  { tick: 260, action: "moveRightUp" },
-];
-const c1 = runSkyDodge(SEED, dodgeLog, 600);
-const c2 = runSkyDodge(SEED, dodgeLog, 600);
-check("sky-dodge: score matches", c1.score === c2.score, `${c1.score} vs ${c2.score}`);
-check("sky-dodge: full state matches", c1.json === c2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine
@@ -277,11 +250,6 @@ const dashRandomWall = runPixelNinjaDash(SEED, withRandomWallMs(dashLog), 900);
 const dashNoWall = runPixelNinjaDash(SEED, withoutWallMs(dashLog), 900);
 check("pixel-ninja-dash: randomized wallMs doesn't change replay state", b1.json === dashRandomWall.json);
 check("pixel-ninja-dash: stripped wallMs doesn't change replay state", b1.json === dashNoWall.json);
-
-const dodgeRandomWall = runSkyDodge(SEED, withRandomWallMs(dodgeLog), 600);
-const dodgeNoWall = runSkyDodge(SEED, withoutWallMs(dodgeLog), 600);
-check("sky-dodge: randomized wallMs doesn't change replay state", c1.json === dodgeRandomWall.json);
-check("sky-dodge: stripped wallMs doesn't change replay state", c1.json === dodgeNoWall.json);
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

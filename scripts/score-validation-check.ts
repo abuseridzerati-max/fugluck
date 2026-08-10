@@ -19,7 +19,6 @@
 import { MAX_INPUT_LOG_ENTRIES, MAX_REPLAY_TICKS, replayEngine, type InputLogEntry } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
-import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { determineDisconnectOutcome, determineMatchOutcome } from "../packages/server/src/validation/matchOutcome.ts";
 import { validateScore } from "../packages/server/src/validation/scoreValidator.ts";
 
@@ -66,17 +65,6 @@ const GAMES = [
     id: "pixel-ninja-dash",
     adapter: pixelNinjaDashReplayAdapter,
     log: periodicLog("dashPressed", null, 15, 60),
-  },
-  {
-    id: "sky-dodge",
-    adapter: skyDodgeReplayAdapter,
-    log: [
-      { tick: 10, action: "moveLeftDown" },
-      { tick: 70, action: "moveLeftUp" },
-      { tick: 75, action: "moveRightDown" },
-      { tick: 200, action: "shieldPressed" },
-      { tick: 260, action: "moveRightUp" },
-    ] as InputLogEntry[],
   },
 ];
 
