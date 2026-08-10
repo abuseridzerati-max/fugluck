@@ -7,7 +7,7 @@ import {
   handleInviteFriend,
   handleRespondInvite,
 } from "./invites";
-import { createMatch, handleDisconnect, isSocketInMatch, submitScore } from "./matches";
+import { createMatch, handleDisconnect, handleReconnect, isSocketInMatch, submitScore } from "./matches";
 import { registerPresence, unregisterPresence } from "./presence";
 import { enqueue, generateSeed, isValidGameId, tryPair } from "./queue";
 import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
@@ -26,6 +26,7 @@ export function attachMatchmaking(httpServer: HttpServer, opts: { clientOrigin: 
 
   io.on("connection", (socket: MatchmakingSocket) => {
     registerPresence(socket);
+    handleReconnect(socket.data.userId, socket);
 
     socket.on("joinQueue", (payload) => {
       if (!payload || typeof payload.gameId !== "string" || !isValidGameId(payload.gameId)) {

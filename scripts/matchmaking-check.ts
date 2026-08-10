@@ -354,7 +354,7 @@ console.log("\nTest 8: disconnect mid-match");
     viewport: VIEWPORT,
   }); // starts the forfeit timer, waiting on hana
   hana.connected = false;
-  handleDisconnect(hana);
+  handleDisconnect(hana, 0);
 
   const gusResolved = gus.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   check(
@@ -382,7 +382,7 @@ console.log("\nTest 8: disconnect mid-match");
     generateSeed(),
   );
   jack.connected = false;
-  handleDisconnect(jack);
+  handleDisconnect(jack, 0);
 
   const ivyResolved = ivy.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   check(

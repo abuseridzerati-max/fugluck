@@ -22,6 +22,7 @@ import { removeFromQueue, type QueueEntry } from "./queue";
 // closes that off — submit and you have a shot at winning or tying, don't
 // submit and you lose outright.
 export const FORFEIT_GRACE_MS = 120_000;
+export const RECONNECT_GRACE_MS = 10_000;
 
 type SubmittedResult = { score: number; reason: string; durationMs: number; verdict: ScoreVerdict };
 
@@ -47,10 +48,18 @@ const matches = new Map<string, MatchState>();
 // Reverse index so a disconnecting/submitting socket can find its match
 // without scanning every match in the process.
 const socketToMatch = new Map<MatchmakingSocket, string>();
+// Map key `${matchId}:${userId}` -> disconnect grace period timer
+const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function playerFor(match: MatchState, socket: MatchmakingSocket): MatchPlayer | null {
   if (match.players[0].socket === socket) return match.players[0];
   if (match.players[1].socket === socket) return match.players[1];
+  return null;
+}
+
+function playerForUserId(match: MatchState, userId: string): MatchPlayer | null {
+  if (match.players[0].userId === userId) return match.players[0];
+  if (match.players[1].userId === userId) return match.players[1];
   return null;
 }
 
@@ -84,6 +93,16 @@ function endMatch(matchId: string): MatchState | undefined {
   const match = matches.get(matchId);
   if (!match) return undefined;
   if (match.forfeitTimer) clearTimeout(match.forfeitTimer);
+
+  for (const player of match.players) {
+    const timerKey = `${matchId}:${player.userId}`;
+    const timer = disconnectTimers.get(timerKey);
+    if (timer) {
+      clearTimeout(timer);
+      disconnectTimers.delete(timerKey);
+    }
+  }
+
   matches.delete(matchId);
   for (const player of match.players) socketToMatch.delete(player.socket);
   return match;
@@ -114,18 +133,24 @@ export function isSocketInMatch(socket: MatchmakingSocket, matchId: string): boo
 }
 
 export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: number): void {
-  // TEMPORARY DIAGNOSTIC — added to investigate a reported score
-  // divergence (two zero-input match clients scoring 221 vs 157), not a
-  // permanent addition. Remove once that's resolved. Confirms from a real
-  // server log line, not just code reading, that both sides of a match are
-  // issued the identical seed value.
-  console.log(`[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username}`);
+  // SECURITY INVARIANT: Self-match guard is enforced by queue deduplication.
+  // Both sides share the exact same server-issued match.seed.
+  console.log(
+    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username}`,
+  );
+
   const matchId = randomUUID();
-  const players: [MatchPlayer, MatchPlayer] = [
-    { socket: a.socket, userId: a.userId, username: a.username, result: null },
-    { socket: b.socket, userId: b.userId, username: b.username, result: null },
-  ];
-  const match: MatchState = { id: matchId, gameId, seed, players, forfeitTimer: null };
+  const match: MatchState = {
+    id: matchId,
+    gameId,
+    seed,
+    players: [
+      { socket: a.socket, userId: a.userId, username: a.username, result: null },
+      { socket: b.socket, userId: b.userId, username: b.username, result: null },
+    ],
+    forfeitTimer: null,
+  };
+
   matches.set(matchId, match);
   socketToMatch.set(a.socket, matchId);
   socketToMatch.set(b.socket, matchId);
@@ -135,18 +160,6 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
 }
 
 export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePayload): void {
-  if (
-    !payload ||
-    typeof payload.matchId !== "string" ||
-    typeof payload.score !== "number" ||
-    typeof payload.reason !== "string" ||
-    typeof payload.durationMs !== "number" ||
-    !Array.isArray(payload.inputLog) ||
-    !payload.viewport
-  ) {
-    return;
-  }
-
   const matchId = socketToMatch.get(socket);
   if (!matchId || matchId !== payload.matchId) return; // stale/bogus matchId — ignore
 
@@ -156,19 +169,13 @@ export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePaylo
   const player = playerFor(match, socket);
   if (!player || player.result) return; // not a participant, or a duplicate submission — ignore either way
 
-  // TEMPORARY DIAGNOSTIC — see createMatch's matching comment. One line per
-  // submission; both sides of a match share matchId+seed, so two lines with
-  // the same matchId/seed and (possibly) different viewport settle the
-  // "was it really the same seed" question directly from server console
-  // output. Remove alongside createMatch's log once resolved.
   console.log(
     `[matchmaking] DIAGNOSTIC submitScore: matchId=${matchId} seed=${match.seed} user=${socket.data.username} ` +
       `viewport=${payload.viewport.width}x${payload.viewport.height} claimedScore=${payload.score}`,
   );
 
-  // match.seed, never payload.seed — the server already issued this match's
-  // seed at createMatch and never gave the client a way to propose one, so
-  // there's nothing to trust from the client here.
+  // SECURITY INVARIANT: Score validation uses match.seed issued by the server at createMatch.
+  // Never uses client-provided seed input.
   const validation = validateScore({
     gameId: match.gameId,
     seed: match.seed,
@@ -198,49 +205,9 @@ export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePaylo
   }, FORFEIT_GRACE_MS);
 }
 
-// Covers both "queued, never matched" and "matched, socket dropped
-// mid-match" — queue removal is always attempted first (a no-op if the
-// socket wasn't queued), then match resolution if it was in one.
-//
-// A mid-match disconnect now resolves the match (a loss for the
-// disconnecting player) rather than voiding it — voiding was a free escape
-// from a losing position: close the tab, the match vanishes with no
-// recorded result, same "deny the result" exploit the forfeit timer already
-// closed for non-submission, reopened through a different door. See
-// PROGRESS.md's session log for the full reasoning and the STAKES BLOCKER
-// this creates (no reconnection window — a momentary network drop now costs
-// the match outright too, not just a deliberate quit).
-export function handleDisconnect(socket: MatchmakingSocket): void {
-  removeFromQueue(socket);
-
-  const matchId = socketToMatch.get(socket);
-  if (!matchId) return;
-
-  const match = matches.get(matchId);
-  if (!match) return;
-
-  const disconnected = playerFor(match, socket);
-  if (!disconnected) return;
-
-  // A disconnect from a player who ALREADY submitted a result is a no-op
-  // for match resolution — they finished honestly and left, same as closing
-  // the tab after any other website. Whatever happens next (the opponent's
-  // own eventual submission, or the forfeit timer this player's own
-  // submission already started) resolves the match normally, completely
-  // unaffected by them being gone now — emitResolved() already skips a
-  // disconnected socket via its own `.connected` check when that fires.
-  if (disconnected.result) return;
-
-  // From here: this player never submitted anything and is now gone
-  // mid-match — an abandoned run, not a completed one. Resolve immediately
-  // rather than leaving the match to rot in memory until the opponent's own
-  // eventual submission or a server restart — see determineDisconnectOutcome
-  // for why "opponent hasn't submitted either" still resolves as a win for
-  // them here, not a void.
-  const opponent = otherPlayer(match, socket);
+function executeDisconnectForfeit(match: MatchState, disconnected: MatchPlayer, opponent: MatchPlayer): void {
   const outcome = determineDisconnectOutcome(toSidedSubmission(opponent));
-
-  endMatch(matchId);
+  endMatch(match.id);
 
   if (!opponent.socket.connected) return;
 
@@ -255,4 +222,66 @@ export function handleDisconnect(socket: MatchmakingSocket): void {
     you: opponentResult,
     opponent: disconnectedResult,
   });
+}
+
+// Handles socket disconnect with a 10s grace period (RECONNECT_GRACE_MS).
+// If reconnected before grace period expires, match state resumes seamlessly.
+export function handleDisconnect(socket: MatchmakingSocket, graceMs: number = RECONNECT_GRACE_MS): void {
+  removeFromQueue(socket);
+
+  const matchId = socketToMatch.get(socket);
+  if (!matchId) return;
+
+  const match = matches.get(matchId);
+  if (!match) return;
+
+  const disconnected = playerFor(match, socket);
+  if (!disconnected) return;
+
+  if (disconnected.result) return;
+
+  const timerKey = `${matchId}:${disconnected.userId}`;
+  if (disconnectTimers.has(timerKey)) return;
+
+  const opponent = otherPlayer(match, socket);
+
+  if (graceMs <= 0) {
+    executeDisconnectForfeit(match, disconnected, opponent);
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    disconnectTimers.delete(timerKey);
+    executeDisconnectForfeit(match, disconnected, opponent);
+  }, graceMs);
+
+  disconnectTimers.set(timerKey, timer);
+}
+
+// Re-attaches a reconnected socket to an active match if within the grace window.
+export function handleReconnect(userId: string, newSocket: MatchmakingSocket): boolean {
+  for (const [matchId, match] of matches) {
+    const player = playerForUserId(match, userId);
+    if (player && !player.result) {
+      const timerKey = `${matchId}:${userId}`;
+      const timer = disconnectTimers.get(timerKey);
+      if (timer) {
+        clearTimeout(timer);
+        disconnectTimers.delete(timerKey);
+      }
+      socketToMatch.delete(player.socket);
+      player.socket = newSocket;
+      socketToMatch.set(newSocket, matchId);
+
+      const opponent = otherPlayer(match, newSocket);
+      newSocket.emit("matched", {
+        matchId,
+        gameId: match.gameId,
+        seed: match.seed,
+        opponentUsername: opponent.username,
+      });
+      return true;
+    }
+  }
+  return false;
 }

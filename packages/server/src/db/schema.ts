@@ -15,19 +15,25 @@ export const users = pgTable("users", {
 
 // Append-only wallet ledger. Balances are SUM(amount) per (userId, currency).
 // Never update/delete rows — grant/spend by inserting a new entry.
-export const ledgerEntries = pgTable("ledger_entries", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  // "COINS" (free Fmoney) or "DIAMONDS" (premium). Stored as text so a new
-  // currency is a new value, not a schema migration — see PROGRESS.md.
-  currency: varchar("currency", { length: 16 }).notNull(),
-  // Signed integer minor units. Positive = credit, negative = debit.
-  amount: integer("amount").notNull(),
-  reason: varchar("reason", { length: 64 }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    // "COINS" (free Fmoney) or "DIAMONDS" (premium). Stored as text so a new
+    // currency is a new value, not a schema migration — see PROGRESS.md.
+    currency: varchar("currency", { length: 16 }).notNull(),
+    // Signed integer minor units. Positive = credit, negative = debit.
+    amount: integer("amount").notNull(),
+    reason: varchar("reason", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userReasonUnique: uniqueIndex("ledger_user_reason_unique").on(t.userId, t.reason),
+  }),
+);
 
 export const friendships = pgTable(
   "friendships",

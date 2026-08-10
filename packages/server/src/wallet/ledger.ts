@@ -1,8 +1,11 @@
-import { SIGNUP_COIN_GRANT, type WalletBalances } from "@arcadeclash/shared";
+import { SIGNUP_COIN_GRANT, type Currency, type WalletBalances } from "@arcadeclash/shared";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { ledgerEntries } from "../db/schema";
+
+export const PLATFORM_RAKE_ACCOUNT = "platform_rake_account";
+export const DEFAULT_RAKE_PERCENT = 10;
 
 export async function getBalances(userId: string): Promise<WalletBalances> {
   const rows = await db
@@ -56,6 +59,90 @@ export async function grantDiamondsStub(userId: string, diamonds: number, packId
     currency: "DIAMONDS",
     amount: diamonds,
     reason: `diamond_purchase_stub:${packId}`,
+  });
+  return getBalances(userId);
+}
+
+export async function escrowStake(
+  userId: string,
+  currency: Currency,
+  amount: number,
+  matchId: string,
+): Promise<WalletBalances> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error("Stake amount must be a positive integer.");
+  }
+  const balances = await getBalances(userId);
+  const currentBalance = currency === "COINS" ? balances.coins : balances.diamonds;
+  if (currentBalance < amount) {
+    throw new Error(`Insufficient ${currency} balance for escrow.`);
+  }
+  const reason = `stake_escrow:${matchId}`;
+  await db.insert(ledgerEntries).values({
+    id: randomUUID(),
+    userId,
+    currency,
+    amount: -amount,
+    reason,
+  });
+  return getBalances(userId);
+}
+
+export async function payoutWinner(
+  winnerUserId: string,
+  loserUserId: string,
+  currency: Currency,
+  stakeAmount: number,
+  matchId: string,
+  rakePercent: number = DEFAULT_RAKE_PERCENT,
+): Promise<{ winnerBalances: WalletBalances; rakeFee: number; winnerPayout: number }> {
+  if (!Number.isInteger(stakeAmount) || stakeAmount <= 0) {
+    throw new Error("Stake amount must be a positive integer.");
+  }
+  const totalPot = stakeAmount * 2;
+  const rakeFee = Math.floor((totalPot * rakePercent) / 100);
+  const winnerPayout = totalPot - rakeFee;
+
+  const winnerReason = `stake_payout:${matchId}`;
+  await db.insert(ledgerEntries).values({
+    id: randomUUID(),
+    userId: winnerUserId,
+    currency,
+    amount: winnerPayout,
+    reason: winnerReason,
+  });
+
+  if (rakeFee > 0) {
+    const rakeReason = `platform_rake:${matchId}`;
+    await db.insert(ledgerEntries).values({
+      id: randomUUID(),
+      userId: PLATFORM_RAKE_ACCOUNT,
+      currency,
+      amount: rakeFee,
+      reason: rakeReason,
+    });
+  }
+
+  const winnerBalances = await getBalances(winnerUserId);
+  return { winnerBalances, rakeFee, winnerPayout };
+}
+
+export async function refundStake(
+  userId: string,
+  currency: Currency,
+  amount: number,
+  matchId: string,
+): Promise<WalletBalances> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error("Refund amount must be a positive integer.");
+  }
+  const reason = `stake_refund:${matchId}`;
+  await db.insert(ledgerEntries).values({
+    id: randomUUID(),
+    userId,
+    currency,
+    amount,
+    reason,
   });
   return getBalances(userId);
 }
