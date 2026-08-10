@@ -63,3 +63,8 @@ in `PROGRESS.md`.
 - **Canonical Virtual Viewport**: All game engines (`RunnerEngine`, `DashEngine`) and replay adapters MUST run strictly against `VIRTUAL_VIEWPORT = { width: 1280, height: 720 }` (`@arcadeclash/shared`).
 - **Letterboxed Client Rendering**: Physical canvas elements MUST letterbox (`object-fit: contain`, 16:9 aspect ratio) inside host containers.
 - **Equal Stakes Integrity**: `engine.resize()` MUST always receive `1280x720` to guarantee identical physics, obstacle travel distance, and scoring regardless of client monitor resolution or display width.
+
+## Architecture Invariant: Freeze-Frame Auto-Forfeit Validation (added 2026-08-10)
+
+- **Server-Side Pacing Enforcement**: `validateScore()` rejects submissions with `verdict: "invalid"` and `reason: "freeze_frame_detected"` whenever real-world duration (`durationMs` or intra-log `wallMs` gaps) exceeds simulated tick progress by more than `FREEZE_FRAME_THRESHOLD_SEC = 3.0` seconds.
+- **Reconnection Window Independence**: Legitimate socket disconnects re-authenticating within the 10-second grace window (`RECONNECT_GRACE_MS = 10_000`) resume match synchronization cleanly without triggering freeze-frame auto-forfeit.
