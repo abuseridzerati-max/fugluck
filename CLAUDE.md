@@ -75,3 +75,8 @@ in `PROGRESS.md`.
 - **COINS Mode (In-Game Fun)**: 0% Platform Rake (`COINS_RAKE_PERCENT = 0`). Winner receives 100% of pot (`stake * 2`). No fee entry created.
 - **DIAMONDS Mode (Competitive Staking)**: 5% Platform Rake (`DIAMONDS_RAKE_PERCENT = 5`). Winner receives 95% of pot (`stake * 2 * 0.95`). 5% is credited to `platform_rake_account`.
 - **Zero-Registration Guest Instant Play**: Unauthenticated guests (`guest_<id>`) can create or join instant matches via `/play/invite/:code`. All guest matches strictly enforce `stake = 0` (Free Play). Sockets flagged with `isGuest = true` attempting to join wagering matches are rejected with `reason: "guests_cannot_wager"`.
+
+## Architecture Invariant: Starting Grant & Monthly 1,000 COIN Allowance Refill Engine (added 2026-08-10)
+
+- **Starting Grant**: New user registration issues 1,000 COINS (`SIGNUP_COIN_GRANT = 1000`).
+- **Monthly Refill Engine**: Executed on login/me (`checkAndApplyMonthlyAllowance(userId)`). Uses month key `monthly_allowance_refill:YYYY-MM`. If COINS balance < 1,000, grants `1000 - balance` to top off balance to 1,000 COINS. If COINS balance ≥ 1,000, grants 0 COINS to leave balance untouched.

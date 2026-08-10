@@ -3149,6 +3149,29 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
   - `scripts/financial-reconnection-check.ts`: **16 / 16 passed** (verified COINS 0% rake vs DIAMONDS 5% rake payouts)
 
+## Session 27 (2026-08-10) — Game Card Launch UI Modal & Monthly 1,000 COIN Allowance Refill Engine
+
+### What Was Done
+1. **Game Card Launch UI Modal (`LaunchModal.tsx`)**:
+   - Added a prominent "Play" button on every game card that opens `LaunchModal.tsx`.
+   - Tailored modal options by auth state:
+     - Unauthenticated (Guest): 2 options (`Solo Rush`, `Instant Invite Link`).
+     - Authenticated (Registered): 4 options (`Solo Rush`, `Instant Invite Link`, `Play with COINS (0% Fee)`, `Play with DIAMONDS (5% Fee)`).
+2. **Monthly 1,000 COIN Allowance Refill Engine**:
+   - Updated starting registration grant to 1,000 COINS (`SIGNUP_COIN_GRANT = 1000`).
+   - Implemented `checkAndApplyMonthlyAllowance(userId)` in `ledger.ts` (evaluated on login/me with reason `monthly_allowance_refill:YYYY-MM`). Tops off balances < 1,000 COINS up to 1,000 COINS (+750 for 250 COINS), while leaving balances ≥ 1,000 COINS untouched.
+3. **Git Safety Tagging & Sync**:
+   - Created local tag `backup-post-ui-modal-refill-4tier` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (88 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **27 / 27 passed**
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified `SIGNUP_COIN_GRANT === 1000`)
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed** (verified monthly allowance top-off logic)
+
 ## How to resume
 
 ```bash
