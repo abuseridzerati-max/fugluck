@@ -35,9 +35,37 @@ async function hasReason(userId: string, reason: string): Promise<boolean> {
   return Boolean(existing);
 }
 
-// Idempotent: 10 COINS once per user. Diamonds stay at 0 until a purchase.
-// Also used on login/me so accounts created before the wallet shipped get
-// the same one-time grant without farming every login.
+// Evaluates and applies the monthly 1,000 COIN allowance refill on login/me.
+// Tops off balances under 1,000 COINS up to 1,000 COINS; balances >= 1,000 are left untouched.
+export async function checkAndApplyMonthlyAllowance(userId: string): Promise<WalletBalances> {
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const reason = `monthly_allowance_refill:${monthKey}`;
+
+  if (!(await hasReason(userId, reason))) {
+    const balances = await getBalances(userId);
+    if (balances.coins < 1000) {
+      const topUp = 1000 - balances.coins;
+      await db.insert(ledgerEntries).values({
+        id: randomUUID(),
+        userId,
+        currency: "COINS",
+        amount: topUp,
+        reason,
+      });
+    } else {
+      await db.insert(ledgerEntries).values({
+        id: randomUUID(),
+        userId,
+        currency: "COINS",
+        amount: 0,
+        reason,
+      });
+    }
+  }
+  return getBalances(userId);
+}
+
+// Idempotent: 1,000 COINS starting grant once per user + monthly 1,000 COIN refill check.
 export async function ensureSignupGrant(userId: string): Promise<WalletBalances> {
   if (!(await hasReason(userId, "signup_grant"))) {
     await db.insert(ledgerEntries).values({
@@ -48,6 +76,7 @@ export async function ensureSignupGrant(userId: string): Promise<WalletBalances>
       reason: "signup_grant",
     });
   }
+  await checkAndApplyMonthlyAllowance(userId);
   return getBalances(userId);
 }
 

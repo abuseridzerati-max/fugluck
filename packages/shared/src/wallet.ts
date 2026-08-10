@@ -24,4 +24,4 @@ export const DIAMOND_PACKS: DiamondPack[] = [
   { id: "pack_120", diamonds: 120, priceUsdCents: 2000, label: "$20 → 120 diamonds" },
 ];
 
-export const SIGNUP_COIN_GRANT = 10;
+export const SIGNUP_COIN_GRANT = 1000;

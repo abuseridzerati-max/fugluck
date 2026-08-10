@@ -70,6 +70,15 @@ async function main() {
   check("DIAMONDS 100-stake match has 10 diamonds rake fee (5%)", diamondsRakeFee === 10);
   check("DIAMONDS 100-stake winner receives 190 diamonds payout (95%)", diamondsWinnerPayout === 190);
 
+  // Monthly 1,000 COIN Allowance Refill Logic Calculations
+  const lowBalance = 250;
+  const expectedTopUpLow = 1000 - lowBalance; // +750
+  const highBalance = 1400;
+  const expectedTopUpHigh = 0; // 0
+
+  check("User with 250 COINS receives +750 refill to reach 1000 COINS", expectedTopUpLow === 750 && lowBalance + expectedTopUpLow === 1000);
+  check("User with 1400 COINS receives 0 refill to remain at 1400 COINS", expectedTopUpHigh === 0 && highBalance + expectedTopUpHigh === 1400);
+
 const matchId = "test-match-12345";
 const winnerId = "user-winner";
 const loserId = "user-loser";

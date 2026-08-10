@@ -19,7 +19,7 @@ function check(label: string, pass: boolean, detail?: string) {
 
 console.log("wallet-friends-check");
 
-check("signup grant is 10 coins", SIGNUP_COIN_GRANT === 10);
+check("signup grant is 1000 coins", SIGNUP_COIN_GRANT === 1000);
 check("at least one diamond pack", DIAMOND_PACKS.length >= 1);
 check(
   "$2 pack grants 10 diamonds",
