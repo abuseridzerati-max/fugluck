@@ -95,9 +95,26 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
         </div>
 
         <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--space-6)' }}>
-          New accounts start with 10 coins and 0 diamonds. Coin balances are play money and may reset when
-          real-money launch happens.
+          New accounts start with 1,000 coins and 0 diamonds. Coin balances are play money and automatically top off to 1,000 every month!
         </p>
+
+        {onNavigateFriends && (
+          <div className="ac-panel" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>Friends & Invites</h3>
+              <p className="ac-text-muted" style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)' }}>
+                View your friends list, accept pending requests, or send private match invites.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="ac-btn ac-btn--primary"
+              onClick={onNavigateFriends}
+            >
+              👥 Open Friends List
+            </button>
+          </div>
+        )}
 
         <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>Diamond shop</h2>
         <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-4)' }}>

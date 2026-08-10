@@ -60,16 +60,6 @@ export default function Navbar({ onNavigateHome, onNavigateProfile, onNavigateFr
             {f.label}
           </button>
         ))}
-        {onNavigateFriends && (
-          <button
-            type="button"
-            className="ac-pill ac-pill--active"
-            onClick={onNavigateFriends}
-            style={{ background: 'var(--color-primary)', color: '#fff', fontWeight: 'bold' }}
-          >
-            👥 Friends & Invites
-          </button>
-        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginLeft: 'auto' }}>
