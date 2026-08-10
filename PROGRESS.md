@@ -3218,6 +3218,29 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
   - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
 
+## Session 30 (2026-08-10) — Matchmaking Betting Window & Replay Recording Persistence
+
+### What Was Done
+1. **Interactive Betting Window (Stake Selection Step)**:
+   - Updated `LaunchModal.tsx` so clicking "Play with COINS" or "Play with DIAMONDS" opens a dedicated Stake Selection Step.
+   - Displayed preset stake options (COINS: 25, 50, 100, 250, 500; DIAMONDS: 5, 10, 25, 50, 100).
+   - Validated current user balance against selected stake, disabling buttons with warnings if balance is insufficient.
+   - Passed `currency` and `stake` into `joinQueue` Socket.IO emission (`{ gameId, currency, stake }`).
+2. **Match Persistence Verification & Test Coverage**:
+   - Maintained DB match persistence (`db.insert(matchesHistory)`) inside `emitResolved()`.
+   - Updated `JoinQueuePayload` and added Test 10 in `matchmaking-check.ts` verifying custom stake and currency queue parameters.
+3. **Git Safety Tagging & Remote Sync**:
+   - Created local tag `backup-post-betting-window-and-replay-fix` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (90 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **29 / 29 passed** (includes stake selection window test assertions)
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+
 ## How to resume
 
 ```bash

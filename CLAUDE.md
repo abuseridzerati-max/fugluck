@@ -92,3 +92,9 @@ in `PROGRESS.md`.
 - **Database Match Persistence**: Upon match completion in `emitResolved()`, match metadata (`id`, `gameId`, `player1Id`, `player2Id`, `winnerId`, `currency`, `stake`, `seed`, `inputLogP1`, `inputLogP2`, `scoreP1`, `scoreP2`) is asynchronously persisted to the `matches_history` PostgreSQL table.
 - **REST Match History Endpoint**: `GET /api/matches/history` returns the authenticated user's past 20 matches enriched with opponent usernames and outcome flags (`win`, `loss`, `draw`).
 - **Interactive Replay Viewer (`ReplayModal.tsx`)**: Clicking "Tape Watch Replay" in `ProfilePage.tsx` feeds the match `seed` and player `inputLog` into the generic `replayEngine` (`@arcadeclash/shared`) and game-specific `replayAdapters` (`@arcadeclash/games`) for local 60 FPS canvas playback.
+
+## Architecture Invariant: Interactive Betting Window & Stake Selection (added 2026-08-10)
+
+- **Stake Picker Step**: Clicking "Play with COINS" or "Play with DIAMONDS" in `LaunchModal.tsx` opens a dedicated Stake Selection Step with preset wager buttons (COINS: 25, 50, 100, 250, 500; DIAMONDS: 5, 10, 25, 50, 100).
+- **Balance Validation**: Preset buttons check user balance against selected stake; options exceeding balance are disabled with "Too low" warning.
+- **Socket Queue Emission**: The chosen `stake` and `currency` are emitted cleanly in `joinQueue` (`{ gameId, currency, stake }`).
