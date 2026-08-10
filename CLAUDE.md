@@ -86,3 +86,9 @@ in `PROGRESS.md`.
 - **Clean Top Header Navigation**: Primary navbar (`Navbar.tsx`) is kept clean and un-cluttered without standalone "Friends" or "Invites" header buttons.
 - **Profile-Embedded Social Management**: Full friends management (friend requests, friend list, inviting friends to matches) remains accessible via the User Profile view (`ProfilePage.tsx`) when clicking an avatar or profile.
 - **Backend Schema Preservation**: The `friendships` database schema, backend API routes (`/api/friends`), and Socket.IO friend invite handlers remain 100% intact.
+
+## Architecture Invariant: Match Recording & Client Replay Engine (added 2026-08-10)
+
+- **Database Match Persistence**: Upon match completion in `emitResolved()`, match metadata (`id`, `gameId`, `player1Id`, `player2Id`, `winnerId`, `currency`, `stake`, `seed`, `inputLogP1`, `inputLogP2`, `scoreP1`, `scoreP2`) is asynchronously persisted to the `matches_history` PostgreSQL table.
+- **REST Match History Endpoint**: `GET /api/matches/history` returns the authenticated user's past 20 matches enriched with opponent usernames and outcome flags (`win`, `loss`, `draw`).
+- **Interactive Replay Viewer (`ReplayModal.tsx`)**: Clicking "Tape Watch Replay" in `ProfilePage.tsx` feeds the match `seed` and player `inputLog` into the generic `replayEngine` (`@arcadeclash/shared`) and game-specific `replayAdapters` (`@arcadeclash/games`) for local 60 FPS canvas playback.

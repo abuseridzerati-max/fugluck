@@ -3196,6 +3196,28 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
   - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
 
+## Session 29 (2026-08-10) — Match Recording & Replay Recordings Engine
+
+### What Was Done
+1. **Match Persistence Schema & API Endpoint**:
+   - Added `matchesHistory` (`matches_history`) table definition to `packages/server/src/db/schema.ts`.
+   - Created `GET /api/matches/history` in `packages/server/src/routes/matches.ts`.
+   - Asynchronously inserted match records upon resolution in `emitResolved()` inside `packages/server/src/matchmaking/matches.ts`.
+2. **Profile Match History Tab & Replay Viewer (`ReplayModal.tsx`)**:
+   - Added a "Match History & Replays" section inside `ProfilePage.tsx` rendering past matches, outcomes, scores, and opponent names.
+   - Built `ReplayModal.tsx` allowing users to click "Watch Replay" to run 60 FPS client-side playback using `replayEngine` and `replayAdapters`.
+3. **Git Safety Tagging & Remote Sync**:
+   - Created local tag `backup-post-match-history-and-features` and pushed all tags/branches to `origin`.
+
+### Verification Results
+- **TypeScript Compilation**: `packages/client` (0 errors), `packages/server` (0 errors).
+- **Test Scripts Breakdown (88 Total Assertions — 100% Pass Rate)**:
+  - `scripts/determinism-check.ts`: **13 / 13 passed**
+  - `scripts/matchmaking-check.ts`: **27 / 27 passed**
+  - `scripts/score-validation-check.ts`: **25 / 25 passed**
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
+  - `scripts/financial-reconnection-check.ts`: **18 / 18 passed**
+
 ## How to resume
 
 ```bash
