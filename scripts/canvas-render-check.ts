@@ -13,6 +13,8 @@ import { SkyDodgeEngine } from "../games/sky-dodge/engine";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay";
+import { CyberHopperEngine } from "../games/cyber-hopper/engine";
+import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -58,6 +60,12 @@ function createMockCanvasContext() {
     },
     strokeRect(x: number, y: number, w: number, h: number) {
       assertFinite("strokeRect", { name: "x", val: x }, { name: "y", val: y }, { name: "w", val: w }, { name: "h", val: h });
+    },
+    rect(x: number, y: number, w: number, h: number) {
+      assertFinite("rect", { name: "x", val: x }, { name: "y", val: y }, { name: "w", val: w }, { name: "h", val: h });
+    },
+    roundRect(x: number, y: number, w: number, h: number) {
+      assertFinite("roundRect", { name: "x", val: x }, { name: "y", val: y }, { name: "w", val: w }, { name: "h", val: h });
     },
     beginPath() {
       totalVerifiedDrawCalls++;
@@ -286,6 +294,35 @@ console.log("\nTest 3.6: Space Blaster 300-Frame Headless Canvas draw() Suite\n"
 }
 
 // ---------------------------------------------------------------------------
+// Test 3.7: Cyber Hopper 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.7: Cyber Hopper 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new CyberHopperEngine(12345678);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    const emptyInput = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, emptyInput);
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Cyber Hopper 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Cyber Hopper verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+}
+
+// ---------------------------------------------------------------------------
 // Test 4: Replay Canvas Integration Test
 // ---------------------------------------------------------------------------
 console.log("\nTest 4: Replay Canvas Integration Test\n");
@@ -403,6 +440,34 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
     console.error("Space Blaster replay render error:", err);
   }
   check("Space Blaster replay rendering completes 100 ticks with zero draw errors", replayPassBlaster);
+
+  // Test Cyber Hopper Replay Adapter rendering
+  const hopperEngine = cyberHopperReplayAdapter.createEngine(111222);
+  cyberHopperReplayAdapter.resize(hopperEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  hopperEngine.reset();
+  const hopperInput = cyberHopperReplayAdapter.createInitialInput();
+  const sampleLogHopper = [
+    { tick: 10, action: "hopUp" },
+    { tick: 30, action: "hopUp" },
+    { tick: 50, action: "hopLeft" },
+  ];
+
+  let replayPassHopper = true;
+  try {
+    for (let tick = 0; tick < 100; tick++) {
+      const actions = sampleLogHopper.filter((e) => e.tick === tick);
+      for (const act of actions) {
+        cyberHopperReplayAdapter.applyAction(hopperInput, act.action);
+      }
+      cyberHopperReplayAdapter.update(hopperEngine, 1 / 60, hopperInput);
+      cyberHopperReplayAdapter.clearPulses(hopperInput);
+      hopperEngine.render(mockCtx);
+    }
+  } catch (err) {
+    replayPassHopper = false;
+    console.error("Cyber Hopper replay render error:", err);
+  }
+  check("Cyber Hopper replay rendering completes 100 ticks with zero draw errors", replayPassHopper);
 }
 
 // ---------------------------------------------------------------------------

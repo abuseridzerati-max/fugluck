@@ -33,6 +33,7 @@ import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
+import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
@@ -79,6 +80,10 @@ function runSkyDodge(seed: number, inputLog: InputLogEntry[], ticks: number): En
 
 function runSpaceBlaster(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
   return snapshotFrom(replayEngine(spaceBlasterReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
+}
+
+function runCyberHopper(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
+  return snapshotFrom(replayEngine(cyberHopperReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
@@ -130,6 +135,18 @@ const d1 = runSpaceBlaster(SEED, blasterLog, 600);
 const d2 = runSpaceBlaster(SEED, blasterLog, 600);
 check("space-blaster: score matches", d1.score === d2.score, `${d1.score} vs ${d2.score}`);
 check("space-blaster: full state matches", d1.json === d2.json);
+
+const hopperLog: InputLogEntry[] = [
+  { tick: 10, action: "hopUp" },
+  { tick: 30, action: "hopUp" },
+  { tick: 60, action: "hopLeft" },
+  { tick: 90, action: "hopUp" },
+  { tick: 120, action: "hopRight" },
+];
+const e1 = runCyberHopper(SEED, hopperLog, 600);
+const e2 = runCyberHopper(SEED, hopperLog, 600);
+check("cyber-hopper: score matches", e1.score === e2.score, `${e1.score} vs ${e2.score}`);
+check("cyber-hopper: full state matches", e1.json === e2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine
@@ -295,6 +312,11 @@ const blasterRandomWall = runSpaceBlaster(SEED, withRandomWallMs(blasterLog), 60
 const blasterNoWall = runSpaceBlaster(SEED, withoutWallMs(blasterLog), 600);
 check("space-blaster: randomized wallMs doesn't change replay state", d1.json === blasterRandomWall.json);
 check("space-blaster: stripped wallMs doesn't change replay state", d1.json === blasterNoWall.json);
+
+const hopperRandomWall = runCyberHopper(SEED, withRandomWallMs(hopperLog), 600);
+const hopperNoWall = runCyberHopper(SEED, withoutWallMs(hopperLog), 600);
+check("cyber-hopper: randomized wallMs doesn't change replay state", e1.json === hopperRandomWall.json);
+check("cyber-hopper: stripped wallMs doesn't change replay state", e1.json === hopperNoWall.json);
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

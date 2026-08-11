@@ -67,5 +67,7 @@ export const GAME_REGISTRY: GameRegistryItem[] = [
   { id: "sky-dodge", name: "Sky Dodge", engine: "arena-shooter", modulePath: "./sky-dodge/index.ts" },
   { id: "space-blaster", name: "Space Blaster", engine: "arena-shooter", modulePath: "./space-blaster/index.ts" },
   { id: "game-3", name: "Space Blaster (Game #3)", engine: "arena-shooter", modulePath: "./game-3/index.ts" },
+  { id: "cyber-hopper", name: "Cyber Hopper", engine: "reflex-timing", modulePath: "./cyber-hopper/index.ts" },
+  { id: "game-4", name: "Cyber Hopper (Game #4)", engine: "reflex-timing", modulePath: "./game-4/index.ts" },
 ];
 

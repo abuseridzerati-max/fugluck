@@ -21,6 +21,7 @@ import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
+import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
 import { determineDisconnectOutcome, determineMatchOutcome } from "../packages/server/src/validation/matchOutcome.ts";
 import { validateScore } from "../packages/server/src/validation/scoreValidator.ts";
 
@@ -77,6 +78,11 @@ const GAMES = [
     id: "space-blaster",
     adapter: spaceBlasterReplayAdapter,
     log: periodicLog("shootPressed", null, 15, 30),
+  },
+  {
+    id: "cyber-hopper",
+    adapter: cyberHopperReplayAdapter,
+    log: periodicLog("hopUp", null, 20, 15),
   },
 ];
 

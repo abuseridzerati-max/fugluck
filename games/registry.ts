@@ -41,4 +41,16 @@ export const gameRegistry: GameRegistryEntry[] = [
     engine: "arena-shooter",
     modulePath: "./game-3/index.ts",
   },
+  {
+    id: "cyber-hopper",
+    name: "Cyber Hopper",
+    engine: "reflex-timing",
+    modulePath: "./cyber-hopper/index.ts",
+  },
+  {
+    id: "game-4",
+    name: "Cyber Hopper (Game #4)",
+    engine: "reflex-timing",
+    modulePath: "./game-4/index.ts",
+  },
 ];

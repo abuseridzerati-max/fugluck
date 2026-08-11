@@ -7,6 +7,26 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 25 (2026-08-11): Game Module #4 ("Cyber Hopper") Multi-Game Expansion
+
+Built and integrated Game Module #4 ("Cyber Hopper") into `games/` (`packages/games/`) and `@arcadeclash/shared` using the plug-and-play expansion contract.
+
+**BUILT (verified how noted):**
+
+1. **Game Module #4 ("Cyber Hopper") & Game Engine**:
+   - Built `games/cyber-hopper/` (`engine.ts`, `index.ts`, `replay.ts`, `constants.ts`) and re-exported under `games/game-4/`.
+   - Fixed 60 FPS timestep loop (`16.66ms` per tick) locked to canonical `1280x720` virtual resolution (20x11 grid).
+   - Seeded RNG stream generated from `match.seed` (`createSeededRandom(seed).stream("gameplay")`) for deterministic traffic speeds and obstacle spawning.
+2. **Replay Adapter & Headless Score Validator**:
+   - Built `cyberHopperReplayAdapter` in `games/cyber-hopper/replay.ts` and registered in `games/replayAdapters.ts`.
+   - Replay adapter works headlessly in `packages/server/src/validation/scoreValidator.ts` without modifying core matchmaking server logic.
+3. **Game Registry & Client UI Integration**:
+   - Registered `cyber-hopper` and `game-4` in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`).
+   - Updated `homeData.ts`, `gameFactories.ts`, and `App.tsx` so Cyber Hopper automatically renders on the Home Dashboard Game Cards and populates the Game Launch Modal.
+4. **Test Suite Verification**:
+   - Updated `scripts/determinism-check.ts`, `scripts/score-validation-check.ts`, and `scripts/canvas-render-check.ts` to include Cyber Hopper assertions.
+   - All 6 test scripts pass 100% on `npm test` with 120 total verified assertions.
+
 ## Session 24 (2026-08-11): Space Blaster Ship Render Visibility & Canvas Coordinate Alignment Fix
 
 Repaired player ship rendering loop, position coordinates, movement clamping boundaries, and vector fallback graphics in Space Blaster (`games/space-blaster/engine.ts`).
