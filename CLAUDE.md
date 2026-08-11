@@ -129,5 +129,6 @@ in `PROGRESS.md`.
 - **Plug-and-Play Expansion Contract**: Game Module #3 (`games/space-blaster/` and `games/game-3/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` canonical virtual resolution.
 - **Headless Replay Adapter Integration**: `spaceBlasterReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Space Blaster match replays without modifying backend validation logic.
 - **Client & Matchmaking Registration**: `space-blaster` and `game-3` registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
+- **Ship Visibility & Coordinate Alignment**: Player ship starts at `(640, 620)` with `60x60` bounds, clamped strictly between `30 <= x <= 1250` and `30 <= y <= 690`. Rendered via multi-layer high-contrast vector fallback renderer (`#00ffff` fuselage, `#7000ff` wings, `#e0f7fa` canopy, `#ff0055` dual thrusters).
 
 

@@ -264,6 +264,22 @@ console.log("\nTest 3.6: Space Blaster 300-Frame Headless Canvas draw() Suite\n"
     thrownError = err as Error;
   }
 
+  check(
+    "Space Blaster player ship initial position is valid and centered (x=640, y=620)",
+    engine.shipX === 640 && engine.shipY === 620,
+    `shipX=${engine.shipX}, shipY=${engine.shipY}`,
+  );
+  check(
+    "Space Blaster player ship coordinates remain strictly finite and within bounds (30 <= x <= 1250, 30 <= y <= 690)",
+    Number.isFinite(engine.shipX) &&
+      Number.isFinite(engine.shipY) &&
+      engine.shipX >= 30 &&
+      engine.shipX <= 1250 &&
+      engine.shipY >= 30 &&
+      engine.shipY <= 690,
+    `shipX=${engine.shipX}, shipY=${engine.shipY}`,
+  );
+
   const callsInRun = totalVerifiedDrawCalls - initialCallCount;
   check("Space Blaster 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Space Blaster verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);

@@ -47,8 +47,8 @@ export class SpaceBlasterEngine {
   public tickCount = 0;
   public gameOver = false;
 
-  public shipX = VIRTUAL_WIDTH / 2;
-  public shipY = VIRTUAL_HEIGHT - 100;
+  public shipX = 640;
+  public shipY = 620;
   public shootCooldownTimer = 0;
 
   public bullets: Bullet[] = [];
@@ -73,8 +73,8 @@ export class SpaceBlasterEngine {
     this.score = 0;
     this.tickCount = 0;
     this.gameOver = false;
-    this.shipX = VIRTUAL_WIDTH / 2;
-    this.shipY = VIRTUAL_HEIGHT - 100;
+    this.shipX = 640;
+    this.shipY = 620;
     this.shootCooldownTimer = 0;
     this.bullets = [];
     this.asteroids = [];
@@ -110,11 +110,13 @@ export class SpaceBlasterEngine {
     this.shipX += dx * SHIP_SPEED * dtSec;
     this.shipY += dy * SHIP_SPEED * dtSec;
 
-    // Clamp ship position within virtual viewport bounds
-    const halfW = SHIP_WIDTH / 2;
-    const halfH = SHIP_HEIGHT / 2;
-    this.shipX = Math.max(halfW, Math.min(VIRTUAL_WIDTH - halfW, this.shipX));
-    this.shipY = Math.max(halfH, Math.min(VIRTUAL_HEIGHT - halfH, this.shipY));
+    // Clamp ship position strictly within virtual viewport bounds (30 <= x <= 1250, 30 <= y <= 690)
+    const minX = 30;
+    const maxX = VIRTUAL_WIDTH - 30; // 1250
+    const minY = 30;
+    const maxY = VIRTUAL_HEIGHT - 30; // 690
+    this.shipX = Math.max(minX, Math.min(maxX, this.shipX));
+    this.shipY = Math.max(minY, Math.min(maxY, this.shipY));
 
     // 3. Process Shooting
     if (this.shootCooldownTimer > 0) {
@@ -126,7 +128,7 @@ export class SpaceBlasterEngine {
       this.bullets.push({
         id: this.nextBulletId++,
         x: this.shipX,
-        y: this.shipY - halfH,
+        y: this.shipY - SHIP_HEIGHT / 2,
         active: true,
       });
     }
@@ -248,25 +250,80 @@ export class SpaceBlasterEngine {
       ctx.stroke();
     }
 
-    // Render Ship (triangle / cyan fighter)
+    // Render Ship (High-visibility vector spacecraft fallback renderer)
     if (!this.gameOver) {
-      const halfW = SHIP_WIDTH / 2;
-      const halfH = SHIP_HEIGHT / 2;
+      const halfW = SHIP_WIDTH / 2; // 30
+      const halfH = SHIP_HEIGHT / 2; // 30
 
-      ctx.fillStyle = SPACE_COLORS.shipPrimary;
+      // 1. Dual Animated Thruster Flames
+      const flameLen = 14 + (this.tickCount % 4) * 4;
+      ctx.fillStyle = SPACE_COLORS.shipEngine;
       ctx.beginPath();
-      ctx.moveTo(this.shipX, this.shipY - halfH);
-      ctx.lineTo(this.shipX - halfW, this.shipY + halfH);
-      ctx.lineTo(this.shipX + halfW, this.shipY + halfH);
+      ctx.moveTo(this.shipX - 14, this.shipY + halfH);
+      ctx.lineTo(this.shipX - 8, this.shipY + halfH + flameLen);
+      ctx.lineTo(this.shipX - 2, this.shipY + halfH);
       ctx.closePath();
       ctx.fill();
 
-      // Engine Flame
-      ctx.fillStyle = SPACE_COLORS.shipEngine;
       ctx.beginPath();
-      ctx.moveTo(this.shipX - halfW * 0.5, this.shipY + halfH);
-      ctx.lineTo(this.shipX, this.shipY + halfH + 12 + (this.tickCount % 4) * 3);
-      ctx.lineTo(this.shipX + halfW * 0.5, this.shipY + halfH);
+      ctx.moveTo(this.shipX + 2, this.shipY + halfH);
+      ctx.lineTo(this.shipX + 8, this.shipY + halfH + flameLen);
+      ctx.lineTo(this.shipX + 14, this.shipY + halfH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner flame core (yellow/white)
+      ctx.fillStyle = "#fffa65";
+      ctx.beginPath();
+      ctx.moveTo(this.shipX - 11, this.shipY + halfH);
+      ctx.lineTo(this.shipX - 8, this.shipY + halfH + flameLen * 0.6);
+      ctx.lineTo(this.shipX - 5, this.shipY + halfH);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(this.shipX + 5, this.shipY + halfH);
+      ctx.lineTo(this.shipX + 8, this.shipY + halfH + flameLen * 0.6);
+      ctx.lineTo(this.shipX + 11, this.shipY + halfH);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Side Wings (Neon Purple Accent)
+      ctx.fillStyle = SPACE_COLORS.shipSecondary;
+      ctx.beginPath();
+      ctx.moveTo(this.shipX, this.shipY - halfH * 0.3);
+      ctx.lineTo(this.shipX - halfW - 6, this.shipY + halfH);
+      ctx.lineTo(this.shipX - halfW + 10, this.shipY + halfH * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(this.shipX, this.shipY - halfH * 0.3);
+      ctx.lineTo(this.shipX + halfW + 6, this.shipY + halfH);
+      ctx.lineTo(this.shipX + halfW - 10, this.shipY + halfH * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
+      // 3. Central Fighter Fuselage (Bright Cyan)
+      ctx.fillStyle = SPACE_COLORS.shipPrimary;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(this.shipX, this.shipY - halfH - 4); // Nose cone tip
+      ctx.lineTo(this.shipX - halfW + 6, this.shipY + halfH * 0.8);
+      ctx.lineTo(this.shipX - 10, this.shipY + halfH);
+      ctx.lineTo(this.shipX + 10, this.shipY + halfH);
+      ctx.lineTo(this.shipX + halfW - 6, this.shipY + halfH * 0.8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 4. Cockpit Canopy (Bright Glass Accent)
+      ctx.fillStyle = SPACE_COLORS.shipCanopy;
+      ctx.beginPath();
+      ctx.moveTo(this.shipX, this.shipY - halfH * 0.4);
+      ctx.lineTo(this.shipX - 6, this.shipY + 2);
+      ctx.lineTo(this.shipX + 6, this.shipY + 2);
       ctx.closePath();
       ctx.fill();
     }
