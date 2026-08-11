@@ -16,6 +16,7 @@ export const trendingGames: MockGame[] = [
   { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', plays: 980, rating: 4.8 },
   { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', plays: 1100, rating: 4.8 },
   { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', plays: 1350, rating: 4.9 },
+  { id: 'speed-trivia', title: 'Speed Trivia Clash', engine: 'quiz', plays: 1420, rating: 4.9 },
 ]
 
 export const featuredGame: {

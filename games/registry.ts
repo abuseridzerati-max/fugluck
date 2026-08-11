@@ -36,4 +36,10 @@ export const gameRegistry: GameRegistryEntry[] = [
     engine: "reflex-timing",
     modulePath: "./cyber-hopper/index.ts",
   },
+  {
+    id: "speed-trivia",
+    name: "Speed Trivia Clash",
+    engine: "quiz",
+    modulePath: "./speed-trivia/index.ts",
+  },
 ];

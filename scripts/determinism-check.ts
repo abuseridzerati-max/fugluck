@@ -34,6 +34,7 @@ import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
+import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
@@ -84,6 +85,10 @@ function runSpaceBlaster(seed: number, inputLog: InputLogEntry[], ticks: number)
 
 function runCyberHopper(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
   return snapshotFrom(replayEngine(cyberHopperReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
+}
+
+function runSpeedTrivia(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
+  return snapshotFrom(replayEngine(speedTriviaReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
@@ -147,6 +152,16 @@ const e1 = runCyberHopper(SEED, hopperLog, 600);
 const e2 = runCyberHopper(SEED, hopperLog, 600);
 check("cyber-hopper: score matches", e1.score === e2.score, `${e1.score} vs ${e2.score}`);
 check("cyber-hopper: full state matches", e1.json === e2.json);
+
+const triviaLog: InputLogEntry[] = [
+  { tick: 30, action: "selectOption0" },
+  { tick: 660, action: "selectOption1" },
+  { tick: 1290, action: "selectOption2" },
+];
+const f1 = runSpeedTrivia(SEED, triviaLog, 1500);
+const f2 = runSpeedTrivia(SEED, triviaLog, 1500);
+check("speed-trivia: score matches", f1.score === f2.score, `${f1.score} vs ${f2.score}`);
+check("speed-trivia: full state matches", f1.json === f2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine

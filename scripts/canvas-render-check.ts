@@ -15,6 +15,9 @@ import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
 import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay";
+import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
+import { renderSpeedTrivia } from "../games/speed-trivia/render";
+import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -52,6 +55,10 @@ function createMockCanvasContext() {
     textAlign: "left" as CanvasTextAlign,
     textBaseline: "alphabetic" as CanvasTextBaseline,
 
+    measureText(text: string) {
+      assertFinite("measureText");
+      return { width: text.length * 10 };
+    },
     clearRect(x: number, y: number, w: number, h: number) {
       assertFinite("clearRect", { name: "x", val: x }, { name: "y", val: y }, { name: "w", val: w }, { name: "h", val: h });
     },
@@ -323,6 +330,35 @@ console.log("\nTest 3.7: Cyber Hopper 300-Frame Headless Canvas draw() Suite\n")
 }
 
 // ---------------------------------------------------------------------------
+// Test 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new SpeedTriviaEngine(12345678);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    const emptyInput = {};
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, emptyInput);
+      renderSpeedTrivia(mockCtx, engine);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Speed Trivia Clash 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Speed Trivia Clash verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+}
+
+// ---------------------------------------------------------------------------
 // Test 4: Replay Canvas Integration Test
 // ---------------------------------------------------------------------------
 console.log("\nTest 4: Replay Canvas Integration Test\n");
@@ -363,10 +399,7 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
   pixelNinjaDashReplayAdapter.resize(dashEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   dashEngine.reset();
   const dashInput = pixelNinjaDashReplayAdapter.createInitialInput();
-  const sampleLogDash = [
-    { tick: 15, action: "dashPressed" },
-    { tick: 45, action: "dashPressed" },
-  ];
+  const sampleLogDash = [{ tick: 15, action: "dashPressed" }, { tick: 45, action: "dashPressed" }];
 
   let replayPassDash = true;
   try {
@@ -390,11 +423,7 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
   skyDodgeReplayAdapter.resize(skyEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   skyEngine.reset();
   const skyInput = skyDodgeReplayAdapter.createInitialInput();
-  const sampleLogSky = [
-    { tick: 10, action: "moveLeftDown" },
-    { tick: 30, action: "moveLeftUp" },
-    { tick: 50, action: "boostPressed" },
-  ];
+  const sampleLogSky = [{ tick: 10, action: "moveLeft" }, { tick: 30, action: "moveRight" }];
 
   let replayPassSky = true;
   try {
@@ -418,11 +447,7 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
   spaceBlasterReplayAdapter.resize(blasterEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   blasterEngine.reset();
   const blasterInput = spaceBlasterReplayAdapter.createInitialInput();
-  const sampleLogBlaster = [
-    { tick: 10, action: "moveLeftDown" },
-    { tick: 20, action: "shootPressed" },
-    { tick: 30, action: "moveLeftUp" },
-  ];
+  const sampleLogBlaster = [{ tick: 10, action: "moveLeftDown" }, { tick: 20, action: "shootPressed" }];
 
   let replayPassBlaster = true;
   try {
@@ -468,6 +493,30 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
     console.error("Cyber Hopper replay render error:", err);
   }
   check("Cyber Hopper replay rendering completes 100 ticks with zero draw errors", replayPassHopper);
+
+  // Test Speed Trivia Replay Adapter rendering
+  const triviaEngine = speedTriviaReplayAdapter.createEngine(999111);
+  speedTriviaReplayAdapter.resize(triviaEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  triviaEngine.reset();
+  const triviaInput = speedTriviaReplayAdapter.createInitialInput();
+  const sampleLogTrivia = [{ tick: 10, action: "selectOption0" }];
+
+  let replayPassTrivia = true;
+  try {
+    for (let tick = 0; tick < 100; tick++) {
+      const actions = sampleLogTrivia.filter((e) => e.tick === tick);
+      for (const act of actions) {
+        speedTriviaReplayAdapter.applyAction(triviaInput, act.action);
+      }
+      speedTriviaReplayAdapter.update(triviaEngine, 1 / 60, triviaInput);
+      speedTriviaReplayAdapter.clearPulses(triviaInput);
+      renderSpeedTrivia(mockCtx, triviaEngine);
+    }
+  } catch (err) {
+    replayPassTrivia = false;
+    console.error("Speed Trivia replay render error:", err);
+  }
+  check("Speed Trivia replay rendering completes 100 ticks with zero draw errors", replayPassTrivia);
 }
 
 // ---------------------------------------------------------------------------

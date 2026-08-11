@@ -7,6 +7,22 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 34 (2026-08-11): Implement Speed Trivia Clash (Quiz Mini-Game #1)
+
+Built and integrated **Speed Trivia Clash** into `packages/games/speed-trivia/` (Quiz Mini-Game #1):
+- Created deterministic `SpeedTriviaEngine` (`games/speed-trivia/engine.ts`), constants (`games/speed-trivia/constants.ts`), questions pool (`games/speed-trivia/questions.ts`), canvas renderer (`games/speed-trivia/render.ts`), headless replay adapter (`games/speed-trivia/replay.ts`), and DOM wrapper module (`games/speed-trivia/index.ts`).
+- Deterministic seeding maps `match.seed` to question selection and 4-option shuffling using `createSeededRandom(seed).stream("gameplay")`. Both competing players see identical question sequences and answer positions.
+- Tick-based scoring: `Points = Math.round(1000 * (ticksRemaining / 600))`. 10 questions per match.
+- Registered in `GAME_REGISTRY` (`@arcadeclash/shared` & `packages/client/src/registry.ts`), `gameRegistry` (`games/registry.ts`), `replayAdapters` (`games/replayAdapters.ts`), `gameFactories` (`packages/client/src/game-loader/gameFactories.ts`), and `trendingGames` (`packages/client/src/mock/homeData.ts`).
+- Added Test 3.8 to `scripts/canvas-render-check.ts` and test assertions in `determinism-check.ts` and `score-validation-check.ts`.
+
+**BUILT (verified how noted):**
+
+1. **Speed Trivia Clash Engine & Integration**:
+   - `games/speed-trivia/` built and registered across workspace.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 33 (2026-08-11): Add "Quiz" Category to GAME_REGISTRY & Client Dashboard Filters
 
 Added `'quiz'` category to global type schemas and client dashboard category filters:

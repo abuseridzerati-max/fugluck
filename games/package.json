@@ -10,7 +10,8 @@
     "./neon-runner": "./neon-runner/index.ts",
     "./pixel-ninja-dash": "./pixel-ninja-dash/index.ts",
     "./space-blaster": "./space-blaster/index.ts",
-    "./cyber-hopper": "./cyber-hopper/index.ts"
+    "./cyber-hopper": "./cyber-hopper/index.ts",
+    "./speed-trivia": "./speed-trivia/index.ts"
   },
   "dependencies": {
     "@arcadeclash/shared": "*"

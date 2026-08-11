@@ -22,6 +22,7 @@ import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
+import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay.ts";
 import { determineDisconnectOutcome, determineMatchOutcome } from "../packages/server/src/validation/matchOutcome.ts";
 import { validateScore } from "../packages/server/src/validation/scoreValidator.ts";
 
@@ -78,6 +79,15 @@ const GAMES = [
     id: "cyber-hopper",
     adapter: cyberHopperReplayAdapter,
     log: periodicLog("hopUp", null, 20, 15),
+  },
+  {
+    id: "speed-trivia",
+    adapter: speedTriviaReplayAdapter,
+    log: [
+      { tick: 30, action: "selectOption2" },
+      { tick: 660, action: "selectOption3" },
+      { tick: 1290, action: "selectOption1" },
+    ],
   },
 ];
 
