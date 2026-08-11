@@ -70,11 +70,6 @@ const GAMES = [
     log: periodicLog("dashPressed", null, 15, 60),
   },
   {
-    id: "sky-dodge",
-    adapter: skyDodgeReplayAdapter,
-    log: periodicLog("moveLeftDown", "moveLeftUp", 25, 20),
-  },
-  {
     id: "space-blaster",
     adapter: spaceBlasterReplayAdapter,
     log: periodicLog("shootPressed", null, 15, 30),

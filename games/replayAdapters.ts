@@ -13,7 +13,6 @@
 import type { ReplayAdapter } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "./neon-runner/replay";
 import { pixelNinjaDashReplayAdapter } from "./pixel-ninja-dash/replay";
-import { skyDodgeReplayAdapter } from "./sky-dodge/replay";
 import { spaceBlasterReplayAdapter } from "./space-blaster/replay";
 import { cyberHopperReplayAdapter } from "./cyber-hopper/replay";
 import { gameRegistry } from "./registry";
@@ -25,11 +24,8 @@ import { gameRegistry } from "./registry";
 export const replayAdapters: Record<string, ReplayAdapter<any, any>> = {
   "neon-runner": neonRunnerReplayAdapter,
   "pixel-ninja-dash": pixelNinjaDashReplayAdapter,
-  "sky-dodge": skyDodgeReplayAdapter,
   "space-blaster": spaceBlasterReplayAdapter,
-  "game-3": spaceBlasterReplayAdapter,
   "cyber-hopper": cyberHopperReplayAdapter,
-  "game-4": cyberHopperReplayAdapter,
 };
 
 // Fails fast at module load if a registry entry has no matching adapter (or

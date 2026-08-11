@@ -12,14 +12,10 @@ export type MockGame = {
 }
 
 export const trendingGames: MockGame[] = [
-  // Real, playable games registered in GAME_REGISTRY & gameFactories
   { id: 'neon-runner', title: 'Neon Runner', engine: 'runner', plays: 1250, rating: 4.9 },
   { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', plays: 980, rating: 4.8 },
-  { id: 'sky-dodge', title: 'Sky Dodge', engine: 'arena-shooter', plays: 1420, rating: 4.9 },
   { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', plays: 1100, rating: 4.8 },
-  { id: 'game-3', title: 'Space Blaster (Game #3)', engine: 'arena-shooter', plays: 850, rating: 4.7 },
   { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', plays: 1350, rating: 4.9 },
-  { id: 'game-4', title: 'Cyber Hopper (Game #4)', engine: 'reflex-timing', plays: 920, rating: 4.8 },
 ]
 
 export const featuredGame: {

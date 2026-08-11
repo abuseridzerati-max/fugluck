@@ -120,12 +120,12 @@ console.log("\nTest 3: queue cancel/removal");
   const a = fakeSocket("user-c", "Cara");
   const b = fakeSocket("user-d", "Dan");
   const c = fakeSocket("user-e", "Eve");
-  enqueue("sky-dodge", a);
-  enqueue("sky-dodge", b);
+  enqueue("space-blaster", a);
+  enqueue("space-blaster", b);
   removeFromQueue(a); // simulates Cancel button or a mid-queue disconnect
-  check("pairing needs a 2nd real player after removal", tryPair("sky-dodge") === null);
-  enqueue("sky-dodge", c);
-  const pair = tryPair("sky-dodge");
+  check("pairing needs a 2nd real player after removal", tryPair("space-blaster") === null);
+  enqueue("space-blaster", c);
+  const pair = tryPair("space-blaster");
   const pairedIds = pair ? [pair[0].userId, pair[1].userId].sort().join(",") : "";
   check("removed player excluded from pairing", pairedIds === ["user-d", "user-e"].sort().join(","), `got [${pairedIds}]`);
 }

@@ -7,6 +7,21 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 27 (2026-08-11): Deduplicate Dashboard Games & Purge Deprecated Entries
+
+Cleaned up `GAME_REGISTRY` in `@arcadeclash/shared`, `games/registry.ts`, and `packages/client/src/registry.ts`:
+- Removed all `(Game #3)` and `(Game #4)` label duplicates so `Space Blaster` and `Cyber Hopper` appear exactly once each.
+- Removed deprecated `Sky Dodge` from active dashboard registries.
+- Verified dashboard renders strictly 4 unique active playable game cards: **Neon Runner**, **Pixel Ninja Dash**, **Space Blaster**, **Cyber Hopper**.
+
+**BUILT (verified how noted):**
+
+1. **Registry Clean-Up**:
+   - Updated `GAME_REGISTRY` (`@arcadeclash/shared` & `packages/client/src/registry.ts`), `gameRegistry` (`games/registry.ts`), `replayAdapters` (`games/replayAdapters.ts`), and `gameFactories` (`packages/client/src/game-loader/gameFactories.ts`).
+   - Cleaned `GAME_TITLES` in `App.tsx` and `LiveQueueList.tsx`.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 26 (2026-08-11): Dashboard Game Card Clean-Up (Only Active Playable Games)
 
 Cleaned up the Home Dashboard in `packages/client` to remove all unplayable placeholder game cards (`turbo-drift`, `vault-siege`, `pinball-frenzy`, `grid-duel`, `skyline-ascent`).
