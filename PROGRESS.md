@@ -7,6 +7,20 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 29 (2026-08-11): Implement Active Category Filtering on the Home Dashboard
+
+Connected top category pill buttons ("All", "Runner", "Reflex Timing", "Arena Shooter") to dynamic category state in `packages/client/src/pages/HomePage.tsx`:
+- `Navbar.tsx` receives `selectedCategory` and `onSelectCategory` to highlight active pill with filled primary accent background (`.ac-pill--active`).
+- `TrendingArena.tsx` filters `trendingGames` by `game.engine.toLowerCase() === selectedCategory.toLowerCase()`.
+- Clicking "All" or "Hot" restores full 4-game view. Selecting "Runner" displays *Neon Runner*, "Arena Shooter" displays *Space Blaster*, and "Reflex Timing" displays *Pixel Ninja Dash* / *Cyber Hopper*.
+
+**BUILT (verified how noted):**
+
+1. **Dashboard Category Filtering**:
+   - `HomePage.tsx`, `Navbar.tsx`, and `TrendingArena.tsx` updated with dynamic state and grid filtering.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 28 (2026-08-11): Fix Game Card Button Text Wrapping & Height Inflation
 
 Updated `packages/client/src/components/GameCard.tsx`:

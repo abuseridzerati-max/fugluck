@@ -9,11 +9,18 @@ type NavbarProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateFriends?: () => void
+  selectedCategory?: string
+  onSelectCategory?: (category: string) => void
 }
 
-export default function Navbar({ onNavigateHome, onNavigateProfile, onNavigateFriends }: NavbarProps) {
+export default function Navbar({
+  onNavigateHome,
+  onNavigateProfile,
+  onNavigateFriends,
+  selectedCategory = 'all',
+  onSelectCategory,
+}: NavbarProps) {
   const { user, logOut } = useAuth()
-  const [activeFilter, setActiveFilter] = useState('hot')
   const [menuOpen, setMenuOpen] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
 
@@ -50,16 +57,19 @@ export default function Navbar({ onNavigateHome, onNavigateProfile, onNavigateFr
       </label>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-        {navFilters.map((f) => (
-          <button
-            key={f.label}
-            type="button"
-            className={`ac-pill${activeFilter === f.engine ? ' ac-pill--active' : ''}`}
-            onClick={() => setActiveFilter(f.engine)}
-          >
-            {f.label}
-          </button>
-        ))}
+        {navFilters.map((f) => {
+          const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
+          return (
+            <button
+              key={f.label}
+              type="button"
+              className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
+              onClick={() => onSelectCategory?.(f.engine)}
+            >
+              {f.label}
+            </button>
+          )
+        })}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginLeft: 'auto' }}>

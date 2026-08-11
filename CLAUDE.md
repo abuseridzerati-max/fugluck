@@ -138,5 +138,6 @@ in `PROGRESS.md`.
 - **Client & Matchmaking Registration**: `cyber-hopper` and `game-4` registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
 - **Active Playable Games Only & Clean Registry**: `GAME_REGISTRY` and dashboard game cards render strictly 4 unique, active playable games: `Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, and `Cyber Hopper`. Duplicate `(Game #3)` / `(Game #4)` labels and deprecated `Sky Dodge` are purged from active registries.
 - **Game Card CTA Button Height**: Game card buttons in `GameCard.tsx` use fixed string `▶ Play` with locked 40px height (`h-10`) and `whiteSpace: nowrap` to ensure 100% uniform button height across all cards without vertical swelling.
+- **Dashboard Category Filtering**: Nav pill filters (`All`, `Runner`, `Reflex Timing`, `Arena Shooter`) filter `trendingGames` dynamically by `game.engine`. Active category pill is styled with `.ac-pill--active` accent background. Selecting `All` restores full 4-game display.
 
 
