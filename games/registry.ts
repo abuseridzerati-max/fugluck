@@ -6,7 +6,8 @@ export type GameEngine =
   | "physics-table"
   | "turn-based-board"
   | "reflex-timing"
-  | "word-trivia";
+  | "word-trivia"
+  | "quiz";
 
 export type GameRegistryEntry = {
   id: string;

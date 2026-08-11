@@ -41,5 +41,6 @@ export const navFilters: Array<{ label: string; engine: GameEngine | 'all' | 'ho
   { label: 'Arena Shooter', engine: 'arena-shooter' },
   { label: 'Falling Block', engine: 'falling-block' },
   { label: 'Reflex Timing', engine: 'reflex-timing' },
+  { label: 'Quiz', engine: 'quiz' },
   { label: 'Hot', engine: 'hot' },
 ]

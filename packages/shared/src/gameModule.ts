@@ -54,10 +54,21 @@ export interface GameModule extends EventTarget {
 
 export type GameModuleFactory = () => GameModule;
 
+export type GameCategory =
+  | "runner"
+  | "racer"
+  | "arena-shooter"
+  | "falling-block"
+  | "physics-table"
+  | "turn-based-board"
+  | "reflex-timing"
+  | "word-trivia"
+  | "quiz";
+
 export type GameRegistryItem = {
   id: string;
   name: string;
-  engine: string;
+  engine: GameCategory | string;
   modulePath: string;
 };
 

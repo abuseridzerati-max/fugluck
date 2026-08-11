@@ -7,6 +7,21 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 33 (2026-08-11): Add "Quiz" Category to GAME_REGISTRY & Client Dashboard Filters
+
+Added `'quiz'` category to global type schemas and client dashboard category filters:
+- Exported `GameCategory` union in `@arcadeclash/shared/src/gameModule.ts` including `"quiz"`.
+- Added `"quiz"` to `GameEngine` union in `games/registry.ts`.
+- Added `'Quiz'` category pill option to `navFilters` in `packages/client/src/mock/homeData.ts`.
+- Verified on `http://localhost:5173` that "Quiz" category pill renders in top category bar and smooth filter state toggle is active.
+
+**BUILT (verified how noted):**
+
+1. **Quiz Category Schema & Filter Expansion**:
+   - `packages/shared/src/gameModule.ts`, `games/registry.ts`, and `packages/client/src/mock/homeData.ts` updated with `"quiz"` category.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 32 (2026-08-11): Remove "View Leaderboards" Button & Clean Up Unused Header References
 
 Removed unused "View Leaderboards" button/link from `packages/client/src/components/TrendingArena.tsx`:
