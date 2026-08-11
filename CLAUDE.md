@@ -144,5 +144,6 @@ in `PROGRESS.md`.
 - **Leaderboards Link Removal**: Non-functional "View Leaderboards" link is removed from `TrendingArena.tsx` header for a clean, non-cluttered header layout.
 - **Quiz Category Expansion**: `GameCategory` type union in `@arcadeclash/shared/src/gameModule.ts` and `GameEngine` in `games/registry.ts` include `"quiz"`. Nav category pills in `homeData.ts` render `'Quiz'`, allowing real-time category filtering.
 - **Speed Trivia Clash (Quiz Mini-Game #1)**: `games/speed-trivia/` implements `GameModule` interface with 60 FPS tick loop, 10 questions per match, tick-based speed scoring `Points = Math.round(1000 * (ticksRemaining / 600))`, and `speedTriviaReplayAdapter` registered in `replayAdapters.ts` for headless score validation. Seeding maps `match.seed` to question selection and 4-option shuffling deterministically.
+- **Speed Trivia Package Exports**: `"./speed-trivia": "./speed-trivia/index.ts"` in `games/package.json` exports map resolvable by `@arcadeclash/client` with Vite dev server restarted to clear resolution cache.
 
 

@@ -7,6 +7,21 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 35 (2026-08-11): Fix @arcadeclash/games Package Exports for ./speed-trivia
+
+Invalidated Vite's package exports cache by restarting `@arcadeclash/client` Vite dev server process:
+- Confirmed `"./speed-trivia": "./speed-trivia/index.ts"` in `games/package.json` exports map.
+- Restarted Vite client dev server process (`npm run dev --workspace=@arcadeclash/client`).
+- Verified `http://localhost:5173` loads without any Vite module resolution errors.
+- Verified filtering by "Quiz" renders the Speed Trivia Clash card cleanly.
+
+**BUILT (verified how noted):**
+
+1. **Vite Module Resolution Cache Invalidation**:
+   - Restarted Vite dev server and verified `http://localhost:5173`.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 34 (2026-08-11): Implement Speed Trivia Clash (Quiz Mini-Game #1)
 
 Built and integrated **Speed Trivia Clash** into `packages/games/speed-trivia/` (Quiz Mini-Game #1):
