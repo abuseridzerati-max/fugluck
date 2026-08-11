@@ -9,7 +9,9 @@
     "./replayAdapters": "./replayAdapters.ts",
     "./neon-runner": "./neon-runner/index.ts",
     "./pixel-ninja-dash": "./pixel-ninja-dash/index.ts",
-    "./sky-dodge": "./sky-dodge/index.ts"
+    "./sky-dodge": "./sky-dodge/index.ts",
+    "./space-blaster": "./space-blaster/index.ts",
+    "./game-3": "./game-3/index.ts"
   },
   "dependencies": {
     "@arcadeclash/shared": "*"

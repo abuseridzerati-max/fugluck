@@ -7,4 +7,6 @@ export const gameFactories: Record<string, () => Promise<{ default: GameModuleFa
   "neon-runner": () => import("@arcadeclash/games/neon-runner"),
   "pixel-ninja-dash": () => import("@arcadeclash/games/pixel-ninja-dash"),
   "sky-dodge": () => import("@arcadeclash/games/sky-dodge"),
+  "space-blaster": () => import("@arcadeclash/games/space-blaster"),
+  "game-3": () => import("@arcadeclash/games/game-3"),
 };

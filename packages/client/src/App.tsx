@@ -23,6 +23,8 @@ const GAME_TITLES: Record<string, string> = {
   'neon-runner': 'Neon Runner',
   'pixel-ninja-dash': 'Pixel Ninja Dash',
   'sky-dodge': 'Sky Dodge',
+  'space-blaster': 'Space Blaster',
+  'game-3': 'Space Blaster (Game #3)',
 }
 
 function AppShell() {

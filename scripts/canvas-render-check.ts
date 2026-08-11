@@ -11,6 +11,8 @@ import { DashEngine } from "../games/pixel-ninja-dash/engine";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay";
 import { SkyDodgeEngine } from "../games/sky-dodge/engine";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay";
+import { SpaceBlasterEngine } from "../games/space-blaster/engine";
+import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -239,6 +241,35 @@ console.log("\nTest 3.5: Sky Dodge 300-Frame Headless Canvas draw() Suite\n");
 }
 
 // ---------------------------------------------------------------------------
+// Test 3.6: Space Blaster 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.6: Space Blaster 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new SpaceBlasterEngine(98765432);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    const emptyInput = { moveLeft: false, moveRight: false, moveUp: false, moveDown: false, shootPressed: false };
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, emptyInput);
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Space Blaster 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Space Blaster verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+}
+
+// ---------------------------------------------------------------------------
 // Test 4: Replay Canvas Integration Test
 // ---------------------------------------------------------------------------
 console.log("\nTest 4: Replay Canvas Integration Test\n");
@@ -328,6 +359,34 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
     console.error("Sky Dodge replay render error:", err);
   }
   check("Sky Dodge replay rendering completes 100 ticks with zero draw errors", replayPassSky);
+
+  // Test Space Blaster Replay Adapter rendering
+  const blasterEngine = spaceBlasterReplayAdapter.createEngine(333222);
+  spaceBlasterReplayAdapter.resize(blasterEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  blasterEngine.reset();
+  const blasterInput = spaceBlasterReplayAdapter.createInitialInput();
+  const sampleLogBlaster = [
+    { tick: 10, action: "moveLeftDown" },
+    { tick: 20, action: "shootPressed" },
+    { tick: 30, action: "moveLeftUp" },
+  ];
+
+  let replayPassBlaster = true;
+  try {
+    for (let tick = 0; tick < 100; tick++) {
+      const actions = sampleLogBlaster.filter((e) => e.tick === tick);
+      for (const act of actions) {
+        spaceBlasterReplayAdapter.applyAction(blasterInput, act.action);
+      }
+      spaceBlasterReplayAdapter.update(blasterEngine, 1 / 60, blasterInput);
+      spaceBlasterReplayAdapter.clearPulses(blasterInput);
+      blasterEngine.render(mockCtx);
+    }
+  } catch (err) {
+    replayPassBlaster = false;
+    console.error("Space Blaster replay render error:", err);
+  }
+  check("Space Blaster replay rendering completes 100 ticks with zero draw errors", replayPassBlaster);
 }
 
 // ---------------------------------------------------------------------------

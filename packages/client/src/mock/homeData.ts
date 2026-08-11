@@ -16,6 +16,8 @@ export const trendingGames: MockGame[] = [
   { id: 'neon-runner', title: 'Neon Runner', engine: 'runner', plays: 0, rating: 0 },
   { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', plays: 0, rating: 0 },
   { id: 'sky-dodge', title: 'Sky Dodge', engine: 'arena-shooter', plays: 0, rating: 0 },
+  { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', plays: 0, rating: 0 },
+  { id: 'game-3', title: 'Space Blaster (Game #3)', engine: 'arena-shooter', plays: 0, rating: 0 },
   { id: 'turbo-drift', title: 'Turbo Drift', engine: 'racer', plays: 845_000, rating: 4.3 },
   { id: 'vault-siege', title: 'Vault Siege', engine: 'arena-shooter', plays: 2_100_000, rating: 4.8 },
   { id: 'pinball-frenzy', title: 'Pinball Frenzy', engine: 'physics-table', plays: 110_000, rating: 3.9 },

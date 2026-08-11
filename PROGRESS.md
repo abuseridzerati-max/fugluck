@@ -7,6 +7,27 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 23 (2026-08-11): Game Module #3 ("Space Blaster") Multi-Game Expansion
+
+Built and integrated Game Module #3 ("Space Blaster") into `games/` (`packages/games/`) and `@arcadeclash/shared` using the plug-and-play expansion contract.
+
+**BUILT (verified how noted):**
+
+1. **Game Module #3 ("Space Blaster") & Game Engine**:
+   - Built `games/space-blaster/` (`engine.ts`, `index.ts`, `replay.ts`, `constants.ts`) and re-exported under `games/game-3/`.
+   - Fixed 60 FPS timestep loop (`16.66ms` per tick) locked to canonical `1280x720` virtual resolution.
+   - Seeded RNG stream generated from `match.seed` (`createSeededRandom(seed).stream("gameplay")`) for deterministic asteroid spawns and movement.
+2. **Replay Adapter & Headless Score Validator**:
+   - Built `spaceBlasterReplayAdapter` in `games/space-blaster/replay.ts` and registered in `games/replayAdapters.ts`.
+   - Replay adapter works headlessly in `packages/server/src/validation/scoreValidator.ts` without modifying core matchmaking server logic.
+3. **Game Registry & Client UI Integration**:
+   - Exported `GAME_REGISTRY` in `@arcadeclash/shared` (`packages/shared/src/gameModule.ts` & `index.ts`).
+   - Created `packages/client/src/registry.ts` exporting `GAME_REGISTRY` and `CLIENT_GAME_REGISTRY`.
+   - Updated `homeData.ts`, `gameFactories.ts`, and `App.tsx` so Space Blaster automatically renders on the Home Dashboard Game Cards and populates the Game Launch Modal.
+4. **Test Suite Verification**:
+   - Updated `scripts/determinism-check.ts`, `scripts/score-validation-check.ts`, and `scripts/canvas-render-check.ts` to include Space Blaster assertions.
+   - All 6 test scripts pass 100% on `npm test` with 113 total verified assertions.
+
 ## Session 22 (2026-08-02): dual-currency wallet + friends + invite-to-play
 
 User asked for Fmoney/coins + diamonds and a friend invite-to-play system.

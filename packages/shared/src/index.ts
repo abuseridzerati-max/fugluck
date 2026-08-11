@@ -1,5 +1,5 @@
-export type { GameMode, GameOverPayload, GameModule, GameModuleFactory, InputLogEntry } from "./gameModule";
-export { VIRTUAL_VIEWPORT } from "./gameModule";
+export type { GameMode, GameOverPayload, GameModule, GameModuleFactory, InputLogEntry, GameRegistryItem } from "./gameModule";
+export { VIRTUAL_VIEWPORT, GAME_REGISTRY } from "./gameModule";
 export type { PublicUser } from "./user";
 export type { RandomFn, SeededRandom } from "./rng";
 export { mulberry32, createSeededRandom } from "./rng";

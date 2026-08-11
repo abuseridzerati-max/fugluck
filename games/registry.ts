@@ -29,4 +29,16 @@ export const gameRegistry: GameRegistryEntry[] = [
     engine: "arena-shooter",
     modulePath: "./sky-dodge/index.ts",
   },
+  {
+    id: "space-blaster",
+    name: "Space Blaster",
+    engine: "arena-shooter",
+    modulePath: "./space-blaster/index.ts",
+  },
+  {
+    id: "game-3",
+    name: "Space Blaster (Game #3)",
+    engine: "arena-shooter",
+    modulePath: "./game-3/index.ts",
+  },
 ];

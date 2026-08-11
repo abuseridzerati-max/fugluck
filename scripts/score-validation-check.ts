@@ -20,6 +20,7 @@ import { MAX_INPUT_LOG_ENTRIES, MAX_REPLAY_TICKS, replayEngine, type InputLogEnt
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
+import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 import { determineDisconnectOutcome, determineMatchOutcome } from "../packages/server/src/validation/matchOutcome.ts";
 import { validateScore } from "../packages/server/src/validation/scoreValidator.ts";
 
@@ -71,6 +72,11 @@ const GAMES = [
     id: "sky-dodge",
     adapter: skyDodgeReplayAdapter,
     log: periodicLog("moveLeftDown", "moveLeftUp", 25, 20),
+  },
+  {
+    id: "space-blaster",
+    adapter: spaceBlasterReplayAdapter,
+    log: periodicLog("shootPressed", null, 15, 30),
   },
 ];
 

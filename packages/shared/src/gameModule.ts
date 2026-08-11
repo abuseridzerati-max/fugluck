@@ -53,3 +53,19 @@ export interface GameModule extends EventTarget {
 }
 
 export type GameModuleFactory = () => GameModule;
+
+export type GameRegistryItem = {
+  id: string;
+  name: string;
+  engine: string;
+  modulePath: string;
+};
+
+export const GAME_REGISTRY: GameRegistryItem[] = [
+  { id: "neon-runner", name: "Neon Runner", engine: "runner", modulePath: "./neon-runner/index.ts" },
+  { id: "pixel-ninja-dash", name: "Pixel Ninja Dash", engine: "reflex-timing", modulePath: "./pixel-ninja-dash/index.ts" },
+  { id: "sky-dodge", name: "Sky Dodge", engine: "arena-shooter", modulePath: "./sky-dodge/index.ts" },
+  { id: "space-blaster", name: "Space Blaster", engine: "arena-shooter", modulePath: "./space-blaster/index.ts" },
+  { id: "game-3", name: "Space Blaster (Game #3)", engine: "arena-shooter", modulePath: "./game-3/index.ts" },
+];
+

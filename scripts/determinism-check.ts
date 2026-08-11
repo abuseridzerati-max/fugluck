@@ -32,6 +32,7 @@ import { RunnerEngine } from "../games/neon-runner/engine.ts";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
+import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
@@ -76,6 +77,10 @@ function runSkyDodge(seed: number, inputLog: InputLogEntry[], ticks: number): En
   return snapshotFrom(replayEngine(skyDodgeReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
+function runSpaceBlaster(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
+  return snapshotFrom(replayEngine(spaceBlasterReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
+}
+
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
 
 const neonRunnerLog: InputLogEntry[] = [
@@ -112,6 +117,19 @@ const c1 = runSkyDodge(SEED, skyLog, 600);
 const c2 = runSkyDodge(SEED, skyLog, 600);
 check("sky-dodge: score matches", c1.score === c2.score, `${c1.score} vs ${c2.score}`);
 check("sky-dodge: full state matches", c1.json === c2.json);
+
+const blasterLog: InputLogEntry[] = [
+  { tick: 10, action: "moveLeftDown" },
+  { tick: 20, action: "shootPressed" },
+  { tick: 35, action: "moveLeftUp" },
+  { tick: 40, action: "moveRightDown" },
+  { tick: 55, action: "shootPressed" },
+  { tick: 70, action: "moveRightUp" },
+];
+const d1 = runSpaceBlaster(SEED, blasterLog, 600);
+const d2 = runSpaceBlaster(SEED, blasterLog, 600);
+check("space-blaster: score matches", d1.score === d2.score, `${d1.score} vs ${d2.score}`);
+check("space-blaster: full state matches", d1.json === d2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine
@@ -272,6 +290,11 @@ const skyRandomWall = runSkyDodge(SEED, withRandomWallMs(skyLog), 600);
 const skyNoWall = runSkyDodge(SEED, withoutWallMs(skyLog), 600);
 check("sky-dodge: randomized wallMs doesn't change replay state", c1.json === skyRandomWall.json);
 check("sky-dodge: stripped wallMs doesn't change replay state", c1.json === skyNoWall.json);
+
+const blasterRandomWall = runSpaceBlaster(SEED, withRandomWallMs(blasterLog), 600);
+const blasterNoWall = runSpaceBlaster(SEED, withoutWallMs(blasterLog), 600);
+check("space-blaster: randomized wallMs doesn't change replay state", d1.json === blasterRandomWall.json);
+check("space-blaster: stripped wallMs doesn't change replay state", d1.json === blasterNoWall.json);
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

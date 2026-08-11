@@ -124,10 +124,10 @@ in `PROGRESS.md`.
 - **Fixed Virtual Resolution Letterboxing**: Canvas scaling maintains strict 16:9 aspect ratio (`VIRTUAL_VIEWPORT = { width: 1280, height: 720 }`) across all viewport bounds.
 - **Suite Command**: `npm test` runs all 6 test scripts (`wallet-friends-check`, `financial-reconnection-check`, `matchmaking-check`, `determinism-check`, `score-validation-check`, `canvas-render-check`).
 
-## Architecture Invariant: Game Module #3 ("Sky Dodge") Multi-Game Expansion (added 2026-08-11)
+## Architecture Invariant: Game Module #3 ("Space Blaster") Multi-Game Expansion (added 2026-08-11)
 
-- **Plug-and-Play Expansion Contract**: Game Module #3 (`games/sky-dodge/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` logical resolution.
-- **Headless Replay Adapter Integration**: `skyDodgeReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Sky Dodge match replays without modifying backend validation logic.
-- **Client & Matchmaking Registration**: `sky-dodge` registered in `gameFactories.ts` and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
+- **Plug-and-Play Expansion Contract**: Game Module #3 (`games/space-blaster/` and `games/game-3/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` canonical virtual resolution.
+- **Headless Replay Adapter Integration**: `spaceBlasterReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Space Blaster match replays without modifying backend validation logic.
+- **Client & Matchmaking Registration**: `space-blaster` and `game-3` registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
 
 
