@@ -142,15 +142,17 @@ export class SpaceBlasterEngine {
       }
     }
 
-    // 5. Spawn Asteroids
+    // 5. Spawn Asteroids (with universal dynamic difficulty scaling)
+    const difficultyScale = 1.0 + Math.pow(this.tickCount / 5400, 1.4) * 1.5;
     const spawnRateReduction = Math.min(15, Math.floor(this.tickCount / 300));
-    const currentInterval = Math.max(15, BASE_SPAWN_INTERVAL_TICKS - spawnRateReduction);
+    const baseInterval = Math.max(15, BASE_SPAWN_INTERVAL_TICKS - spawnRateReduction);
+    const currentInterval = Math.max(8, Math.floor(baseInterval / Math.sqrt(difficultyScale)));
 
     if (this.tickCount % currentInterval === 0) {
       const radius = ASTEROID_MIN_SIZE + this.rng() * (ASTEROID_MAX_SIZE - ASTEROID_MIN_SIZE);
       const spawnX = radius + this.rng() * (VIRTUAL_WIDTH - radius * 2);
-      const vy = ASTEROID_MIN_SPEED + this.rng() * (ASTEROID_MAX_SPEED - ASTEROID_MIN_SPEED);
-      const vx = (this.rng() - 0.5) * 120;
+      const vy = (ASTEROID_MIN_SPEED + this.rng() * (ASTEROID_MAX_SPEED - ASTEROID_MIN_SPEED)) * difficultyScale;
+      const vx = (this.rng() - 0.5) * 120 * difficultyScale;
 
       this.asteroids.push({
         id: this.nextAsteroidId++,

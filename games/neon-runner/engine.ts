@@ -58,6 +58,7 @@ export class RunnerEngine {
 
   constructor(seed: number) {
     this.seed = seed;
+    this.reset();
   }
 
   resize(width: number, height: number) {
@@ -139,7 +140,10 @@ export class RunnerEngine {
     if (this.ended) return "ok";
 
     this.elapsed += dtSec;
-    this.speed = Math.min(WORLD.maxSpeed, WORLD.initialSpeed + this.elapsed * WORLD.speedRampPerSec);
+    const tickCount = Math.floor(this.elapsed * 60);
+    const difficultyScale = 1.0 + Math.pow(tickCount / 5400, 1.4) * 1.5;
+
+    this.speed = Math.min(WORLD.maxSpeed, (WORLD.initialSpeed + this.elapsed * WORLD.speedRampPerSec) * difficultyScale);
     this.distance += this.speed * dtSec;
 
     if (input.jumpPressed) this.jump();
@@ -159,10 +163,11 @@ export class RunnerEngine {
       if (this.slideRemainingMs <= 0) this.isSliding = false;
     }
 
-    const spawnIntervalMs = Math.max(
+    const baseSpawnIntervalMs = Math.max(
       WORLD.minSpawnIntervalMs,
       WORLD.initialSpawnIntervalMs - this.elapsed * WORLD.spawnIntervalDecayPerSec,
     );
+    const spawnIntervalMs = Math.max(350, baseSpawnIntervalMs / Math.sqrt(difficultyScale));
     this.spawnTimerMs -= dtSec * 1000;
     if (this.spawnTimerMs <= 0) {
       this.spawnTimerMs = spawnIntervalMs + this.gameplayRng() * 300;

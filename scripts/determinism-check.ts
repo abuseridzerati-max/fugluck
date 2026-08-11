@@ -318,5 +318,33 @@ const hopperNoWall = runCyberHopper(SEED, withoutWallMs(hopperLog), 600);
 check("cyber-hopper: randomized wallMs doesn't change replay state", e1.json === hopperRandomWall.json);
 check("cyber-hopper: stripped wallMs doesn't change replay state", e1.json === hopperNoWall.json);
 
+// ---------------------------------------------------------------------------
+// Test 4: Long-Run 90s (5,400 Ticks) Dynamic Difficulty Escalation Determinism
+// ---------------------------------------------------------------------------
+console.log("\nTest 4: 90-Second (5,400 Ticks) Dynamic Difficulty Escalation Determinism\n");
+
+{
+  const longBlasterLog: InputLogEntry[] = [
+    { tick: 100, action: "moveLeftDown" },
+    { tick: 500, action: "shootPressed" },
+    { tick: 1200, action: "moveRightDown" },
+    { tick: 2700, action: "shootPressed" },
+    { tick: 5400, action: "moveLeftUp" },
+  ];
+  const r1 = runSpaceBlaster(SEED, longBlasterLog, 5400);
+  const r2 = runSpaceBlaster(SEED, longBlasterLog, 5400);
+  check("space-blaster: 90s (5400-tick) 2.5x scaled replay determinism matches bit-for-bit", r1.json === r2.json);
+
+  const longHopperLog: InputLogEntry[] = [
+    { tick: 100, action: "hopUp" },
+    { tick: 1000, action: "hopUp" },
+    { tick: 2700, action: "hopLeft" },
+    { tick: 5400, action: "hopRight" },
+  ];
+  const h1 = runCyberHopper(SEED, longHopperLog, 5400);
+  const h2 = runCyberHopper(SEED, longHopperLog, 5400);
+  check("cyber-hopper: 90s (5400-tick) 2.5x scaled replay determinism matches bit-for-bit", h1.json === h2.json);
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

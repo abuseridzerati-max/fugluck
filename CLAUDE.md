@@ -140,5 +140,6 @@ in `PROGRESS.md`.
 - **Game Card CTA Button Height**: Game card buttons in `GameCard.tsx` use fixed string `▶ Play` with locked 40px height (`h-10`) and `whiteSpace: nowrap` to ensure 100% uniform button height across all cards without vertical swelling.
 - **Dashboard Category Filtering**: Nav pill filters (`All`, `Runner`, `Reflex Timing`, `Arena Shooter`) filter `trendingGames` dynamically by `game.engine`. Active category pill is styled with `.ac-pill--active` accent background. Selecting `All` restores full 4-game display.
 - **Hero Spotlight Removal**: Featured "Game of the Week" hero banner section is removed from `HomePage.tsx`, focusing the top layout directly on category filtering, live matchmaking lobby, and active game grid.
+- **Universal Deterministic Dynamic Difficulty Scaling**: All 4 active games (`Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, `Cyber Hopper`) calculate difficulty scale strictly from tick count: `const difficultyScale = 1.0 + Math.pow(tickCount / 5400, 1.4) * 1.5`. At 90s (5,400 ticks), velocity and spawn rates reach 2.5x speed while preserving 100% deterministic score validation and replay playback.
 
 

@@ -139,12 +139,16 @@ export class CyberHopperEngine {
       this.maxGridY = 0;
     }
 
-    // 3. Spawn Obstacles in Lanes
+    // 3. Spawn Obstacles in Lanes (with universal dynamic difficulty scaling)
+    const difficultyScale = 1.0 + Math.pow(this.tickCount / 5400, 1.4) * 1.5;
+
     for (const lane of this.lanes) {
-      if (this.tickCount - lane.lastSpawnTick >= lane.spawnIntervalTicks) {
+      const effectiveInterval = Math.max(15, Math.floor(lane.spawnIntervalTicks / Math.sqrt(difficultyScale)));
+      if (this.tickCount - lane.lastSpawnTick >= effectiveInterval) {
         lane.lastSpawnTick = this.tickCount;
         const obstacleWidth = 70 + Math.floor(this.rng() * 40);
         const spawnX = lane.direction === 1 ? -obstacleWidth : VIRTUAL_WIDTH + obstacleWidth;
+        const obsSpeed = lane.speed * (1 + this.roundsCompleted * 0.1) * difficultyScale;
 
         this.obstacles.push({
           id: this.nextObstacleId++,
@@ -153,7 +157,7 @@ export class CyberHopperEngine {
           y: lane.y,
           width: obstacleWidth,
           height: CELL_HEIGHT * 0.7,
-          speed: lane.speed * (1 + this.roundsCompleted * 0.1),
+          speed: obsSpeed,
           direction: lane.direction,
           color: lane.color,
           active: true,

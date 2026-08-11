@@ -54,6 +54,7 @@ export class DashEngine {
 
   constructor(seed: number) {
     this.seed = seed;
+    this.reset();
   }
 
   resize(width: number, height: number) {
@@ -169,6 +170,9 @@ export class DashEngine {
     if (this.ended) return this.finished ? "finished" : "ok";
 
     this.elapsed += dtSec;
+    const tickCount = Math.floor(this.elapsed * 60);
+    const difficultyScale = 1.0 + Math.pow(tickCount / 5400, 1.4) * 1.5;
+    this.speed = Math.min(800, WORLD.baseSpeed * difficultyScale);
 
     const effectiveSpeed = this.stumbleRemainingMs > 0 ? this.speed * WORLD.stumbleSpeedFactor : this.speed;
     if (this.stumbleRemainingMs > 0) this.stumbleRemainingMs -= dtSec * 1000;

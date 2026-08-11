@@ -7,6 +7,21 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 31 (2026-08-11): Implement Universal Deterministic Dynamic Difficulty Scaling Across All Games
+
+Implemented universal tick-based difficulty scaling across all 4 active game modules (`Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, `Cyber Hopper`):
+- Universal tick-based difficulty formula: `const difficultyScale = 1.0 + Math.pow(this.tickCount / 5400, 1.4) * 1.5;`
+- At 90 seconds (5,400 ticks), obstacle velocity, scroll speed, and projectile density smoothly reach 2.5x speed.
+- Computed 100% deterministically from engine `tickCount`, preserving bit-for-bit replay match in Profile Match History and server-side score validation.
+- Added Test 4 in `scripts/determinism-check.ts` asserting 5,400-tick 2.5x replay determinism across games.
+
+**BUILT (verified how noted):**
+
+1. **Deterministic Difficulty Escalation Engine**:
+   - `games/neon-runner/engine.ts`, `games/pixel-ninja-dash/engine.ts`, `games/space-blaster/engine.ts`, and `games/cyber-hopper/engine.ts` updated with tick-based scaling.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 30 (2026-08-11): Remove "Game of the Week" Hero Banner Section
 
 Streamlined Home Dashboard layout in `packages/client/src/pages/HomePage.tsx`:
