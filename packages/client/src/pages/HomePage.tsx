@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import Hero from '../components/Hero'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
 import TrendingArena from '../components/TrendingArena'
@@ -30,8 +29,7 @@ export default function HomePage({
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
       />
-      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '0 var(--space-4)' }}>
-        <Hero onPlayGame={onPlayGame} />
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}

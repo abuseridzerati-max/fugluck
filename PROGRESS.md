@@ -7,6 +7,20 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 30 (2026-08-11): Remove "Game of the Week" Hero Banner Section
+
+Streamlined Home Dashboard layout in `packages/client/src/pages/HomePage.tsx`:
+- Removed `<Hero />` spotlight banner section from top of dashboard.
+- Adjusted main container padding to `var(--space-6) var(--space-4)`, focusing layout directly on Navbar category filters, live matchmaking lobby, and active game grid.
+- Verified on `http://localhost:5173` that top layout is clean, compact, and hero-free.
+
+**BUILT (verified how noted):**
+
+1. **Dashboard Layout Cleanup**:
+   - `HomePage.tsx` updated with Hero section removed.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 29 (2026-08-11): Implement Active Category Filtering on the Home Dashboard
 
 Connected top category pill buttons ("All", "Runner", "Reflex Timing", "Arena Shooter") to dynamic category state in `packages/client/src/pages/HomePage.tsx`:
