@@ -136,5 +136,6 @@ in `PROGRESS.md`.
 - **Plug-and-Play Expansion Contract**: Game Module #4 (`games/cyber-hopper/` and `games/game-4/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` canonical virtual resolution (20x11 grid).
 - **Headless Replay Adapter Integration**: `cyberHopperReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Cyber Hopper match replays without modifying backend validation logic.
 - **Client & Matchmaking Registration**: `cyber-hopper` and `game-4` registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
+- **Active Playable Games Only**: Home Dashboard `trendingGames` renders exclusively active playable games present in `GAME_REGISTRY` and `gameFactories`. Placeholder cards (`turbo-drift`, `vault-siege`, `pinball-frenzy`, `grid-duel`, `skyline-ascent`) are removed.
 
 

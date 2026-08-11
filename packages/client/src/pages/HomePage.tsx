@@ -26,7 +26,7 @@ export default function HomePage({
         onNavigateFriends={onNavigateFriends}
       />
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '0 var(--space-4)' }}>
-        <Hero />
+        <Hero onPlayGame={onPlayGame} />
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena onPlayGame={onPlayGame} onFindOpponent={onFindOpponent} loadingGameId={loadingGameId} />
       </main>

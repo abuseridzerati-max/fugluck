@@ -5,7 +5,11 @@ import { PlayIcon } from './icons'
 
 // Background is a CSS gradient placeholder standing in for real per-game key
 // art, which doesn't exist yet — swap for an actual image once games have assets.
-export default function Hero() {
+type HeroProps = {
+  onPlayGame?: (id: string, title: string) => void
+}
+
+export default function Hero({ onPlayGame }: HeroProps) {
   return (
     <section
       style={{
@@ -80,7 +84,11 @@ export default function Hero() {
           {featuredGame.description}
         </p>
 
-        <button type="button" className="ac-btn ac-btn--primary">
+        <button
+          type="button"
+          className="ac-btn ac-btn--primary"
+          onClick={() => onPlayGame?.(featuredGame.id, featuredGame.title)}
+        >
           <PlayIcon /> PLAY NOW
         </button>
       </div>

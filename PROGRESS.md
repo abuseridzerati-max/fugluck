@@ -7,6 +7,19 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 26 (2026-08-11): Dashboard Game Card Clean-Up (Only Active Playable Games)
+
+Cleaned up the Home Dashboard in `packages/client` to remove all unplayable placeholder game cards (`turbo-drift`, `vault-siege`, `pinball-frenzy`, `grid-duel`, `skyline-ascent`).
+
+**BUILT (verified how noted):**
+
+1. **Dashboard & Featured Game Clean-Up**:
+   - Filtered `trendingGames` in `packages/client/src/mock/homeData.ts` to map strictly over active, playable games in `GAME_REGISTRY` (`neon-runner`, `pixel-ninja-dash`, `sky-dodge`, `space-blaster`, `game-3`, `cyber-hopper`, `game-4`).
+   - Updated `featuredGame` to `Neon Runner` (`neon-runner`) and bound Hero "PLAY NOW" button to open the Launch Modal via `onPlayGame`.
+   - Updated `GAME_TITLES` map in `LiveQueueList.tsx` for clean title formatting.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test` with 120 total verified assertions.
+
 ## Session 25 (2026-08-11): Game Module #4 ("Cyber Hopper") Multi-Game Expansion
 
 Built and integrated Game Module #4 ("Cyber Hopper") into `games/` (`packages/games/`) and `@arcadeclash/shared` using the plug-and-play expansion contract.
