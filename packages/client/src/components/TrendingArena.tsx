@@ -38,9 +38,6 @@ export default function TrendingArena({
           <TrendingIcon className="ac-text-muted" />
           <h2 style={{ fontSize: 'var(--font-size-xl)', margin: 0 }}>Trending Arena</h2>
         </div>
-        <a href="#" className="ac-link--secondary">
-          View Leaderboards →
-        </a>
       </div>
 
       {filteredGames.length === 0 ? (

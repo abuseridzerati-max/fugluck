@@ -7,6 +7,19 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 32 (2026-08-11): Remove "View Leaderboards" Button & Clean Up Unused Header References
+
+Removed unused "View Leaderboards" button/link from `packages/client/src/components/TrendingArena.tsx`:
+- Header in `TrendingArena.tsx` cleaned up, focusing title directly on "Trending Arena".
+- Verified on `http://localhost:5173` that header layout is clean and aligned.
+
+**BUILT (verified how noted):**
+
+1. **Dashboard Header Cleanup**:
+   - `TrendingArena.tsx` updated with "View Leaderboards" link removed.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 31 (2026-08-11): Implement Universal Deterministic Dynamic Difficulty Scaling Across All Games
 
 Implemented universal tick-based difficulty scaling across all 4 active game modules (`Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, `Cyber Hopper`):
