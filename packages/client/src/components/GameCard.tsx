@@ -65,9 +65,16 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
               e.stopPropagation()
               setShowModal(true)
             }}
-            style={{ width: '100%', justifyContent: 'center', fontWeight: 'bold' }}
+            style={{
+              width: '100%',
+              height: '40px',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+            }}
           >
-            ▶ Play {title}
+            ▶ Play
           </button>
         </div>
       </div>

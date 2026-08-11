@@ -7,6 +7,20 @@ conversations don't carry over, and work may resume from a different tool.
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
 
+## Session 28 (2026-08-11): Fix Game Card Button Text Wrapping & Height Inflation
+
+Updated `packages/client/src/components/GameCard.tsx`:
+- Standardized card CTA button text to clean, fixed string `▶ Play`.
+- Applied explicit height-locking (`height: 40px`, `whiteSpace: nowrap`, `overflow: hidden`) to prevent multi-line button swelling.
+- Verified on `http://localhost:5173` that all 4 game cards (Neon Runner, Pixel Ninja Dash, Space Blaster, Cyber Hopper) render 100% identical thin 40px height buttons.
+
+**BUILT (verified how noted):**
+
+1. **Card CTA Button Layout Fix**:
+   - `GameCard.tsx` updated with `▶ Play` text and locked 40px height.
+2. **Test Suite Verification**:
+   - All 6 test scripts pass 100% on `npm test`.
+
 ## Session 27 (2026-08-11): Deduplicate Dashboard Games & Purge Deprecated Entries
 
 Cleaned up `GAME_REGISTRY` in `@arcadeclash/shared`, `games/registry.ts`, and `packages/client/src/registry.ts`:
