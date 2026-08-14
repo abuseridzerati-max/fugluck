@@ -16,6 +16,7 @@ export type MatchSocketMode =
   | { kind: 'queue'; stake?: number; currency?: 'COINS' | 'DIAMONDS' }
   | { kind: 'sendInvite'; friendUserId: string }
   | { kind: 'acceptInvite'; inviteId: string }
+  | { kind: 'resume' }
 
 export type UseMatchSocketResult = {
   connectionState: MatchmakingConnectionState
@@ -47,6 +48,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
       withCredentials: true,
       auth: { token: token || undefined },
+      autoConnect: false,
     })
     socketRef.current = socket
 
@@ -58,9 +60,14 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       } else if (mode.kind === 'sendInvite') {
         setWaitingLabel('Sending invite…')
         socket.emit('inviteFriend', { friendUserId: mode.friendUserId, gameId })
-      } else {
+      } else if (mode.kind === 'acceptInvite') {
         setWaitingLabel('Joining match…')
         socket.emit('respondInvite', { inviteId: mode.inviteId, accept: true })
+      } else {
+        // The server checks authenticated sockets for an active match before
+        // this callback runs and emits the authoritative matched payload when
+        // one exists. Do not join a fresh queue while restoring that match.
+        setWaitingLabel('Restoring your active match…')
       }
     })
 
@@ -100,6 +107,11 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     socket.on('disconnect', () => {
       setConnectionState('closed')
     })
+
+    // Reconnect can emit `matched` immediately during the server connection
+    // callback. Attach every listener before opening the transport so that
+    // authoritative resume payload cannot be missed.
+    socket.connect()
 
     return () => {
       if (mode.kind === 'sendInvite') {

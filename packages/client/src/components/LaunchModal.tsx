@@ -249,6 +249,18 @@ export default function LaunchModal({
                 <>
                   <button
                     type="button"
+                    className="ac-btn ac-btn--secondary"
+                    onClick={() => {
+                      onLaunchCoinsMatch?.(0)
+                      onClose()
+                    }}
+                    style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
+                  >
+                    ⚡ <strong style={{ marginLeft: 8 }}>Free Match</strong> — Public Queue (0 stake)
+                  </button>
+
+                  <button
+                    type="button"
                     className="ac-btn ac-btn--primary"
                     onClick={() => {
                       setStakeCurrency('COINS')
