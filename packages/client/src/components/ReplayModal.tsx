@@ -27,15 +27,13 @@ export default function ReplayModal({
   const [isPlaying, setIsPlaying] = useState(true)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [replayState, setReplayState] = useState<{ finalScore: number; totalTicks: number } | null>(null)
-  const animFrameRef = useRef<number | null>(null)
-
   useEffect(() => {
     const adapter = replayAdapters[gameId]
     if (!adapter) return
 
     try {
       const outcome = replayEngine(adapter, seed, inputLog, { width: 1280, height: 720 }, MAX_REPLAY_TICKS)
-      setReplayState({ finalScore: outcome.score, totalTicks: outcome.totalTicks })
+      setReplayState({ finalScore: outcome.finalScore, totalTicks: outcome.finalTick })
     } catch (e) {
       console.error('Replay calculation failed:', e)
     }

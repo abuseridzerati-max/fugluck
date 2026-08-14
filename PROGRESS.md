@@ -3,6 +3,143 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 39 (2026-08-14): Client production-build stabilization
+
+### Task
+
+Client production-build stabilization.
+
+### Starting state
+
+**Verified by running both commands before editing:** `npm exec --workspace
+packages/client tsc -- -b --pretty false` and the canonical `npm run build -w
+packages/client` both failed before Vite could run. The complete baseline was
+16 TypeScript diagnostics: TS1294 in the Cyber Hopper and Space Blaster
+constructors; unused `dtSec` in Speed Trivia and TF Sprint; three unused/stale
+admin-console diagnostics plus an invalid `PublicUser.role` read; two invalid
+two-argument `updateUser` calls in `AuthContext`; two missing `quiz` category
+color lookups; invalid React CSS property `justify`; and three ReplayModal
+diagnostics (unused animation ref and stale `score`/`totalTicks` outcome fields).
+
+### Root causes
+
+- **Stale Client/shared contracts (verified by source audit):** auth responses
+  use an HTTP-only cookie and return no JWT; `ReplayOutcome` now exposes
+  `finalScore` and `finalTick`; `PublicUser` intentionally has no admin role.
+- **Client importing Games under stricter compiler settings (verified by the
+  Client TS1294/TS6133 diagnostics):** two parameter properties and two unused
+  fixed-timestep parameters were incompatible with Client `erasableSyntaxOnly`
+  / unused checks even though Games' own typecheck was green.
+- **Metadata drift (verified by registry/theme/catalog comparison):** `quiz`
+  was canonical in shared/Games but missing from theme colors; the dashboard
+  omitted active `tf-sprint` despite the canonical six-game registry.
+- **Local UI typing errors (verified by TypeScript):** LaunchModal used the
+  non-existent `justify` style key and admin console retained dead auth-modal
+  state/imports.
+
+### Fixes
+
+- **AuthContext:** aligned signup/login response types with the current
+  cookie-auth server contract and removed impossible token arguments. Nullable
+  user/loading behavior and current custom ArcadeClash authentication remain
+  unchanged. The stale Supabase client is still only used for best-effort
+  sign-out; broader auth migration/removal was deliberately not attempted.
+- **ReplayModal:** aligned replay calculation with canonical
+  `ReplayOutcome.finalScore` / `finalTick` and removed an unused animation ref.
+  Replay semantics and active adapter lookup are unchanged.
+- **LaunchModal:** replaced invalid `justify` with typed `justifyContent`; no UX
+  redesign.
+- **Admin console:** removed dead `AuthModal` state/import and stopped reading
+  role from player-facing `PublicUser`; server-side owner-admin authentication
+  and authorization remain authoritative and unchanged.
+- **Game metadata/colors:** added the canonical `quiz` theme color and restored
+  True / False Sprint to the six-game dashboard catalog.
+- **Client/game contracts:** rewrote two constructor parameter properties as
+  explicit readonly fields and marked two intentionally unused timestep
+  parameters, preserving engine/replay behavior.
+- **Retired-game cleanup:** `rg` over Client/shared/Games source returned zero
+  functional `game-3`, `game-4`, `game3`, or `game4` references. Canonical
+  `space-blaster` and `cyber-hopper` remain intact.
+
+### Verification
+
+- **Client TypeScript:** PASS, 0 errors (`npm exec --workspace packages/client
+  tsc -- -b --pretty false`).
+- **Client production build:** PASS, Vite 8.1.5 transformed 177 modules and
+  emitted all six active game chunks. One non-blocking warning remains for the
+  664.29 kB main chunk exceeding the 500 kB advisory threshold.
+- **Shared TypeScript:** PASS, 0 errors (`tsc --noEmit`).
+- **Games TypeScript:** PASS, 0 errors (`tsc --noEmit`).
+- **Server TypeScript:** PASS, 0 errors (`tsc --noEmit`); shared contracts were
+  not changed.
+- **Theme TypeScript:** PASS, 0 errors (`tsc --noEmit`).
+- **i18n:** PASS, 44/44 checks.
+- **Replay/game checks:** determinism 31/31; score validation 42/42; canvas
+  rendering/replay 28/28 across the active games.
+- **Other safe script checks:** wallet/friends 18/18; rate limiting 11/11; SQL
+  injection 19/19; input validation 16/16; XSS 17/17; password security 13/13;
+  admin security 8/8; admin console 31/31; CORS 20/20; registration verification
+  9/9; request logging 12/12; password policy 17/17; file-upload audit 4/4;
+  disposable-database safety 17/17.
+- **Database-backed scripts:** not passed in this environment. `npm test`
+  initially hit a machine-level Node `os.userInfo()` ENOMEM before tests ran;
+  a process-local test-only preload allowed execution. Matchmaking and
+  financial-reconnection then reached the approved disposable test-database
+  boundary but failed because network connections were sandbox-blocked with
+  EACCES. Destructive PostgreSQL suites were not run, per task scope. These are
+  environment limitations, not Client source/build failures.
+- **Browser/runtime smoke:** PASS for built-preview boot, home/dashboard,
+  six-game catalog, `tf-sprint` LaunchModal, login route, and private admin-auth
+  route; zero browser console warnings/errors. Authenticated dashboard state,
+  replay modal, matchmaking, multiplayer, and playable canvas flows were not
+  exercised because they require live auth/backend state.
+
+### Build hygiene
+
+**Verified by repository scan after all builds:** no source-adjacent `.js`,
+`.js.map`, `.d.ts`, or `.tsbuildinfo` exists outside excluded dependency and
+intended build directories. Shared/Games/Server `noEmit` protections remain.
+The intended `packages/client/dist` output was regenerated normally.
+
+### Remaining risks
+
+- Major admin-panel redesign is still pending.
+- Mobile compatibility is still pending.
+- SEO foundation is still pending.
+- Marketing foundation is still pending.
+- Browser multiplayer smoke testing is still pending.
+- `tf-sprint` browser launch into an actual playable canvas is still pending;
+  only its catalog card and LaunchModal were verified.
+- Authenticated replay UI remains browser-unverified.
+- The main production chunk has a non-blocking size advisory.
+- Partial/stale Supabase Client integration remains architectural auth debt;
+  current custom HTTP-only-cookie auth was preserved and not weakened.
+
+### Files
+
+**Modified:**
+
+- `packages/client/src/admin/AdminConsolePage.tsx`
+- `packages/client/src/auth/AuthContext.tsx`
+- `packages/client/src/components/LaunchModal.tsx`
+- `packages/client/src/components/ReplayModal.tsx`
+- `packages/client/src/mock/homeData.ts`
+- `packages/theme/src/tokens.ts`
+- `games/cyber-hopper/engine.ts`
+- `games/space-blaster/engine.ts`
+- `games/speed-trivia/engine.ts`
+- `games/tf-sprint/engine.ts`
+- `PROGRESS.md`
+
+**Created:** none in project source. Intended Client `dist` artifacts were
+regenerated by the canonical production build.
+
+**Deleted:** none in project source.
+
+### Exact next action
+
+**Perform focused browser/runtime smoke testing of the web product, including authentication, dashboard, matchmaking, replay, and at least one playable game flow.**
+
 ## Session 38 (2026-08-14): Generated JavaScript artifact cleanup
 
 **Problem and root cause (verified by configuration/content audit):** Games

@@ -70,7 +70,7 @@ export class TFSprintEngine {
     return this.activeQuestions[this.currentQuestionIndex];
   }
 
-  public update(dtSec: number, input: TFSprintInput): "ended" | null {
+  public update(_dtSec: number, input: TFSprintInput): "ended" | null {
     if (this.gameOver) return "ended";
 
     this.tickCount++;

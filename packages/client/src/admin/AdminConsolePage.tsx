@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
-import AuthModal from '../components/AuthModal'
 import { apiFetch, ApiError } from '../lib/api'
 
 type Tab = 'dashboard' | 'users' | 'matches' | 'ledger' | 'audit'
@@ -61,8 +60,6 @@ type AuditItem = {
 
 export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: () => void }) {
   const { user } = useAuth()
-  const [showAuthModal, setShowAuthModal] = useState(false)
-
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [recentAuditLogs, setRecentAuditLogs] = useState<AuditItem[]>([])
@@ -328,7 +325,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fbbf24', letterSpacing: '0.05em' }}>ARCADECLASH OPERATIONAL CONSOLE</span>
           <span style={{ fontSize: '12px', background: '#1e293b', color: '#94a3b8', padding: '2px 8px', borderRadius: '4px' }}>SERVER AUTHORIZED</span>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>User: {user.username} ({user.role || 'user'})</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>User: {user.username}</span>
         </div>
         <button type="button" onClick={handleAdminLogout} style={{ background: '#1e2030', border: '1px solid #334155', color: '#f8fafc', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
           Exit Console & Logout

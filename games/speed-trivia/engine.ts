@@ -99,7 +99,7 @@ export class SpeedTriviaEngine {
     return this.activeQuestions[this.currentQuestionIndex];
   }
 
-  public update(dtSec: number, input: SpeedTriviaInput): "ended" | null {
+  public update(_dtSec: number, input: SpeedTriviaInput): "ended" | null {
     if (this.gameOver) return "ended";
 
     this.tickCount++;
@@ -169,4 +169,3 @@ export class SpeedTriviaEngine {
     }
   }
 }
-

@@ -31,6 +31,7 @@ export const categoryColors = {
   "turn-based-board": "#818cf8",
   "reflex-timing": "#a3e635",
   "word-trivia": "#22d3ee",
+  quiz: "#22d3ee",
 } as const;
 
 export type CategoryName = keyof typeof categoryColors;
