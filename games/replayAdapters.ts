@@ -16,6 +16,7 @@ import { pixelNinjaDashReplayAdapter } from "./pixel-ninja-dash/replay";
 import { spaceBlasterReplayAdapter } from "./space-blaster/replay";
 import { cyberHopperReplayAdapter } from "./cyber-hopper/replay";
 import { speedTriviaReplayAdapter } from "./speed-trivia/replay";
+import { tfSprintReplayAdapter } from "./tf-sprint/replay";
 import { gameRegistry } from "./registry";
 
 // `any` here is deliberate type erasure — each game's adapter has its own
@@ -28,6 +29,7 @@ export const replayAdapters: Record<string, ReplayAdapter<any, any>> = {
   "space-blaster": spaceBlasterReplayAdapter,
   "cyber-hopper": cyberHopperReplayAdapter,
   "speed-trivia": speedTriviaReplayAdapter,
+  "tf-sprint": tfSprintReplayAdapter,
 };
 
 // Fails fast at module load if a registry entry has no matching adapter (or

@@ -4,14 +4,9 @@ import { apiFetch, ApiError } from '../lib/api'
 import { supabase } from '../lib/supabase'
 
 const AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
-const AUTH_TOKEN_KEY = 'arcadeclash_auth_token'
 
 export function getStoredAuthToken(): string | null {
-  try {
-    return localStorage.getItem(AUTH_TOKEN_KEY)
-  } catch {
-    return null
-  }
+  return null
 }
 
 type AuthContextValue = {
@@ -38,15 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  function updateUser(u: PublicUser | null, token?: string) {
+  function updateUser(u: PublicUser | null) {
     setUser(u)
     try {
       if (u) {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u))
-        if (token) localStorage.setItem(AUTH_TOKEN_KEY, token)
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY)
-        localStorage.removeItem(AUTH_TOKEN_KEY)
       }
     } catch {
       // Ignore storage errors
@@ -57,15 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
 
     async function initSession() {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (data?.session?.access_token) {
-          localStorage.setItem(AUTH_TOKEN_KEY, data.session.access_token)
-        }
-      } catch {
-        // Fall back gracefully to cookie / local storage re-hydration
-      }
-
       try {
         const res = await apiFetch<{ user: PublicUser }>('/api/auth/me')
         if (mounted) updateUser(res.user)
@@ -84,15 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void initSession()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event: unknown, session: { access_token?: string } | null) => {
-      if (session?.access_token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, session.access_token)
-      }
-    })
-
     return () => {
       mounted = false
-      authListener?.subscription.unsubscribe()
     }
   }, [])
 

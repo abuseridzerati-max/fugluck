@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { FriendEntry } from '@arcadeclash/shared'
 import { gameRegistry } from '@arcadeclash/games'
 import Navbar from '../components/Navbar'
@@ -11,6 +12,7 @@ type FriendsPageProps = {
 }
 
 export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInviteFriend }: FriendsPageProps) {
+  const { t } = useTranslation()
   const [friends, setFriends] = useState<FriendEntry[]>([])
   const [username, setUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,9 +26,9 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
 
   useEffect(() => {
     refresh()
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load friends'))
+      .catch((e) => setError(e instanceof ApiError ? e.message : t('friends.loadFailed')))
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   async function sendRequest(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +41,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       setUsername('')
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not send request')
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotSend'))
     }
   }
 
@@ -49,7 +51,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       await apiFetch(`/api/friends/${id}/accept`, { method: 'POST' })
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not accept')
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotAccept'))
     }
   }
 
@@ -59,7 +61,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       await apiFetch(`/api/friends/${id}/reject`, { method: 'POST' })
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not reject')
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotReject'))
     }
   }
 
@@ -71,16 +73,16 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
     <>
       <Navbar onNavigateHome={onNavigateHome} onNavigateProfile={onNavigateProfile} onNavigateFriends={() => {}} />
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
-        <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-3xl)' }}>Friends</h1>
+        <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-3xl)' }}>{t('friends.title')}</h1>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-6)' }}>
-          Add friends by username, then invite them to a private match.
+          {t('friends.tagline')}
         </p>
 
         <form onSubmit={sendRequest} style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
+            placeholder={t('friends.usernamePlaceholder')}
             required
             minLength={3}
             style={{
@@ -93,7 +95,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
             }}
           />
           <button type="submit" className="ac-btn ac-btn--primary">
-            Add friend
+            {t('friends.addFriendBtn')}
           </button>
         </form>
 
@@ -102,46 +104,46 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
         )}
 
         {loading ? (
-          <p className="ac-text-muted">Loading…</p>
+          <p className="ac-text-muted">{t('common.loading')}</p>
         ) : (
           <>
-            <Section title="Incoming requests">
+            <Section title={t('friends.incomingRequests')}>
               {incoming.length === 0 ? (
-                <Empty>No pending requests.</Empty>
+                <Empty>{t('friends.noIncoming')}</Empty>
               ) : (
                 incoming.map((f) => (
                   <Row key={f.friendshipId} label={f.username}>
                     <button type="button" className="ac-btn ac-btn--primary" onClick={() => accept(f.friendshipId)}>
-                      Accept
+                      {t('common.accept')}
                     </button>
                     <button type="button" className="ac-btn ac-btn--ghost" onClick={() => reject(f.friendshipId)}>
-                      Reject
+                      {t('common.reject')}
                     </button>
                   </Row>
                 ))
               )}
             </Section>
 
-            <Section title="Friends">
+            <Section title={t('friends.friendsSection')}>
               {accepted.length === 0 ? (
-                <Empty>No friends yet — send a request above.</Empty>
+                <Empty>{t('friends.noFriends')}</Empty>
               ) : (
                 accepted.map((f) => (
                   <Row key={f.friendshipId} label={f.username}>
                     <button type="button" className="ac-btn ac-btn--primary" onClick={() => setInviteFor(f)}>
-                      Invite to play
+                      {t('friends.inviteToPlay')}
                     </button>
                   </Row>
                 ))
               )}
             </Section>
 
-            <Section title="Outgoing requests">
+            <Section title={t('friends.outgoingRequests')}>
               {outgoing.length === 0 ? (
-                <Empty>None.</Empty>
+                <Empty>{t('friends.noOutgoing')}</Empty>
               ) : (
                 outgoing.map((f) => (
-                  <Row key={f.friendshipId} label={`${f.username} (pending)`} />
+                  <Row key={f.friendshipId} label={t('friends.pendingLabel', { username: f.username })} />
                 ))
               )}
             </Section>
@@ -163,7 +165,9 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
           onClick={() => setInviteFor(null)}
         >
           <div className="ac-panel" style={{ minWidth: 300, padding: 'var(--space-5)' }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 var(--space-4)' }}>Invite {inviteFor.username}</h2>
+            <h2 style={{ margin: '0 0 var(--space-4)' }}>
+              {t('friends.inviteUserModalTitle', { username: inviteFor.username })}
+            </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {gameRegistry.map((g) => (
                 <button
@@ -186,7 +190,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
               style={{ marginTop: 'var(--space-4)', width: '100%' }}
               onClick={() => setInviteFor(null)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>

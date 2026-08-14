@@ -34,6 +34,14 @@ export default function GameLoader({ createModule, gameTitle, onExit }: GameLoad
   }
 
   useEffect(() => {
+    const prevTitle = document.title
+    document.title = `ArcadeClash — Practice: ${gameTitle}`
+    return () => {
+      document.title = prevTitle
+    }
+  }, [gameTitle])
+
+  useEffect(() => {
     mount()
     return () => {
       moduleRef.current?.destroy()

@@ -3,6 +3,14 @@ import { Router } from "express";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { ensureSignupGrant, getBalances, grantDiamondsStub } from "../wallet/ledger";
 
+import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+
+const walletMutationLimiter = createRateLimiterMiddleware({
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  message: "Too many transaction attempts. Please wait a moment.",
+});
+
 export const walletRouter = Router();
 
 walletRouter.use(attachSession, requireAuth);
@@ -20,7 +28,7 @@ walletRouter.get("/packs", (_req, res) => {
 // Stub purchase — no Stripe yet. Grants diamonds immediately so the dual-
 // currency UI and shop flow can be exercised end-to-end. Replace with a real
 // payment webhook before any production money moves.
-walletRouter.post("/purchase-diamonds", async (req, res) => {
+walletRouter.post("/purchase-diamonds", walletMutationLimiter, async (req, res) => {
   const packId = req.body?.packId;
   if (typeof packId !== "string") {
     res.status(400).json({ error: "packId is required." });

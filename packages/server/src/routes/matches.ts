@@ -4,9 +4,17 @@ import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { matchesHistory, users } from "../db/schema";
 
+import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+
+const matchHistoryLimiter = createRateLimiterMiddleware({
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  message: "Too many request attempts. Please try again later.",
+});
+
 export const matchesRouter = Router();
 
-matchesRouter.get("/history", attachSession, requireAuth, async (req, res) => {
+matchesRouter.get("/history", attachSession, requireAuth, matchHistoryLimiter, async (req, res) => {
   const userId = req.userId!;
   const records = await db.query.matchesHistory.findMany({
     where: or(eq(matchesHistory.player1Id, userId), eq(matchesHistory.player2Id, userId)),

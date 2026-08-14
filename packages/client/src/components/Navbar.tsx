@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { navFilters } from '../mock/homeData'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
+import LanguageSwitcher from './LanguageSwitcher'
 import { BellIcon, SearchIcon } from './icons'
 
 type NavbarProps = {
@@ -20,6 +22,7 @@ export default function Navbar({
   selectedCategory = 'all',
   onSelectCategory,
 }: NavbarProps) {
+  const { t } = useTranslation()
   const { user, logOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
@@ -29,7 +32,7 @@ export default function Navbar({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 'var(--space-6)',
+        gap: 'var(--space-4)',
         padding: 'var(--space-4) var(--space-6)',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-bg)',
@@ -51,9 +54,9 @@ export default function Navbar({
         ArcadeClash
       </button>
 
-      <label className="ac-search" style={{ flex: 1, maxWidth: 420 }}>
+      <label className="ac-search" style={{ flex: 1, maxWidth: 380 }}>
         <SearchIcon />
-        <input type="text" placeholder="Search games, creators, or genres..." />
+        <input type="text" placeholder={t('common.search')} />
       </label>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -72,7 +75,9 @@ export default function Navbar({
         })}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginLeft: 'auto' }}>
+        <LanguageSwitcher />
+
         {user && (
           <div
             style={{
@@ -81,20 +86,22 @@ export default function Navbar({
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-muted)',
             }}
-            title="Coins are free play money. Diamonds are premium."
+            title={t('navigation.coinsTooltip')}
           >
             <span>
-              <span style={{ color: 'var(--color-secondary, #fbbf24)' }}>{user.balances.coins}</span> coins
+              <span style={{ color: 'var(--color-secondary, #fbbf24)' }}>{user.balances.coins}</span>{' '}
+              {t('common.coins').toLowerCase()}
             </span>
             <span>
-              <span style={{ color: 'var(--color-primary)' }}>{user.balances.diamonds}</span> diamonds
+              <span style={{ color: 'var(--color-primary)' }}>{user.balances.diamonds}</span>{' '}
+              {t('common.diamonds').toLowerCase()}
             </span>
           </div>
         )}
 
         <button
           type="button"
-          aria-label="Notifications"
+          aria-label={t('navigation.notifications')}
           className="ac-btn--ghost"
           style={{
             display: 'inline-flex',
@@ -112,7 +119,7 @@ export default function Navbar({
           <div style={{ position: 'relative' }}>
             <button
               type="button"
-              aria-label="Account menu"
+              aria-label={t('navigation.accountMenu')}
               onClick={() => setMenuOpen((open) => !open)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
             >
@@ -131,7 +138,7 @@ export default function Navbar({
                 }}
               >
                 <MenuItem
-                  label="Profile"
+                  label={t('navigation.profile')}
                   onClick={() => {
                     setMenuOpen(false)
                     onNavigateProfile()
@@ -139,7 +146,7 @@ export default function Navbar({
                 />
                 {onNavigateFriends && (
                   <MenuItem
-                    label="Friends"
+                    label={t('navigation.friends')}
                     onClick={() => {
                       setMenuOpen(false)
                       onNavigateFriends()
@@ -147,7 +154,7 @@ export default function Navbar({
                   />
                 )}
                 <MenuItem
-                  label="Log out"
+                  label={t('navigation.logout')}
                   onClick={() => {
                     setMenuOpen(false)
                     logOut()
@@ -159,10 +166,10 @@ export default function Navbar({
         ) : (
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <button type="button" className="ac-pill" onClick={() => setAuthModalMode('login')}>
-              Log in
+              {t('navigation.login')}
             </button>
             <button type="button" className="ac-pill ac-pill--active" onClick={() => setAuthModalMode('signup')}>
-              Sign up
+              {t('navigation.signup')}
             </button>
           </div>
         )}

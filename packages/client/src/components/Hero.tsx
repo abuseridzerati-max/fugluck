@@ -1,15 +1,16 @@
+import { useTranslation } from 'react-i18next'
 import { categoryColors } from '@arcadeclash/theme'
 import { engineLabel } from '../lib/format'
 import { featuredGame, liveArenaCount } from '../mock/homeData'
 import { PlayIcon } from './icons'
 
-// Background is a CSS gradient placeholder standing in for real per-game key
-// art, which doesn't exist yet — swap for an actual image once games have assets.
 type HeroProps = {
   onPlayGame?: (id: string, title: string) => void
 }
 
 export default function Hero({ onPlayGame }: HeroProps) {
+  const { t } = useTranslation()
+
   return (
     <section
       style={{
@@ -53,7 +54,7 @@ export default function Hero({ onPlayGame }: HeroProps) {
             background: 'var(--color-danger)',
           }}
         />
-        LIVE ARENA · {liveArenaCount} players online now
+        {t('hero.liveArenaStatus', { count: liveArenaCount })}
       </div>
 
       <div
@@ -89,7 +90,7 @@ export default function Hero({ onPlayGame }: HeroProps) {
           className="ac-btn ac-btn--primary"
           onClick={() => onPlayGame?.(featuredGame.id, featuredGame.title)}
         >
-          <PlayIcon /> PLAY NOW
+          <PlayIcon /> {t('hero.playNow')}
         </button>
       </div>
     </section>

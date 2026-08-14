@@ -6,6 +6,14 @@ import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { friendships, users } from "../db/schema";
 
+import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+
+const socialLimiter = createRateLimiterMiddleware({
+  windowMs: 60 * 1000,
+  maxRequests: 15,
+  message: "Too many social actions. Please wait a moment.",
+});
+
 export const friendsRouter = Router();
 
 friendsRouter.use(attachSession, requireAuth);
@@ -42,11 +50,13 @@ friendsRouter.get("/", async (req, res) => {
   res.json({ friends: entries });
 });
 
-friendsRouter.post("/request", async (req, res) => {
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
+
+friendsRouter.post("/request", socialLimiter, async (req, res) => {
   const me = req.userId!;
   const username = req.body?.username;
-  if (typeof username !== "string" || username.length < 3) {
-    res.status(400).json({ error: "Username is required." });
+  if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
+    res.status(400).json({ error: "Username must be 3-20 characters: letters, numbers, underscores only." });
     return;
   }
 
@@ -112,10 +122,11 @@ friendsRouter.post("/request", async (req, res) => {
   });
 });
 
-friendsRouter.post("/:friendshipId/accept", async (req, res) => {
+friendsRouter.post("/:friendshipId/accept", socialLimiter, async (req, res) => {
   const me = req.userId!;
+  const friendshipId = String(req.params.friendshipId);
   const friendship = await db.query.friendships.findFirst({
-    where: eq(friendships.id, req.params.friendshipId),
+    where: eq(friendships.id, friendshipId),
   });
   if (!friendship || friendship.addresseeId !== me || friendship.status !== "pending") {
     res.status(404).json({ error: "No pending request to accept." });
@@ -129,10 +140,11 @@ friendsRouter.post("/:friendshipId/accept", async (req, res) => {
   res.json({ friendshipId: updated.id, status: updated.status });
 });
 
-friendsRouter.post("/:friendshipId/reject", async (req, res) => {
+friendsRouter.post("/:friendshipId/reject", socialLimiter, async (req, res) => {
   const me = req.userId!;
+  const friendshipId = String(req.params.friendshipId);
   const friendship = await db.query.friendships.findFirst({
-    where: eq(friendships.id, req.params.friendshipId),
+    where: eq(friendships.id, friendshipId),
   });
   if (!friendship || friendship.addresseeId !== me || friendship.status !== "pending") {
     res.status(404).json({ error: "No pending request to reject." });

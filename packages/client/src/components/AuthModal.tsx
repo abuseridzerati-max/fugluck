@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type FormEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 
 type AuthModalProps = {
@@ -7,12 +8,21 @@ type AuthModalProps = {
 }
 
 export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
+  const { t } = useTranslation()
   const { signUp, logIn, error } = useAuth()
   const [mode, setMode] = useState(initialMode)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const prevTitle = document.title
+    document.title = mode === 'signup' ? t('meta.titleSignup') : t('meta.titleLogin')
+    return () => {
+      document.title = prevTitle
+    }
+  }, [mode, t])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -45,12 +55,14 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
       onClick={onClose}
     >
       <div className="ac-panel" style={{ width: 340 }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: '0 0 var(--space-5)' }}>{mode === 'signup' ? 'Sign up' : 'Log in'}</h2>
+        <h2 style={{ margin: '0 0 var(--space-5)' }}>
+          {mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
+        </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-              Username
+              {t('auth.username')}
             </span>
             <input
               value={username}
@@ -65,7 +77,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
           <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-              Password
+              {t('auth.password')}
             </span>
             <input
               type="password"
@@ -80,7 +92,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
           {mode === 'signup' && (
             <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-                Email (optional)
+                {t('auth.emailOptional')}
               </span>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
             </label>
@@ -91,7 +103,11 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
           )}
 
           <button type="submit" className="ac-btn ac-btn--primary" disabled={submitting}>
-            {submitting ? 'Please wait…' : mode === 'signup' ? 'Sign up' : 'Log in'}
+            {submitting
+              ? t('common.pleaseWait')
+              : mode === 'signup'
+                ? t('auth.submitSignup')
+                : t('auth.submitLogin')}
           </button>
         </form>
 
@@ -101,7 +117,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
           className="ac-link--secondary"
           style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 'var(--space-4)', padding: 0 }}
         >
-          {mode === 'signup' ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
+          {mode === 'signup' ? t('auth.alreadyHaveAccount') : t('auth.dontHaveAccount')}
         </button>
       </div>
     </div>

@@ -4,29 +4,15 @@
 // each socket.
 import type { MatchOutcome, ScoreVerdict } from "@arcadeclash/shared";
 
-// null = forfeited (never submitted a score at all).
-export type SidedSubmission = { score: number; verdict: ScoreVerdict } | null;
+export type SidedSubmission = {
+  score: number;
+  verdict: ScoreVerdict;
+  correctCount?: number;
+  totalResponseTicks?: number;
+} | null;
 
 export type MatchOutcomeResult = { a: MatchOutcome; b: MatchOutcome };
 
-// Policy (confirmed with the user before implementing):
-//  - Exactly one side forfeited, the other's score is trustworthy
-//    (valid — "unverifiable" is currently unreachable, kept for a future
-//    non-tick game) -> the submitter wins outright. Mirrors the existing
-//    forfeit-timeout precedent (see FORFEIT_GRACE_MS's comment in
-//    matches.ts): voiding would let "don't submit" become a winning
-//    strategy against a losing position.
-//  - Exactly one side forfeited, the other's score is INVALID -> void. An
-//    invalid submission doesn't get to win just because the opponent also
-//    failed to produce a trustworthy result — this is a natural extension
-//    of "invalid never wins," not something separately asked for.
-//  - Both trustworthy -> compare scores directly: higher wins, equal ->
-//    draw.
-//  - Exactly one side INVALID (other trustworthy) -> the trustworthy side
-//    wins, regardless of what it's being compared against.
-//  - Both INVALID, or both forfeited (shouldn't occur given how matches.ts
-//    only starts the forfeit timer once one side has already submitted —
-//    handled defensively anyway) -> void.
 export function determineMatchOutcome(a: SidedSubmission, b: SidedSubmission): MatchOutcomeResult {
   const aTrusted = a !== null && a.verdict !== "invalid";
   const bTrusted = b !== null && b.verdict !== "invalid";
@@ -38,6 +24,18 @@ export function determineMatchOutcome(a: SidedSubmission, b: SidedSubmission): M
   if (aTrusted && !bTrusted) return { a: "win", b: "loss" };
   if (bTrusted && !aTrusted) return { a: "loss", b: "win" };
   if (!aTrusted && !bTrusted) return { a: "void", b: "void" };
+
+  // Primary ranking for Trivia: Most correct answers
+  if (a.correctCount !== undefined && b.correctCount !== undefined) {
+    if (a.correctCount > b.correctCount) return { a: "win", b: "loss" };
+    if (a.correctCount < b.correctCount) return { a: "loss", b: "win" };
+
+    // Secondary tiebreaker: Lowest totalResponseTicks (faster aggregate response speed)
+    if (a.totalResponseTicks !== undefined && b.totalResponseTicks !== undefined) {
+      if (a.totalResponseTicks < b.totalResponseTicks) return { a: "win", b: "loss" };
+      if (a.totalResponseTicks > b.totalResponseTicks) return { a: "loss", b: "win" };
+    }
+  }
 
   if (a.score > b.score) return { a: "win", b: "loss" };
   if (a.score < b.score) return { a: "loss", b: "win" };

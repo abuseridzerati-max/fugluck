@@ -21,7 +21,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
   private root: HTMLDivElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
-  private hud: HTMLDivElement | null = null;
   private countdownEl: HTMLDivElement | null = null;
   private pauseOverlay: HTMLDivElement | null = null;
 
@@ -74,14 +73,13 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     const clickY = (e.clientY - rect.top) * scaleY;
 
     // 4 Option Card bounding boxes on 1280x720 canvas
-    const w = VIRTUAL_VIEWPORT.width;
-    const cardW = (w - 150) / 2; // 565
-    const cardH = 130;
+    const cardW = 570;
+    const cardH = 150;
     const positions = [
-      { x: 60, y: 375 },
-      { x: 60 + cardW + 30, y: 375 },
-      { x: 60, y: 375 + cardH + 20 },
-      { x: 60 + cardW + 30, y: 375 + cardH + 20 },
+      { x: 50, y: 325 },
+      { x: 660, y: 325 },
+      { x: 50, y: 500 },
+      { x: 660, y: 500 },
     ];
 
     for (let i = 0; i < 4; i++) {
@@ -113,18 +111,14 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     this.root = document.createElement("div");
     this.root.className = "speed-trivia-root";
     this.root.style.cssText =
-      "position:relative;width:100%;height:100%;background:#080a14;overflow:hidden;user-select:none;";
+      "position:relative;width:100%;height:100%;background:#080a14;overflow:hidden;user-select:none;display:flex;align-items:center;justify-content:center;";
 
     this.canvas = document.createElement("canvas");
     this.canvas.width = VIRTUAL_VIEWPORT.width;
     this.canvas.height = VIRTUAL_VIEWPORT.height;
-    this.canvas.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;cursor:pointer;";
+    this.canvas.style.cssText =
+      "display:block;max-width:100%;max-height:100%;aspect-ratio:16/9;object-fit:contain;cursor:pointer;";
     this.ctx = this.canvas.getContext("2d");
-
-    this.hud = document.createElement("div");
-    this.hud.style.cssText =
-      "position:absolute;top:16px;left:24px;font-family:monospace;font-size:24px;font-weight:bold;color:#7c3aed;pointer-events:none;";
-    this.hud.textContent = "SCORE 0";
 
     this.countdownEl = document.createElement("div");
     this.countdownEl.style.cssText =
@@ -142,7 +136,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     this.pauseOverlay.appendChild(resumeBtn);
 
     this.root.appendChild(this.canvas);
-    this.root.appendChild(this.hud);
     this.root.appendChild(this.countdownEl);
     this.root.appendChild(this.pauseOverlay);
     container.appendChild(this.root);
@@ -210,7 +203,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
 
   private render() {
     if (this.ctx) renderSpeedTrivia(this.ctx, this.engine);
-    if (this.hud) this.hud.textContent = `SCORE ${this.engine.score}`;
   }
 
   private resume() {

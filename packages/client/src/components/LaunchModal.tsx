@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 
 type LaunchModalProps = {
@@ -21,6 +22,7 @@ export default function LaunchModal({
   onLaunchCoinsMatch,
   onLaunchDiamondsMatch,
 }: LaunchModalProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [stakeCurrency, setStakeCurrency] = useState<'COINS' | 'DIAMONDS' | null>(null)
   const [selectedStake, setSelectedStake] = useState<number>(100)
@@ -61,7 +63,9 @@ export default function LaunchModal({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-            {stakeCurrency ? `Select ${stakeCurrency} Stake` : `Launch ${gameTitle}`}
+            {stakeCurrency
+              ? t('game.selectStake', { currency: stakeCurrency })
+              : t('game.launchTitle', { title: gameTitle })}
           </h2>
           <button
             type="button"
@@ -77,7 +81,7 @@ export default function LaunchModal({
           /* Stake Selection Step */
           <div>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
-              Choose preset or enter custom wager for <strong>{gameTitle}</strong>.
+              {t('game.choosePresetOrCustom', { title: gameTitle })}
             </p>
 
             <div
@@ -88,10 +92,12 @@ export default function LaunchModal({
                 marginBottom: 'var(--space-4)',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>Available Balance:</span>
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                {t('game.availableBalance')}
+              </span>
               <strong style={{ color: stakeCurrency === 'COINS' ? '#fbbf24' : '#a855f7' }}>
                 {currentBalance} {stakeCurrency}
               </strong>
@@ -113,7 +119,7 @@ export default function LaunchModal({
                     }}
                     className={`ac-btn ${isSelected ? 'ac-btn--primary' : 'ac-btn--ghost'}`}
                     style={{
-                      justify: 'center',
+                      justifyContent: 'center',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -126,7 +132,7 @@ export default function LaunchModal({
                     <span>
                       {amount} {stakeCurrency === 'COINS' ? '🪙' : '💎'}
                     </span>
-                    {!canAfford && <span style={{ fontSize: '9px', color: '#f87171' }}>Too low</span>}
+                    {!canAfford && <span style={{ fontSize: '9px', color: '#f87171' }}>{t('game.tooLow')}</span>}
                   </button>
                 )
               })}
@@ -135,13 +141,13 @@ export default function LaunchModal({
             {/* Custom Amount Input Field */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <label style={{ fontSize: 'var(--font-size-xs)', display: 'block', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                Or enter Custom Wager ({stakeCurrency}):
+                {t('game.customWager', { currency: stakeCurrency })}
               </label>
               <input
                 type="number"
                 min={1}
                 max={currentBalance}
-                placeholder={`e.g. 175`}
+                placeholder={t('game.customPlaceholder')}
                 value={customInput}
                 onChange={(e) => {
                   const val = e.target.value
@@ -164,7 +170,7 @@ export default function LaunchModal({
               />
               {isCustomExceeding && (
                 <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginTop: 4 }}>
-                  Custom bet cannot exceed your available balance of {currentBalance} {stakeCurrency}.
+                  {t('game.customExceedsBalance', { balance: currentBalance, currency: stakeCurrency })}
                 </span>
               )}
             </div>
@@ -179,7 +185,7 @@ export default function LaunchModal({
                 }}
                 style={{ flex: 1 }}
               >
-                ← Back
+                ← {t('common.back')}
               </button>
               <button
                 type="button"
@@ -193,7 +199,7 @@ export default function LaunchModal({
                 }}
                 style={{ flex: 2, fontWeight: 'bold', opacity: canSubmit ? 1 : 0.4 }}
               >
-                Enter Queue ({selectedStake} {stakeCurrency})
+                {t('game.enterQueue', { stake: selectedStake, currency: stakeCurrency })}
               </button>
             </div>
           </div>
@@ -202,8 +208,8 @@ export default function LaunchModal({
           <>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
               {user
-                ? 'Select your match mode below to start playing or wagering.'
-                : 'You are playing as a Guest. Choose Solo Rush or send an instant invite link to a friend.'}
+                ? t('game.matchmaking')
+                : t('game.guestWagerNotice')}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -217,7 +223,7 @@ export default function LaunchModal({
                 }}
                 style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
               >
-                🕹️ <strong style={{ marginLeft: 8 }}>Solo Rush</strong> — Practice Mode (Offline)
+                🕹️ <strong style={{ marginLeft: 8 }}>{t('game.soloRush')}</strong> — {t('game.practiceMode')}
               </button>
 
               {/* Mode 2: Instant Invite Link */}
@@ -230,12 +236,12 @@ export default function LaunchModal({
                 }}
                 style={{
                   width: '100%',
-                  justify: 'flex-start',
+                  justifyContent: 'flex-start',
                   padding: 'var(--space-3)',
                   border: '1px dashed var(--color-border)',
                 }}
               >
-                🔗 <strong style={{ marginLeft: 8 }}>Instant Invite Link</strong> — Share Free-Play Link
+                🔗 <strong style={{ marginLeft: 8 }}>{t('game.instantInviteLink')}</strong> — {t('game.shareFreePlay')}
               </button>
 
               {/* Mode 3 & 4: Only for Authenticated Users */}
@@ -251,7 +257,7 @@ export default function LaunchModal({
                     }}
                     style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
                   >
-                    🪙 <strong style={{ marginLeft: 8 }}>Play with COINS</strong> — Fun Match (0% Rake Fee)
+                    🪙 <strong style={{ marginLeft: 8 }}>{t('game.playWithCoins')}</strong> — {t('game.funMatchRake')}
                   </button>
 
                   <button
@@ -271,7 +277,7 @@ export default function LaunchModal({
                       border: 'none',
                     }}
                   >
-                    💎 <strong style={{ marginLeft: 8 }}>Play with DIAMONDS</strong> — Competitive (5% Rake Fee)
+                    💎 <strong style={{ marginLeft: 8 }}>{t('game.playWithDiamonds')}</strong> — {t('game.competitiveRake')}
                   </button>
                 </>
               ) : (
@@ -285,7 +291,7 @@ export default function LaunchModal({
                     color: 'var(--color-text-muted)',
                   }}
                 >
-                  🔒 Log in or Sign up to unlock COIN and DIAMOND wagering matches with real balance tracking!
+                  🔒 {t('game.guestWagerNotice')}
                 </div>
               )}
             </div>

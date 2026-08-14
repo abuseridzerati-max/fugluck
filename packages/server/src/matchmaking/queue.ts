@@ -39,7 +39,7 @@ export function isValidGameId(gameId: string): boolean {
 }
 
 export function generateSeed(): number {
-  return randomInt(0x100000000);
+  return randomInt(0x7fffffff);
 }
 
 export function makeQueueKey(gameId: string, currency: "COINS" | "DIAMONDS" = "COINS", stake: number = 0): string {

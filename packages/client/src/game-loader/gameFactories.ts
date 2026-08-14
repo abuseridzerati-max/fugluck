@@ -9,4 +9,5 @@ export const gameFactories: Record<string, () => Promise<{ default: GameModuleFa
   "space-blaster": () => import("@arcadeclash/games/space-blaster"),
   "cyber-hopper": () => import("@arcadeclash/games/cyber-hopper"),
   "speed-trivia": () => import("@arcadeclash/games/speed-trivia"),
+  "tf-sprint": () => import("@arcadeclash/games/tf-sprint"),
 };

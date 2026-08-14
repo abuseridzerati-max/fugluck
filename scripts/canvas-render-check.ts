@@ -18,6 +18,9 @@ import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay";
+import { TFSprintEngine } from "../games/tf-sprint/engine";
+import { renderTFSprint } from "../games/tf-sprint/render";
+import { tfSprintReplayAdapter } from "../games/tf-sprint/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -335,7 +338,40 @@ console.log("\nTest 3.7: Cyber Hopper 300-Frame Headless Canvas draw() Suite\n")
 console.log("\nTest 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Suite\n");
 
 {
+  let maxYCoord = 0;
+  let minYCoord = Infinity;
+
   const mockCtx = createMockCanvasContext();
+
+  const origFillRect = mockCtx.fillRect.bind(mockCtx);
+  const origStrokeRect = mockCtx.strokeRect.bind(mockCtx);
+  const origFillText = mockCtx.fillText.bind(mockCtx);
+
+  mockCtx.fillRect = function (x: number, y: number, w: number, h: number) {
+    if (w < VIRTUAL_VIEWPORT.width || h < VIRTUAL_VIEWPORT.height) {
+      minYCoord = Math.min(minYCoord, y);
+      maxYCoord = Math.max(maxYCoord, y + h);
+    }
+    return origFillRect(x, y, w, h);
+  };
+  mockCtx.strokeRect = function (x: number, y: number, w: number, h: number) {
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y + h);
+    return origStrokeRect(x, y, w, h);
+  };
+  mockCtx.roundRect = function (x: number, y: number, w: number, h: number) {
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y + h);
+    totalVerifiedDrawCalls++;
+  };
+  let categoryRendered = false;
+  mockCtx.fillText = function (text: string, x: number, y: number) {
+    if (text.includes("CATEGORY:")) categoryRendered = true;
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y);
+    return origFillText(text, x, y);
+  };
+
   const engine = new SpeedTriviaEngine(12345678);
   engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   engine.reset();
@@ -356,6 +392,77 @@ console.log("\nTest 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Sui
   const callsInRun = totalVerifiedDrawCalls - initialCallCount;
   check("Speed Trivia Clash 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Speed Trivia Clash verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Speed Trivia Clash Category Header text renders prominently on top canvas header", categoryRendered);
+  check(
+    "Speed Trivia Clash UI rendering elements lie strictly within y in [0, 700] canonical bounds",
+    maxYCoord <= 700 && minYCoord >= 0,
+    `minY=${minYCoord}, maxY=${maxYCoord}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.9: True / False Sprint 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.9: True / False Sprint 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  let minYCoord = Infinity;
+  let maxYCoord = -Infinity;
+
+  const mockCtx = createMockCanvasContext();
+
+  const origFillRect = mockCtx.fillRect.bind(mockCtx);
+  const origStrokeRect = mockCtx.strokeRect.bind(mockCtx);
+  const origFillText = mockCtx.fillText.bind(mockCtx);
+
+  mockCtx.fillRect = function (x: number, y: number, w: number, h: number) {
+    if (w < VIRTUAL_VIEWPORT.width || h < VIRTUAL_VIEWPORT.height) {
+      minYCoord = Math.min(minYCoord, y);
+      maxYCoord = Math.max(maxYCoord, y + h);
+    }
+    return origFillRect(x, y, w, h);
+  };
+  mockCtx.strokeRect = function (x: number, y: number, w: number, h: number) {
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y + h);
+    return origStrokeRect(x, y, w, h);
+  };
+  mockCtx.roundRect = function (x: number, y: number, w: number, h: number) {
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y + h);
+    totalVerifiedDrawCalls++;
+  };
+  mockCtx.fillText = function (text: string, x: number, y: number) {
+    minYCoord = Math.min(minYCoord, y);
+    maxYCoord = Math.max(maxYCoord, y);
+    return origFillText(text, x, y);
+  };
+
+  const engine = new TFSprintEngine(88776655);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    const emptyInput = {};
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, emptyInput);
+      renderTFSprint(mockCtx, engine);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("True / False Sprint 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("True / False Sprint verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check(
+    "True / False Sprint UI rendering elements lie strictly within y in [0, 700] canonical bounds",
+    maxYCoord <= 700 && minYCoord >= 0,
+    `minY=${minYCoord}, maxY=${maxYCoord}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -517,6 +624,30 @@ console.log("\nTest 4: Replay Canvas Integration Test\n");
     console.error("Speed Trivia replay render error:", err);
   }
   check("Speed Trivia replay rendering completes 100 ticks with zero draw errors", replayPassTrivia);
+
+  // Test True / False Sprint Replay Adapter rendering
+  const tfEngine = tfSprintReplayAdapter.createEngine(555444);
+  tfSprintReplayAdapter.resize(tfEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  tfEngine.reset();
+  const tfInput = tfSprintReplayAdapter.createInitialInput();
+  const sampleLogTF = [{ tick: 10, action: "selectTrue" }];
+
+  let replayPassTF = true;
+  try {
+    for (let tick = 0; tick < 100; tick++) {
+      const actions = sampleLogTF.filter((e) => e.tick === tick);
+      for (const act of actions) {
+        tfSprintReplayAdapter.applyAction(tfInput, act.action);
+      }
+      tfSprintReplayAdapter.update(tfEngine, 1 / 60, tfInput);
+      tfSprintReplayAdapter.clearPulses(tfInput);
+      renderTFSprint(mockCtx, tfEngine);
+    }
+  } catch (err) {
+    replayPassTF = false;
+    console.error("True / False Sprint replay render error:", err);
+  }
+  check("True / False Sprint replay rendering completes 100 ticks with zero draw errors", replayPassTF);
 }
 
 // ---------------------------------------------------------------------------

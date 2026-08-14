@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AuthModal from '../components/AuthModal'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
 import TrendingArena from '../components/TrendingArena'
@@ -9,6 +10,7 @@ type HomePageProps = {
   loadingGameId: string | null
   onNavigateProfile: () => void
   onNavigateFriends: () => void
+  initialAuthModalMode?: 'login' | 'signup'
 }
 
 export default function HomePage({
@@ -17,8 +19,10 @@ export default function HomePage({
   loadingGameId,
   onNavigateProfile,
   onNavigateFriends,
+  initialAuthModalMode,
 }: HomePageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(initialAuthModalMode ?? null)
 
   return (
     <>
@@ -38,6 +42,7 @@ export default function HomePage({
           selectedCategory={selectedCategory}
         />
       </main>
+      {authModalMode && <AuthModal initialMode={authModalMode} onClose={() => setAuthModalMode(null)} />}
     </>
   )
 }

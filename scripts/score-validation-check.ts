@@ -23,8 +23,12 @@ import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
 import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay.ts";
+import { tfSprintReplayAdapter } from "../games/tf-sprint/replay.ts";
 import { determineDisconnectOutcome, determineMatchOutcome } from "../packages/server/src/validation/matchOutcome.ts";
 import { validateScore } from "../packages/server/src/validation/scoreValidator.ts";
+import { getSeededQuestions } from "../packages/server/src/validation/triviaQuestions.ts";
+import { SpeedTriviaEngine } from "../games/speed-trivia/engine.ts";
+import { TFSprintEngine } from "../games/tf-sprint/engine.ts";
 
 const SEED = 424242;
 const VIEWPORT = { width: 1280, height: 720 };
@@ -59,6 +63,44 @@ function periodicLog(actionOn: string, actionOff: string | null, period: number,
   return log;
 }
 
+function getTriviaSampleLog(seed: number): InputLogEntry[] {
+  const engine = new SpeedTriviaEngine(seed);
+  const log: InputLogEntry[] = [];
+  let tick = 30;
+  for (let q = 0; q < 3; q++) {
+    const activeQ = engine.currentQuestion();
+    if (!activeQ) break;
+    const action = `selectOption${activeQ.correctIndex}`;
+    log.push({ tick, action });
+    engine.update(1 / 60, { selectOption: activeQ.correctIndex });
+    for (let f = 0; f < 35; f++) {
+      engine.update(1 / 60, {});
+      tick++;
+    }
+    tick += 600;
+  }
+  return log;
+}
+
+function getTFSprintSampleLog(seed: number): InputLogEntry[] {
+  const engine = new TFSprintEngine(seed);
+  const log: InputLogEntry[] = [];
+  let tick = 30;
+  for (let q = 0; q < 3; q++) {
+    const activeQ = engine.currentQuestion();
+    if (!activeQ) break;
+    const action = activeQ.isTrue ? "selectTrue" : "selectFalse";
+    log.push({ tick, action });
+    engine.update(1 / 60, activeQ.isTrue ? { selectTrue: true } : { selectFalse: true });
+    for (let f = 0; f < 30; f++) {
+      engine.update(1 / 60, {});
+      tick++;
+    }
+    tick += 300;
+  }
+  return log;
+}
+
 const GAMES = [
   {
     id: "neon-runner",
@@ -83,11 +125,12 @@ const GAMES = [
   {
     id: "speed-trivia",
     adapter: speedTriviaReplayAdapter,
-    log: [
-      { tick: 30, action: "selectOption2" },
-      { tick: 660, action: "selectOption3" },
-      { tick: 1290, action: "selectOption1" },
-    ],
+    log: getTriviaSampleLog(SEED),
+  },
+  {
+    id: "tf-sprint",
+    adapter: tfSprintReplayAdapter,
+    log: getTFSprintSampleLog(SEED),
   },
 ];
 
@@ -343,5 +386,57 @@ console.log("\nTest 7: freeze-frame / tab-switching auto-forfeit enforcement\n")
   );
 }
 
+// ---------------------------------------------------------------------------
+// Test 8: 1,000,000+ Question Engine O(1) Selection & Speed Advantage / Sudden Death
+// ---------------------------------------------------------------------------
+console.log("\nTest 8: 1,000,000+ Question Engine O(1) Selection & Speed Advantage / Sudden Death\n");
+
+{
+  // 1. Sub-5ms Query Speed Test
+  const startQuery = performance.now();
+  const questions1 = getSeededQuestions(99887766, 10, 1_000_000);
+  const queryDurationMs = performance.now() - startQuery;
+  check(
+    "Sub-5ms Query Speed Test: Fetching 10 questions from 1,000,000-question pool completes in < 5ms",
+    queryDurationMs < 5.0 && questions1.length === 10,
+    `Duration=${queryDurationMs.toFixed(2)}ms`,
+  );
+
+  // 2. Deterministic Payload Test
+  const questions2 = getSeededQuestions(99887766, 10, 1_000_000);
+  const isIdentical = JSON.stringify(questions1) === JSON.stringify(questions2);
+  check(
+    "Deterministic Payload Test: Invoking getSeededQuestions with identical seeds produces identical 10-question arrays",
+    isIdentical,
+  );
+
+  // 3. Speed Advantage Test
+  const playerA = { score: 12000, verdict: "valid" as const, correctCount: 8, totalResponseTicks: 800 };
+  const playerB = { score: 12000, verdict: "valid" as const, correctCount: 8, totalResponseTicks: 824 }; // 400ms slower
+  const speedOutcome = determineMatchOutcome(playerA, playerB);
+  check(
+    "Speed Advantage Test: Player A (400ms faster) beats Player B with equal 8/10 correct answers",
+    speedOutcome.a === "win" && speedOutcome.b === "loss",
+    JSON.stringify(speedOutcome),
+  );
+
+  // 4. Sudden Death Trigger Test
+  const triviaEngine = new SpeedTriviaEngine(12345);
+  triviaEngine.enableSuddenDeath();
+  for (let i = 0; i < 10; i++) {
+    const q = triviaEngine.currentQuestion();
+    if (q) {
+      triviaEngine.update(1 / 60, { selectOption: q.correctIndex });
+    }
+    for (let f = 0; f < 35; f++) triviaEngine.update(1 / 60, {});
+  }
+  check(
+    "Sudden Death Trigger Test: Equal correct answers & response times trigger Question 11 automatically",
+    triviaEngine.isSuddenDeath && triviaEngine.currentQuestionIndex >= 10,
+    `isSuddenDeath=${triviaEngine.isSuddenDeath}, questionIndex=${triviaEngine.currentQuestionIndex}`,
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);
+

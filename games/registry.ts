@@ -42,4 +42,10 @@ export const gameRegistry: GameRegistryEntry[] = [
     engine: "quiz",
     modulePath: "./speed-trivia/index.ts",
   },
+  {
+    id: "tf-sprint",
+    name: "True / False Sprint",
+    engine: "quiz",
+    modulePath: "./tf-sprint/index.ts",
+  },
 ];

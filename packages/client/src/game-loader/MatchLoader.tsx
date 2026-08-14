@@ -163,6 +163,18 @@ export default function MatchLoader({
   }, [error, connectionState])
 
   useEffect(() => {
+    const prevTitle = document.title
+    if (phase.kind === 'queued') {
+      document.title = `ArcadeClash — Matchmaking: ${gameTitle}`
+    } else {
+      document.title = `ArcadeClash — Match: ${gameTitle}`
+    }
+    return () => {
+      document.title = prevTitle
+    }
+  }, [phase.kind, gameTitle])
+
+  useEffect(() => {
     return () => destroyModule()
   }, [])
 

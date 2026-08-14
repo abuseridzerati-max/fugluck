@@ -13,6 +13,11 @@ export class SpeedTriviaEngine {
   public tickCount = 0;
   public gameOver = false;
 
+  public correctCount = 0;
+  public totalResponseTicks = 0;
+  public isSuddenDeath = false;
+  public isSuddenDeathRequested = false;
+
   public currentQuestionIndex = 0;
   public questionTicksRemaining = TRIVIA_RULES.ticksPerQuestion;
   public activeQuestions: ActiveQuestion[] = [];
@@ -20,8 +25,9 @@ export class SpeedTriviaEngine {
   public answerFeedbackTimer = 0; // Ticks to display green/red before advancing
   public lastAnswerCorrect = false;
 
-  private readonly seed: number;
+  private seed: number;
   private rng!: () => number;
+  private rawPoolCopy: RawQuestion[] = [];
 
   constructor(seed: number) {
     this.seed = seed;
@@ -33,10 +39,21 @@ export class SpeedTriviaEngine {
     this.height = height;
   }
 
+  public enableSuddenDeath() {
+    this.isSuddenDeathRequested = true;
+    if (this.currentQuestionIndex >= TRIVIA_RULES.totalQuestions - 1) {
+      this.isSuddenDeath = true;
+    }
+  }
+
   public reset() {
     this.score = 0;
     this.tickCount = 0;
     this.gameOver = false;
+    this.correctCount = 0;
+    this.totalResponseTicks = 0;
+    this.isSuddenDeath = false;
+    this.isSuddenDeathRequested = false;
     this.currentQuestionIndex = 0;
     this.questionTicksRemaining = TRIVIA_RULES.ticksPerQuestion;
     this.selectedAnswer = null;
@@ -46,33 +63,39 @@ export class SpeedTriviaEngine {
     const seededRng = createSeededRandom(this.seed);
     this.rng = seededRng.stream("gameplay");
 
-    // Deterministically shuffle question pool and select activeQuestions
-    const poolCopy: RawQuestion[] = [...QUESTION_POOL];
-    for (let i = poolCopy.length - 1; i > 0; i--) {
+    // Deterministically shuffle question pool
+    this.rawPoolCopy = [...QUESTION_POOL];
+    for (let i = this.rawPoolCopy.length - 1; i > 0; i--) {
       const j = Math.floor(this.rng() * (i + 1));
-      [poolCopy[i], poolCopy[j]] = [poolCopy[j], poolCopy[i]];
+      [this.rawPoolCopy[i], this.rawPoolCopy[j]] = [this.rawPoolCopy[j], this.rawPoolCopy[i]];
     }
 
-    const selectedRaw = poolCopy.slice(0, TRIVIA_RULES.totalQuestions);
-    this.activeQuestions = selectedRaw.map((raw) => {
-      const allOptions = [raw.correctAnswer, ...raw.incorrectAnswers];
-      // Deterministically shuffle 4 options
-      for (let i = allOptions.length - 1; i > 0; i--) {
-        const j = Math.floor(this.rng() * (i + 1));
-        [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
-      }
-      const correctIndex = allOptions.indexOf(raw.correctAnswer);
-      return {
-        id: raw.id,
-        category: raw.category,
-        question: raw.question,
-        options: allOptions as [string, string, string, string],
-        correctIndex,
-      };
-    });
+    this.activeQuestions = this.rawPoolCopy.map((raw) => this.formatQuestion(raw));
+  }
+
+  private formatQuestion(raw: RawQuestion): ActiveQuestion {
+    const allOptions = [raw.correctAnswer, ...raw.incorrectAnswers];
+    for (let i = allOptions.length - 1; i > 0; i--) {
+      const j = Math.floor(this.rng() * (i + 1));
+      [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+    }
+    const correctIndex = allOptions.indexOf(raw.correctAnswer);
+    return {
+      id: raw.id,
+      category: raw.category,
+      question: raw.question,
+      options: allOptions as [string, string, string, string],
+      correctIndex,
+    };
   }
 
   public currentQuestion(): ActiveQuestion | undefined {
+    if (this.currentQuestionIndex >= this.activeQuestions.length) {
+      // Deterministically generate next question for Sudden Death if pool exhausted
+      const rawIndex = this.currentQuestionIndex % QUESTION_POOL.length;
+      const nextQuestion = this.formatQuestion(QUESTION_POOL[rawIndex]);
+      this.activeQuestions.push(nextQuestion);
+    }
     return this.activeQuestions[this.currentQuestionIndex];
   }
 
@@ -99,11 +122,13 @@ export class SpeedTriviaEngine {
       if (q && this.selectedAnswer === null) {
         this.selectedAnswer = input.selectOption;
         this.lastAnswerCorrect = input.selectOption === q.correctIndex;
+        const ticksTaken = TRIVIA_RULES.ticksPerQuestion - this.questionTicksRemaining;
 
         if (this.lastAnswerCorrect) {
-          const speedFactor = Math.max(0.1, this.questionTicksRemaining / TRIVIA_RULES.ticksPerQuestion);
-          const pointsEarned = Math.round(TRIVIA_RULES.baseQuestionScore * speedFactor);
+          const pointsEarned = 1000 + Math.floor((this.questionTicksRemaining / TRIVIA_RULES.ticksPerQuestion) * 1000);
           this.score += pointsEarned;
+          this.correctCount++;
+          this.totalResponseTicks += ticksTaken;
         }
 
         this.answerFeedbackTimer = 30; // 0.5s pause to show result
@@ -121,13 +146,27 @@ export class SpeedTriviaEngine {
   }
 
   private advanceToNextQuestion() {
-    this.currentQuestionIndex++;
+    const nextIdx = this.currentQuestionIndex + 1;
+
+    if (nextIdx >= TRIVIA_RULES.totalQuestions && !this.isSuddenDeathRequested && !this.isSuddenDeath) {
+      this.gameOver = true;
+      return;
+    }
+
+    if (nextIdx >= TRIVIA_RULES.totalQuestions) {
+      this.isSuddenDeath = true;
+    }
+
+    this.currentQuestionIndex = nextIdx;
     this.selectedAnswer = null;
     this.answerFeedbackTimer = 0;
     this.questionTicksRemaining = TRIVIA_RULES.ticksPerQuestion;
 
     if (this.currentQuestionIndex >= this.activeQuestions.length) {
-      this.gameOver = true;
+      const rawIndex = this.currentQuestionIndex % QUESTION_POOL.length;
+      const nextQuestion = this.formatQuestion(QUESTION_POOL[rawIndex]);
+      this.activeQuestions.push(nextQuestion);
     }
   }
 }
+

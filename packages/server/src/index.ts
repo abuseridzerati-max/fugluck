@@ -4,22 +4,27 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import { attachMatchmaking } from "./matchmaking";
+import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
 import { friendsRouter } from "./routes/friends";
 import { matchesRouter } from "./routes/matches";
 import { walletRouter } from "./routes/wallet";
 
+import { corsOptions } from "./config/cors";
+import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
+
 const app = express();
 
-const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
-app.use(cors({ origin: clientOrigin, credentials: true }));
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+app.use(requestLoggerMiddleware);
 
 app.use("/api/auth", authRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/matches", matchesRouter);
+app.use("/api/admin", adminRouter);
 
 app.get("/", (_req, res) => {
   res.json({
@@ -39,13 +44,13 @@ app.get("/api/health", (_req, res) => {
 // crashing the process (this is exactly what happened under Express 4
 // during initial testing, before the upgrade).
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  console.error("[server] unhandled error:", err);
+  logger.error("[server] unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 };
 app.use(errorHandler);
 
 const httpServer = createServer(app);
-attachMatchmaking(httpServer, { clientOrigin });
+attachMatchmaking(httpServer);
 
 const port = Number(process.env.PORT ?? 4000);
 httpServer.listen(port, () => {

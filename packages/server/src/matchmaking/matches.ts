@@ -1,12 +1,52 @@
 import { randomUUID } from "node:crypto";
 import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@arcadeclash/shared";
+import { eq, or, sql } from "drizzle-orm";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
 import { validateScore } from "../validation/scoreValidator";
 import { db } from "../db/client";
 import { matchesHistory } from "../db/schema";
-import { escrowStake, payoutWinner } from "../wallet/ledger";
+import { ensureMatchSettlementsTable, escrowStake, payoutWinner, refundMatchSettlement } from "../wallet/ledger";
 import type { MatchmakingSocket } from "./socketAuth";
 import { removeFromQueue, type QueueEntry } from "./queue";
+
+let historyTableEnsured = false;
+export async function ensureMatchesHistoryTable() {
+  if (historyTableEnsured) return;
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS matches_history (
+        id text PRIMARY KEY,
+        game_id text NOT NULL,
+        player1_id text NOT NULL,
+        player2_id text NOT NULL,
+        winner_id text,
+        currency varchar(16) NOT NULL DEFAULT 'COINS',
+        stake integer NOT NULL DEFAULT 0,
+        seed bigint NOT NULL,
+        input_log_p1 jsonb,
+        input_log_p2 jsonb,
+        score_p1 integer NOT NULL DEFAULT 0,
+        score_p2 integer NOT NULL DEFAULT 0,
+        status varchar(16) NOT NULL DEFAULT 'ACTIVE',
+        status_reason text,
+        created_at timestamp with time zone NOT NULL DEFAULT NOW(),
+        started_at timestamp with time zone,
+        ended_at timestamp with time zone
+      );
+      ALTER TABLE matches_history ALTER COLUMN seed TYPE bigint;
+      ALTER TABLE matches_history ADD COLUMN IF NOT EXISTS started_at timestamp with time zone;
+      ALTER TABLE matches_history ADD COLUMN IF NOT EXISTS ended_at timestamp with time zone;
+      CREATE INDEX IF NOT EXISTS idx_matches_p1 ON matches_history (player1_id);
+      CREATE INDEX IF NOT EXISTS idx_matches_p2 ON matches_history (player2_id);
+      CREATE INDEX IF NOT EXISTS idx_matches_game ON matches_history (game_id);
+      CREATE INDEX IF NOT EXISTS idx_matches_status ON matches_history (status);
+      CREATE INDEX IF NOT EXISTS idx_matches_created ON matches_history (created_at);
+    `);
+    historyTableEnsured = true;
+  } catch {
+    // Table may already exist
+  }
+}
 
 // Grace window a player gets to submit a score once their opponent already
 // has, before the match is resolved as a forfeit against them. Anchored at
@@ -78,8 +118,11 @@ function otherPlayer(match: MatchState, socket: MatchmakingSocket): MatchPlayer 
   return match.players[0].socket === socket ? match.players[1] : match.players[0];
 }
 
-function toPlayerResult(player: MatchPlayer): PlayerResult {
+function toPlayerResult(player: MatchPlayer, disconnectedPlayer?: MatchPlayer): PlayerResult {
   if (!player.result) {
+    if (disconnectedPlayer && player.userId !== disconnectedPlayer.userId) {
+      return { username: player.username, score: null, reason: null, status: "opponent_disconnected" };
+    }
     return { username: player.username, score: null, reason: null, status: "forfeited" };
   }
   return {
@@ -121,13 +164,21 @@ function endMatch(matchId: string): MatchState | undefined {
 
 // Emits a personalized matchResolved to each still-connected player, built
 // from whatever `result` is currently on each MatchPlayer — works unchanged
-// for a normal both-submitted resolution and a forfeit resolution (one
-// player's result is simply null, toPlayerResult reports it as forfeited).
-function emitResolved(match: MatchState): void {
+// for a normal both-submitted resolution, forfeit resolution, or disconnect resolution.
+async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer): Promise<void> {
   const [p1, p2] = match.players;
-  const r1 = toPlayerResult(p1);
-  const r2 = toPlayerResult(p2);
-  const outcome = determineMatchOutcome(toSidedSubmission(p1), toSidedSubmission(p2));
+  const r1 = toPlayerResult(p1, disconnectedPlayer);
+  const r2 = toPlayerResult(p2, disconnectedPlayer);
+
+  let outcome;
+  if (disconnectedPlayer) {
+    const isP1Disconnected = p1.userId === disconnectedPlayer.userId;
+    const sidedOutcome = determineDisconnectOutcome(toSidedSubmission(isP1Disconnected ? p2 : p1));
+    outcome = isP1Disconnected ? sidedOutcome : { a: sidedOutcome.b, b: sidedOutcome.a };
+  } else {
+    outcome = determineMatchOutcome(toSidedSubmission(p1), toSidedSubmission(p2));
+  }
+
   if (p1.socket.connected) {
     p1.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.a, you: r1, opponent: r2 });
   }
@@ -138,41 +189,86 @@ function emitResolved(match: MatchState): void {
   const winnerId = outcome.a === "win" ? p1.userId : outcome.b === "win" ? p2.userId : null;
   const loserId = outcome.a === "win" ? p2.userId : outcome.b === "win" ? p1.userId : null;
 
-  // FINANCIAL INVARIANT: Payout winner if match had stake > 0 and ended with a winner
-  if (winnerId && loserId && match.stake > 0) {
-    void payoutWinner(winnerId, loserId, match.currency, match.stake, match.id)
-      .then(({ winnerBalances }) => {
+  let finalStatus = "COMPLETED";
+  if (disconnectedPlayer) {
+    finalStatus = "DISCONNECTED";
+  } else if (!p1.result || !p2.result) {
+    finalStatus = "FORFEITED";
+  } else if (outcome.a === "draw") {
+    finalStatus = "DRAW";
+  } else if (outcome.a === "void") {
+    finalStatus = "VOIDED";
+  }
+
+  // FINANCIAL INVARIANT: Payout winner if match had stake > 0 and ended with a winner;
+  // refund both players if match ended in a draw or void.
+  if (match.stake > 0) {
+    try {
+      if (winnerId && loserId) {
+        const { winnerBalances } = await payoutWinner(winnerId, loserId, match.currency, match.stake, match.id);
         const winnerPlayer = p1.userId === winnerId ? p1 : p2;
         if (winnerPlayer.socket.connected) {
           // @ts-expect-error custom event emission for live balance update
           winnerPlayer.socket.emit("balanceUpdate", { balances: winnerBalances });
         }
-      })
-      .catch((err) => {
-        console.error(`[matches] Failed to payout winner ${winnerId} in match ${match.id}:`, err);
-      });
+      } else {
+        // Draw or void — refund escrowed stakes to both players
+        const refundStatus = finalStatus === "DRAW" ? "DRAW" : "VOIDED";
+        const { p1Balances, p2Balances } = await refundMatchSettlement(p1.userId, p2.userId, match.currency, match.stake, match.id, refundStatus);
+        if (p1.socket.connected && p1Balances) {
+          // @ts-expect-error custom event emission for live balance update
+          p1.socket.emit("balanceUpdate", { balances: p1Balances });
+        }
+        if (p2.socket.connected && p2Balances) {
+          // @ts-expect-error custom event emission for live balance update
+          p2.socket.emit("balanceUpdate", { balances: p2Balances });
+        }
+      }
+    } catch (err) {
+      console.error(`[matches] Failed financial settlement for match ${match.id}:`, err);
+    }
   }
 
   // Persist completed match record to database for Profile Match History & Replaying
-  void db
-    .insert(matchesHistory)
-    .values({
-      id: match.id,
-      gameId: match.gameId,
-      player1Id: p1.userId,
-      player2Id: p2.userId,
-      winnerId,
-      currency: match.currency,
-      stake: match.stake,
-      seed: match.seed,
-      inputLogP1: p1.result?.inputLog ?? null,
-      inputLogP2: p2.result?.inputLog ?? null,
-      scoreP1: p1.result?.score ?? 0,
-      scoreP2: p2.result?.score ?? 0,
-    })
-    .catch((err) => {
-      console.error(`[matches] Failed to persist match history record ${match.id}:`, err);
-    });
+  const now = new Date();
+  try {
+    await ensureMatchesHistoryTable();
+    await db
+      .insert(matchesHistory)
+      .values({
+        id: match.id,
+        gameId: match.gameId,
+        player1Id: p1.userId,
+        player2Id: p2.userId,
+        winnerId,
+        currency: match.currency,
+        stake: match.stake,
+        seed: match.seed,
+        inputLogP1: p1.result?.inputLog ?? null,
+        inputLogP2: p2.result?.inputLog ?? null,
+        scoreP1: p1.result?.score ?? 0,
+        scoreP2: p2.result?.score ?? 0,
+        status: finalStatus,
+        statusReason: winnerId ? `Winner: ${winnerId}` : `Outcome: ${finalStatus}`,
+        startedAt: now,
+        endedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: matchesHistory.id,
+        set: {
+          winnerId,
+          inputLogP1: p1.result?.inputLog ?? null,
+          inputLogP2: p2.result?.inputLog ?? null,
+          scoreP1: p1.result?.score ?? 0,
+          scoreP2: p2.result?.score ?? 0,
+          status: finalStatus,
+          statusReason: winnerId ? `Winner: ${winnerId}` : `Outcome: ${finalStatus}`,
+          endedAt: now,
+        },
+      });
+  } catch (err) {
+    console.error(`[matches] Failed to persist match history record ${match.id}:`, err);
+  }
 }
 
 // Used by index.ts to validate a visibilityHidden report actually belongs
@@ -212,6 +308,25 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
   socketToMatch.set(a.socket, matchId);
   socketToMatch.set(b.socket, matchId);
 
+  // DURABLE LIFECYCLE PERSISTENCE: Persist match record immediately in state ACTIVE
+  void db
+    .insert(matchesHistory)
+    .values({
+      id: matchId,
+      gameId,
+      player1Id: a.userId,
+      player2Id: b.userId,
+      currency,
+      stake,
+      seed,
+      status: "ACTIVE",
+      startedAt: new Date(),
+    })
+    .onConflictDoNothing()
+    .catch((err) => {
+      console.error(`[matches] Failed to persist initial match record ${matchId}:`, err);
+    });
+
   // FINANCIAL INVARIANT: Escrow debits both players' ledger balances when match starts if stake > 0
   if (stake > 0 && !isGuestMatch) {
     void escrowStake(a.userId, currency, stake, matchId).catch((err) => {
@@ -226,7 +341,7 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
   b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
 }
 
-export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePayload): void {
+export async function submitScore(socket: MatchmakingSocket, payload: SubmitScorePayload): Promise<void> {
   const matchId = socketToMatch.get(socket);
   if (!matchId || matchId !== payload.matchId) return; // stale/bogus matchId — ignore
 
@@ -263,38 +378,24 @@ export function submitScore(socket: MatchmakingSocket, payload: SubmitScorePaylo
   const opponent = otherPlayer(match, socket);
   if (opponent.result) {
     endMatch(matchId);
-    emitResolved(match);
+    await emitResolved(match);
     return;
   }
 
   match.forfeitTimer = setTimeout(() => {
     const ended = endMatch(matchId);
-    if (ended) emitResolved(ended);
+    if (ended) void emitResolved(ended);
   }, FORFEIT_GRACE_MS);
 }
 
-function executeDisconnectForfeit(match: MatchState, disconnected: MatchPlayer, opponent: MatchPlayer): void {
-  const outcome = determineDisconnectOutcome(toSidedSubmission(opponent));
+async function executeDisconnectForfeit(match: MatchState, disconnected: MatchPlayer, opponent: MatchPlayer): Promise<void> {
   endMatch(match.id);
-
-  if (!opponent.socket.connected) return;
-
-  const opponentResult: PlayerResult = opponent.result
-    ? toPlayerResult(opponent)
-    : { username: opponent.username, score: null, reason: null, status: "opponent_disconnected" };
-  const disconnectedResult: PlayerResult = { username: disconnected.username, score: null, reason: null, status: "forfeited" };
-
-  opponent.socket.emit("matchResolved", {
-    matchId: match.id,
-    outcome: outcome.b,
-    you: opponentResult,
-    opponent: disconnectedResult,
-  });
+  await emitResolved(match, disconnected);
 }
 
 // Handles socket disconnect with a 10s grace period (RECONNECT_GRACE_MS).
 // If reconnected before grace period expires, match state resumes seamlessly.
-export function handleDisconnect(socket: MatchmakingSocket, graceMs: number = RECONNECT_GRACE_MS): void {
+export async function handleDisconnect(socket: MatchmakingSocket, graceMs: number = RECONNECT_GRACE_MS): Promise<void> {
   removeFromQueue(socket);
 
   const matchId = socketToMatch.get(socket);
@@ -314,13 +415,13 @@ export function handleDisconnect(socket: MatchmakingSocket, graceMs: number = RE
   const opponent = otherPlayer(match, socket);
 
   if (graceMs <= 0) {
-    executeDisconnectForfeit(match, disconnected, opponent);
+    await executeDisconnectForfeit(match, disconnected, opponent);
     return;
   }
 
   const timer = setTimeout(() => {
     disconnectTimers.delete(timerKey);
-    executeDisconnectForfeit(match, disconnected, opponent);
+    void executeDisconnectForfeit(match, disconnected, opponent);
   }, graceMs);
 
   disconnectTimers.set(timerKey, timer);
@@ -352,4 +453,54 @@ export function handleReconnect(userId: string, newSocket: MatchmakingSocket): b
     }
   }
   return false;
+}
+
+export function getActiveMatchesSummary() {
+  return Array.from(matches.values()).map((m) => ({
+    matchId: m.id,
+    gameId: m.gameId,
+    player1Id: m.players[0].userId,
+    player1Username: m.players[0].username,
+    player2Id: m.players[1].userId,
+    player2Username: m.players[1].username,
+    currency: m.currency,
+    stake: m.stake,
+    status: "ACTIVE",
+  }));
+}
+
+export async function recoverOrphanMatches(): Promise<number> {
+  try {
+    await ensureMatchSettlementsTable();
+    await ensureMatchesHistoryTable();
+    const activeMatches = await db.query.matchesHistory.findMany({
+      where: or(eq(matchesHistory.status, "ACTIVE"), eq(matchesHistory.status, "CREATED")),
+    });
+
+    if (!activeMatches || activeMatches.length === 0) return 0;
+
+    console.log(`[matches] Found ${activeMatches.length} orphan active match(es) from previous server run. Recovering...`);
+
+    const now = new Date();
+    for (const m of activeMatches) {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(matchesHistory)
+          .set({
+            status: "INTERRUPTED",
+            statusReason: "Server restarted during active gameplay",
+            endedAt: now,
+          })
+          .where(eq(matchesHistory.id, m.id));
+
+        if (m.stake > 0) {
+          await refundMatchSettlement(m.player1Id, m.player2Id, m.currency as any, m.stake, m.id, "VOIDED");
+        }
+      });
+    }
+    return activeMatches.length;
+  } catch (err) {
+    console.error("[matches] Error recovering orphan matches:", err);
+    return 0;
+  }
 }

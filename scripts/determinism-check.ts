@@ -35,6 +35,7 @@ import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";
 import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay.ts";
 import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay.ts";
 import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay.ts";
+import { tfSprintReplayAdapter } from "../games/tf-sprint/replay.ts";
 
 const SEED = 424242;
 // Canonical viewport for every replay in this suite. Real gameplay never
@@ -89,6 +90,10 @@ function runCyberHopper(seed: number, inputLog: InputLogEntry[], ticks: number):
 
 function runSpeedTrivia(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
   return snapshotFrom(replayEngine(speedTriviaReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
+}
+
+function runTFSprint(seed: number, inputLog: InputLogEntry[], ticks: number): EngineSnapshot {
+  return snapshotFrom(replayEngine(tfSprintReplayAdapter, seed, inputLog, VIEWPORT, ticks).engine);
 }
 
 console.log("Test 1: engine replay determinism (same seed + same inputLog, twice)\n");
@@ -162,6 +167,16 @@ const f1 = runSpeedTrivia(SEED, triviaLog, 1500);
 const f2 = runSpeedTrivia(SEED, triviaLog, 1500);
 check("speed-trivia: score matches", f1.score === f2.score, `${f1.score} vs ${f2.score}`);
 check("speed-trivia: full state matches", f1.json === f2.json);
+
+const tfLog: InputLogEntry[] = [
+  { tick: 30, action: "selectTrue" },
+  { tick: 660, action: "selectFalse" },
+  { tick: 1290, action: "selectTrue" },
+];
+const g1 = runTFSprint(SEED, tfLog, 1500);
+const g2 = runTFSprint(SEED, tfLog, 1500);
+check("tf-sprint: score matches", g1.score === g2.score, `${g1.score} vs ${g2.score}`);
+check("tf-sprint: full state matches", g1.json === g2.json);
 
 // ---------------------------------------------------------------------------
 // Test 2: loop jitter — the accumulator itself, not just the engine

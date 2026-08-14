@@ -8,6 +8,7 @@ export type PublicUser = {
   avatarUrl: string | null;
   gamesPlayed: number;
   gamesWon: number;
+  isEmailVerified: boolean;
   createdAt: string;
   // Derived from the ledger at response time (see wallet/ledger.ts).
   balances: WalletBalances;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { DIAMOND_PACKS } from '@arcadeclash/shared'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
@@ -26,12 +27,15 @@ type ProfilePageProps = {
 }
 
 export default function ProfilePage({ onNavigateHome, onNavigateFriends }: ProfilePageProps) {
+  const { t, i18n } = useTranslation()
   const { user, refreshUser } = useAuth()
   const [shopError, setShopError] = useState<string | null>(null)
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [matches, setMatches] = useState<MatchHistoryItem[]>([])
   const [loadingMatches, setLoadingMatches] = useState(true)
   const [activeReplay, setActiveReplay] = useState<MatchHistoryItem | null>(null)
+
+  const currentLang = i18n.language || 'en'
 
   useEffect(() => {
     if (!user) return
@@ -46,7 +50,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
       <>
         <Navbar onNavigateHome={onNavigateHome} onNavigateProfile={() => {}} onNavigateFriends={onNavigateFriends} />
         <main style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
-          <p className="ac-text-muted">You're not logged in.</p>
+          <p className="ac-text-muted">{t('auth.notLoggedIn')}</p>
         </main>
       </>
     )
@@ -64,7 +68,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
       })
       await refreshUser()
     } catch (e) {
-      setShopError(e instanceof ApiError ? e.message : 'Purchase failed')
+      setShopError(e instanceof ApiError ? e.message : t('wallet.purchaseFailed'))
     } finally {
       setBuyingId(null)
     }
@@ -79,7 +83,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
           <div>
             <h1 style={{ margin: 0, fontSize: 'var(--font-size-3xl)' }}>{user.username}</h1>
             <p className="ac-text-muted" style={{ margin: 'var(--space-1) 0 0' }}>
-              Joined {new Date(user.createdAt).toLocaleDateString()}
+              Joined {new Date(user.createdAt).toLocaleDateString(currentLang)}
             </p>
           </div>
         </div>
@@ -90,48 +94,48 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
         >
           <div>
             <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-2)' }}>
-              Coins (free)
+              {t('wallet.coinsLabel')}
             </div>
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>
-              {user.balances.coins}
+              {user.balances.coins.toLocaleString(currentLang)}
             </div>
           </div>
           <div>
             <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-2)' }}>
-              Diamonds
+              {t('wallet.diamondsLabel')}
             </div>
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>
-              {user.balances.diamonds}
+              {user.balances.diamonds.toLocaleString(currentLang)}
             </div>
           </div>
           <div>
             <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-2)' }}>
-              Games Played
+              {t('wallet.gamesPlayed')}
             </div>
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>
-              {user.gamesPlayed}
+              {user.gamesPlayed.toLocaleString(currentLang)}
             </div>
           </div>
           <div>
             <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-2)' }}>
-              Win Rate
+              {t('wallet.winRate')}
             </div>
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)' }}>{winRate}</div>
           </div>
         </div>
 
         <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--space-6)' }}>
-          New accounts start with 1,000 coins and 0 diamonds. Coin balances are play money and automatically top off to 1,000 every month!
+          {t('wallet.startingGrantInfo')}
         </p>
 
         {/* Match History Section */}
         <section style={{ marginBottom: 'var(--space-8)' }}>
-          <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>🎮 Match History & Replays</h2>
+          <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>{t('game.matchHistoryTitle')}</h2>
           {loadingMatches ? (
-            <p className="ac-text-muted">Loading match history…</p>
+            <p className="ac-text-muted">{t('game.loadingHistory')}</p>
           ) : matches.length === 0 ? (
             <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-              No matches recorded yet. Play a match to record engine inputLogs and watch 60 FPS replays!
+              {t('game.noMatchesRecorded')}
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -142,17 +146,21 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     padding: 'var(--space-3) var(--space-4)',
                   }}
                 >
                   <div>
                     <strong style={{ color: m.outcome === 'win' ? '#22c55e' : m.outcome === 'loss' ? '#f87171' : '#fbbf24' }}>
-                      {m.outcome.toUpperCase()}
+                      {(t(`game.${m.outcome}`) || m.outcome).toUpperCase()}
                     </strong>{' '}
                     — {m.gameId} vs <strong>{m.opponentUsername}</strong>
                     <div className="ac-text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
-                      Score: {m.userScore} vs {m.opponentScore} | {new Date(m.createdAt).toLocaleDateString()}
+                      {t('game.scoreLine', {
+                        userScore: m.userScore,
+                        opponentScore: m.opponentScore,
+                        date: new Date(m.createdAt).toLocaleDateString(currentLang),
+                      })}
                     </div>
                   </div>
 
@@ -162,7 +170,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
                     onClick={() => setActiveReplay(m)}
                     style={{ fontSize: 'var(--font-size-xs)', border: '1px solid var(--color-border)' }}
                   >
-                    📼 Watch Replay
+                    📼 {t('game.watchReplay')}
                   </button>
                 </div>
               ))}
@@ -173,9 +181,9 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
         {onNavigateFriends && (
           <div className="ac-panel" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>Friends & Invites</h3>
+              <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>{t('friends.friendsAndInvitesPanelTitle')}</h3>
               <p className="ac-text-muted" style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)' }}>
-                View your friends list, accept pending requests, or send private match invites.
+                {t('friends.friendsAndInvitesDesc')}
               </p>
             </div>
             <button
@@ -183,14 +191,14 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
               className="ac-btn ac-btn--primary"
               onClick={onNavigateFriends}
             >
-              👥 Open Friends List
+              👥 {t('friends.openFriendsList')}
             </button>
           </div>
         )}
 
-        <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>Diamond shop</h2>
+        <h2 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xl)' }}>{t('wallet.diamondShopTitle')}</h2>
         <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-4)' }}>
-          Stub purchases only — no real payment yet. Clicking a pack grants diamonds immediately for testing.
+          {t('wallet.stubNotice')}
         </p>
         {shopError && (
           <p style={{ color: 'var(--color-danger, #f87171)', marginBottom: 'var(--space-3)' }}>{shopError}</p>
@@ -206,7 +214,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
               style={{ justifyContent: 'space-between', display: 'flex' }}
             >
               <span>{pack.label}</span>
-              <span>{buyingId === pack.id ? 'Granting…' : `+${pack.diamonds}`}</span>
+              <span>{buyingId === pack.id ? t('wallet.granting') : t('wallet.packGrant', { count: pack.diamonds })}</span>
             </button>
           ))}
         </div>
