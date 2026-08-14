@@ -16,6 +16,7 @@ type MatchLoaderProps = {
   gameId: string
   onExit: () => void
   matchMode?: MatchSocketMode
+  onMatchResolved?: () => void
 }
 
 // A separate host from GameLoader (practice mode) rather than a mode branch
@@ -52,6 +53,7 @@ export default function MatchLoader({
   gameId,
   onExit,
   matchMode = { kind: 'queue' },
+  onMatchResolved,
 }: MatchLoaderProps) {
   const { connectionState, match, resolution, error, waitingLabel, submitScore, reportVisibilityHidden, disconnect } =
     useMatchSocket(gameId, matchMode)
@@ -143,13 +145,14 @@ export default function MatchLoader({
   // Can arrive from any non-terminal phase — see the Phase type's comment.
   useEffect(() => {
     if (!resolution) return
+    onMatchResolved?.()
     void refreshUser()
     setPhase((prev) => {
       if (isTerminal(prev)) return prev
       destroyModule()
       return { kind: 'resolved', resolution }
     })
-  }, [resolution, refreshUser])
+  }, [resolution, refreshUser, onMatchResolved])
 
   // Unexpected drop — a real error, or the socket closing before either
   // terminal server event arrived (e.g. a server restart mid-match).
@@ -204,7 +207,7 @@ export default function MatchLoader({
         }}
       >
         <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-          {gameTitle} · {matchMode.kind === 'queue' ? 'Find Opponent' : 'Friend Match'}
+          {gameTitle} · {matchMode.kind === 'queue' ? 'Find Opponent' : matchMode.kind === 'resume' ? 'Reconnect' : 'Friend Match'}
         </span>
         <button
           type="button"
@@ -223,12 +226,14 @@ export default function MatchLoader({
           <Overlay>
             <div className="ac-panel" style={{ textAlign: 'center', minWidth: 280 }}>
               <h2 style={{ margin: '0 0 var(--space-2)' }}>
-                {matchMode.kind === 'queue' ? 'Finding an opponent...' : 'Friend invite'}
+                {matchMode.kind === 'queue' ? 'Finding an opponent...' : matchMode.kind === 'resume' ? 'Restoring match...' : 'Friend invite'}
               </h2>
               <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)' }}>
                 {waitingLabel ??
                   (matchMode.kind === 'queue'
                     ? `Waiting for another ${gameTitle} player`
+                    : matchMode.kind === 'resume'
+                      ? 'Reconnecting to your active match…'
                     : 'Setting up your match…')}
               </p>
               <button type="button" className="ac-btn ac-btn--ghost" onClick={handleLeave}>

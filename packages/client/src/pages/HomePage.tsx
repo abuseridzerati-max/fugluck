@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../auth/AuthContext'
 import AuthModal from '../components/AuthModal'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
@@ -21,8 +22,13 @@ export default function HomePage({
   onNavigateFriends,
   initialAuthModalMode,
 }: HomePageProps) {
+  const { user } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(initialAuthModalMode ?? null)
+
+  useEffect(() => {
+    if (user) setAuthModalMode(null)
+  }, [user])
 
   return (
     <>

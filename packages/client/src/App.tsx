@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GameModuleFactory, InviteReceivedPayload } from '@arcadeclash/shared'
 import { AuthProvider } from './auth/AuthContext'
@@ -29,6 +29,35 @@ const GAME_TITLES: Record<string, string> = {
   'cyber-hopper': 'Cyber Hopper',
   'speed-trivia': 'Speed Trivia Clash',
   'tf-sprint': 'True / False Sprint',
+}
+
+const ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
+
+type StoredActiveMatch = { id: string; title: string }
+
+function storeActiveMatch(match: StoredActiveMatch | null) {
+  try {
+    if (match) sessionStorage.setItem(ACTIVE_MATCH_STORAGE_KEY, JSON.stringify(match))
+    else sessionStorage.removeItem(ACTIVE_MATCH_STORAGE_KEY)
+  } catch {
+    // A disabled storage surface should not prevent ordinary matchmaking.
+  }
+}
+
+function readStoredActiveMatch(): StoredActiveMatch | null {
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_MATCH_STORAGE_KEY)
+    if (!raw) return null
+    const value = JSON.parse(raw) as Partial<StoredActiveMatch>
+    if (typeof value.id !== 'string' || typeof value.title !== 'string' || !gameFactories[value.id]) {
+      storeActiveMatch(null)
+      return null
+    }
+    return { id: value.id, title: value.title }
+  } catch {
+    storeActiveMatch(null)
+    return null
+  }
 }
 
 function getViewFromPath(pathname: string): View {
@@ -88,6 +117,19 @@ function AppShell() {
   const [view, setViewState] = useState<View>(() => getViewFromPath(window.location.pathname))
   const [activeGame, setActiveGame] = useState<ActiveGame | null>(null)
   const [loadingGameId, setLoadingGameId] = useState<string | null>(null)
+  const [restoringActiveMatch, setRestoringActiveMatch] = useState(() => readStoredActiveMatch() !== null)
+
+  useEffect(() => {
+    const stored = readStoredActiveMatch()
+    if (stored) {
+      void loadGame(stored.id, stored.title, 'match', { kind: 'resume' }).finally(() => setRestoringActiveMatch(false))
+    } else {
+      setRestoringActiveMatch(false)
+    }
+    // Restore once on boot. The server remains authoritative for whether the
+    // authenticated user actually has an active match and for its seed/id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function getTitleForView(targetView: View): string {
     switch (targetView) {
@@ -164,20 +206,30 @@ function AppShell() {
   }
 
   function handleFindOpponent(id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') {
+    storeActiveMatch({ id, title })
     return loadGame(id, title, 'match', { kind: 'queue', stake, currency })
   }
 
   function handleInviteFriend(friendUserId: string, gameId: string, gameTitle: string) {
+    storeActiveMatch({ id: gameId, title: gameTitle })
     return loadGame(gameId, gameTitle, 'match', { kind: 'sendInvite', friendUserId })
   }
 
   function handleAcceptInvite(invite: InviteReceivedPayload) {
     const title = GAME_TITLES[invite.gameId] ?? invite.gameId
+    storeActiveMatch({ id: invite.gameId, title })
     void loadGame(invite.gameId, title, 'match', { kind: 'acceptInvite', inviteId: invite.inviteId })
   }
 
+  const clearActiveMatch = useCallback(() => {
+    storeActiveMatch(null)
+  }, [])
+
   return (
-    <InviteProvider onAcceptInvite={handleAcceptInvite} enabled={!activeGame || activeGame.mode === 'practice'}>
+    <InviteProvider
+      onAcceptInvite={handleAcceptInvite}
+      enabled={!restoringActiveMatch && (!activeGame || activeGame.mode === 'practice')}
+    >
       {activeGame?.mode === 'practice' ? (
         <GameLoader
           key={activeGame.id}
@@ -192,7 +244,11 @@ function AppShell() {
           gameTitle={activeGame.title}
           gameId={activeGame.id}
           matchMode={activeGame.matchMode}
-          onExit={() => setActiveGame(null)}
+          onMatchResolved={clearActiveMatch}
+          onExit={() => {
+            clearActiveMatch()
+            setActiveGame(null)
+          }}
         />
       ) : view === 'profile' || view === 'wallet' || view === 'settings' ? (
         <ProfilePage

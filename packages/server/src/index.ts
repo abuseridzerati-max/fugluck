@@ -11,6 +11,7 @@ import { matchesRouter } from "./routes/matches";
 import { walletRouter } from "./routes/wallet";
 
 import { corsOptions } from "./config/cors";
+import { ensureUserSchema } from "./db/client";
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
 
 const app = express();
@@ -53,6 +54,15 @@ const httpServer = createServer(app);
 attachMatchmaking(httpServer);
 
 const port = Number(process.env.PORT ?? 4000);
-httpServer.listen(port, () => {
-  console.log(`[server] listening on http://localhost:${port}`);
+
+async function startServer() {
+  await ensureUserSchema();
+  httpServer.listen(port, () => {
+    console.log(`[server] listening on http://localhost:${port}`);
+  });
+}
+
+void startServer().catch((error) => {
+  logger.error("[server] startup failed:", error);
+  process.exitCode = 1;
 });
