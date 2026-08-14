@@ -3,6 +3,87 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 37 (2026-08-14): Games build-health stabilization
+
+**Task:** Games build-health stabilization. Git operations were intentionally
+not performed; manual Git review is required.
+
+**Starting state (verified with `tsc --project games/tsconfig.json`):** The
+Games compilation failed with eight errors. `games/game-3/index.ts` and
+`games/game-4/index.ts` each produced two TS2528 duplicate-default-export
+errors. `games/tf-sprint/index.ts` produced TS2420 (missing `start`), TS2353
+(obsolete `onTick`/`onRender` fixed-loop options), TS2741 (missing
+`GameOverPayload.viewport`), and TS2353 (object-shaped factory incompatible
+with the callable `GameModuleFactory`).
+
+**Permanent retirement (BUILT, verified by source inspection and a
+repository-wide identifier search):** **`game-3` and `game-4` were permanently
+removed by product decision.** `game-3` was only a four-file TypeScript/
+generated-JavaScript compatibility alias for canonical Space Blaster;
+`game-4` was the equivalent alias for canonical Cyber Hopper. Deleted
+`games/game-3/{index,replay}.{ts,js}` and
+`games/game-4/{index,replay}.{ts,js}`, then removed both empty directories.
+Neither alias had an independent engine, game ID registration, factory,
+catalog card, route, server mapping, matchmaking mapping, asset, fixture, or
+test. Shared Space Blaster/Cyber Hopper engines, factories, replay adapters,
+registrations, tests, and assets were preserved. Functional source search for
+`game-3`, `game-4`, `game3`, and `game4` returned zero active-code matches;
+remaining matches are historical/removal documentation only.
+
+**`tf-sprint` (BUILT, verified by compilation and game suites):** Repaired
+rather than deferred because inspection found a complete engine, renderer,
+input handling, seeded replay adapter, registry/factory/catalog wiring, and
+existing determinism/validation/render coverage. The repair was limited to
+the canonical module contract: added `start()`, renamed loop callbacks to
+`update`/`render`, added the captured viewport to the game-over payload, and
+changed the default export to a callable factory. Engine simulation, seeded
+RNG, scoring, fixed timestep, question data, and replay behavior were not
+changed.
+
+**Final active registry (BUILT, verified by both Games and Shared registries):**
+Neon Runner (`neon-runner`), Pixel Ninja Dash (`pixel-ninja-dash`), Space
+Blaster (`space-blaster`), Cyber Hopper (`cyber-hopper`), Speed Trivia Clash
+(`speed-trivia`), and True / False Sprint (`tf-sprint`). IDs are unique; every
+entry has a package export, client factory, and replay adapter. Sky Dodge
+source remains preserved but is intentionally absent from the active registry
+and catalog while its previously reported runtime issue remains deferred.
+
+**Verification:** Games TypeScript PASS (0 errors); Shared TypeScript PASS (0
+errors); Server TypeScript PASS (0 errors). Determinism PASS 32/32, including
+all six active games plus the preserved Sky Dodge checks, loop jitter,
+wall-clock invariance, and 5,400-tick scaling. Score validation PASS 46/46,
+including honest/tampered replays, tick/log caps, outcome/forfeit/freeze-frame
+policy, and trivia scaling. Canvas/headless rendering PASS 31/31 with 294,295
+finite draw operations and replay rendering for all covered games. The root
+test chain additionally passed i18n 44/44 and wallet/friends 18/18, then its
+database-backed financial-reconnection suite could not create its test match
+because sandbox network access to the approved disposable database was denied
+(`EACCES`); no database write occurred and database-backed suites were not
+retried. The normal Supabase database was untouched.
+
+**Files modified:** `games/tf-sprint/index.ts` (and generated
+`games/tf-sprint/index.js` from the configured emitting TypeScript check),
+`AGENTS.md`, `CLAUDE.md`, `GAMES.md`, and `PROGRESS.md`.
+
+**Files deleted:** `games/game-3/index.ts`, `games/game-3/replay.ts`,
+`games/game-3/index.js`, `games/game-3/replay.js`, `games/game-4/index.ts`,
+`games/game-4/replay.ts`, `games/game-4/index.js`, and
+`games/game-4/replay.js`; their now-empty directories were also removed.
+No repository files were created.
+
+**Scope/risk:** No financial lifecycle semantics, production PostgreSQL data,
+Unity, SEO, marketing, admin-panel, mobile, or unrelated Client UI work was
+performed. No client source edit was necessary because the retired aliases
+had no client references. No server/matchmaking edit was necessary because
+the retired aliases had no accepted IDs or mappings. Broad Client production
+build health was not tested or claimed. Remaining risks are the deferred Sky
+Dodge runtime report, lack of browser-level `tf-sprint` launch verification in
+this task, and database-backed full-suite checks not run to completion under
+the sandbox network restriction.
+
+**Exact next action:** **Restore the Client production build in a separate
+focused Client build-health task.**
+
 ## Session 36 (2026-08-14): Atomic wager creation and durable resolution
 
 **BUILT (verified by code review and server TypeScript compilation):**

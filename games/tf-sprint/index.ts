@@ -149,12 +149,16 @@ export class TFSprintModule extends EventTarget implements GameModule {
     this.destroy();
   }
 
-  public init(container: HTMLElement, mode: GameMode, params: unknown, seed: number): void {
+  public init(container: HTMLElement, mode: GameMode, _opponentSocket: WebSocket | null, seed: number): void {
     this.mount(container);
     this.mode = mode;
     this.seed = seed;
     this.resetGame();
     this.renderCurrentFrame();
+  }
+
+  public start(): void {
+    this.startCountdown();
   }
 
   private resetGame() {
@@ -195,7 +199,7 @@ export class TFSprintModule extends EventTarget implements GameModule {
     this.runStartTime = performance.now();
 
     this.fixedLoop = createFixedTimestepLoop({
-      onTick: () => {
+      update: () => {
         const result = this.engine.update(FIXED_TIMESTEP_SEC, this.input);
         this.input.selectTrue = undefined;
         this.input.selectFalse = undefined;
@@ -204,7 +208,7 @@ export class TFSprintModule extends EventTarget implements GameModule {
           this.endRun("completed");
         }
       },
-      onRender: () => {
+      render: () => {
         this.renderCurrentFrame();
       },
     });
@@ -267,16 +271,13 @@ export class TFSprintModule extends EventTarget implements GameModule {
       reason,
       seed: this.seed,
       inputLog: this.inputLog,
+      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
 
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));
   }
 }
 
-const factory: GameModuleFactory = {
-  create() {
-    return new TFSprintModule();
-  },
-};
+const factory: GameModuleFactory = () => new TFSprintModule();
 
 export default factory;
