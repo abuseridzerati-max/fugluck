@@ -171,7 +171,7 @@ export function handleRespondInvite(
   };
 
   clearInvite(invite, false);
-  createMatch(invite.gameId, a, b, generateSeed());
+  void createMatch(invite.gameId, a, b, generateSeed());
 }
 
 export function handleCancelInvite(socket: MatchmakingSocket, payload: { inviteId?: unknown }): void {
@@ -250,5 +250,5 @@ export function handleJoinGuestLink(socket: MatchmakingSocket, payload: { code?:
   };
 
   guestLinksByCode.delete(payload.code);
-  createMatch(link.gameId, a, b, generateSeed());
+  void createMatch(link.gameId, a, b, generateSeed());
 }
