@@ -3,6 +3,69 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 38 (2026-08-14): Generated JavaScript artifact cleanup
+
+**Problem and root cause (verified by configuration/content audit):** Games
+build-health PR #2 accidentally included source-adjacent JavaScript emitted by
+verification. `games/tsconfig.json`, `packages/shared/tsconfig.json`, and
+`packages/server/tsconfig.json` inherited `tsconfig.base.json` without
+`noEmit` or `outDir`; running `tsc --project <config>` therefore compiled into
+each source file's directory. Every affected compiler output had an
+identically located `.ts` peer and contained its type-erased output.
+
+**Cleanup (BUILT, verified by peer/content inspection):** Removed 70 compiled
+`.js` artifacts: `games/{registry,replayAdapters}.js`; `constants.js`,
+`engine.js`, `index.js`, and `replay.js` from each of `games/cyber-hopper`,
+`games/neon-runner`, `games/pixel-ninja-dash`, `games/sky-dodge`, and
+`games/space-blaster`; `constants.js`, `engine.js`, `index.js`, `questions.js`,
+`render.js`, and `replay.js` from each of `games/speed-trivia` and
+`games/tf-sprint`; all `.js` files under `packages/shared/src`
+(`fixedTimestepLoop`, `friends`, `gameModule`, `index`, `matchmaking`,
+`replay`, `rng`, `user`, `wallet`); all `.js` files under
+`packages/server/src` (`index`, auth `adminLockout`/`jwt`/`middleware`/
+`password`/`permissions`, config `cors`, db `client`/`schema`, matchmaking
+`index`/`invites`/`matches`/`presence`/`queue`/`socketAuth`, routes
+`admin`/`auth`/`friends`/`matches`/`wallet`, utils `rateLimiter`/`safeLogger`,
+validation `matchOutcome`/`scoreValidator`/`triviaQuestions`, and wallet
+`ledger`); and `packages/server/drizzle.config.js`. Also removed the root
+diagnostic-output artifact `-files .js` and ignored generated caches
+`packages/shared/tsconfig.tsbuildinfo` and
+`packages/server/tsconfig.tsbuildinfo`. No intentional JavaScript source was
+found in these locations, so none was preserved; dependency and controlled
+build-output directories were out of scope and untouched.
+
+**Recurrence prevention (BUILT, verified by repeated checks):** Added
+`compilerOptions.noEmit: true` to the Games, Shared, and Server tsconfigs.
+These packages use TypeScript-source runtime/bundler entrypoints and had no
+production emit script requiring adjacent JavaScript. `.gitignore` was not
+changed: broad source-tree JavaScript ignores could hide future intentional
+source, while `noEmit` prevents the actual failure mode. Existing ignores
+already cover `dist`, `build`, `out`, maps/bundles, and `*.tsbuildinfo`.
+
+**Verification:** Normal `tsc --project` commands using all three configs
+PASS with zero errors. Determinism PASS 32/32; score/replay validation PASS
+46/46; canvas/headless rendering PASS 31/31 with 294,295 finite draw
+operations. After these checks, and again after a second complete Games/
+Shared/Server typecheck, repository source audit found zero `.js`, `.js.map`,
+`.d.ts`, or `.tsbuildinfo` artifacts outside excluded dependency/build
+directories. This proves verification no longer recreates adjacent output.
+`games/game-3` and `games/game-4` remain absent, and functional reference
+search returned zero matches. The repaired `games/tf-sprint/index.ts` and all
+canonical TypeScript game sources remain unchanged.
+
+**Files modified:** `games/tsconfig.json`,
+`packages/shared/tsconfig.json`, `packages/server/tsconfig.json`, and
+`PROGRESS.md`. **Files deleted:** the 70 compiler outputs, root diagnostic
+artifact, and two build-info caches enumerated above. **Files created:** none.
+
+**Scope/risk:** No Client feature work, gameplay semantics, financial code,
+database data, Unity, deployment, or Git operation was performed. Remaining
+risk is limited to manual review ensuring the deletion set is staged exactly;
+the verification results and zero-residue audit are clean.
+
+**Exact next action:** **Manually commit and merge the generated-artifact
+cleanup, then begin the separate Client production-build stabilization task.**
+
 ## Session 37 (2026-08-14): Games build-health stabilization
 
 **Task:** Games build-health stabilization. Git operations were intentionally
