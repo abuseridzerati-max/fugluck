@@ -270,7 +270,7 @@ export default function LaunchModal({
                     }}
                     style={{
                       width: '100%',
-                      justify: 'flex-start',
+                      justifyContent: 'flex-start',
                       padding: 'var(--space-3)',
                       background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
                       color: '#fff',

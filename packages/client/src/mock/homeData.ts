@@ -17,6 +17,7 @@ export const trendingGames: MockGame[] = [
   { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', plays: 1100, rating: 4.8 },
   { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', plays: 1350, rating: 4.9 },
   { id: 'speed-trivia', title: 'Speed Trivia Clash', engine: 'quiz', plays: 1420, rating: 4.9 },
+  { id: 'tf-sprint', title: 'True / False Sprint', engine: 'quiz', plays: 0, rating: 0 },
 ]
 
 export const featuredGame: {

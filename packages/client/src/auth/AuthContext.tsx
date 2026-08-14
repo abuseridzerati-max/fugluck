@@ -76,11 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUp(username: string, password: string, email?: string) {
     setError(null)
     try {
-      const res = await apiFetch<{ user: PublicUser; token?: string }>('/api/auth/signup', {
+      const res = await apiFetch<{ user: PublicUser }>('/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify({ username, password, email }),
       })
-      updateUser(res.user, res.token)
+      updateUser(res.user)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Sign up failed')
       throw e
@@ -90,11 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logIn(username: string, password: string) {
     setError(null)
     try {
-      const res = await apiFetch<{ user: PublicUser; token?: string }>('/api/auth/login', {
+      const res = await apiFetch<{ user: PublicUser }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       })
-      updateUser(res.user, res.token)
+      updateUser(res.user)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Log in failed')
       throw e

@@ -59,7 +59,10 @@ export class CyberHopperEngine {
   private width = VIRTUAL_WIDTH;
   private height = VIRTUAL_HEIGHT;
 
-  constructor(public readonly seed: number) {
+  public readonly seed: number;
+
+  constructor(seed: number) {
+    this.seed = seed;
     this.reset();
   }
 
