@@ -9,7 +9,20 @@ export const DEFAULT_RAKE_PERCENT = 10;
 export const COINS_RAKE_PERCENT = 0;
 export const DIAMONDS_RAKE_PERCENT = 5;
 
-type DbClientOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbClientOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Every ledger mutation is serialized per user by the database migration's
+// ledger_non_negative_guard trigger. Taking the same lock explicitly here
+// also makes the invariant visible in application code and lets a caller lock
+// both match participants in a deterministic order before checking either
+// balance. hashtext is stable inside PostgreSQL and the two-int form
+// keeps these locks in an ArcadeClash-specific namespace.
+export async function lockWalletUsers(client: DbClientOrTx, userIds: string[]): Promise<void> {
+  const uniqueIds = [...new Set(userIds)].sort();
+  for (const userId of uniqueIds) {
+    await client.execute(sql`select pg_advisory_xact_lock(1094927180, hashtext(${userId}))`);
+  }
+}
 
 let tableEnsured = false;
 export async function ensureMatchSettlementsTable() {
@@ -183,6 +196,55 @@ export async function escrowStake(
   });
 }
 
+export async function escrowMatchStakes(
+  client: DbClientOrTx,
+  player1Id: string,
+  player2Id: string,
+  currency: Currency,
+  amount: number,
+  matchId: string,
+): Promise<{ player1Balances: WalletBalances; player2Balances: WalletBalances; alreadyEscrowed: boolean }> {
+  validatePositiveInteger(amount, "Stake amount");
+  validateCurrency(currency);
+  if (player1Id === player2Id) throw new Error("A player cannot escrow both sides of a match.");
+
+  await lockWalletUsers(client, [player1Id, player2Id]);
+
+  const reason = `stake_escrow:${matchId}`;
+  const p1Existing = await hasReason(player1Id, reason, client);
+  const p2Existing = await hasReason(player2Id, reason, client);
+  if (p1Existing !== p2Existing) {
+    throw new Error(`Partial escrow invariant violation for match ${matchId}.`);
+  }
+  if (p1Existing && p2Existing) {
+    return {
+      player1Balances: await getBalances(player1Id, client),
+      player2Balances: await getBalances(player2Id, client),
+      alreadyEscrowed: true,
+    };
+  }
+
+  const [p1BalancesBefore, p2BalancesBefore] = await Promise.all([
+    getBalances(player1Id, client),
+    getBalances(player2Id, client),
+  ]);
+  const p1Available = currency === "COINS" ? p1BalancesBefore.coins : p1BalancesBefore.diamonds;
+  const p2Available = currency === "COINS" ? p2BalancesBefore.coins : p2BalancesBefore.diamonds;
+  if (p1Available < amount) throw new Error(`Player 1 has insufficient ${currency} balance for escrow.`);
+  if (p2Available < amount) throw new Error(`Player 2 has insufficient ${currency} balance for escrow.`);
+
+  await client.insert(ledgerEntries).values([
+    { id: randomUUID(), userId: player1Id, currency, amount: -amount, reason },
+    { id: randomUUID(), userId: player2Id, currency, amount: -amount, reason },
+  ]);
+
+  return {
+    player1Balances: await getBalances(player1Id, client),
+    player2Balances: await getBalances(player2Id, client),
+    alreadyEscrowed: false,
+  };
+}
+
 export async function payoutWinner(
   winnerUserId: string,
   loserUserId: string,
@@ -202,69 +264,89 @@ export async function payoutWinner(
       ? COINS_RAKE_PERCENT
       : DIAMONDS_RAKE_PERCENT;
 
+  return await db.transaction(async (tx) =>
+    payoutWinnerInTransaction(tx, winnerUserId, loserUserId, currency, stakeAmount, matchId, effectiveRake),
+  );
+}
+
+export async function payoutWinnerInTransaction(
+  client: DbClientOrTx,
+  winnerUserId: string,
+  loserUserId: string,
+  currency: Currency,
+  stakeAmount: number,
+  matchId: string,
+  rakePercent?: number,
+): Promise<{ winnerBalances: WalletBalances; rakeFee: number; winnerPayout: number; alreadySettled: boolean }> {
+  validatePositiveInteger(stakeAmount, "Stake amount");
+  validateCurrency(currency);
+  const effectiveRake =
+    rakePercent !== undefined ? rakePercent : currency === "COINS" ? COINS_RAKE_PERCENT : DIAMONDS_RAKE_PERCENT;
   const totalPot = stakeAmount * 2;
   const rakeFee = Math.floor((totalPot * effectiveRake) / 100);
   const winnerPayout = totalPot - rakeFee;
 
-  return await db.transaction(async (tx) => {
-    const existingSettlement = await tx.query.matchSettlements.findFirst({
-      where: eq(matchSettlements.matchId, matchId),
-    });
+  await lockWalletUsers(client, [winnerUserId, loserUserId, ...(rakeFee > 0 ? [PLATFORM_RAKE_ACCOUNT] : [])]);
 
-    if (existingSettlement) {
-      console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
-      const winnerBalances = await getBalances(winnerUserId, tx);
-      return {
-        winnerBalances,
-        rakeFee: existingSettlement.rakeFee ?? rakeFee,
-        winnerPayout: existingSettlement.winnerPayout ?? winnerPayout,
-        alreadySettled: true,
-      };
-    }
-
-    await tx
-      .insert(matchSettlements)
-      .values({
-        matchId,
-        status: "PAYOUT",
-        winnerId: winnerUserId,
-        loserId: loserUserId,
-        currency,
-        stake: stakeAmount,
-        winnerPayout,
-        rakeFee,
-      })
-      .onConflictDoNothing();
-
-    const winnerReason = `stake_payout:${matchId}`;
-    await tx
-      .insert(ledgerEntries)
-      .values({
-        id: randomUUID(),
-        userId: winnerUserId,
-        currency,
-        amount: winnerPayout,
-        reason: winnerReason,
-      })
-      .onConflictDoNothing();
-
-    if (rakeFee > 0) {
-      const rakeReason = `platform_rake:${matchId}`;
-      await tx
-        .insert(ledgerEntries)
-        .values({
-          id: randomUUID(),
-          userId: PLATFORM_RAKE_ACCOUNT,
-          currency,
-          amount: rakeFee,
-          reason: rakeReason,
-        })
-        .onConflictDoNothing();
-    }
-
-    const winnerBalances = await getBalances(winnerUserId, tx);
-    return { winnerBalances, rakeFee, winnerPayout, alreadySettled: false };
+  const existingSettlement = await client.query.matchSettlements.findFirst({
+    where: eq(matchSettlements.matchId, matchId),
   });
+
+  if (existingSettlement) {
+    console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
+    if (
+      existingSettlement.status !== "PAYOUT" ||
+      existingSettlement.winnerId !== winnerUserId ||
+      existingSettlement.loserId !== loserUserId ||
+      existingSettlement.currency !== currency ||
+      existingSettlement.stake !== stakeAmount ||
+      existingSettlement.winnerPayout !== winnerPayout ||
+      existingSettlement.rakeFee !== rakeFee
+    ) {
+      throw new Error(`Settlement conflict for match ${matchId}.`);
+    }
+    const winnerBalances = await getBalances(winnerUserId, client);
+    return {
+      winnerBalances,
+      rakeFee: existingSettlement.rakeFee ?? rakeFee,
+      winnerPayout: existingSettlement.winnerPayout ?? winnerPayout,
+      alreadySettled: true,
+    };
+  }
+
+  await client.insert(matchSettlements).values({
+    matchId,
+    status: "PAYOUT",
+    winnerId: winnerUserId,
+    loserId: loserUserId,
+    currency,
+    stake: stakeAmount,
+    winnerPayout,
+    rakeFee,
+  });
+
+  const winnerReason = `stake_payout:${matchId}`;
+  await client.insert(ledgerEntries).values({
+    id: randomUUID(),
+    userId: winnerUserId,
+    currency,
+    amount: winnerPayout,
+    reason: winnerReason,
+  });
+
+  if (rakeFee > 0) {
+    const rakeReason = `platform_rake:${matchId}`;
+    await client.insert(ledgerEntries).values({
+      id: randomUUID(),
+      userId: PLATFORM_RAKE_ACCOUNT,
+      currency,
+      amount: rakeFee,
+      reason: rakeReason,
+    });
+  }
+
+  const winnerBalances = await getBalances(winnerUserId, client);
+  return { winnerBalances, rakeFee, winnerPayout, alreadySettled: false };
 }
 
 export async function refundMatchSettlement(
@@ -279,58 +361,74 @@ export async function refundMatchSettlement(
   validateCurrency(currency);
   await ensureMatchSettlementsTable();
 
-  return await db.transaction(async (tx) => {
-    const existingSettlement = await tx.query.matchSettlements.findFirst({
-      where: eq(matchSettlements.matchId, matchId),
-    });
+  return await db.transaction(async (tx) =>
+    refundMatchSettlementInTransaction(tx, player1Id, player2Id, currency, stakeAmount, matchId, status),
+  );
+}
 
-    if (existingSettlement) {
-      console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
-      const p1Balances = await getBalances(player1Id, tx);
-      const p2Balances = player2Id ? await getBalances(player2Id, tx) : null;
-      return { p1Balances, p2Balances, alreadySettled: true };
-    }
+export async function refundMatchSettlementInTransaction(
+  client: DbClientOrTx,
+  player1Id: string,
+  player2Id: string | null,
+  currency: Currency,
+  stakeAmount: number,
+  matchId: string,
+  status: "REFUND" | "DRAW" | "VOIDED" = "REFUND",
+): Promise<{ p1Balances: WalletBalances; p2Balances: WalletBalances | null; alreadySettled: boolean }> {
+  validatePositiveInteger(stakeAmount, "Refund amount");
+  validateCurrency(currency);
+  await lockWalletUsers(client, [player1Id, ...(player2Id ? [player2Id] : [])]);
 
-    await tx
-      .insert(matchSettlements)
-      .values({
-        matchId,
-        status,
-        currency,
-        stake: stakeAmount,
-      })
-      .onConflictDoNothing();
-
-    const p1Reason = `stake_refund:${matchId}`;
-    await tx
-      .insert(ledgerEntries)
-      .values({
-        id: randomUUID(),
-        userId: player1Id,
-        currency,
-        amount: stakeAmount,
-        reason: p1Reason,
-      })
-      .onConflictDoNothing();
-
-    if (player2Id && player2Id !== player1Id) {
-      const p2Reason = `stake_refund:${matchId}`;
-      await tx
-        .insert(ledgerEntries)
-        .values({
-          id: randomUUID(),
-          userId: player2Id,
-          currency,
-          amount: stakeAmount,
-          reason: p2Reason,
-        })
-        .onConflictDoNothing();
-    }
-
-    const p1Balances = await getBalances(player1Id, tx);
-    const p2Balances = player2Id ? await getBalances(player2Id, tx) : null;
-    return { p1Balances, p2Balances, alreadySettled: false };
+  const existingSettlement = await client.query.matchSettlements.findFirst({
+    where: eq(matchSettlements.matchId, matchId),
   });
+
+  if (existingSettlement) {
+    console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
+    if (
+      existingSettlement.status !== status ||
+      existingSettlement.currency !== currency ||
+      existingSettlement.stake !== stakeAmount ||
+      existingSettlement.winnerId !== null ||
+      existingSettlement.loserId !== null
+    ) {
+      throw new Error(`Settlement conflict for match ${matchId}.`);
+    }
+    const p1Balances = await getBalances(player1Id, client);
+    const p2Balances = player2Id ? await getBalances(player2Id, client) : null;
+    return { p1Balances, p2Balances, alreadySettled: true };
+  }
+
+  await client.insert(matchSettlements).values({
+    matchId,
+    status,
+    currency,
+    stake: stakeAmount,
+  });
+
+  const p1Reason = `stake_refund:${matchId}`;
+  await client.insert(ledgerEntries).values({
+    id: randomUUID(),
+    userId: player1Id,
+    currency,
+    amount: stakeAmount,
+    reason: p1Reason,
+  });
+
+  if (player2Id && player2Id !== player1Id) {
+    const p2Reason = `stake_refund:${matchId}`;
+    await client.insert(ledgerEntries).values({
+      id: randomUUID(),
+      userId: player2Id,
+      currency,
+      amount: stakeAmount,
+      reason: p2Reason,
+    });
+  }
+
+  const p1Balances = await getBalances(player1Id, client);
+  const p2Balances = player2Id ? await getBalances(player2Id, client) : null;
+  return { p1Balances, p2Balances, alreadySettled: false };
 }
 
 export async function refundStake(

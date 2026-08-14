@@ -18,6 +18,8 @@
 // because the payload guard rejected every under-shaped submission and
 // nobody re-ran this file to notice — see PROGRESS.md and CLAUDE.md's
 // "run every test script" rule, added because of exactly this.
+// createMatch now persists and escrows, so this suite requires an isolated test DB.
+import "./require-disposable-test-database.ts";
 
 import {
   createMatch,
@@ -81,6 +83,17 @@ function fakeSocket(userId: string, username: string): MatchmakingSocket & { emi
     emitted,
   };
   return socket as unknown as MatchmakingSocket & { emitted: Emitted[] };
+}
+
+async function waitForEvent(
+  socket: MatchmakingSocket & { emitted: Emitted[] },
+  event: string,
+  timeoutMs = 5_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!socket.emitted.some((entry) => entry.event === event) && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
 }
 
 // Wrapped in an async function rather than using top-level await — this repo
@@ -150,7 +163,7 @@ const matchSeed = 424242;
     const s = generateSeed();
     return s >= 0 && s < 0x100000000;
   })());
-  createMatch(
+  await createMatch(
     "neon-runner",
     { socket: alice, userId: "user-alice", username: "Alice" },
     { socket: bob, userId: "user-bob", username: "Bob" },
@@ -194,7 +207,7 @@ let bobScore = 0;
     `both ${aliceScore}`,
   );
 
-  submitScore(alice, {
+  await submitScore(alice, {
     matchId,
     score: aliceScore,
     reason: "collision",
@@ -203,7 +216,7 @@ let bobScore = 0;
     viewport: VIEWPORT,
   });
   check("no resolution yet after only one submission", !alice.emitted.some((e) => e.event === "matchResolved"));
-  submitScore(bob, {
+  await submitScore(bob, {
     matchId,
     score: bobScore,
     reason: "collision",
@@ -228,7 +241,7 @@ let bobScore = 0;
 console.log("\nTest 6: duplicate submission after resolution");
 {
   const before = alice.emitted.length;
-  submitScore(alice, { matchId, score: 999, reason: "collision", durationMs: 1, inputLog: [], viewport: VIEWPORT });
+  await submitScore(alice, { matchId, score: 999, reason: "collision", durationMs: 1, inputLog: [], viewport: VIEWPORT });
   check("resubmitting after resolution emits nothing new", alice.emitted.length === before);
 }
 
@@ -240,7 +253,7 @@ console.log("\nTest 7: forfeit timeout");
   const carl = fakeSocket("user-carl", "Carl");
   const dana = fakeSocket("user-dana", "Dana");
   const seed = generateSeed();
-  createMatch(
+  await createMatch(
     "pixel-ninja-dash",
     { socket: carl, userId: "user-carl", username: "Carl" },
     { socket: dana, userId: "user-dana", username: "Dana" },
@@ -258,7 +271,7 @@ console.log("\nTest 7: forfeit timeout");
   const realSetTimeout = global.setTimeout;
   // @ts-expect-error test-only stub, intentionally narrower than the real overloads
   global.setTimeout = (fn: (...a: unknown[]) => void) => realSetTimeout(fn, 10);
-  submitScore(carl, {
+  await submitScore(carl, {
     matchId: carlMatchId,
     score: carlScore,
     reason: "collision",
@@ -268,7 +281,7 @@ console.log("\nTest 7: forfeit timeout");
   });
   global.setTimeout = realSetTimeout;
 
-  await new Promise((resolve) => realSetTimeout(resolve, 60));
+  await waitForEvent(carl, "matchResolved");
 
   const carlResolved = carl.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   const danaResolved = dana.emitted.find((e) => e.event === "matchResolved")?.payload as any;
@@ -297,7 +310,7 @@ console.log("\nTest 8: disconnect mid-match");
   const eli = fakeSocket("user-eli", "Eli");
   const fay = fakeSocket("user-fay", "Fay");
   const seed = generateSeed();
-  createMatch(
+  await createMatch(
     "neon-runner",
     { socket: eli, userId: "user-eli", username: "Eli" },
     { socket: fay, userId: "user-fay", username: "Fay" },
@@ -307,7 +320,7 @@ console.log("\nTest 8: disconnect mid-match");
   const eliLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
   const eliScore = replayEngine(neonRunnerReplayAdapter, seed, eliLog, VIEWPORT).finalScore;
 
-  submitScore(eli, {
+  await submitScore(eli, {
     matchId: eliMatchId,
     score: eliScore,
     reason: "collision",
@@ -316,12 +329,12 @@ console.log("\nTest 8: disconnect mid-match");
     viewport: VIEWPORT,
   }); // starts the real 120s forfeit timer, waiting on fay
   eli.connected = false;
-  handleDisconnect(eli);
+  await handleDisconnect(eli);
   check("8a: disconnect after already submitting emits nothing new", !eli.emitted.some((e) => e.event === "matchResolved"));
 
   const fayLog = periodicLog("slidePressed", null, 25, 10);
   const fayScore = replayEngine(neonRunnerReplayAdapter, seed, fayLog, VIEWPORT).finalScore;
-  submitScore(fay, {
+  await submitScore(fay, {
     matchId: eliMatchId,
     score: fayScore,
     reason: "collision",
@@ -343,7 +356,7 @@ console.log("\nTest 8: disconnect mid-match");
   const gus = fakeSocket("user-gus", "Gus");
   const hana = fakeSocket("user-hana", "Hana");
   const seed = generateSeed();
-  createMatch(
+  await createMatch(
     "neon-runner",
     { socket: gus, userId: "user-gus", username: "Gus" },
     { socket: hana, userId: "user-hana", username: "Hana" },
@@ -353,7 +366,7 @@ console.log("\nTest 8: disconnect mid-match");
   const gusLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
   const gusScore = replayEngine(neonRunnerReplayAdapter, seed, gusLog, VIEWPORT).finalScore;
 
-  submitScore(gus, {
+  await submitScore(gus, {
     matchId: gusMatchId,
     score: gusScore,
     reason: "collision",
@@ -362,7 +375,7 @@ console.log("\nTest 8: disconnect mid-match");
     viewport: VIEWPORT,
   }); // starts the forfeit timer, waiting on hana
   hana.connected = false;
-  handleDisconnect(hana, 0);
+  await handleDisconnect(hana, 0);
 
   const gusResolved = gus.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   check(
@@ -383,14 +396,14 @@ console.log("\nTest 8: disconnect mid-match");
 {
   const ivy = fakeSocket("user-ivy", "Ivy");
   const jack = fakeSocket("user-jack", "Jack");
-  createMatch(
+  await createMatch(
     "neon-runner",
     { socket: ivy, userId: "user-ivy", username: "Ivy" },
     { socket: jack, userId: "user-jack", username: "Jack" },
     generateSeed(),
   );
   jack.connected = false;
-  handleDisconnect(jack, 0);
+  await handleDisconnect(jack, 0);
 
   const ivyResolved = ivy.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   check(
@@ -415,7 +428,7 @@ console.log("\nTest 9: guest instant play & zero-stake enforcement\n");
   check("registered socket has isGuest = false or undefined", !hostSocket.data.isGuest);
 
   const seed = generateSeed();
-  createMatch(
+  await createMatch(
     "neon-runner",
     { socket: hostSocket, userId: "user-host", username: "HostUser" },
     { socket: guestSocket, userId: "guest_abc123", username: "Guest_abc1" },

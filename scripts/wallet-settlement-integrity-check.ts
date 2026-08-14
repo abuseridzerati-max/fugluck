@@ -1,5 +1,7 @@
 // Comprehensive Wallet Settlement Integrity, Idempotency, Concurrency & Crash Safety Test Suite for ArcadeClash.
-// Run: npx tsx scripts/wallet-settlement-integrity-check.ts
+// Run only with an isolated TEST_DATABASE_URL.
+
+import "./require-disposable-test-database.ts";
 
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
@@ -21,7 +23,7 @@ console.log("=== wallet-settlement-integrity-check ===");
 
 async function main() {
   const { db, ensureUserSchema } = await import("../packages/server/src/db/client.ts");
-  const { users, ledgerEntries } = await import("../packages/server/src/db/schema.ts");
+  const { users, ledgerEntries, matchesHistory, matchSettlements } = await import("../packages/server/src/db/schema.ts");
   const { sql, eq } = await import("drizzle-orm");
   const {
     escrowStake,
@@ -53,6 +55,20 @@ async function main() {
   const initBalP2 = await getBalances(p2Id);
 
   const stake = 100; // 100 COINS stake
+
+  async function activeMatch(matchId: string, currency: "COINS" | "DIAMONDS" = "COINS", matchStake = stake) {
+    await db.insert(matchesHistory).values({
+      id: matchId,
+      gameId: "wallet-settlement-integrity-check",
+      player1Id: p1Id,
+      player2Id: p2Id,
+      currency,
+      stake: matchStake,
+      seed: 1,
+      status: "ACTIVE",
+      startedAt: new Date(),
+    });
+  }
 
   // Helper to verify derived balance invariant
   async function assertDerivedBalanceInvariant(userId: string) {
@@ -125,6 +141,7 @@ async function main() {
   console.log("\nTest 3: Sequential & Concurrent Payout Hardening");
 
   const matchIdPayout = `match_payout_${randomUUID()}`;
+  await activeMatch(matchIdPayout);
   await escrowStake(p1Id, "COINS", stake, matchIdPayout);
   await escrowStake(p2Id, "COINS", stake, matchIdPayout);
 
@@ -153,6 +170,7 @@ async function main() {
   const balP1AfterRace = await getBalances(p1Id);
   check("P1 balance increased by exactly 1 payout amount (200 COINS)", balP1AfterRace.coins === balP1BeforePayout.coins + 200);
   check("Derived balance matches SUM(ledger) after payout", await assertDerivedBalanceInvariant(p1Id));
+  await db.update(matchesHistory).set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() }).where(eq(matchesHistory.id, matchIdPayout));
 
   // ---------------------------------------------------------------------------
   // Test 4: Match Draw & Refund Settlement
@@ -160,6 +178,7 @@ async function main() {
   console.log("\nTest 4: Match Draw & Refund Settlement");
 
   const matchIdDraw = `match_draw_${randomUUID()}`;
+  await activeMatch(matchIdDraw);
   await escrowStake(p1Id, "COINS", stake, matchIdDraw);
   await escrowStake(p2Id, "COINS", stake, matchIdDraw);
 
@@ -178,6 +197,7 @@ async function main() {
   const drawRetryRes = await refundMatchSettlement(p1Id, p2Id, "COINS", stake, matchIdDraw, "DRAW");
   check("Retrying draw settlement returns alreadySettled = true", drawRetryRes.alreadySettled === true);
   check("Player 1 balance unchanged on draw retry", (await getBalances(p1Id)).coins === balP1AfterDraw.coins);
+  await db.update(matchesHistory).set({ status: "DRAW", endedAt: new Date() }).where(eq(matchesHistory.id, matchIdDraw));
 
   // ---------------------------------------------------------------------------
   // Test 5: Mutual Exclusion Guard (Payout vs Refund)
@@ -185,14 +205,21 @@ async function main() {
   console.log("\nTest 5: Mutual Exclusion Guard (Payout vs Refund)");
 
   const matchIdMut = `match_mut_${randomUUID()}`;
+  await activeMatch(matchIdMut);
   await escrowStake(p1Id, "COINS", stake, matchIdMut);
   await escrowStake(p2Id, "COINS", stake, matchIdMut);
 
   const payResMut = await payoutWinner(p1Id, p2Id, "COINS", stake, matchIdMut);
   check("Initial payout succeeded", payResMut.alreadySettled === false);
 
-  const refundResMut = await refundMatchSettlement(p1Id, p2Id, "COINS", stake, matchIdMut, "REFUND");
-  check("Subsequent refund attempt rejected by match_settlements primary key constraint", refundResMut.alreadySettled === true);
+  let refundConflict = false;
+  try {
+    await refundMatchSettlement(p1Id, p2Id, "COINS", stake, matchIdMut, "REFUND");
+  } catch (error: any) {
+    refundConflict = error.message === `Settlement conflict for match ${matchIdMut}.`;
+  }
+  check("Subsequent conflicting refund is rejected", refundConflict);
+  await db.update(matchesHistory).set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() }).where(eq(matchesHistory.id, matchIdMut));
 
   // ---------------------------------------------------------------------------
   // Test 6: Currency & Integer Validation Controls
@@ -231,6 +258,22 @@ async function main() {
   const balP1PostDiamond = await getBalances(p1Id);
   check("Diamond grant increases diamonds by 50", balP1PostDiamond.diamonds === balP1PreDiamond.diamonds + 50);
   check("Diamond grant does NOT alter coins balance", balP1PostDiamond.coins === balP1PreDiamond.coins);
+
+  // This suite exercises the single-wallet escrow primitive without creating
+  // match history. Remove that verified standalone fixture before handing the
+  // shared disposable database to later lifecycle suites.
+  await db.delete(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId1}`));
+  check(
+    "standalone escrow fixture is cleaned after assertions",
+    (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId1}`))).length === 0,
+  );
+
+  const inconsistentActiveSettlements = await db
+    .select({ id: matchesHistory.id })
+    .from(matchesHistory)
+    .innerJoin(matchSettlements, eq(matchSettlements.matchId, matchesHistory.id))
+    .where(eq(matchesHistory.status, "ACTIVE"));
+  check("suite leaves no already-settled ACTIVE history fixtures", inconsistentActiveSettlements.length === 0);
 
   if (failures > 0) {
     console.log(`\nFAILURE: ${failures} check(s) failed.`);

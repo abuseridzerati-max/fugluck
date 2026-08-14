@@ -1,11 +1,16 @@
 import { randomUUID } from "node:crypto";
 import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@arcadeclash/shared";
-import { eq, or, sql } from "drizzle-orm";
+import { asc, eq, or, sql } from "drizzle-orm";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
 import { validateScore } from "../validation/scoreValidator";
 import { db } from "../db/client";
 import { matchesHistory } from "../db/schema";
-import { ensureMatchSettlementsTable, escrowStake, payoutWinner, refundMatchSettlement } from "../wallet/ledger";
+import {
+  ensureMatchSettlementsTable,
+  escrowMatchStakes,
+  payoutWinnerInTransaction,
+  refundMatchSettlementInTransaction,
+} from "../wallet/ledger";
 import type { MatchmakingSocket } from "./socketAuth";
 import { removeFromQueue, type QueueEntry } from "./queue";
 
@@ -90,7 +95,59 @@ type MatchState = {
   stake: number;
   players: [MatchPlayer, MatchPlayer];
   forfeitTimer: ReturnType<typeof setTimeout> | null;
+  resolutionInFlight: boolean;
+  resolutionAttempts: number;
+  resolutionRetryTimer: ReturnType<typeof setTimeout> | null;
 };
+
+export const MAX_TERMINAL_RESOLUTION_ATTEMPTS = 4;
+export const TERMINAL_RESOLUTION_RETRY_BASE_MS = 1_000;
+export const TERMINAL_RESOLUTION_RETRY_MAX_MS = 4_000;
+
+let terminalResolutionFailureInjectorForTests: ((matchId: string, attempt: number) => void | Promise<void>) | null = null;
+let terminalResolutionRetryDelayOverrideForTests: number | null = null;
+
+export function configureTerminalResolutionRetryForTests(options: {
+  failureInjector?: ((matchId: string, attempt: number) => void | Promise<void>) | null;
+  retryDelayMs?: number | null;
+}): void {
+  if (process.env.NODE_ENV !== "test") throw new Error("Terminal resolution test controls require NODE_ENV=test.");
+  terminalResolutionFailureInjectorForTests = options.failureInjector ?? null;
+  terminalResolutionRetryDelayOverrideForTests = options.retryDelayMs ?? null;
+}
+
+export function terminalResolutionRetryDelayMs(attempts: number): number {
+  if (terminalResolutionRetryDelayOverrideForTests !== null) return terminalResolutionRetryDelayOverrideForTests;
+  return Math.min(
+    TERMINAL_RESOLUTION_RETRY_BASE_MS * 2 ** Math.max(0, attempts - 1),
+    TERMINAL_RESOLUTION_RETRY_MAX_MS,
+  );
+}
+
+export function isRetryableTerminalResolutionError(error: unknown): boolean {
+  const code = typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : "";
+  if (code === "40001" || code === "40P01" || code.startsWith("08") || code.startsWith("53")) return true;
+  if (code.startsWith("22") || code.startsWith("23") || code.startsWith("42")) return false;
+
+  const message = error instanceof Error ? error.message : String(error);
+  return !(
+    message.startsWith("Settlement conflict for match ") ||
+    message.startsWith("Durable match ") ||
+    message.startsWith("Invalid currency:") ||
+    message.includes("must be a positive integer") ||
+    message.startsWith("A player cannot escrow both sides") ||
+    message.startsWith("Partial escrow invariant violation")
+  );
+}
+
+function sanitizedError(error: unknown): string {
+  const raw = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  return raw
+    .replace(/(postgres(?:ql)?:\/\/)([^\s/@:]+)(?::[^\s/@]*)?@/gi, "$1[REDACTED]@")
+    .replace(/\b(password|passwd|pwd)\s*[=:]\s*[^\s,;]+/gi, "$1=[REDACTED]");
+}
 
 // In-memory only, same reasoning as queue.ts — see PROGRESS.md for what a
 // server restart does to an in-progress match (state is simply gone; both
@@ -147,6 +204,7 @@ function endMatch(matchId: string): MatchState | undefined {
   const match = matches.get(matchId);
   if (!match) return undefined;
   if (match.forfeitTimer) clearTimeout(match.forfeitTimer);
+  if (match.resolutionRetryTimer) clearTimeout(match.resolutionRetryTimer);
 
   for (const player of match.players) {
     const timerKey = `${matchId}:${player.userId}`;
@@ -166,6 +224,9 @@ function endMatch(matchId: string): MatchState | undefined {
 // from whatever `result` is currently on each MatchPlayer — works unchanged
 // for a normal both-submitted resolution, forfeit resolution, or disconnect resolution.
 async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer): Promise<void> {
+  if (match.resolutionInFlight) return;
+  match.resolutionInFlight = true;
+  match.resolutionAttempts++;
   const [p1, p2] = match.players;
   const r1 = toPlayerResult(p1, disconnectedPlayer);
   const r2 = toPlayerResult(p2, disconnectedPlayer);
@@ -177,13 +238,6 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
     outcome = isP1Disconnected ? sidedOutcome : { a: sidedOutcome.b, b: sidedOutcome.a };
   } else {
     outcome = determineMatchOutcome(toSidedSubmission(p1), toSidedSubmission(p2));
-  }
-
-  if (p1.socket.connected) {
-    p1.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.a, you: r1, opponent: r2 });
-  }
-  if (p2.socket.connected) {
-    p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1 });
   }
 
   const winnerId = outcome.a === "win" ? p1.userId : outcome.b === "win" ? p2.userId : null;
@@ -200,62 +254,54 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
     finalStatus = "VOIDED";
   }
 
-  // FINANCIAL INVARIANT: Payout winner if match had stake > 0 and ended with a winner;
-  // refund both players if match ended in a draw or void.
-  if (match.stake > 0) {
-    try {
-      if (winnerId && loserId) {
-        const { winnerBalances } = await payoutWinner(winnerId, loserId, match.currency, match.stake, match.id);
-        const winnerPlayer = p1.userId === winnerId ? p1 : p2;
-        if (winnerPlayer.socket.connected) {
-          // @ts-expect-error custom event emission for live balance update
-          winnerPlayer.socket.emit("balanceUpdate", { balances: winnerBalances });
-        }
-      } else {
-        // Draw or void — refund escrowed stakes to both players
-        const refundStatus = finalStatus === "DRAW" ? "DRAW" : "VOIDED";
-        const { p1Balances, p2Balances } = await refundMatchSettlement(p1.userId, p2.userId, match.currency, match.stake, match.id, refundStatus);
-        if (p1.socket.connected && p1Balances) {
-          // @ts-expect-error custom event emission for live balance update
-          p1.socket.emit("balanceUpdate", { balances: p1Balances });
-        }
-        if (p2.socket.connected && p2Balances) {
-          // @ts-expect-error custom event emission for live balance update
-          p2.socket.emit("balanceUpdate", { balances: p2Balances });
+  try {
+    if (terminalResolutionFailureInjectorForTests) {
+      await terminalResolutionFailureInjectorForTests(match.id, match.resolutionAttempts);
+    }
+    const balances = await db.transaction(async (tx) => {
+      // Serialize every terminal attempt for this durable match row. A retry
+      // after a transient failure sees ACTIVE and repeats the same transaction;
+      // a duplicate after commit sees the terminal status and becomes a no-op.
+      const locked = await tx.execute(sql`
+        select id, status from matches_history where id = ${match.id} for update
+      `);
+      const row = locked.rows[0] as { id?: string; status?: string } | undefined;
+      if (!row?.id) throw new Error(`Durable match ${match.id} does not exist.`);
+      if (row.status !== "ACTIVE" && row.status !== "CREATED") return null;
+
+      let p1Balances = null;
+      let p2Balances = null;
+      if (match.stake > 0) {
+        if (winnerId && loserId) {
+          const { winnerBalances } = await payoutWinnerInTransaction(
+            tx,
+            winnerId,
+            loserId,
+            match.currency,
+            match.stake,
+            match.id,
+          );
+          if (p1.userId === winnerId) p1Balances = winnerBalances;
+          else p2Balances = winnerBalances;
+        } else {
+          const refundStatus = finalStatus === "DRAW" ? "DRAW" : "VOIDED";
+          const refunded = await refundMatchSettlementInTransaction(
+            tx,
+            p1.userId,
+            p2.userId,
+            match.currency,
+            match.stake,
+            match.id,
+            refundStatus,
+          );
+          p1Balances = refunded.p1Balances;
+          p2Balances = refunded.p2Balances;
         }
       }
-    } catch (err) {
-      console.error(`[matches] Failed financial settlement for match ${match.id}:`, err);
-    }
-  }
 
-  // Persist completed match record to database for Profile Match History & Replaying
-  const now = new Date();
-  try {
-    await ensureMatchesHistoryTable();
-    await db
-      .insert(matchesHistory)
-      .values({
-        id: match.id,
-        gameId: match.gameId,
-        player1Id: p1.userId,
-        player2Id: p2.userId,
-        winnerId,
-        currency: match.currency,
-        stake: match.stake,
-        seed: match.seed,
-        inputLogP1: p1.result?.inputLog ?? null,
-        inputLogP2: p2.result?.inputLog ?? null,
-        scoreP1: p1.result?.score ?? 0,
-        scoreP2: p2.result?.score ?? 0,
-        status: finalStatus,
-        statusReason: winnerId ? `Winner: ${winnerId}` : `Outcome: ${finalStatus}`,
-        startedAt: now,
-        endedAt: now,
-      })
-      .onConflictDoUpdate({
-        target: matchesHistory.id,
-        set: {
+      await tx
+        .update(matchesHistory)
+        .set({
           winnerId,
           inputLogP1: p1.result?.inputLog ?? null,
           inputLogP2: p2.result?.inputLog ?? null,
@@ -263,11 +309,59 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
           scoreP2: p2.result?.score ?? 0,
           status: finalStatus,
           statusReason: winnerId ? `Winner: ${winnerId}` : `Outcome: ${finalStatus}`,
-          endedAt: now,
-        },
-      });
+          endedAt: new Date(),
+        })
+        .where(eq(matchesHistory.id, match.id));
+
+      return { p1Balances, p2Balances };
+    });
+
+    // A concurrent duplicate resolver that observes a terminal row must not
+    // emit a second final event.
+    if (!balances) {
+      endMatch(match.id);
+      return;
+    }
+
+    endMatch(match.id);
+    if (p1.socket.connected && balances.p1Balances) {
+      // @ts-expect-error custom event emission for live balance update
+      p1.socket.emit("balanceUpdate", { balances: balances.p1Balances });
+    }
+    if (p2.socket.connected && balances.p2Balances) {
+      // @ts-expect-error custom event emission for live balance update
+      p2.socket.emit("balanceUpdate", { balances: balances.p2Balances });
+    }
+    if (p1.socket.connected) {
+      p1.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.a, you: r1, opponent: r2 });
+    }
+    if (p2.socket.connected) {
+      p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1 });
+    }
   } catch (err) {
-    console.error(`[matches] Failed to persist match history record ${match.id}:`, err);
+    match.resolutionInFlight = false;
+    const retryable = isRetryableTerminalResolutionError(err);
+    const exhausted = match.resolutionAttempts >= MAX_TERMINAL_RESOLUTION_ATTEMPTS;
+    if (!retryable || exhausted) {
+      console.error(
+        `[matches] Durable resolution stopped for match ${match.id} after ${match.resolutionAttempts} attempt(s): ${sanitizedError(err)}`,
+      );
+      endMatch(match.id);
+      return;
+    }
+
+    const delayMs = terminalResolutionRetryDelayMs(match.resolutionAttempts);
+    console.error(
+      `[matches] Durable resolution attempt ${match.resolutionAttempts} failed for match ${match.id}; ` +
+        `retrying in ${delayMs}ms: ${sanitizedError(err)}`,
+    );
+    if (matches.has(match.id)) {
+      if (match.resolutionRetryTimer) clearTimeout(match.resolutionRetryTimer);
+      match.resolutionRetryTimer = setTimeout(() => {
+        match.resolutionRetryTimer = null;
+        void emitResolved(match, disconnectedPlayer);
+      }, delayMs);
+    }
   }
 }
 
@@ -278,7 +372,13 @@ export function isSocketInMatch(socket: MatchmakingSocket, matchId: string): boo
   return socketToMatch.get(socket) === matchId;
 }
 
-export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: number): void {
+export async function createMatch(
+  gameId: string,
+  a: QueueEntry,
+  b: QueueEntry,
+  seed: number,
+  requestedMatchId?: string,
+): Promise<string | null> {
   // SECURITY INVARIANT: Self-match guard is enforced by queue deduplication.
   // Both sides share the exact same server-issued match.seed.
   // GUEST INVARIANT: Matches involving an unauthenticated guest strictly enforce stake = 0 (Free Play).
@@ -290,7 +390,7 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
     `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch} currency=${currency} stake=${stake}`,
   );
 
-  const matchId = randomUUID();
+  const matchId = requestedMatchId ?? randomUUID();
   const match: MatchState = {
     id: matchId,
     gameId,
@@ -302,43 +402,58 @@ export function createMatch(gameId: string, a: QueueEntry, b: QueueEntry, seed: 
       { socket: b.socket, userId: b.userId, username: b.username, result: null },
     ],
     forfeitTimer: null,
+    resolutionInFlight: false,
+    resolutionAttempts: 0,
+    resolutionRetryTimer: null,
   };
 
-  matches.set(matchId, match);
-  socketToMatch.set(a.socket, matchId);
-  socketToMatch.set(b.socket, matchId);
+  try {
+    await ensureMatchesHistoryTable();
+    const created = await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(matchesHistory)
+        .values({
+          id: matchId,
+          gameId,
+          player1Id: a.userId,
+          player2Id: b.userId,
+          currency,
+          stake,
+          seed,
+          status: "ACTIVE",
+          startedAt: new Date(),
+        })
+        .onConflictDoNothing()
+        .returning({ id: matchesHistory.id });
 
-  // DURABLE LIFECYCLE PERSISTENCE: Persist match record immediately in state ACTIVE
-  void db
-    .insert(matchesHistory)
-    .values({
-      id: matchId,
-      gameId,
-      player1Id: a.userId,
-      player2Id: b.userId,
-      currency,
-      stake,
-      seed,
-      status: "ACTIVE",
-      startedAt: new Date(),
-    })
-    .onConflictDoNothing()
-    .catch((err) => {
-      console.error(`[matches] Failed to persist initial match record ${matchId}:`, err);
+      if (inserted.length === 0) return false;
+      if (stake > 0) {
+        await escrowMatchStakes(tx, a.userId, b.userId, currency, stake, matchId);
+      }
+      return true;
     });
 
-  // FINANCIAL INVARIANT: Escrow debits both players' ledger balances when match starts if stake > 0
-  if (stake > 0 && !isGuestMatch) {
-    void escrowStake(a.userId, currency, stake, matchId).catch((err) => {
-      console.error(`[matches] Failed to escrow stake for ${a.userId} in match ${matchId}:`, err);
-    });
-    void escrowStake(b.userId, currency, stake, matchId).catch((err) => {
-      console.error(`[matches] Failed to escrow stake for ${b.userId} in match ${matchId}:`, err);
-    });
+    // Duplicate creation attempts are an idempotent no-op. In particular,
+    // they cannot duplicate escrow or emit a second matched event.
+    if (!created) return null;
+
+    // In-memory activation and client notification happen only after the DB
+    // transaction containing the ACTIVE row and both escrow debits commits.
+    matches.set(matchId, match);
+    socketToMatch.set(a.socket, matchId);
+    socketToMatch.set(b.socket, matchId);
+    a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
+    b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
+    return matchId;
+  } catch (err) {
+    console.error(`[matches] Match creation/escrow failed for ${matchId}:`, err);
+    const message = err instanceof Error && err.message.includes("insufficient")
+      ? "A player no longer has enough balance for this wager."
+      : "Could not reserve both wagers. No match was started.";
+    a.socket.emit("queueError", { message });
+    b.socket.emit("queueError", { message });
+    return null;
   }
-
-  a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
-  b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
 }
 
 export async function submitScore(socket: MatchmakingSocket, payload: SubmitScorePayload): Promise<void> {
@@ -377,19 +492,17 @@ export async function submitScore(socket: MatchmakingSocket, payload: SubmitScor
 
   const opponent = otherPlayer(match, socket);
   if (opponent.result) {
-    endMatch(matchId);
     await emitResolved(match);
     return;
   }
 
   match.forfeitTimer = setTimeout(() => {
-    const ended = endMatch(matchId);
-    if (ended) void emitResolved(ended);
+    const active = matches.get(matchId);
+    if (active) void emitResolved(active);
   }, FORFEIT_GRACE_MS);
 }
 
-async function executeDisconnectForfeit(match: MatchState, disconnected: MatchPlayer, opponent: MatchPlayer): Promise<void> {
-  endMatch(match.id);
+async function executeDisconnectForfeit(match: MatchState, disconnected: MatchPlayer): Promise<void> {
   await emitResolved(match, disconnected);
 }
 
@@ -412,16 +525,14 @@ export async function handleDisconnect(socket: MatchmakingSocket, graceMs: numbe
   const timerKey = `${matchId}:${disconnected.userId}`;
   if (disconnectTimers.has(timerKey)) return;
 
-  const opponent = otherPlayer(match, socket);
-
   if (graceMs <= 0) {
-    await executeDisconnectForfeit(match, disconnected, opponent);
+    await executeDisconnectForfeit(match, disconnected);
     return;
   }
 
   const timer = setTimeout(() => {
     disconnectTimers.delete(timerKey);
-    void executeDisconnectForfeit(match, disconnected, opponent);
+    void executeDisconnectForfeit(match, disconnected);
   }, graceMs);
 
   disconnectTimers.set(timerKey, timer);
@@ -470,19 +581,21 @@ export function getActiveMatchesSummary() {
 }
 
 export async function recoverOrphanMatches(): Promise<number> {
-  try {
-    await ensureMatchSettlementsTable();
-    await ensureMatchesHistoryTable();
-    const activeMatches = await db.query.matchesHistory.findMany({
-      where: or(eq(matchesHistory.status, "ACTIVE"), eq(matchesHistory.status, "CREATED")),
-    });
+  await ensureMatchSettlementsTable();
+  await ensureMatchesHistoryTable();
+  const activeMatches = await db.query.matchesHistory.findMany({
+    where: or(eq(matchesHistory.status, "ACTIVE"), eq(matchesHistory.status, "CREATED")),
+    orderBy: asc(matchesHistory.createdAt),
+  });
 
-    if (!activeMatches || activeMatches.length === 0) return 0;
+  if (!activeMatches || activeMatches.length === 0) return 0;
 
-    console.log(`[matches] Found ${activeMatches.length} orphan active match(es) from previous server run. Recovering...`);
+  console.log(`[matches] Found ${activeMatches.length} orphan active match(es) from previous server run. Recovering...`);
 
-    const now = new Date();
-    for (const m of activeMatches) {
+  let recoveredCount = 0;
+  for (const m of activeMatches) {
+    try {
+      const now = new Date();
       await db.transaction(async (tx) => {
         await tx
           .update(matchesHistory)
@@ -494,13 +607,22 @@ export async function recoverOrphanMatches(): Promise<number> {
           .where(eq(matchesHistory.id, m.id));
 
         if (m.stake > 0) {
-          await refundMatchSettlement(m.player1Id, m.player2Id, m.currency as any, m.stake, m.id, "VOIDED");
+          await refundMatchSettlementInTransaction(
+            tx,
+            m.player1Id,
+            m.player2Id,
+            m.currency as "COINS" | "DIAMONDS",
+            m.stake,
+            m.id,
+            "VOIDED",
+          );
         }
       });
+      endMatch(m.id);
+      recoveredCount++;
+    } catch (err) {
+      console.error(`[matches] Failed to recover orphan match ${m.id}; continuing: ${sanitizedError(err)}`);
     }
-    return activeMatches.length;
-  } catch (err) {
-    console.error("[matches] Error recovering orphan matches:", err);
-    return 0;
   }
+  return recoveredCount;
 }

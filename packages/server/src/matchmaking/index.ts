@@ -43,7 +43,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
     handleReconnect(socket.data.userId, socket);
     socket.emit("queueStateUpdate", { entries: getPublicQueueState() });
 
-    socket.on("joinQueue", (payload) => {
+    socket.on("joinQueue", async (payload) => {
       if (!checkSocketRateLimit(socket.id, "joinQueue", 6, 10_000)) {
         socket.emit("queueError", { message: "Too many queue requests. Please wait a moment." });
         return;
@@ -62,7 +62,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       const pair = tryPair(payload.gameId, currency, stake);
       if (pair) {
         const [a, b] = pair;
-        createMatch(payload.gameId, a, b, generateSeed());
+        await createMatch(payload.gameId, a, b, generateSeed());
       }
     });
 

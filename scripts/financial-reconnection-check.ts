@@ -1,5 +1,7 @@
 // Standalone verification script for financial idempotency keys, rake calculation,
 // and match reconnection grace period.
+// createMatch persists and escrows, so this suite requires an isolated test DB.
+import "./require-disposable-test-database.ts";
 //
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
@@ -118,7 +120,7 @@ check("Forfeit grace window is 120,000ms (2 minutes)", FORFEIT_GRACE_MS === 120_
   const entryA: QueueEntry = { socket: alice, userId: "user-alice-rec", username: "Alice" };
   const entryB: QueueEntry = { socket: bob, userId: "user-bob-rec", username: "Bob" };
 
-  createMatch("neon-runner", entryA, entryB, seed);
+  await createMatch("neon-runner", entryA, entryB, seed);
 
   // @ts-expect-error test helper access
   const matchedPayload = alice.emitted.find((e) => e.event === "matched")?.payload as any;

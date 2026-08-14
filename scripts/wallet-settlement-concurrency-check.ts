@@ -1,5 +1,7 @@
 // Comprehensive Wallet Settlement Idempotency & Concurrency Audit Script for ArcadeClash.
-// Run: npx tsx scripts/wallet-settlement-concurrency-check.ts
+// Run only with an isolated TEST_DATABASE_URL.
+
+import "./require-disposable-test-database.ts";
 
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
@@ -21,7 +23,8 @@ console.log("wallet-settlement-concurrency-check");
 
 async function main() {
   const { db, ensureUserSchema } = await import("../packages/server/src/db/client.ts");
-  const { users } = await import("../packages/server/src/db/schema.ts");
+  const { users, ledgerEntries, matchesHistory, matchSettlements } = await import("../packages/server/src/db/schema.ts");
+  const { eq } = await import("drizzle-orm");
   const {
     escrowStake,
     getBalances,
@@ -51,12 +54,27 @@ async function main() {
 
   const stake = 100; // 100 COINS stake
 
+  async function activeMatch(matchId: string) {
+    await db.insert(matchesHistory).values({
+      id: matchId,
+      gameId: "wallet-settlement-concurrency-check",
+      player1Id: p1Id,
+      player2Id: p2Id,
+      currency: "COINS",
+      stake,
+      seed: 1,
+      status: "ACTIVE",
+      startedAt: new Date(),
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Test 1: Same Settlement Submitted Twice (Sequential Idempotency)
   // ---------------------------------------------------------------------------
   console.log("\nTest 1: Same Settlement Submitted Twice (Sequential Idempotency)");
 
   const matchId1 = `match_seq_${randomUUID()}`;
+  await activeMatch(matchId1);
   await escrowStake(p1Id, "COINS", stake, matchId1);
   await escrowStake(p2Id, "COINS", stake, matchId1);
 
@@ -70,6 +88,7 @@ async function main() {
 
   const balP1AfterSecond = await getBalances(p1Id);
   check("P1 balance remains identical after second payout call", balP1AfterSecond.coins === balP1AfterFirst.coins);
+  await db.update(matchesHistory).set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() }).where(eq(matchesHistory.id, matchId1));
 
   // ---------------------------------------------------------------------------
   // Test 2: Same Settlement Submitted Concurrently (Concurrent Race Condition)
@@ -77,6 +96,7 @@ async function main() {
   console.log("\nTest 2: Same Settlement Submitted Concurrently");
 
   const matchId2 = `match_conc_${randomUUID()}`;
+  await activeMatch(matchId2);
   await escrowStake(p1Id, "COINS", stake, matchId2);
   await escrowStake(p2Id, "COINS", stake, matchId2);
 
@@ -99,6 +119,7 @@ async function main() {
 
   const balP1AfterRace = await getBalances(p1Id);
   check("P1 balance increased by exactly 1 payout amount (200 COINS)", balP1AfterRace.coins === balP1BeforeRace.coins + 200);
+  await db.update(matchesHistory).set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() }).where(eq(matchesHistory.id, matchId2));
 
   // ---------------------------------------------------------------------------
   // Test 3: Server Failure & Transaction Atomicity
@@ -119,14 +140,21 @@ async function main() {
   console.log("\nTest 4: Payout Followed by Refund (Mutual Exclusion Guard)");
 
   const matchId4 = `match_pay_ref_${randomUUID()}`;
+  await activeMatch(matchId4);
   await escrowStake(p1Id, "COINS", stake, matchId4);
   await escrowStake(p2Id, "COINS", stake, matchId4);
 
   const payRes = await payoutWinner(p1Id, p2Id, "COINS", stake, matchId4);
   check("Payout succeeded for matchId4", payRes.alreadySettled === false);
 
-  const refundRes = await refundStake(p1Id, "COINS", stake, matchId4);
-  check("Subsequent refund rejected by database match_settlements constraint (alreadySettled = true)", refundRes.alreadySettled === true);
+  let payoutThenRefundConflict = false;
+  try {
+    await refundStake(p1Id, "COINS", stake, matchId4);
+  } catch (error: any) {
+    payoutThenRefundConflict = error.message === `Settlement conflict for match ${matchId4}.`;
+  }
+  check("Subsequent conflicting refund is rejected", payoutThenRefundConflict);
+  await db.update(matchesHistory).set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() }).where(eq(matchesHistory.id, matchId4));
 
   // ---------------------------------------------------------------------------
   // Test 5: Refund Followed by Payout (Mutual Exclusion Guard)
@@ -134,14 +162,21 @@ async function main() {
   console.log("\nTest 5: Refund Followed by Payout (Mutual Exclusion Guard)");
 
   const matchId5 = `match_ref_pay_${randomUUID()}`;
+  await activeMatch(matchId5);
   await escrowStake(p1Id, "COINS", stake, matchId5);
   await escrowStake(p2Id, "COINS", stake, matchId5);
 
   const refundRes5 = await refundStake(p1Id, "COINS", stake, matchId5);
   check("Refund succeeded for matchId5", refundRes5.alreadySettled === false);
 
-  const payRes5 = await payoutWinner(p1Id, p2Id, "COINS", stake, matchId5);
-  check("Subsequent payout rejected by database match_settlements constraint (alreadySettled = true)", payRes5.alreadySettled === true);
+  let refundThenPayoutConflict = false;
+  try {
+    await payoutWinner(p1Id, p2Id, "COINS", stake, matchId5);
+  } catch (error: any) {
+    refundThenPayoutConflict = error.message === `Settlement conflict for match ${matchId5}.`;
+  }
+  check("Subsequent conflicting payout is rejected", refundThenPayoutConflict);
+  await db.update(matchesHistory).set({ status: "INTERRUPTED", endedAt: new Date() }).where(eq(matchesHistory.id, matchId5));
 
   // ---------------------------------------------------------------------------
   // Test 6: Two Server Processes Attempting Settlement
@@ -149,17 +184,25 @@ async function main() {
   console.log("\nTest 6: Two Server Processes Attempting Settlement");
 
   const matchId6 = `match_multi_proc_${randomUUID()}`;
+  await activeMatch(matchId6);
   await escrowStake(p1Id, "COINS", stake, matchId6);
   await escrowStake(p2Id, "COINS", stake, matchId6);
 
   // Process A attempts Payout; Process B attempts Refund simultaneously
-  const [procA, procB] = await Promise.all([
+  const [procA, procB] = await Promise.allSettled([
     payoutWinner(p1Id, p2Id, "COINS", stake, matchId6),
     refundStake(p1Id, "COINS", stake, matchId6),
   ]);
 
-  const oneSucceeded = (procA.alreadySettled === false && procB.alreadySettled === true) || (procA.alreadySettled === true && procB.alreadySettled === false);
+  const results = [procA, procB];
+  const oneSucceeded =
+    results.filter((result) => result.status === "fulfilled" && result.value.alreadySettled === false).length === 1 &&
+    results.filter((result) => result.status === "rejected" && result.reason?.message === `Settlement conflict for match ${matchId6}.`).length === 1;
   check("Multi-process race condition strictly resolved by DB primary key to exactly 1 valid outcome", oneSucceeded);
+  await db
+    .update(matchesHistory)
+    .set(procA.status === "fulfilled" ? { status: "COMPLETED", winnerId: p1Id, endedAt: new Date() } : { status: "INTERRUPTED", endedAt: new Date() })
+    .where(eq(matchesHistory.id, matchId6));
 
   // ---------------------------------------------------------------------------
   // Test 7: Duplicate Escrow Prevention
@@ -176,6 +219,24 @@ async function main() {
   await escrowStake(p1Id, "COINS", stake, matchId7);
   const balAfterSecondEscrow = await getBalances(p1Id);
   check("Duplicate escrow for same matchId & user is safely ignored by ledger unique constraint", balAfterSecondEscrow.coins === balAfterFirstEscrow.coins);
+
+  // Tests 3 and 7 intentionally exercise escrow primitives without durable
+  // match history. Clean those rows only after their assertions so later
+  // lifecycle suites receive no unbacked escrow fixtures.
+  await db.delete(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId3}`));
+  await db.delete(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId7}`));
+  check(
+    "standalone escrow fixtures are cleaned after assertions",
+    (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId3}`))).length === 0 &&
+      (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${matchId7}`))).length === 0,
+  );
+
+  const inconsistentActiveSettlements = await db
+    .select({ id: matchesHistory.id })
+    .from(matchesHistory)
+    .innerJoin(matchSettlements, eq(matchSettlements.matchId, matchesHistory.id))
+    .where(eq(matchesHistory.status, "ACTIVE"));
+  check("suite leaves no already-settled ACTIVE history fixtures", inconsistentActiveSettlements.length === 0);
 
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);

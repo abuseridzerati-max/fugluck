@@ -1,4 +1,5 @@
-import { boolean, bigserial, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { boolean, bigserial, check, foreignKey, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -119,22 +120,40 @@ export const matchesHistory = pgTable(
     gameIdx: index("idx_matches_game").on(t.gameId),
     statusIdx: index("idx_matches_status").on(t.status),
     createdAtIdx: index("idx_matches_created").on(t.createdAt),
+    currencyCheck: check("matches_history_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS')`),
+    stakeCheck: check("matches_history_stake_check", sql`${t.stake} >= 0`),
   }),
 );
 
 // Database-enforced atomic match settlement record. Primary key is match_id.
 // Enforces that a match can produce EXACTLY ONE settlement outcome (PAYOUT | REFUND | VOIDED).
-export const matchSettlements = pgTable("match_settlements", {
-  matchId: text("match_id").primaryKey(),
-  status: varchar("status", { length: 16 }).notNull(),
-  winnerId: text("winner_id"),
-  loserId: text("loser_id"),
-  currency: varchar("currency", { length: 16 }).notNull(),
-  stake: integer("stake").notNull().default(0),
-  winnerPayout: integer("winner_payout").notNull().default(0),
-  rakeFee: integer("rake_fee").notNull().default(0),
-  settledAt: timestamp("settled_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const matchSettlements = pgTable(
+  "match_settlements",
+  {
+    matchId: text("match_id").primaryKey(),
+    status: varchar("status", { length: 16 }).notNull(),
+    winnerId: text("winner_id"),
+    loserId: text("loser_id"),
+    currency: varchar("currency", { length: 16 }).notNull(),
+    stake: integer("stake").notNull().default(0),
+    winnerPayout: integer("winner_payout").notNull().default(0),
+    rakeFee: integer("rake_fee").notNull().default(0),
+    settledAt: timestamp("settled_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    matchFk: foreignKey({ columns: [t.matchId], foreignColumns: [matchesHistory.id] }),
+    statusCheck: check("match_settlements_status_check", sql`${t.status} in ('PAYOUT', 'REFUND', 'DRAW', 'VOIDED')`),
+    currencyCheck: check("match_settlements_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS')`),
+    amountCheck: check(
+      "match_settlements_amount_check",
+      sql`${t.stake} > 0 and ${t.winnerPayout} >= 0 and ${t.rakeFee} >= 0`,
+    ),
+    payoutShapeCheck: check(
+      "match_settlements_payout_shape_check",
+      sql`(${t.status} = 'PAYOUT' and ${t.winnerId} is not null and ${t.loserId} is not null) or (${t.status} <> 'PAYOUT' and ${t.winnerId} is null and ${t.loserId} is null and ${t.winnerPayout} = 0 and ${t.rakeFee} = 0)`,
+    ),
+  }),
+);
 
 export const triviaQuestions = pgTable(
   "trivia_questions",
