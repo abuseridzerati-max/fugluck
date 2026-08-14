@@ -1,5 +1,7 @@
 // Comprehensive Match Lifecycle & Historical Persistence Audit Script for ArcadeClash.
-// Run: npx tsx scripts/match-lifecycle-durability-check.ts
+// Run only with an isolated TEST_DATABASE_URL.
+
+import "./require-disposable-test-database.ts";
 
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
@@ -62,7 +64,7 @@ async function main() {
     recoverOrphanMatches,
     ensureMatchesHistoryTable,
   } = await import("../packages/server/src/matchmaking/matches.ts");
-  const { escrowStake, ensureSignupGrant, ensureMatchSettlementsTable, getBalances } = await import("../packages/server/src/wallet/ledger.ts");
+  const { escrowStake, ensureSignupGrant, ensureMatchSettlementsTable, getBalances, payoutWinner } = await import("../packages/server/src/wallet/ledger.ts");
   const { generateSeed } = await import("../packages/server/src/matchmaking/queue.ts");
 
   await ensureUserSchema();
@@ -93,7 +95,7 @@ async function main() {
   const entryA1: QueueEntry = { socket: socketA1, userId: p1Id, username: "Player 1", currency: "COINS", stake: 100 };
   const entryB1: QueueEntry = { socket: socketB1, userId: p2Id, username: "Player 2", currency: "COINS", stake: 100 };
 
-  createMatch("neon-runner", entryA1, entryB1, seed1);
+  await createMatch("neon-runner", entryA1, entryB1, seed1);
 
   // Extract created matchId from emitted socket event
   // @ts-expect-error test payload access
@@ -164,7 +166,7 @@ async function main() {
   const entryA2: QueueEntry = { socket: socketA2, userId: p1Id, username: "Player 1", currency: "COINS", stake: 50 };
   const entryB2: QueueEntry = { socket: socketB2, userId: p2Id, username: "Player 2", currency: "COINS", stake: 50 };
 
-  createMatch("space-blaster", entryA2, entryB2, generateSeed());
+  await createMatch("space-blaster", entryA2, entryB2, generateSeed());
   // @ts-expect-error test payload access
   const matchId2 = (socketA2.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
 
@@ -188,6 +190,24 @@ async function main() {
   // Test 4: Crash Recovery for Orphan Active Matches (recoverOrphanMatches)
   // ---------------------------------------------------------------------------
   console.log("\nTest 4: Crash Recovery for Orphan Active Matches");
+
+  const conflictingOrphanId = `match_orphan_conflict_${randomUUID()}`;
+  const conflictingStake = 25;
+  await escrowStake(p1Id, "COINS", conflictingStake, conflictingOrphanId);
+  await escrowStake(p2Id, "COINS", conflictingStake, conflictingOrphanId);
+  await db.insert(matchesHistory).values({
+    id: conflictingOrphanId,
+    gameId: "cyber-hopper",
+    player1Id: p1Id,
+    player2Id: p2Id,
+    currency: "COINS",
+    stake: conflictingStake,
+    seed: 12344,
+    status: "ACTIVE",
+    startedAt: new Date(Date.now() - 2_000),
+    createdAt: new Date(Date.now() - 2_000),
+  });
+  await payoutWinner(p1Id, p2Id, "COINS", conflictingStake, conflictingOrphanId);
 
   const orphanMatchId = `match_orphan_${randomUUID()}`;
   const orphanStake = 75;
@@ -214,7 +234,11 @@ async function main() {
 
   // Run server startup orphan recovery
   const recoveredCount = await recoverOrphanMatches();
-  check("recoverOrphanMatches identifies orphan active match (recoveredCount >= 1)", recoveredCount >= 1);
+  check("one conflicting orphan does not block the later valid orphan", recoveredCount === 1);
+
+  const conflictingOrphan = await db.query.matchesHistory.findFirst({ where: eq(matchesHistory.id, conflictingOrphanId) });
+  const conflictingSettlement = await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, conflictingOrphanId) });
+  check("conflicting orphan remains unchanged for explicit follow-up", conflictingOrphan?.status === "ACTIVE" && conflictingSettlement?.status === "PAYOUT");
 
   const recoveredMatch = await db.query.matchesHistory.findFirst({ where: eq(matchesHistory.id, orphanMatchId) });
   check("Orphan match status updated to INTERRUPTED", recoveredMatch?.status === "INTERRUPTED");
@@ -234,10 +258,15 @@ async function main() {
   console.log("\nTest 5: Re-running Orphan Recovery is Safely Idempotent");
 
   const secondRecoverCount = await recoverOrphanMatches();
-  check("Second run of recoverOrphanMatches finds 0 active orphan matches", secondRecoverCount === 0);
+  check("Second run of recoverOrphanMatches recovers 0 additional matches", secondRecoverCount === 0);
 
   const balP1Final = await getBalances(p1Id);
   check("Player 1 balance unchanged by idempotent recovery re-run", balP1Final.coins === balP1PostRecover.coins);
+
+  await db
+    .update(matchesHistory)
+    .set({ status: "COMPLETED", winnerId: p1Id, endedAt: new Date() })
+    .where(eq(matchesHistory.id, conflictingOrphanId));
 
   if (failures > 0) {
     console.log(`\nFAILURE: ${failures} check(s) failed.`);

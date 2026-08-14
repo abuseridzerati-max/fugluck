@@ -1,5 +1,7 @@
 // Comprehensive Private Owner Admin Console & 5-Attempt / 1-Hour Lockout Test Script for ArcadeClash.
-// Run: npx tsx scripts/owner-admin-lockout-check.ts
+// Run only with an isolated TEST_DATABASE_URL because lockout state is persisted.
+
+import "./require-disposable-test-database.ts";
 
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
