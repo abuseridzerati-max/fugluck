@@ -14,6 +14,14 @@ audit this file's wording was corrected against.
 | Neon Runner | [`games/neon-runner/`](games/neon-runner/) | runner | BUILT — practice + for-fun matchmaking |
 | Pixel Ninja Dash | [`games/pixel-ninja-dash/`](games/pixel-ninja-dash/) | reflex-timing | BUILT — practice + for-fun matchmaking |
 | Sky Dodge | [`games/sky-dodge/`](games/sky-dodge/) | falling-block | ⚠️ **REPORTED BROKEN, session 19 — see PROGRESS.md "STILL UNVERIFIED"** (undiagnosed; "BUILT" below refers to what's in code, not a current working-state guarantee) |
+| Space Blaster | [`games/space-blaster/`](games/space-blaster/) | arena-shooter | BUILT — active registry, deterministic replay and score validation verified |
+| Cyber Hopper | [`games/cyber-hopper/`](games/cyber-hopper/) | reflex-timing | BUILT — active registry, deterministic replay and score validation verified |
+| Speed Trivia Clash | [`games/speed-trivia/`](games/speed-trivia/) | quiz | BUILT — active registry, deterministic replay and score validation verified |
+| True / False Sprint | [`games/tf-sprint/`](games/tf-sprint/) | quiz | BUILT — canonical module contract, deterministic replay and score validation verified during Games build-health stabilization |
+
+The legacy `game-3` and `game-4` compatibility aliases were permanently
+retired by product decision during Games build-health stabilization. Space
+Blaster and Cyber Hopper remain under their canonical directories and IDs.
 
 **On "for-fun matchmaking" (session 15, see PROGRESS.md) — read the
 verification confidence carefully, it is not uniform.** Session 15
