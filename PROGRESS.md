@@ -3,6 +3,53 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 36 (2026-08-14): Atomic wager creation and durable resolution
+
+**BUILT (verified by code review and server TypeScript compilation):**
+
+- Wagered `createMatch()` now inserts the ACTIVE match and both escrow
+  debits in one PostgreSQL transaction. In-memory activation and `matched`
+  emission occur only after commit. A failed debit rolls back the match row
+  and both debits.
+- Wallet mutations use deterministic per-user PostgreSQL advisory locks.
+  Migration `0004_atomic_wager_lifecycle.sql` adds a database trigger that
+  serializes every ledger insert per user and rejects debits that would make
+  a currency balance negative.
+- Terminal match persistence and payout/refund settlement now share one
+  transaction. `matchResolved` is emitted only after commit; transient
+  failures keep the in-memory match active and retry without emitting.
+- Settlement retries validate that an existing settlement exactly matches
+  the requested outcome instead of treating a conflicting row as success.
+- Crash recovery now updates interrupted history and refunds escrow in the
+  same transaction.
+- Added `scripts/atomic-wager-lifecycle-check.ts`, gated by a distinct
+  `TEST_DATABASE_URL`, covering atomic escrow, insufficient balances,
+  concurrency, idempotency, payout/draw/void/refund, rollback/retry,
+  currency isolation, consistency, and free matches.
+
+**Verification:** An isolated Neon `arcadeclash_atomic_test` database was
+approved by the centralized disposable-database safety guard; the normal
+Supabase database was untouched. Fresh migrations `0000` through `0004`
+passed, the core atomic wager suite passed 28/28, every protected
+financial/lifecycle suite passed, genuine concurrency and rollback boundaries
+passed, and the independent SQL invariant audit returned zero violations.
+Shared and server TypeScript checks, database safety tests (17/17), and
+`git diff --check` also passed. The machine-specific `tsx` launcher still
+fails in `uv_os_get_passwd` with `ENOMEM`, so the unchanged TypeScript suites
+were executed with Node 24's TypeScript transform and a local extension loader.
+Production historical-data audit remains required before migration `0004` is
+deployed. Broader migration/schema/runtime-DDL drift remains later work and is
+not resolved by this branch.
+
+**Local commit status:** The atomic wager implementation commit exists locally
+as `147bbca4cd7f3ceb25e482b724f6f5f9b015e7fd` (`feat(server): make wager
+lifecycle atomic and recoverable`). The intended test-coverage and progress
+documentation commits have not yet been created because the Codex session
+cannot create `.git/index.lock`, even though normal PowerShell can write the
+repository index. The remaining test files and this document are preserved in
+the working tree/index for staging recovery. Nothing has been pushed or
+merged.
+
 **TOP PRIORITY, UNDIAGNOSED: the user reports Sky Dodge does not work when
 played. Nobody has investigated yet — see the next section, and "STILL
 UNVERIFIED" further down, before doing anything else this session.**
