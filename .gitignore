@@ -100,15 +100,15 @@ $RECYCLE.BIN/
 # Unity Game Engine Generated & Cache Directories
 # (Preserves Assets/, Packages/, ProjectSettings/, and all *.meta files)
 # -----------------------------------------------------------------------------
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]ser[Ss]ettings/
-/[Mm]emoryCaptures/
-/[Aa]rchive/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Aa]rchive/
 
 # Unity generated project files & Visual Studio / Rider caches
 [Aa]ssets/Plugins/Editor/JetBrains*
