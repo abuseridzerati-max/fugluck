@@ -30,9 +30,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0003_matches_history.sql",
     "0004_atomic_wager_lifecycle.sql",
     "0005_reconcile_schema_parity.sql",
+    "0006_password_reset_tokens.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0005) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0006) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -75,6 +76,7 @@ async function verifySchema(pool: Pool): Promise<void> {
   const expectedTables = [
     "users",
     "email_verification_tokens",
+    "password_reset_tokens",
     "admin_lockout_attempts",
     "admin_audit_logs",
     "ledger_entries",
@@ -103,6 +105,16 @@ async function verifySchema(pool: Pool): Promise<void> {
   check("email_verification_tokens has token_hash column", emailCols.has("token_hash"));
   check("email_verification_tokens has expires_at column", emailCols.has("expires_at"));
   check("email_verification_tokens has created_at column", emailCols.has("created_at"));
+
+  const resetTokenCols = await pool.query(
+    `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'password_reset_tokens'`,
+  );
+  const resetCols = new Set(resetTokenCols.rows.map((r: any) => r.column_name));
+  check("password_reset_tokens has id column", resetCols.has("id"));
+  check("password_reset_tokens has user_id column", resetCols.has("user_id"));
+  check("password_reset_tokens has token_hash column", resetCols.has("token_hash"));
+  check("password_reset_tokens has expires_at column", resetCols.has("expires_at"));
+  check("password_reset_tokens has created_at column", resetCols.has("created_at"));
 
   const lockoutCols = await pool.query(
     `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'admin_lockout_attempts'`,
@@ -146,6 +158,7 @@ async function verifySchema(pool: Pool): Promise<void> {
   `);
   const fks = new Set(fkRes.rows.map((r: any) => `${r.table_name}->${r.foreign_table_name}`));
   check("email_verification_tokens FK to users", fks.has("email_verification_tokens->users"));
+  check("password_reset_tokens FK to users", fks.has("password_reset_tokens->users"));
   check("admin_audit_logs FK to users", fks.has("admin_audit_logs->users"));
   check("ledger_entries FK to users", fks.has("ledger_entries->users"));
   check("friendships FK to users", fks.has("friendships->users"));
@@ -214,6 +227,13 @@ async function verifySchema(pool: Pool): Promise<void> {
   );
   check("DML smoke: INSERT into email_verification_tokens succeeds", tokenInsert.rows.length === 1);
 
+  const resetInsert = await pool.query(
+    `INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at)
+     VALUES ($1, $2, $3, NOW() + interval '1 hour') RETURNING id`,
+    ["prt_test_" + Date.now(), testUserId, "reset_hash_" + Date.now()],
+  );
+  check("DML smoke: INSERT into password_reset_tokens succeeds", resetInsert.rows.length === 1);
+
   const lockoutInsert = await pool.query(
     `INSERT INTO admin_lockout_attempts (id, ip_address, attempt_count)
      VALUES ($1, $2, $3) RETURNING id`,
@@ -247,6 +267,7 @@ async function verifySchema(pool: Pool): Promise<void> {
 
   // Clean up smoke rows
   await pool.query(`DELETE FROM email_verification_tokens WHERE user_id = $1`, [testUserId]);
+  await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = $1`, [testUserId]);
   await pool.query(`DELETE FROM admin_audit_logs WHERE admin_user_id = $1`, [testUserId]);
   await pool.query(`DELETE FROM users WHERE id = $1`, [testUserId]);
 }

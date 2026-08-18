@@ -2,7 +2,7 @@ import type { FriendEntry } from "@arcadeclash/shared";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 import { Router } from "express";
-import { attachSession, requireAuth } from "../auth/middleware";
+import { attachSession, requireAuth, requireEmailVerified } from "../auth/middleware";
 import { db } from "../db/client";
 import { friendships, users } from "../db/schema";
 
@@ -52,7 +52,7 @@ friendsRouter.get("/", async (req, res) => {
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
 
-friendsRouter.post("/request", socialLimiter, async (req, res) => {
+friendsRouter.post("/request", socialLimiter, requireEmailVerified, async (req, res) => {
   const me = req.userId!;
   const username = req.body?.username;
   if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
@@ -122,7 +122,7 @@ friendsRouter.post("/request", socialLimiter, async (req, res) => {
   });
 });
 
-friendsRouter.post("/:friendshipId/accept", socialLimiter, async (req, res) => {
+friendsRouter.post("/:friendshipId/accept", socialLimiter, requireEmailVerified, async (req, res) => {
   const me = req.userId!;
   const friendshipId = String(req.params.friendshipId);
   const friendship = await db.query.friendships.findFirst({

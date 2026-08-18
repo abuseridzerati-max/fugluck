@@ -3,6 +3,69 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 42 (2026-08-18): Complete Authentication, Transactional Email Verification & Account Recovery Lifecycle
+
+### Task and Objective
+Complete the entire web player authentication and account mechanics lifecycle before Unity integration:
+1. **Supabase Auth Retirement**: Retired residual Supabase client and storage references. Canonical auth is 100% server-issued JWT with HTTP-only `ac_session` cookie and authoritative `/api/auth/me` rehydration.
+2. **Transactional Email Service & Delivery**: Implemented environment-driven email provider service (`packages/server/src/email/emailService.ts`) supporting Resend API, SMTP, or structured test/dev logger. Tokens persisted strictly as SHA-256 hashes in PostgreSQL; raw tokens never exposed in production API responses.
+3. **Verification UX & Policy Enforcement**: Created client `VerifyEmailPage.tsx` (`/verify-email?token=...`), verification resend triggers, and updated `AuthModal.tsx`. Enforced verification boundary: unverified users can play Solo Practice and Free matches (`stake = 0`), but are strictly blocked from wagering queues (`stake > 0`) and social friend requests/acceptances (`requireEmailVerified`).
+4. **Password Reset & Account Recovery Lifecycle**: Added forward migration `0006_password_reset_tokens.sql`, updated `schema.ts`, added rate-limited `/api/auth/forgot-password` and `/api/auth/reset-password` endpoints with password policy enforcement, single-use token deletion, and client `ResetPasswordPage.tsx` (`/reset-password?token=...`).
+5. **Session & Socket.IO Security Hardening**: Enforced account status check (`banned` / `suspended`) in login, `/me`, and `socketAuthMiddleware` (`account_suspended`).
+6. **Automated Test Coverage**: Added `scripts/auth-account-lifecycle-check.ts` (31 assertions passed). Verified complete `npm test` across all 25 test suites.
+
+### Verification Completed
+- **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS** (Migration chain 0000 -> 0006 replayed on disposable test DB `arcadeclash_atomic_test` with full catalog parity and DML smoke tests).
+- **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS** (Registration, token hashing, email dispatch, single-use verification, resend invalidation, password reset, policy validation, password hash update, banned/suspended rejection, wagering verification boundary).
+- **`scripts/wallet-friends-check.ts`**: **18/18 PASS**.
+- **`scripts/financial-reconnection-check.ts`**: **19/19 PASS**.
+- **`scripts/matchmaking-check.ts`**: **29/29 PASS**.
+- **`scripts/determinism-check.ts`**: **31/31 PASS**.
+- **`scripts/score-validation-check.ts`**: **42/42 PASS**.
+- **`scripts/canvas-render-check.ts`**: **28/28 PASS** (294,295 verified finite draw operations).
+- **`scripts/rate-limit-check.ts`**: **11/11 PASS**.
+- **`scripts/sql-injection-check.ts`**: **19/19 PASS**.
+- **`scripts/input-validation-check.ts`**: **16/16 PASS**.
+- **`scripts/xss-audit-check.ts`**: **17/17 PASS**.
+- **`scripts/password-security-check.ts`**: **13/13 PASS**.
+- **`scripts/admin-security-check.ts`**: **8/8 PASS**.
+- **`scripts/admin-console-check.ts`**: **31/31 PASS**.
+- **`scripts/cors-audit-check.ts`**: **20/20 PASS**.
+- **`scripts/registration-verification-check.ts`**: **9/9 PASS**.
+- **`scripts/owner-admin-lockout-check.ts`**: **13/13 PASS**.
+- **`scripts/request-logging-audit-check.ts`**: **12/12 PASS**.
+- **`scripts/password-policy-check.ts`**: **17/17 PASS**.
+- **`scripts/file-upload-audit-check.ts`**: **4/4 PASS**.
+- **`scripts/wallet-settlement-concurrency-check.ts`**: **17/17 PASS**.
+- **`scripts/wallet-settlement-integrity-check.ts`**: **16/16 PASS**.
+- **`scripts/match-lifecycle-durability-check.ts`**: **20/20 PASS**.
+- **Client Production Build**: **PASS** (`tsc -b && vite build` completed with zero errors).
+
+### Files Modified & Created
+- `packages/server/drizzle/0006_password_reset_tokens.sql` [NEW]
+- `packages/server/drizzle/meta/_journal.json` [MODIFIED]
+- `packages/server/src/db/schema.ts` [MODIFIED]
+- `packages/server/src/db/client.ts` [MODIFIED]
+- `packages/server/src/email/emailService.ts` [NEW]
+- `packages/server/src/routes/auth.ts` [MODIFIED]
+- `packages/server/src/routes/friends.ts` [MODIFIED]
+- `packages/server/src/matchmaking/socketAuth.ts` [MODIFIED]
+- `packages/server/src/matchmaking/index.ts` [MODIFIED]
+- `packages/server/.env.example` [MODIFIED]
+- `packages/client/src/lib/supabase.ts` [DELETED]
+- `packages/client/src/auth/AuthContext.tsx` [MODIFIED]
+- `packages/client/src/components/AuthModal.tsx` [MODIFIED]
+- `packages/client/src/pages/VerifyEmailPage.tsx` [NEW]
+- `packages/client/src/pages/ResetPasswordPage.tsx` [NEW]
+- `packages/client/src/App.tsx` [MODIFIED]
+- `scripts/auth-account-lifecycle-check.ts` [NEW]
+- `scripts/migration-schema-parity-check.ts` [MODIFIED]
+- `scripts/wallet-friends-check.ts` [MODIFIED]
+- `package.json` [MODIFIED]
+- `PROGRESS.md` [MODIFIED]
+
+---
+
 ## Session 41 (2026-08-14): Replay-valid two-player continuation — blocked by external server exit
 
 ### Task and baseline

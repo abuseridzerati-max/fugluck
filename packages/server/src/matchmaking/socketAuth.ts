@@ -14,6 +14,7 @@ export type MatchmakingSocketData = {
   userId: string;
   username: string;
   isGuest?: boolean;
+  isEmailVerified?: boolean;
 };
 
 export type MatchmakingSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
@@ -59,6 +60,7 @@ export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err
       socket.data.userId = `guest_${rawId}`;
       socket.data.username = `Guest_${rawId.slice(0, 4)}`;
       socket.data.isGuest = true;
+      socket.data.isEmailVerified = false;
       next();
       return;
     }
@@ -72,8 +74,14 @@ export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err
     return;
   }
 
+  if (user.status === "banned" || user.status === "suspended") {
+    next(new Error("account_suspended"));
+    return;
+  }
+
   socket.data.userId = user.id;
   socket.data.username = user.username;
   socket.data.isGuest = false;
+  socket.data.isEmailVerified = user.isEmailVerified ?? false;
   next();
 }
