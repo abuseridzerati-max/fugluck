@@ -3,6 +3,69 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 44 (2026-08-18): Completely Remove User-Facing Match Replay Feature While Preserving Internal Anti-Cheat
+
+### Explicit Product Decision
+User-facing match replay/watch functionality was intentionally removed from ArcadeClash. Internal deterministic replay/simulation infrastructure remains because it is required for server-side score validation and anti-cheat.
+The replay viewer is REMOVED BY PRODUCT DECISION / NOT PART OF PRODUCT (not unfinished work, not a gap, and not planned).
+
+### Task and Objective
+1. **User-Facing Match Replay Removal**:
+   - Deleted `packages/client/src/components/ReplayModal.tsx`.
+   - Removed `ReplayModal` import, `activeReplay` state, and "📼 Watch Replay" button in `ProfilePage.tsx`.
+   - Removed unused `game.watchReplay` localization keys across `en.json`, `ka.json`, and `ru.json`, and cleaned match history descriptions.
+   - Updated architecture invariants in `AGENTS.md` and `CLAUDE.md`.
+2. **Match History Preservation**:
+   - Preserved `GET /api/matches/history` and the User Profile match history list (game, opponent, outcome, score, date, currency, stake).
+   - Preserved `matches_history` database table with all fields (`seed`, `inputLogP1`, `inputLogP2`, `scoreP1`, `scoreP2`, etc.) intact for dispute verification, durability, and audit trails.
+3. **Anti-Cheat & Deterministic Replay Preservation**:
+   - Preserved 100% of internal deterministic simulation engine (`replayEngine`, `ReplayAdapter`, `ReplayOutcome` in `@arcadeclash/shared`).
+   - Preserved all game-specific replay adapters in `games/*/replay.ts` and `games/replayAdapters.ts`.
+   - Preserved server-side `scoreValidator.ts` for headless match score verification.
+4. **Automated Verification**:
+   - Verified complete `npm test` across all 25 test suites passing with 100% assertions.
+   - Verified client production build (`tsc -b && vite build`) passing cleanly with client bundle size reduction from 476kB to 407kB.
+   - Verified all 4 TypeScript workspace configurations (`packages/shared`, `games`, `packages/server`, `packages/client`) typechecking cleanly without errors.
+
+### Verification Completed
+- **`scripts/determinism-check.ts`**: **31/31 PASS** (Deterministic simulation for all games).
+- **`scripts/score-validation-check.ts`**: **42/42 PASS** (Headless server-side anti-cheat replay score validation).
+- **`scripts/matchmaking-check.ts`**: **38/38 PASS**.
+- **`scripts/wallet-friends-check.ts`**: **28/28 PASS**.
+- **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS**.
+- **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS**.
+- **`scripts/financial-reconnection-check.ts`**: **19/19 PASS**.
+- **`scripts/canvas-render-check.ts`**: **28/28 PASS**.
+- **`scripts/rate-limit-check.ts`**: **11/11 PASS**.
+- **`scripts/sql-injection-check.ts`**: **19/19 PASS**.
+- **`scripts/input-validation-check.ts`**: **16/16 PASS**.
+- **`scripts/xss-audit-check.ts`**: **17/17 PASS**.
+- **`scripts/password-security-check.ts`**: **13/13 PASS**.
+- **`scripts/admin-security-check.ts`**: **8/8 PASS**.
+- **`scripts/admin-console-check.ts`**: **31/31 PASS**.
+- **`scripts/cors-audit-check.ts`**: **20/20 PASS**.
+- **`scripts/registration-verification-check.ts`**: **9/9 PASS**.
+- **`scripts/owner-admin-lockout-check.ts`**: **13/13 PASS**.
+- **`scripts/request-logging-audit-check.ts`**: **12/12 PASS**.
+- **`scripts/password-policy-check.ts`**: **17/17 PASS**.
+- **`scripts/file-upload-audit-check.ts`**: **4/4 PASS**.
+- **`scripts/wallet-settlement-concurrency-check.ts`**: **17/17 PASS**.
+- **`scripts/wallet-settlement-integrity-check.ts`**: **16/16 PASS**.
+- **`scripts/match-lifecycle-durability-check.ts`**: **20/20 PASS**.
+- **`scripts/i18n-check.ts`**: **15/15 PASS**.
+- **Client Production Build**: **PASS** (`tsc -b && vite build` completed with zero errors).
+- **All TSConfigs Typecheck**: **PASS** (`shared`, `games`, `server`, `client` zero errors).
+
+### Files Modified & Deleted
+- `packages/client/src/components/ReplayModal.tsx` [DELETED]
+- `packages/client/src/pages/ProfilePage.tsx` [MODIFIED]
+- `packages/client/src/locales/en.json` [MODIFIED]
+- `packages/client/src/locales/ka.json` [MODIFIED]
+- `packages/client/src/locales/ru.json` [MODIFIED]
+- `AGENTS.md` [MODIFIED]
+- `CLAUDE.md` [MODIFIED]
+- `PROGRESS.md` [MODIFIED]
+
 ## Session 43 (2026-08-18): Complete Core Desktop Social & Guest Match Mechanics
 
 ### Task and Objective

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { DIAMOND_PACKS } from '@arcadeclash/shared'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
-import ReplayModal from '../components/ReplayModal'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
 
@@ -33,7 +32,6 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [matches, setMatches] = useState<MatchHistoryItem[]>([])
   const [loadingMatches, setLoadingMatches] = useState(true)
-  const [activeReplay, setActiveReplay] = useState<MatchHistoryItem | null>(null)
 
   const currentLang = i18n.language || 'en'
 
@@ -163,15 +161,6 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
                       })}
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    className="ac-btn ac-btn--ghost"
-                    onClick={() => setActiveReplay(m)}
-                    style={{ fontSize: 'var(--font-size-xs)', border: '1px solid var(--color-border)' }}
-                  >
-                    📼 {t('game.watchReplay')}
-                  </button>
                 </div>
               ))}
             </div>
@@ -219,19 +208,6 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends }: Profi
           ))}
         </div>
       </main>
-
-      {activeReplay && (
-        <ReplayModal
-          gameId={activeReplay.gameId}
-          opponentUsername={activeReplay.opponentUsername}
-          seed={activeReplay.seed}
-          inputLog={activeReplay.inputLog}
-          userScore={activeReplay.userScore}
-          opponentScore={activeReplay.opponentScore}
-          outcome={activeReplay.outcome}
-          onClose={() => setActiveReplay(null)}
-        />
-      )}
     </>
   )
 }
