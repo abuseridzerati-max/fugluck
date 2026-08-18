@@ -7,7 +7,7 @@ services:
     runtime: node
     plan: starter
     region: ohio
-    buildCommand: npm install && npm run build:server
+    buildCommand: npm install --include=dev && npm run build:server
     startCommand: npm run start:server
     healthCheckPath: /health
     autoDeploy: true

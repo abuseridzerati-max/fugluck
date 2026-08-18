@@ -3,6 +3,25 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 49 (2026-08-19): Fix Render Server Build Failure (devDependencies & tsx Runtime Placement)
+
+### Baseline
+- `53a3889` (PR #13 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Task and Objective
+Diagnose and resolve the Render build failure (`TS7016: Could not find a declaration file for module 'express'`):
+1. **Root Cause Analysis**:
+   - In production hosts like Render where `NODE_ENV=production` is set in the environment variables table, `npm install` defaults to omitting all `devDependencies` across monorepo workspaces.
+   - Because `@types/express` (and related `@types/*`) were stored in `devDependencies`, TypeScript compilation (`npx tsc --project packages/server/tsconfig.json --noEmit`) could not find Express declarations during `npm run build:server`.
+   - Furthermore, `tsx` was initially in `devDependencies` despite being the runtime execution command for `npm run start:server` (`tsx src/index.ts`).
+2. **Resolution & Hardening**:
+   - Updated the Render build command in `render.yaml` and `DEPLOYMENT.md` to `npm install --include=dev && npm run build:server`, guaranteeing that type declarations and compilation tools are fully installed regardless of `NODE_ENV=production`.
+   - Moved `tsx` to `dependencies` in `packages/server/package.json` so the runtime engine is explicitly a first-class production dependency.
+3. **Verification**:
+   - Tested clean production build simulation under `$env:NODE_ENV = 'production'; npm install --include=dev && npm run build:server` (passed with code 0).
+   - Ran `npm run typecheck` across all 5 workspace projects (0 errors).
+   - Ran all 27 test suites in `npm test` (all passed, 0 failures).
+
 ## Session 48 (2026-08-18): Staging Deployment Readiness Audit & Preparation
 
 ### Baseline
