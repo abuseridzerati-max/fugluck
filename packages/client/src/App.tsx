@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@arcadeclash/shared'
-import { AuthProvider } from './auth/AuthContext'
+import { AuthProvider, useAuth } from './auth/AuthContext'
+import AuthModal from './components/AuthModal'
 import GameLoader from './game-loader/GameLoader'
 import { gameFactories } from './game-loader/gameFactories'
 import MatchLoader from './game-loader/MatchLoader'
@@ -14,6 +15,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
+import WalletPage from './pages/WalletPage'
 import { apiFetch } from './lib/api'
 
 type ActiveGame = {
@@ -23,7 +25,7 @@ type ActiveGame = {
   mode: 'practice' | 'match'
   matchMode?: MatchSocketMode
 }
-type View = 'home' | 'profile' | 'friends' | 'wallet' | 'settings' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'invite' | 'not-found'
+type View = 'home' | 'profile' | 'friends' | 'wallet' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'invite' | 'not-found'
 
 const ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
 
@@ -60,7 +62,6 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/profile') return 'profile'
   if (cleanPath === '/friends') return 'friends'
   if (cleanPath === '/wallet') return 'wallet'
-  if (cleanPath === '/settings') return 'settings'
   if (cleanPath === '/login') return 'login'
   if (cleanPath === '/signup') return 'signup'
   if (cleanPath === '/admin') return 'admin'
@@ -78,8 +79,6 @@ function getPathForView(view: View): string {
       return '/friends'
     case 'wallet':
       return '/wallet'
-    case 'settings':
-      return '/settings'
     case 'login':
       return '/login'
     case 'signup':
@@ -118,10 +117,13 @@ function updateSocialMetaTags(title: string, path: string) {
 
 function AppShell() {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
   const [view, setViewState] = useState<View>(() => getViewFromPath(window.location.pathname))
   const [activeGame, setActiveGame] = useState<ActiveGame | null>(null)
   const [loadingGameId, setLoadingGameId] = useState<string | null>(null)
   const [restoringActiveMatch, setRestoringActiveMatch] = useState(() => readStoredActiveMatch() !== null)
+  const [pendingRedirectView, setPendingRedirectView] = useState<View | null>(null)
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
 
   useEffect(() => {
     const stored = readStoredActiveMatch()
@@ -130,10 +132,20 @@ function AppShell() {
     } else {
       setRestoringActiveMatch(false)
     }
-    // Restore once on boot. The server remains authoritative for whether the
-    // authenticated user actually has an active match and for its seed/id.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // If unauthenticated and navigating to protected views, show login modal and remember destination
+  useEffect(() => {
+    const protectedViews: View[] = ['profile', 'friends', 'wallet', 'admin']
+    if (!user && protectedViews.includes(view)) {
+      setPendingRedirectView(view)
+      setAuthModalMode('login')
+    } else if (user && pendingRedirectView) {
+      navigateTo(pendingRedirectView)
+      setPendingRedirectView(null)
+      setAuthModalMode(null)
+    }
+  }, [user, view])
 
   function getTitleForView(targetView: View): string {
     switch (targetView) {
@@ -143,8 +155,6 @@ function AppShell() {
         return t('meta.titleFriends')
       case 'wallet':
         return t('meta.titleWallet')
-      case 'settings':
-        return t('meta.titleSettings')
       case 'login':
         return t('meta.titleLogin')
       case 'signup':
@@ -287,9 +297,16 @@ function AppShell() {
             setActiveGame(null)
           }}
         />
-      ) : view === 'profile' || view === 'wallet' || view === 'settings' ? (
+      ) : view === 'profile' ? (
         <ProfilePage
           onNavigateHome={() => navigateTo('home')}
+          onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
+        />
+      ) : view === 'wallet' ? (
+        <WalletPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
         />
       ) : view === 'admin' ? (
@@ -298,6 +315,7 @@ function AppShell() {
         <FriendsPage
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
+          onNavigateWallet={() => navigateTo('wallet')}
           onInviteFriend={handleInviteFriend}
         />
       ) : view === 'verify-email' ? (
@@ -326,7 +344,21 @@ function AppShell() {
           loadingGameId={loadingGameId}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
+        />
+      )}
+
+      {authModalMode && (
+        <AuthModal
+          initialMode={authModalMode}
+          onClose={() => {
+            setAuthModalMode(null)
+            if (!user && pendingRedirectView) {
+              setPendingRedirectView(null)
+              navigateTo('home')
+            }
+          }}
         />
       )}
     </InviteProvider>

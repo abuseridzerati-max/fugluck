@@ -1,22 +1,20 @@
 import { useState } from 'react'
 import type { GameEngine } from '@arcadeclash/games'
 import { categoryColors } from '@arcadeclash/theme'
-import { engineLabel, formatPlays } from '../lib/format'
+import { engineLabel } from '../lib/format'
 import LaunchModal from './LaunchModal'
-import StarRating from './StarRating'
 
 type GameCardProps = {
   title: string
   engine: GameEngine
-  plays: number
-  rating: number
+  tagline?: string
   onPlay?: () => void
   onFindOpponent?: (stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   onLaunchGuestInvite?: () => void
   loading?: boolean
 }
 
-export default function GameCard({ title, engine, plays, rating, onPlay, onFindOpponent, onLaunchGuestInvite, loading }: GameCardProps) {
+export default function GameCard({ title, engine, tagline, onPlay, onFindOpponent, onLaunchGuestInvite, loading }: GameCardProps) {
   const [showModal, setShowModal] = useState(false)
   const tagColor = categoryColors[engine]
 
@@ -33,7 +31,7 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
             setShowModal(true)
           }
         }}
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
       >
         <div
           style={{
@@ -49,19 +47,21 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
             {engineLabel(engine)}
           </span>
         </div>
-        <div style={{ padding: 'var(--space-4)' }}>
-          <div style={{ fontWeight: 'var(--font-weight-medium)', marginBottom: 'var(--space-2)' }}>{title}</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-            <StarRating rating={rating} />
-            <span className="ac-text-muted ac-text-mono" style={{ fontSize: 'var(--font-size-xs)' }}>
-              {loading ? 'Loading…' : `${formatPlays(plays)} PLAYS`}
-            </span>
+        <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontWeight: 'var(--font-weight-medium)', marginBottom: 'var(--space-1)' }}>{title}</div>
+            {tagline && (
+              <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', margin: '0 0 var(--space-3)', lineHeight: 1.4 }}>
+                {tagline}
+              </p>
+            )}
           </div>
 
           {/* Prominent Play Button under every game card */}
           <button
             type="button"
             className="ac-btn ac-btn--primary"
+            disabled={loading}
             onClick={(e) => {
               e.stopPropagation()
               setShowModal(true)
@@ -73,6 +73,7 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
               fontWeight: 'bold',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
+              marginTop: 'var(--space-2)',
             }}
           >
             ▶ Play

@@ -3,6 +3,86 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 45 (2026-08-18): Complete Remaining Normal-User Desktop Web Mechanics
+
+### Baseline
+- `be783ce` (PR #9 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Task and Objective
+Finalize all remaining desktop-web mechanics for normal players across wallet, routing, catalog search, friends/match history error recovery, and desktop keyboard input handling:
+1. **User-Facing Wallet Transaction History (`GET /api/wallet/history`)**:
+   - Implemented authenticated `GET /api/wallet/history` querying `ledgerEntries` strictly for `userId = req.userId!` ordered newest first (`createdAt DESC`, limit 50).
+   - Mapped internal ledger reasons to clean user-facing labels (`signup_grant`, `monthly_allowance_refill`, `stake_escrow`, `stake_payout`, `stake_refund`, `diamond_pack_grant`, `admin_grant`, `admin_adjustment`).
+   - Built dedicated `WalletPage.tsx` displaying COINS & DIAMONDS balances, transaction history with error/retry handling, and the test-mode Diamond shop with an unambiguous sandbox indicator.
+2. **Clean `/wallet` Routing & Settings Removal**:
+   - Added `/wallet` route rendering `WalletPage` in `App.tsx` and linked it directly in the Navbar account menu.
+   - Removed `/settings` redundant alias and non-functional menu items.
+3. **Navbar Game Search Filtering**:
+   - Connected Navbar search input to dynamic state (`searchQuery`, `onSearchChange`) with instant case-insensitive filtering across game title, engine category, and tagline in `TrendingArena.tsx`.
+   - Added instant search clear button and helpful "No games found matching '[query]'" empty state.
+4. **Purged Dead Catalog Filters & Fake Metrics**:
+   - Removed dead category filters (`falling-block`, `hot`) with 0 games from `navFilters`. Available filters are derived strictly from active games (`all`, `runner`, `arena-shooter`, `reflex-timing`, `quiz`).
+   - Removed fake play counts (`plays: 1250`), fake star ratings (`rating: 4.9`), and fake live arena counts (`liveArenaCount = 128`).
+   - Deleted unused dead components (`Hero.tsx`, `StarRating.tsx`).
+5. **Match History & Friends Error / Retry Recovery**:
+   - In `ProfilePage.tsx`: distinguished loading, error with Retry button, and empty state; formatted zero-stake matches as "Free Play".
+   - In `FriendsPage.tsx`: distinguished loading, load errors with Retry button, and empty friend/request lists without requiring full page refreshes.
+6. **Protected Route Authentication Intent UX**:
+   - In `App.tsx`: when unauthenticated users visit `/profile`, `/friends`, `/wallet`, or `/admin`, opens `AuthModal` in `'login'` mode and preserves navigation destination (`pendingRedirectView`), smoothly redirecting the user upon login.
+7. **Clean Header & Notification Bell Removal**:
+   - Removed non-functional notification bell from `Navbar.tsx` keeping the header clean and uncluttered.
+8. **Desktop Focus & Input Handling**:
+   - Ensured keyboard handlers across mini-games (`speed-trivia`, `tf-sprint`, `neon-runner`, `cyber-hopper`, `space-blaster`, `pixel-ninja-dash`) call `e.preventDefault()` on game key events to prevent browser window scrolling and shortcut conflicts.
+
+### Verification Completed
+- **`scripts/wallet-friends-check.ts`**: **48/48 PASS** (Signup grant, diamond packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution, formatReasonLabel mapping, ledger user isolation, catalog active filters, real-time search filtering).
+- **`scripts/matchmaking-check.ts`**: **38/38 PASS**.
+- **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS**.
+- **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS**.
+- **`scripts/financial-reconnection-check.ts`**: **19/19 PASS**.
+- **`scripts/determinism-check.ts`**: **31/31 PASS**.
+- **`scripts/score-validation-check.ts`**: **42/42 PASS**.
+- **`scripts/canvas-render-check.ts`**: **28/28 PASS**.
+- **`scripts/rate-limit-check.ts`**: **11/11 PASS**.
+- **`scripts/sql-injection-check.ts`**: **19/19 PASS**.
+- **`scripts/input-validation-check.ts`**: **16/16 PASS**.
+- **`scripts/xss-audit-check.ts`**: **17/17 PASS**.
+- **`scripts/password-security-check.ts`**: **13/13 PASS**.
+- **`scripts/admin-security-check.ts`**: **8/8 PASS**.
+- **`scripts/admin-console-check.ts`**: **31/31 PASS**.
+- **`scripts/cors-audit-check.ts`**: **20/20 PASS**.
+- **`scripts/registration-verification-check.ts`**: **9/9 PASS**.
+- **`scripts/owner-admin-lockout-check.ts`**: **13/13 PASS**.
+- **`scripts/request-logging-audit-check.ts`**: **12/12 PASS**.
+- **`scripts/password-policy-check.ts`**: **17/17 PASS**.
+- **`scripts/file-upload-audit-check.ts`**: **4/4 PASS**.
+- **`scripts/wallet-settlement-concurrency-check.ts`**: **17/17 PASS**.
+- **`scripts/wallet-settlement-integrity-check.ts`**: **16/16 PASS**.
+- **`scripts/match-lifecycle-durability-check.ts`**: **20/20 PASS**.
+- **`scripts/i18n-check.ts`**: **15/15 PASS** (130 base translation keys verified across English, Georgian, Russian).
+- **Client Production Build**: **PASS** (`tsc -b && vite build` completed in 317ms with 0 errors).
+- **All TSConfigs Typecheck**: **PASS** (`shared`, `games`, `server`, `client` zero errors).
+
+### Files Created, Modified & Deleted
+- `packages/client/src/pages/WalletPage.tsx` [NEW]
+- `packages/server/src/routes/wallet.ts` [MODIFIED]
+- `packages/client/src/App.tsx` [MODIFIED]
+- `packages/client/src/components/Navbar.tsx` [MODIFIED]
+- `packages/client/src/components/TrendingArena.tsx` [MODIFIED]
+- `packages/client/src/components/GameCard.tsx` [MODIFIED]
+- `packages/client/src/pages/HomePage.tsx` [MODIFIED]
+- `packages/client/src/pages/ProfilePage.tsx` [MODIFIED]
+- `packages/client/src/pages/FriendsPage.tsx` [MODIFIED]
+- `packages/client/src/mock/homeData.ts` [MODIFIED]
+- `packages/client/src/locales/en.json` [MODIFIED]
+- `packages/client/src/locales/ka.json` [MODIFIED]
+- `packages/client/src/locales/ru.json` [MODIFIED]
+- `games/speed-trivia/index.ts` [MODIFIED]
+- `scripts/wallet-friends-check.ts` [MODIFIED]
+- `packages/client/src/components/Hero.tsx` [DELETED]
+- `packages/client/src/components/StarRating.tsx` [DELETED]
+- `PROGRESS.md` [MODIFIED]
+
 ## Session 44 (2026-08-18): Completely Remove User-Facing Match Replay Feature While Preserving Internal Anti-Cheat
 
 ### Explicit Product Decision

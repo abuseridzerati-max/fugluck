@@ -49,15 +49,19 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     if (this.state !== "running") return;
 
     if (e.code === "Digit1" || e.code === "KeyA") {
+      e.preventDefault();
       this.input.selectOption = 0;
       this.logInput("selectOption0");
     } else if (e.code === "Digit2" || e.code === "KeyB") {
+      e.preventDefault();
       this.input.selectOption = 1;
       this.logInput("selectOption1");
     } else if (e.code === "Digit3" || e.code === "KeyC") {
+      e.preventDefault();
       this.input.selectOption = 2;
       this.logInput("selectOption2");
     } else if (e.code === "Digit4" || e.code === "KeyD") {
+      e.preventDefault();
       this.input.selectOption = 3;
       this.logInput("selectOption3");
     }

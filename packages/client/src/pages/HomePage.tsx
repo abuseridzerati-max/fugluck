@@ -12,6 +12,7 @@ type HomePageProps = {
   loadingGameId: string | null
   onNavigateProfile: () => void
   onNavigateFriends: () => void
+  onNavigateWallet?: () => void
   initialAuthModalMode?: 'login' | 'signup'
 }
 
@@ -22,10 +23,12 @@ export default function HomePage({
   loadingGameId,
   onNavigateProfile,
   onNavigateFriends,
+  onNavigateWallet,
   initialAuthModalMode,
 }: HomePageProps) {
   const { user } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(initialAuthModalMode ?? null)
 
   useEffect(() => {
@@ -35,11 +38,17 @@ export default function HomePage({
   return (
     <>
       <Navbar
-        onNavigateHome={() => setSelectedCategory('all')}
+        onNavigateHome={() => {
+          setSelectedCategory('all')
+          setSearchQuery('')
+        }}
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
+        onNavigateWallet={onNavigateWallet}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
         <LiveQueueList onFindOpponent={onFindOpponent} />
@@ -49,6 +58,8 @@ export default function HomePage({
           onLaunchGuestInvite={onLaunchGuestInvite}
           loadingGameId={loadingGameId}
           selectedCategory={selectedCategory}
+          searchQuery={searchQuery}
+          onClearSearch={() => setSearchQuery('')}
         />
       </main>
       {authModalMode && <AuthModal initialMode={authModalMode} onClose={() => setAuthModalMode(null)} />}
