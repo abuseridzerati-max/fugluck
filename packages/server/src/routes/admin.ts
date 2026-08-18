@@ -4,7 +4,7 @@ import { and, count, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { ADMIN_SESSION_COOKIE_NAME, attachSession, requireAuth, requireOwnerAdmin } from "../auth/middleware";
 import { requirePermission } from "../auth/permissions";
 import { verifyPassword } from "../auth/password";
-import { signSessionToken, SESSION_COOKIE_MAX_AGE_MS } from "../auth/jwt";
+import { signSessionToken, getSessionCookieOptions, getClearCookieOptions } from "../auth/jwt";
 import { checkAdminLockout, recordFailedAdminLogin, resetAdminLockout } from "../auth/adminLockout";
 import { db } from "../db/client";
 import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users } from "../db/schema";
@@ -68,12 +68,7 @@ adminRouter.post("/login", adminLoginLimiter, async (req, res) => {
 
   // Set HTTP-only admin session cookie
   const adminToken = signSessionToken({ sub: user.id });
-  res.cookie(ADMIN_SESSION_COOKIE_NAME, adminToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_COOKIE_MAX_AGE_MS,
-  });
+  res.cookie(ADMIN_SESSION_COOKIE_NAME, adminToken, getSessionCookieOptions());
 
   res.json({
     success: true,
@@ -86,7 +81,7 @@ adminRouter.post("/login", adminLoginLimiter, async (req, res) => {
 });
 
 adminRouter.post("/logout", (_req, res) => {
-  res.clearCookie(ADMIN_SESSION_COOKIE_NAME);
+  res.clearCookie(ADMIN_SESSION_COOKIE_NAME, getClearCookieOptions());
   res.status(204).end();
 });
 

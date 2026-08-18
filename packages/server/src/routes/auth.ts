@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, or } from "drizzle-orm";
 import { Router } from "express";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../auth/password";
-import { SESSION_COOKIE_MAX_AGE_MS, SESSION_COOKIE_NAME, signSessionToken } from "../auth/jwt";
+import { getClearCookieOptions, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from "../auth/jwt";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
@@ -34,12 +34,7 @@ async function toPublicUser(user: User): Promise<PublicUser> {
 
 function setSessionCookie(res: import("express").Response, userId: string) {
   const token = signSessionToken({ sub: userId });
-  res.cookie(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_COOKIE_MAX_AGE_MS,
-  });
+  res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
 }
 
 const authLimiter = createRateLimiterMiddleware({
@@ -413,7 +408,7 @@ authRouter.post("/reset-password", authLimiter, async (req, res) => {
   });
 
   // Clear any existing session cookie so user must authenticate with new password
-  res.clearCookie(SESSION_COOKIE_NAME);
+  res.clearCookie(SESSION_COOKIE_NAME, getClearCookieOptions());
   res.json({ message: "Password reset successfully. You may now log in with your new password." });
 });
 
@@ -443,7 +438,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
 });
 
 authRouter.post("/logout", (_req, res) => {
-  res.clearCookie(SESSION_COOKIE_NAME);
+  res.clearCookie(SESSION_COOKIE_NAME, getClearCookieOptions());
   res.status(204).end();
 });
 

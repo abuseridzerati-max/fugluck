@@ -3,6 +3,33 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 48 (2026-08-18): Staging Deployment Readiness Audit & Preparation
+
+### Baseline
+- `54f4f73` (PR #11 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Task and Objective
+Complete comprehensive audit and staging deployment preparation for public testing on `staging.arcadeclash.com` (Vercel) and `api-staging.arcadeclash.com` (Render) with isolated staging PostgreSQL:
+1. **Frontend SPA Hosting on Vercel (`packages/client/vercel.json`)**:
+   - Added rewrite configuration (`/(.*) -> /index.html`) so direct deep links and browser refreshes (`F5`) on custom History API routes (`/profile`, `/terms`, `/privacy`, `/help`, `/wallet`, `/verify-email`, `/reset-password`, `/invite/:code`) resolve cleanly.
+2. **Backend Server Startup Validation & Reverse Proxy Hardening (`packages/server`)**:
+   - Built `src/config/startup.ts` enforcing mandatory boot validation for `DATABASE_URL`, `JWT_SECRET`, `PORT`, and CORS origins.
+   - Configured `app.set("trust proxy", 1)` for accurate client IP and secure header resolution behind Render/Railway/Cloudflare reverse proxies.
+   - Added `/health` and `/api/health` returning `{ ok: true, status: "healthy", timestamp, environment, version }`.
+   - Implemented graceful shutdown handlers for `SIGTERM` and `SIGINT` closing WebSocket connections, HTTP listeners, and database pool cleanly.
+3. **Cross-Subdomain Session Cookie & Financial Gating**:
+   - Added `getSessionCookieOptions()` and `getClearCookieOptions()` supporting configurable `COOKIE_DOMAIN` (e.g. `.arcadeclash.com`) and `COOKIE_SAMESITE` (`lax`).
+   - Gated development diamond sandbox grants behind `ENABLE_DEV_DIAMOND_STUB` (defaulting to `false` in production/staging).
+4. **Hosting Blueprint & Scripts (`render.yaml` & `package.json`)**:
+   - Created `render.yaml` for Render Web Service deployment with `/health` health checks and standardized build/start commands.
+   - Added root and package scripts: `build:client`, `build:server`, `start:server`, `db:migrate`, `typecheck`.
+5. **Comprehensive Non-Programmer Staging Guide (`DEPLOYMENT.md`)**:
+   - Authored complete beginner-friendly step-by-step deployment guide with DNS records, environment variable inventory, migration commands, and post-deployment smoke test checklist.
+6. **27/27 Test Suite Verification & Typecheck**:
+   - Built `scripts/staging-readiness-check.ts` (31 PASS, 0 FAIL).
+   - Ran all 27 test suites via `npm test` — **100% PASS with 0 failures**.
+   - Ran TypeScript compilation across all workspaces — **100% clean**.
+
 ## Session 47 (2026-08-18): Legal, Policy, Consent & Help Center Foundation
 
 ### Baseline

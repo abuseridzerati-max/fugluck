@@ -146,4 +146,13 @@ in `PROGRESS.md`.
 - **Speed Trivia Clash (Quiz Mini-Game #1)**: `games/speed-trivia/` implements `GameModule` interface with 60 FPS tick loop, 10 questions per match, tick-based speed scoring `Points = Math.round(1000 * (ticksRemaining / 600))`, and `speedTriviaReplayAdapter` registered in `replayAdapters.ts` for headless score validation. Seeding maps `match.seed` to question selection and 4-option shuffling deterministically.
 - **Speed Trivia Package Exports**: `"./speed-trivia": "./speed-trivia/index.ts"` in `games/package.json` exports map resolvable by `@arcadeclash/client` with Vite dev server restarted to clear resolution cache.
 
+## Architecture Invariant: Staging Deployment Readiness & Cross-Subdomain Routing (added 2026-08-18)
+
+- **Frontend SPA Routing on Vercel**: `packages/client/vercel.json` provides `/(.*) -> /index.html` rewrites to guarantee custom History API deep links (`/terms`, `/privacy`, `/help`, `/wallet`, `/profile`, `/verify-email`, `/reset-password`, `/invite/:code`) load cleanly on hard browser refreshes (`F5`).
+- **Server Startup Validation**: `packages/server/src/config/startup.ts` validates mandatory `DATABASE_URL` and `JWT_SECRET` at process initialization.
+- **Cross-Subdomain Session Cookie Scoping**: Sockets and HTTP session cookies share `COOKIE_DOMAIN` (e.g. `.arcadeclash.com`), `COOKIE_SAMESITE` (`lax`), `httpOnly: true`, and `secure: true` in production across `staging.arcadeclash.com` and `api-staging.arcadeclash.com`.
+- **Health Checks & Graceful Process Termination**: Backend exposes `/health` and `/api/health` returning `{ ok: true, status: "healthy" }`, and handles `SIGTERM`/`SIGINT` by closing WebSocket listeners, HTTP server, and database connection pool cleanly.
+- **Financial Sandbox Gating**: Test Diamond purchasing is gated behind `ENABLE_DEV_DIAMOND_STUB` (defaulting to `false` in production/staging). Real money payments and withdrawals remain completely disabled.
+
+
 
