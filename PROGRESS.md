@@ -4259,12 +4259,46 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/score-validation-check.ts`: **24 / 24 passed**
   - `scripts/canvas-render-check.ts`: **11 / 11 passed** (106,420 canvas draw calls verified)
 
+## Session 42 (2026-08-18) — Database Migration Parity & Schema Reconciliation
+
+### What Was Done
+1. **Repository-Wide Comprehensive Audit**:
+   - Verified local repository state and independent GitHub REST API commit tracking against `422a82de2850bfd0d1d6c54cb14c91ae53e78150`.
+   - Evaluated TypeScript build health across all workspaces (`shared`, `games`, `server`, `client`) and Client production bundling (177 modules, 6 game chunks) with 0 errors.
+2. **Schema Drift Identification & Gap Analysis**:
+   - Compared ORM definitions (`packages/server/src/db/schema.ts`) against the checked-in migration history (`0000` through `0004`).
+   - Identified 4 missing tables never declared in the migration chain: `email_verification_tokens`, `admin_lockout_attempts`, `admin_audit_logs`, and `trivia_questions`.
+   - Identified 7 `NOT VALID` constraints in migration `0004` that were never formally validated in the migration chain.
+   - Identified Drizzle journal (`packages/server/drizzle/meta/_journal.json`) truncation at migration `0002`.
+3. **Forward Migration `0005_reconcile_schema_parity.sql`**:
+   - Created `packages/server/drizzle/0005_reconcile_schema_parity.sql` adding `email_verification_tokens`, `admin_lockout_attempts`, `admin_audit_logs`, and `trivia_questions`.
+   - Added `ALTER TABLE ... VALIDATE CONSTRAINT` for all 7 unvalidated foreign key and check constraints.
+   - Updated `packages/server/drizzle/meta/_journal.json` to register entries `0000` through `0005`.
+4. **Automated Migration & Schema Parity Test Script**:
+   - Created `scripts/migration-schema-parity-check.ts` executing all migrations `0000`–`0005` sequentially from scratch against a fresh database, introspecting PostgreSQL system catalogs (`information_schema.tables`, `information_schema.columns`, `pg_constraint` with `convalidated = true`, `pg_indexes`, `pg_trigger`, `users`), and executing smoke DML across all tables.
+   - Updated root `package.json` with `"test:migration-parity"` and included it in the root `npm test` pipeline.
+5. **Full Database & Platform Regression**:
+   - Executed full database-backed test suite against guarded disposable database (`arcadeclash_atomic_test`):
+     - `scripts/migration-schema-parity-check.ts`: **59 / 59 passed**
+     - `scripts/atomic-wager-lifecycle-check.ts`: **37 / 37 passed**
+     - `scripts/wallet-settlement-concurrency-check.ts`: **10 / 10 passed**
+     - `scripts/wallet-settlement-integrity-check.ts`: **13 / 13 passed**
+     - `scripts/match-lifecycle-durability-check.ts`: **19 / 19 passed**
+     - `scripts/financial-reconnection-check.ts`: **19 / 19 passed**
+     - `scripts/owner-admin-lockout-check.ts`: **10 / 10 passed**
+   - Executed complete 24-suite `npm test` pipeline: **100% passed**.
+
+### Verification Results
+- **TypeScript Compilation**: Clean across `@arcadeclash/shared`, `@arcadeclash/games`, `@arcadeclash/server`, `@arcadeclash/client`.
+- **Database Parity**: 59 system catalog assertions passed with 0 failures on fresh database replay.
+- **Total Test Suites**: 24/24 passed cleanly.
+
 ## How to resume
 
 ```bash
 cd C:/Users/abuse/arcadeclash
 git status
-npm test                            # Runs all 6 test scripts (118 assertions)
+npm test                            # Runs all 24 test scripts
 npm run dev -w packages/client   # http://localhost:5173 (frontend)
 npm run dev -w packages/server   # http://localhost:4000 (backend API)
 ```

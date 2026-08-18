@@ -70,6 +70,8 @@ async function main() {
   await ensureUserSchema();
   await ensureMatchSettlementsTable();
   await ensureMatchesHistoryTable();
+  // Clear any leftover orphan matches from previous interrupted runs before testing
+  await recoverOrphanMatches();
 
   // Create test users P1 & P2
   const p1Id = `usr_ml_p1_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
