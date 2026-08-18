@@ -10,8 +10,10 @@ import { InviteProvider } from './invites/InviteProvider'
 import type { MatchSocketMode } from './matchmaking/useMatchSocket'
 import AdminConsolePage from './admin/AdminConsolePage'
 import FriendsPage from './pages/FriendsPage'
+import HelpCenterPage from './pages/HelpCenterPage'
 import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/NotFoundPage'
+import PolicyPage from './pages/PolicyPage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
@@ -25,7 +27,41 @@ type ActiveGame = {
   mode: 'practice' | 'match'
   matchMode?: MatchSocketMode
 }
-type View = 'home' | 'profile' | 'friends' | 'wallet' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'invite' | 'not-found'
+
+const POLICY_SLUGS = [
+  'terms',
+  'privacy',
+  'cookies',
+  'rules',
+  'diamonds',
+  'withdrawals',
+  'refunds',
+  'responsible-play',
+  'eligibility',
+  'fair-play',
+  'disputes',
+  'data-rights',
+  'security',
+  'about',
+  'contact',
+] as const
+
+type PolicySlug = (typeof POLICY_SLUGS)[number]
+
+type View =
+  | 'home'
+  | 'profile'
+  | 'friends'
+  | 'wallet'
+  | 'login'
+  | 'signup'
+  | 'admin'
+  | 'verify-email'
+  | 'reset-password'
+  | 'invite'
+  | 'help'
+  | `policy:${PolicySlug}`
+  | 'not-found'
 
 const ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
 
@@ -67,11 +103,21 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/admin') return 'admin'
   if (cleanPath === '/verify-email') return 'verify-email'
   if (cleanPath === '/reset-password') return 'reset-password'
+  if (cleanPath === '/help') return 'help'
   if (cleanPath.startsWith('/invite/')) return 'invite'
+
+  const stripped = cleanPath.slice(1)
+  if (POLICY_SLUGS.includes(stripped as PolicySlug)) {
+    return `policy:${stripped as PolicySlug}`
+  }
+
   return 'not-found'
 }
 
 function getPathForView(view: View): string {
+  if (view.startsWith('policy:')) {
+    return `/${view.slice(7)}`
+  }
   switch (view) {
     case 'profile':
       return '/profile'
@@ -89,6 +135,8 @@ function getPathForView(view: View): string {
       return '/verify-email'
     case 'reset-password':
       return '/reset-password'
+    case 'help':
+      return '/help'
     case 'home':
       return '/'
     case 'invite':
@@ -148,6 +196,11 @@ function AppShell() {
   }, [user, view])
 
   function getTitleForView(targetView: View): string {
+    if (targetView.startsWith('policy:')) {
+      const slug = targetView.slice(7)
+      const formattedSlug = slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+      return `ArcadeClash — ${formattedSlug}`
+    }
     switch (targetView) {
       case 'profile':
         return t('meta.titleProfile')
@@ -165,6 +218,8 @@ function AppShell() {
         return 'ArcadeClash — Verify Account'
       case 'reset-password':
         return 'ArcadeClash — Reset Password'
+      case 'help':
+        return 'ArcadeClash — Help Center & FAQ'
       case 'not-found':
         return t('meta.titleNotFound')
       case 'home':
@@ -328,6 +383,13 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateLogin={() => navigateTo('login')}
         />
+      ) : view === 'help' ? (
+        <HelpCenterPage onNavigate={(path) => navigateTo(getViewFromPath(path))} />
+      ) : view.startsWith('policy:') ? (
+        <PolicyPage
+          policySlug={view.slice(7)}
+          onNavigate={(path) => navigateTo(getViewFromPath(path))}
+        />
       ) : view === 'not-found' ? (
         <NotFoundPage
           onNavigateHome={() => navigateTo('home')}
@@ -345,6 +407,7 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
         />
       )}

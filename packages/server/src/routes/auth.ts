@@ -1,12 +1,12 @@
-import type { PublicUser } from "@arcadeclash/shared";
+import { CURRENT_POLICY_VERSIONS, type PolicyType, type PublicUser } from "@arcadeclash/shared";
 import { createHash, randomUUID } from "node:crypto";
-import { eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { Router } from "express";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../auth/password";
 import { SESSION_COOKIE_MAX_AGE_MS, SESSION_COOKIE_NAME, signSessionToken } from "../auth/jwt";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
-import { emailVerificationTokens, passwordResetTokens, users, type User } from "../db/schema";
+import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
 import { ensureSignupGrant } from "../wallet/ledger";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/emailService";
@@ -62,8 +62,60 @@ const forgotPasswordLimiter = createRateLimiterMiddleware({
 
 export const authRouter = Router();
 
+authRouter.get("/policies/versions", (_req, res) => {
+  res.json({
+    versions: CURRENT_POLICY_VERSIONS,
+    requiredAtSignup: {
+      terms: CURRENT_POLICY_VERSIONS.TERMS,
+      privacy: CURRENT_POLICY_VERSIONS.PRIVACY,
+    },
+  });
+});
+
+authRouter.get("/policies/my-acceptances", attachSession, requireAuth, async (req, res) => {
+  const acceptances = await db.query.policyAcceptances.findMany({
+    where: eq(policyAcceptances.userId, req.userId!),
+    orderBy: [desc(policyAcceptances.acceptedAt)],
+  });
+  res.json({ acceptances });
+});
+
+authRouter.post("/policies/accept", attachSession, requireAuth, async (req, res) => {
+  const { policyType, policyVersion, source } = req.body ?? {};
+
+  if (typeof policyType !== "string" || !(policyType in CURRENT_POLICY_VERSIONS)) {
+    res.status(400).json({ error: "Invalid or unsupported policy type." });
+    return;
+  }
+  const typedPolicy = policyType as PolicyType;
+  const currentVersion = CURRENT_POLICY_VERSIONS[typedPolicy];
+  if (typeof policyVersion !== "string" || policyVersion !== currentVersion) {
+    res.status(400).json({
+      error: `Policy version must match the current version (${currentVersion}).`,
+      currentVersion,
+    });
+    return;
+  }
+
+  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
+  const userAgent = (req.headers["user-agent"] as string) || null;
+
+  const id = `pa_${randomUUID()}`;
+  await db.insert(policyAcceptances).values({
+    id,
+    userId: req.userId!,
+    policyType: typedPolicy,
+    policyVersion,
+    source: typeof source === "string" ? source.slice(0, 32) : "user_action",
+    ipAddress: clientIp,
+    userAgent,
+  });
+
+  res.json({ success: true, id, policyType: typedPolicy, policyVersion });
+});
+
 authRouter.post("/signup", authLimiter, async (req, res) => {
-  const { username, password, email } = req.body ?? {};
+  const { username, password, email, acceptedPolicies } = req.body ?? {};
 
   if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
     res.status(400).json({ error: "Username must be 3-20 characters: letters, numbers, underscores only." });
@@ -77,6 +129,23 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
   }
   if (email !== undefined && email !== null && (typeof email !== "string" || email.length > 255 || !email.includes("@"))) {
     res.status(400).json({ error: "Email must be valid and under 255 characters." });
+    return;
+  }
+
+  // Server-side mandatory consent validation for current Terms & Privacy Policy
+  if (
+    !acceptedPolicies ||
+    typeof acceptedPolicies !== "object" ||
+    acceptedPolicies.termsVersion !== CURRENT_POLICY_VERSIONS.TERMS ||
+    acceptedPolicies.privacyVersion !== CURRENT_POLICY_VERSIONS.PRIVACY
+  ) {
+    res.status(400).json({
+      error: "You must agree to the current Terms of Service and acknowledge the Privacy Policy.",
+      requiredVersions: {
+        terms: CURRENT_POLICY_VERSIONS.TERMS,
+        privacy: CURRENT_POLICY_VERSIONS.PRIVACY,
+      },
+    });
     return;
   }
 
@@ -94,8 +163,11 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
     }
   }
 
+  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
+  const userAgent = (req.headers["user-agent"] as string) || null;
   const passwordHash = await hashPassword(password);
   const id = randomUUID();
+
   const [user] = await db
     .insert(users)
     .values({
@@ -106,6 +178,28 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
       isEmailVerified: false,
     })
     .returning();
+
+  // Atomically record durable legal acceptance records for Terms and Privacy
+  await db.insert(policyAcceptances).values([
+    {
+      id: `pa_${randomUUID()}`,
+      userId: user.id,
+      policyType: "TERMS",
+      policyVersion: CURRENT_POLICY_VERSIONS.TERMS,
+      source: "registration",
+      ipAddress: clientIp,
+      userAgent,
+    },
+    {
+      id: `pa_${randomUUID()}`,
+      userId: user.id,
+      policyType: "PRIVACY",
+      policyVersion: CURRENT_POLICY_VERSIONS.PRIVACY,
+      source: "registration",
+      ipAddress: clientIp,
+      userAgent,
+    },
+  ]);
 
   // Create registration email verification token (24-hour expiration)
   const rawVerificationToken = randomUUID();

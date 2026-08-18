@@ -157,5 +157,30 @@
     "titleSignup": "ArcadeClash — Регистрация",
     "titleAdmin": "ArcadeClash — Панель администратора",
     "titleNotFound": "ArcadeClash — 404 Страница не найдена"
+  },
+  "policies": {
+    "nav": {
+      "about": "О платформе ArcadeClash",
+      "help": "Центр помощи и FAQ",
+      "contact": "Контакты и поддержка",
+      "terms": "Условия обслуживания",
+      "privacy": "Политика конфиденциальности",
+      "cookies": "Политика cookie и хранилища",
+      "rules": "Правила соревнований",
+      "diamonds": "Условия Diamond и кошелька",
+      "withdrawals": "Политика вывода средств",
+      "refunds": "Политика возвратов",
+      "responsiblePlay": "Ответственная игра",
+      "fairPlay": "Честная игра и античит",
+      "eligibility": "Требования и ограничения",
+      "disputes": "Жалобы и споры",
+      "dataRights": "Права на данные и закрытие аккаунта",
+      "security": "Безопасность платформы"
+    },
+    "footer": {
+      "legalHeading": "Юридическая информация",
+      "playMoneyHeading": "Игра и финансы",
+      "accountSafetyHeading": "Аккаунт и безопасность"
+    }
   }
 }

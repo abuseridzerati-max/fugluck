@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FriendEntry } from '@arcadeclash/shared'
 import { gameRegistry } from '@arcadeclash/games'
+import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { apiFetch, ApiError } from '../lib/api'
 
@@ -97,14 +98,14 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onNavig
   const outgoing = friends.filter((f) => f.direction === 'outgoing' && f.status === 'pending')
 
   return (
-    <>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateWallet={onNavigateWallet}
         onNavigateFriends={() => {}}
       />
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
+      <main style={{ flex: 1, maxWidth: 720, width: '100%', margin: '0 auto', padding: 'var(--space-8) var(--space-5)', boxSizing: 'border-box' }}>
         <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-3xl)' }}>{t('friends.title')}</h1>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-6)' }}>
           {t('friends.tagline')}
@@ -249,7 +250,8 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onNavig
           </div>
         </div>
       )}
-    </>
+      <Footer onNavigate={onNavigateHome} />
+    </div>
   )
 }
 

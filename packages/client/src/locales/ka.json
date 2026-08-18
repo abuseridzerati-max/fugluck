@@ -151,5 +151,30 @@
     "titleSignup": "ArcadeClash — რეგისტრაცია",
     "titleAdmin": "ArcadeClash — ადმინ კონსოლი",
     "titleNotFound": "ArcadeClash — 404 გვერდი ვერ მოიძებნა"
+  },
+  "policies": {
+    "nav": {
+      "about": "ArcadeClash-ის შესახებ",
+      "help": "დახმარების ცენტრი & FAQ",
+      "contact": "კონტაქტი & მხარდაჭერა",
+      "terms": "მომსახურების პირობები",
+      "privacy": "კონფიდენციალურობის პოლიტიკა",
+      "cookies": "ქუქი-ფაილების პოლიტიკა",
+      "rules": "შეჯიბრის წესები",
+      "diamonds": "Diamond & საფულის წესები",
+      "withdrawals": "განაღდების პოლიტიკა",
+      "refunds": "თანხის დაბრუნების პოლიტიკა",
+      "responsiblePlay": "პასუხისმგებლიანი თამაში",
+      "fairPlay": "სამართლიანი თამაში & ანტი-ჩითი",
+      "eligibility": "უფლებამოსილება & შეზღუდვები",
+      "disputes": "საჩივრები & დავები",
+      "dataRights": "მონაცემთა უფლებები & ანგარიშის დახურვა",
+      "security": "პლატფორმის უსაფრთხოება"
+    },
+    "footer": {
+      "legalHeading": "იურიდიული & პირობები",
+      "playMoneyHeading": "თამაში & ფინანსები",
+      "accountSafetyHeading": "ანგარიში & უსაფრთხოება"
+    }
   }
 }

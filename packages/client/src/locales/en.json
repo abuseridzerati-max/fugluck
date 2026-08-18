@@ -151,5 +151,30 @@
     "titleSignup": "ArcadeClash — Sign Up",
     "titleAdmin": "ArcadeClash — Admin Console",
     "titleNotFound": "ArcadeClash — 404 Page Not Found"
+  },
+  "policies": {
+    "nav": {
+      "about": "About ArcadeClash",
+      "help": "Help Center & FAQ",
+      "contact": "Contact & Support",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy",
+      "rules": "Competition Rules",
+      "diamonds": "Diamond & Wallet Terms",
+      "withdrawals": "Withdrawal Policy",
+      "refunds": "Refund Policy",
+      "responsiblePlay": "Responsible Play",
+      "fairPlay": "Fair Play & Anti-Cheat",
+      "eligibility": "Eligibility & Restrictions",
+      "disputes": "Complaints & Disputes",
+      "dataRights": "Data Rights & Account Closure",
+      "security": "Platform Security"
+    },
+    "footer": {
+      "legalHeading": "Legal & Terms",
+      "playMoneyHeading": "Play & Money",
+      "accountSafetyHeading": "Account & Safety"
+    }
   }
 }

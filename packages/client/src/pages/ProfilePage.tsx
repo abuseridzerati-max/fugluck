@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getGameTitle } from '@arcadeclash/shared'
 import Avatar from '../components/Avatar'
+import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
@@ -222,6 +223,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
           )}
         </section>
       </main>
+      <Footer onNavigate={onNavigateHome} />
     </>
   )
 }

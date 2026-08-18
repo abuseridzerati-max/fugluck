@@ -3,6 +3,37 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 47 (2026-08-18): Legal, Policy, Consent & Help Center Foundation
+
+### Baseline
+- `54f4f73` (PR #11 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Task and Objective
+Build ArcadeClash's comprehensive professional Legal, Policies, Consent, and Help Center foundation for the desktop website without fabricating regulatory/licensing conclusions:
+1. **Shared Policy Constants & Types (`@arcadeclash/shared`)**:
+   - Defined `CURRENT_POLICY_VERSIONS` for all 15 platform legal/policy documents (`TERMS`, `PRIVACY`, `COOKIES`, `RULES`, `DIAMONDS`, `WITHDRAWALS`, `REFUNDS`, `RESPONSIBLE_PLAY`, `ELIGIBILITY`, `FAIR_PLAY`, `DISPUTES`, `DATA_RIGHTS`, `SECURITY`, `ABOUT`, `CONTACT`) set to `"2026-08-18"`.
+   - Defined `POLICY_NAV_ITEMS` categorizing 16 items across 4 pillars: `ARCADECLASH`, `LEGAL`, `PLAY_AND_MONEY`, `ACCOUNT_AND_SAFETY`.
+2. **Durable Database Audit (`policy_acceptances` table & Migration 0007)**:
+   - Added `policyAcceptances` Drizzle schema with indexed `(user_id, policy_type)` and `(policy_type, policy_version)` columns and cascading foreign key to `users`.
+   - Created migration `0007_policy_acceptances.sql` and registered in `meta/_journal.json`.
+3. **Mandatory Registration Legal Consent & API Handlers**:
+   - `POST /api/auth/signup` enforces mandatory acceptance of current `TERMS` and `PRIVACY` versions. Atomically inserts durable audit records with IP, User-Agent, and timestamps.
+   - Added `GET /api/auth/policies/versions`, `POST /api/auth/policies/accept`, and `GET /api/auth/policies/my-acceptances`.
+   - Added registration checkbox in `AuthModal.tsx` linking to `/terms` and `/privacy`.
+4. **Structured Client Policy Data & Reusable Viewer (`PolicyPage.tsx`)**:
+   - Built `packages/client/src/legal/policyData.ts` containing complete texts and structured sections for all 15 policies.
+   - Built `PolicyPage.tsx` with breadcrumbs, executive summary box, version badge, print button, table of contents sidebar, and related policy links.
+5. **Interactive Help Center (`HelpCenterPage.tsx`)**:
+   - Built `packages/client/src/legal/faqData.ts` with 8 categories and questions with deep policy cross-links.
+   - Built `HelpCenterPage.tsx` with live search filtering, category pills, expandable FAQ accordions, and support contact banner.
+6. **Persistent Global Footer (`Footer.tsx`)**:
+   - 4-column layout linking all 16 policy/help routes with disclaimers and engine badges, mounted across all normal views.
+7. **Internal Review Register (`LEGAL_REVIEW_REQUIRED.md`)**:
+   - Tracking unconfirmed items (skill-game licensing, age minimum, geo-restrictions, KYC thresholds, withdrawal limits/fees/timelines, AML playthrough, tax treatment).
+8. **Triple-Language Parity & Verification**:
+   - Added full translations in `en.json`, `ka.json`, and `ru.json` with 100% key parity verified by `scripts/legal-policy-help-check.ts` and `scripts/i18n-check.ts`.
+   - 26/26 test suites passed (80 migration checks, 53 legal policy checks, 31 auth lifecycle checks, 294,295 canvas draw ops). Client production build passed.
+
 ## Session 46 (2026-08-18): Real-Money Diamond Economy Architecture & System Design Audit
 
 ### Baseline
