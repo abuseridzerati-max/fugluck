@@ -12,10 +12,11 @@ type GameCardProps = {
   rating: number
   onPlay?: () => void
   onFindOpponent?: (stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onLaunchGuestInvite?: () => void
   loading?: boolean
 }
 
-export default function GameCard({ title, engine, plays, rating, onPlay, onFindOpponent, loading }: GameCardProps) {
+export default function GameCard({ title, engine, plays, rating, onPlay, onFindOpponent, onLaunchGuestInvite, loading }: GameCardProps) {
   const [showModal, setShowModal] = useState(false)
   const tagColor = categoryColors[engine]
 
@@ -87,8 +88,7 @@ export default function GameCard({ title, engine, plays, rating, onPlay, onFindO
             onPlay?.()
           }}
           onLaunchInviteLink={() => {
-            void navigator.clipboard.writeText('http://localhost:5173')
-            alert(`Instant invite link for ${title} copied to clipboard! Share with anyone to play instantly.`)
+            onLaunchGuestInvite?.()
           }}
           onLaunchCoinsMatch={(stake) => {
             onFindOpponent?.(stake, 'COINS')

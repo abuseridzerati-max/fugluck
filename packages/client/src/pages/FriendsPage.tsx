@@ -65,6 +65,26 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
     }
   }
 
+  async function removeFriend(id: string) {
+    setError(null)
+    try {
+      await apiFetch(`/api/friends/${id}`, { method: 'DELETE' })
+      await refresh()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not remove friend.')
+    }
+  }
+
+  async function cancelRequest(id: string) {
+    setError(null)
+    try {
+      await apiFetch(`/api/friends/${id}/cancel`, { method: 'DELETE' })
+      await refresh()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not cancel request.')
+    }
+  }
+
   const accepted = friends.filter((f) => f.status === 'accepted')
   const incoming = friends.filter((f) => f.direction === 'incoming' && f.status === 'pending')
   const outgoing = friends.filter((f) => f.direction === 'outgoing' && f.status === 'pending')
@@ -133,6 +153,14 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
                     <button type="button" className="ac-btn ac-btn--primary" onClick={() => setInviteFor(f)}>
                       {t('friends.inviteToPlay')}
                     </button>
+                    <button
+                      type="button"
+                      className="ac-btn ac-btn--ghost"
+                      style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}
+                      onClick={() => removeFriend(f.friendshipId)}
+                    >
+                      Remove
+                    </button>
                   </Row>
                 ))
               )}
@@ -143,7 +171,16 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
                 <Empty>{t('friends.noOutgoing')}</Empty>
               ) : (
                 outgoing.map((f) => (
-                  <Row key={f.friendshipId} label={t('friends.pendingLabel', { username: f.username })} />
+                  <Row key={f.friendshipId} label={t('friends.pendingLabel', { username: f.username })}>
+                    <button
+                      type="button"
+                      className="ac-btn ac-btn--ghost"
+                      style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-danger, #f87171)' }}
+                      onClick={() => cancelRequest(f.friendshipId)}
+                    >
+                      Cancel
+                    </button>
+                  </Row>
                 ))
               )}
             </Section>

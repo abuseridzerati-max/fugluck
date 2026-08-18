@@ -139,6 +139,11 @@ export type QueueStateUpdatePayload = {
   entries: QueueStateEntry[];
 };
 
+export type GuestLinkCreatedPayload = {
+  code: string;
+  gameId: string;
+};
+
 export interface ClientToServerEvents {
   joinQueue: (payload: JoinQueuePayload) => void;
   submitScore: (payload: SubmitScorePayload) => void;
@@ -147,6 +152,8 @@ export interface ClientToServerEvents {
   respondInvite: (payload: RespondInvitePayload) => void;
   // Cancel a pending invite you sent (or leave the "waiting for accept" screen).
   cancelInvite: (payload: { inviteId: string }) => void;
+  createGuestLink: (payload: { gameId: string }) => void;
+  joinGuestLink: (payload: { code: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -158,6 +165,7 @@ export interface ServerToClientEvents {
   inviteError: (payload: InviteErrorPayload) => void;
   // Echoed to the inviter so the waiting UI knows which inviteId to cancel.
   inviteSent: (payload: { inviteId: string; gameId: string; toUsername: string }) => void;
+  guestLinkCreated: (payload: GuestLinkCreatedPayload) => void;
   // Real-time broadcast of waiting players in the public matchmaking lobby.
   queueStateUpdate: (payload: QueueStateUpdatePayload) => void;
 }

@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { QueueStateEntry, ServerToClientEvents, ClientToServerEvents } from '@arcadeclash/shared'
+import { getGameTitle, type QueueStateEntry, type ServerToClientEvents, type ClientToServerEvents } from '@arcadeclash/shared'
 import { io, type Socket } from 'socket.io-client'
 import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'
-
-const GAME_TITLES: Record<string, string> = {
-  'neon-runner': 'Neon Runner',
-  'pixel-ninja-dash': 'Pixel Ninja Dash',
-  'space-blaster': 'Space Blaster',
-  'cyber-hopper': 'Cyber Hopper',
-}
 
 type LiveQueueListProps = {
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
@@ -55,7 +48,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
 
   function handleDirectMatch(entry: QueueStateEntry) {
     setError(null)
-    const gameTitle = GAME_TITLES[entry.gameId] ?? entry.gameId
+    const gameTitle = getGameTitle(entry.gameId)
 
     // Guest enforcement guard
     if (!user && entry.stake > 0) {
@@ -144,7 +137,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-4)' }}>
           {entries.map((entry) => {
             const isSelf = user?.id === entry.userId
-            const gameTitle = GAME_TITLES[entry.gameId] ?? entry.gameId
+            const gameTitle = getGameTitle(entry.gameId)
 
             return (
               <div

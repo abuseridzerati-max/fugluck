@@ -134,9 +134,49 @@ function mockEscrowStake(userBalance: number, stakeAmount: number) {
 const insufficientEscrowAttempt = mockEscrowStake(25, 100);
 check("Escrow debit rejects attempt when user balance is insufficient", insufficientEscrowAttempt.error === "insufficient_funds");
 
+// 6. Friend Removal Authorization Guard (DELETE /api/friends/:id)
+function mockRemoveFriend(currentUserId: string, friendship: { requesterId: string; addresseeId: string; status: string }) {
+  if ((friendship.requesterId !== currentUserId && friendship.addresseeId !== currentUserId) || friendship.status !== "accepted") {
+    return { status: 404, body: { error: "Friendship not found or not accepted." } };
+  }
+  return { status: 200, body: { success: true } };
+}
+
+const acceptedFriendshipAB = { requesterId: "usr_A", addresseeId: "usr_B", status: "accepted" };
+check("User A can remove accepted friendship with User B (200)", mockRemoveFriend("usr_A", acceptedFriendshipAB).status === 200);
+check("User B can remove accepted friendship with User A (200)", mockRemoveFriend("usr_B", acceptedFriendshipAB).status === 200);
+check("Unrelated User C is rejected when attempting to remove friendship between A and B (404)", mockRemoveFriend("usr_C", acceptedFriendshipAB).status === 404);
+
+const pendingFriendshipAB = { requesterId: "usr_A", addresseeId: "usr_B", status: "pending" };
+check("Pending friendship cannot be removed via unfriend endpoint (404)", mockRemoveFriend("usr_A", pendingFriendshipAB).status === 404);
+
+// 7. Friend Request Cancellation Authorization Guard (DELETE /api/friends/:id/cancel)
+function mockCancelFriendRequest(currentUserId: string, friendship: { requesterId: string; addresseeId: string; status: string }) {
+  if (friendship.requesterId !== currentUserId || friendship.status !== "pending") {
+    return { status: 404, body: { error: "No pending outgoing request found to cancel." } };
+  }
+  return { status: 200, body: { success: true } };
+}
+
+check("Requester User A can cancel pending outgoing request (200)", mockCancelFriendRequest("usr_A", pendingFriendshipAB).status === 200);
+check("Addressee User B cannot cancel outgoing request through requester endpoint (404)", mockCancelFriendRequest("usr_B", pendingFriendshipAB).status === 404);
+check("Unrelated User C cannot cancel request (404)", mockCancelFriendRequest("usr_C", pendingFriendshipAB).status === 404);
+check("Accepted friendship cannot be canceled through request cancellation endpoint (404)", mockCancelFriendRequest("usr_A", acceptedFriendshipAB).status === 404);
+
+// 8. Game Title Registry Resolution
+import { getGameTitle } from "@arcadeclash/shared";
+check("getGameTitle resolves 'neon-runner'", getGameTitle("neon-runner") === "Neon Runner");
+check("getGameTitle resolves 'pixel-ninja-dash'", getGameTitle("pixel-ninja-dash") === "Pixel Ninja Dash");
+check("getGameTitle resolves 'space-blaster'", getGameTitle("space-blaster") === "Space Blaster");
+check("getGameTitle resolves 'cyber-hopper'", getGameTitle("cyber-hopper") === "Cyber Hopper");
+check("getGameTitle resolves 'speed-trivia'", getGameTitle("speed-trivia") === "Speed Trivia Clash");
+check("getGameTitle resolves 'tf-sprint'", getGameTitle("tf-sprint") === "True / False Sprint");
+check("getGameTitle falls back to gameId for unknown id", getGameTitle("unknown-game") === "unknown-game");
+
 if (failures > 0) {
   console.log(`\n${failures} failure(s)`);
   process.exit(1);
 }
 console.log(`\nAll checks passed.`);
+
 

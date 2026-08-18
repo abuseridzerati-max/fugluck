@@ -36,10 +36,19 @@ import {
   setOnQueueChange,
   tryPair,
 } from "../packages/server/src/matchmaking/queue.ts";
+import {
+  cancelInvitesForSocket,
+  getGuestLinkInfo,
+  handleCreateGuestLink,
+  handleJoinGuestLink,
+} from "../packages/server/src/matchmaking/invites.ts";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
 import { replayEngine, type InputLogEntry } from "@arcadeclash/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
+import { db } from "../packages/server/src/db/client.ts";
+import { matchesHistory } from "../packages/server/src/db/schema.ts";
+import { eq } from "drizzle-orm";
 
 let failures = 0;
 
@@ -507,8 +516,72 @@ console.log("\nTest 12: live public queue state broadcast & 1-click lobby\n");
 }
 
 // ---------------------------------------------------------------------------
+// Test 13: Instant Guest Invite Link Creation, Lookup, Joining & Cleanup
+// ---------------------------------------------------------------------------
+console.log("\nTest 13: instant guest invite link lifecycle\n");
+
+{
+  const host = fakeSocket("user_host_guest", "HostGamer");
+  handleCreateGuestLink(host, { gameId: "neon-runner" });
+
+  const guestLinkCreated = host.emitted.find((e) => e.event === "guestLinkCreated")?.payload as any;
+  const inviteSent = host.emitted.find((e) => e.event === "inviteSent")?.payload as any;
+
+  check("handleCreateGuestLink emits guestLinkCreated with code and gameId", Boolean(guestLinkCreated?.code && guestLinkCreated?.gameId === "neon-runner"));
+  check("handleCreateGuestLink emits inviteSent with code as inviteId", Boolean(inviteSent?.inviteId === guestLinkCreated?.code));
+
+  const code = guestLinkCreated.code;
+
+  // Lookup metadata
+  const validInfo = getGuestLinkInfo(code);
+  check("getGuestLinkInfo returns valid=true with gameId and hostUsername for active link", validInfo.valid === true && validInfo.gameId === "neon-runner" && validInfo.hostUsername === "HostGamer");
+
+  const invalidInfo = getGuestLinkInfo("nonexistent_code");
+  check("getGuestLinkInfo returns valid=false for unknown link", invalidInfo.valid === false);
+
+  // Self-join rejection
+  handleJoinGuestLink(host, { code });
+  const selfJoinError = host.emitted.find((e) => e.event === "inviteError")?.payload as any;
+  check("host cannot join their own guest link", selfJoinError?.message === "You cannot join your own guest link.");
+
+  // Guest joins link
+  const guest = fakeSocket("guest_joiner_1", "GuestJoiner");
+  guest.data.isGuest = true;
+
+  handleJoinGuestLink(guest, { code });
+  await waitForEvent(guest, "matched");
+  await waitForEvent(host, "matched");
+
+  const guestMatched = guest.emitted.find((e) => e.event === "matched")?.payload as any;
+  const hostMatched = host.emitted.find((e) => e.event === "matched")?.payload as any;
+
+  check("guest receives matched payload upon joining guest link", Boolean(guestMatched?.matchId));
+  check("host receives matched payload upon guest joining", Boolean(hostMatched?.matchId));
+
+  const dbMatch = await db.query.matchesHistory.findFirst({ where: eq(matchesHistory.id, guestMatched.matchId) });
+  check("guest match strictly persists currency=COINS and stake=0 in database", dbMatch?.currency === "COINS" && dbMatch?.stake === 0);
+
+  // Second join attempt after consumption fails
+  const secondGuest = fakeSocket("guest_late", "LateGuest");
+  handleJoinGuestLink(secondGuest, { code });
+  const consumedError = secondGuest.emitted.find((e) => e.event === "inviteError")?.payload as any;
+  check("consumed guest link is cleared and cannot be joined again", consumedError?.message === "Guest invite link expired or host is offline.");
+
+  // Disconnect cleanup check
+  const host2 = fakeSocket("user_host_dc", "HostDC");
+  handleCreateGuestLink(host2, { gameId: "space-blaster" });
+  const dcCode = (host2.emitted.find((e) => e.event === "guestLinkCreated")?.payload as any)?.code;
+  check("second host created guest link", Boolean(dcCode));
+
+  cancelInvitesForSocket(host2);
+  const infoAfterDC = getGuestLinkInfo(dcCode);
+  check("cancelInvitesForSocket cleans up hosted guest link upon host disconnect", infoAfterDC.valid === false);
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) FAILED.`}`);
 process.exit(failures === 0 ? 0 : 1);
 }
 
 main();
+

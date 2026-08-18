@@ -3,6 +3,78 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 43 (2026-08-18): Complete Core Desktop Social & Guest Match Mechanics
+
+### Task and Objective
+Implement and verify all remaining core desktop-web social, guest matchmaking, and game title mechanics identified in the desktop audit:
+1. **Instant Guest Invite Links**:
+   - Host clicks "Play with Friend" / "Instant Invite Link" in `LaunchModal` / `GameCard`, which mounts `MatchLoader` in mode `{ kind: 'createGuest' }`.
+   - Socket emits `createGuestLink({ gameId })`. Server issues 8-character unique code with 10-minute TTL cleanup and socket disconnect cleanup (`cancelInvitesForSocket`), emitting `guestLinkCreated({ code, gameId })`.
+   - Host UI renders shareable `${window.location.origin}/invite/${code}` with 1-click clipboard copy feedback (`✓ Copied`) and waiting state without disruptive alerts.
+2. **Direct Guest Invite URL Joining (`/invite/:code`)**:
+   - Added `GET /api/matches/guest-link/:code` public lookup endpoint in server `matches.ts`.
+   - Added `/invite/:code` route resolution in `App.tsx` which looks up link validity and mounts `MatchLoader` in mode `{ kind: 'joinGuest', code }`.
+   - Socket emits `joinGuestLink({ code })`. Server pairs host and guest, removes both from queue, and creates match with `currency = "COINS"` and `stake = 0` (Free Play).
+3. **Friendship Removal & Outgoing Request Cancellation**:
+   - Implemented `DELETE /api/friends/:friendshipId` for either participant in an accepted friendship.
+   - Implemented `DELETE /api/friends/:friendshipId/cancel` and `POST /api/friends/:friendshipId/cancel` for the requester of a pending friend request.
+   - Wired "Remove" button in `FriendsPage.tsx` under accepted friends list with instant removal.
+   - Wired "Cancel" button in `FriendsPage.tsx` under outgoing pending requests list with instant cancellation.
+4. **Canonical Game Titles Source of Truth**:
+   - Exported `getGameTitle(gameId: string): string` from `@arcadeclash/shared` derived directly from `GAME_REGISTRY`.
+   - Replaced fragmented/hardcoded `GAME_TITLES` maps in `LiveQueueList.tsx` and `App.tsx` with `getGameTitle()`.
+5. **Automated Test Coverage**:
+   - Added assertions to `scripts/wallet-friends-check.ts` for unfriend authorization, request cancellation authorization, and game title registry lookup across all 6 games (28 assertions total).
+   - Added Test 13 to `scripts/matchmaking-check.ts` verifying guest invite link creation, metadata lookup, self-join rejection, guest pairing, zero-stake enforcement, single-use consumption, and host disconnect cleanup (38 assertions total).
+   - Verified complete `npm test` across all 25 test suites and client production build.
+
+### Verification Completed
+- **`scripts/wallet-friends-check.ts`**: **28/28 PASS** (Signup grant, diamond packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution).
+- **`scripts/matchmaking-check.ts`**: **38/38 PASS** (Game ID validation, queue pairing, queue removal, match creation, score submission & resolution, duplicate submission protection, forfeit timeout, disconnect mid-match, guest instant play, stake selection, queue isolation, live queue broadcast, guest invite link lifecycle).
+- **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS**.
+- **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS**.
+- **`scripts/financial-reconnection-check.ts`**: **19/19 PASS**.
+- **`scripts/determinism-check.ts`**: **31/31 PASS**.
+- **`scripts/score-validation-check.ts`**: **42/42 PASS**.
+- **`scripts/canvas-render-check.ts`**: **28/28 PASS**.
+- **`scripts/rate-limit-check.ts`**: **11/11 PASS**.
+- **`scripts/sql-injection-check.ts`**: **19/19 PASS**.
+- **`scripts/input-validation-check.ts`**: **16/16 PASS**.
+- **`scripts/xss-audit-check.ts`**: **17/17 PASS**.
+- **`scripts/password-security-check.ts`**: **13/13 PASS**.
+- **`scripts/admin-security-check.ts`**: **8/8 PASS**.
+- **`scripts/admin-console-check.ts`**: **31/31 PASS**.
+- **`scripts/cors-audit-check.ts`**: **20/20 PASS**.
+- **`scripts/registration-verification-check.ts`**: **9/9 PASS**.
+- **`scripts/owner-admin-lockout-check.ts`**: **13/13 PASS**.
+- **`scripts/request-logging-audit-check.ts`**: **12/12 PASS**.
+- **`scripts/password-policy-check.ts`**: **17/17 PASS**.
+- **`scripts/file-upload-audit-check.ts`**: **4/4 PASS**.
+- **`scripts/wallet-settlement-concurrency-check.ts`**: **17/17 PASS**.
+- **`scripts/wallet-settlement-integrity-check.ts`**: **16/16 PASS**.
+- **`scripts/match-lifecycle-durability-check.ts`**: **20/20 PASS**.
+- **`scripts/i18n-check.ts`**: **15/15 PASS**.
+- **Client Production Build**: **PASS** (`tsc -b && vite build` completed with zero errors).
+- **Server Typecheck**: **PASS** (`npx tsc --noEmit -p packages/server/tsconfig.json` completed with zero errors).
+
+### Files Modified
+- `packages/shared/src/gameModule.ts` [MODIFIED]
+- `packages/shared/src/matchmaking.ts` [MODIFIED]
+- `packages/shared/src/index.ts` [MODIFIED]
+- `packages/server/src/matchmaking/invites.ts` [MODIFIED]
+- `packages/server/src/routes/matches.ts` [MODIFIED]
+- `packages/server/src/routes/friends.ts` [MODIFIED]
+- `packages/client/src/matchmaking/useMatchSocket.ts` [MODIFIED]
+- `packages/client/src/game-loader/MatchLoader.tsx` [MODIFIED]
+- `packages/client/src/components/GameCard.tsx` [MODIFIED]
+- `packages/client/src/components/TrendingArena.tsx` [MODIFIED]
+- `packages/client/src/components/LiveQueueList.tsx` [MODIFIED]
+- `packages/client/src/pages/HomePage.tsx` [MODIFIED]
+- `packages/client/src/pages/FriendsPage.tsx` [MODIFIED]
+- `packages/client/src/App.tsx` [MODIFIED]
+- `scripts/wallet-friends-check.ts` [MODIFIED]
+- `scripts/matchmaking-check.ts` [MODIFIED]
+
 ## Session 42 (2026-08-18): Complete Authentication, Transactional Email Verification & Account Recovery Lifecycle
 
 ### Task and Objective

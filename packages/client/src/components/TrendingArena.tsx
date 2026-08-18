@@ -7,6 +7,7 @@ import { TrendingIcon } from './icons'
 type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onLaunchGuestInvite?: (id: string, title: string) => void
   loadingGameId: string | null
   selectedCategory?: string
 }
@@ -14,6 +15,7 @@ type TrendingArenaProps = {
 export default function TrendingArena({
   onPlayGame,
   onFindOpponent,
+  onLaunchGuestInvite,
   loadingGameId,
   selectedCategory = 'all',
 }: TrendingArenaProps) {
@@ -74,6 +76,11 @@ export default function TrendingArena({
               onFindOpponent={
                 user && game.id in gameFactories
                   ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                  : undefined
+              }
+              onLaunchGuestInvite={
+                game.id in gameFactories
+                  ? () => onLaunchGuestInvite?.(game.id, game.title)
                   : undefined
               }
             />

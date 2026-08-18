@@ -8,6 +8,7 @@ import TrendingArena from '../components/TrendingArena'
 type HomePageProps = {
   onPlayGame: (id: string, title: string) => void
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onLaunchGuestInvite?: (id: string, title: string) => void
   loadingGameId: string | null
   onNavigateProfile: () => void
   onNavigateFriends: () => void
@@ -17,6 +18,7 @@ type HomePageProps = {
 export default function HomePage({
   onPlayGame,
   onFindOpponent,
+  onLaunchGuestInvite,
   loadingGameId,
   onNavigateProfile,
   onNavigateFriends,
@@ -44,6 +46,7 @@ export default function HomePage({
         <TrendingArena
           onPlayGame={onPlayGame}
           onFindOpponent={onFindOpponent}
+          onLaunchGuestInvite={onLaunchGuestInvite}
           loadingGameId={loadingGameId}
           selectedCategory={selectedCategory}
         />

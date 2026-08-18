@@ -1,5 +1,5 @@
 export type { GameMode, GameOverPayload, GameModule, GameModuleFactory, InputLogEntry, GameRegistryItem } from "./gameModule";
-export { VIRTUAL_VIEWPORT, GAME_REGISTRY } from "./gameModule";
+export { VIRTUAL_VIEWPORT, GAME_REGISTRY, getGameTitle } from "./gameModule";
 export type { PublicUser } from "./user";
 export type { RandomFn, SeededRandom } from "./rng";
 export { mulberry32, createSeededRandom } from "./rng";
@@ -7,6 +7,7 @@ export type { FixedTimestepLoop, FixedTimestepLoopOptions } from "./fixedTimeste
 export { createFixedTimestepLoop, FIXED_TIMESTEP_SEC } from "./fixedTimestepLoop";
 export type {
   ClientToServerEvents,
+  GuestLinkCreatedPayload,
   InviteErrorPayload,
   InviteFriendPayload,
   InviteReceivedPayload,
