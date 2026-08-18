@@ -48,13 +48,13 @@ const mockStoredSession = JSON.stringify(sample);
 const rehydrated = JSON.parse(mockStoredSession) as PublicUser;
 check("Auth session rehydrates from localStorage mock", rehydrated.username === "tester" && rehydrated.balances.coins === 10);
 
-// Supabase Auth Persistence & Token Storage Simulation
-const mockSupabaseSessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken";
+// Auth Session Persistence & Token Storage Simulation
+const mockSessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken";
 const mockAuthStorageKey = "arcadeclash_auth_token";
 const mockStorage: Record<string, string> = {};
-mockStorage[mockAuthStorageKey] = mockSupabaseSessionToken;
+mockStorage[mockAuthStorageKey] = mockSessionToken;
 
-check("Supabase Auth session token stores in localStorage", mockStorage["arcadeclash_auth_token"] === mockSupabaseSessionToken);
+check("Auth session token stores in localStorage mock", mockStorage["arcadeclash_auth_token"] === mockSessionToken);
 check("Auth loading gate rehydrates user state prior to network sync", Boolean(mockStorage["arcadeclash_auth_token"]));
 
 // Ledger Reason Key Format Verification

@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { PublicUser } from '@arcadeclash/shared'
 import { apiFetch, ApiError } from '../lib/api'
-import { supabase } from '../lib/supabase'
 
 const AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
 
@@ -13,10 +12,14 @@ type AuthContextValue = {
   user: PublicUser | null
   loading: boolean
   error: string | null
-  signUp: (username: string, password: string, email?: string) => Promise<void>
+  signUp: (username: string, password: string, email?: string) => Promise<{ user: PublicUser; verificationMessage?: string }>
   logIn: (username: string, password: string) => Promise<void>
   logOut: () => Promise<void>
   refreshUser: () => Promise<void>
+  verifyEmail: (token: string) => Promise<PublicUser>
+  resendVerification: (email?: string) => Promise<string>
+  forgotPassword: (emailOrUsername: string) => Promise<string>
+  resetPassword: (token: string, newPassword: string) => Promise<string>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -53,13 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await apiFetch<{ user: PublicUser }>('/api/auth/me')
         if (mounted) updateUser(res.user)
-      } catch (err) {
+      } catch {
         if (mounted) {
-          // Check if we have re-hydrated user from localStorage
-          const stored = localStorage.getItem(AUTH_STORAGE_KEY)
-          if (!stored) {
-            updateUser(null)
-          }
+          // If server /me rejects, the session is invalid — clear local cache
+          updateUser(null)
         }
       } finally {
         if (mounted) setLoading(false)
@@ -76,11 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUp(username: string, password: string, email?: string) {
     setError(null)
     try {
-      const res = await apiFetch<{ user: PublicUser }>('/api/auth/signup', {
+      const res = await apiFetch<{ user: PublicUser; verificationMessage?: string }>('/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify({ username, password, email }),
       })
       updateUser(res.user)
+      return res
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Sign up failed')
       throw e
@@ -103,11 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logOut() {
     await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-    try {
-      await supabase.auth.signOut().catch(() => {})
-    } catch {
-      // Ignore Supabase sign out error if offline
-    }
     updateUser(null)
   }
 
@@ -116,13 +112,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch<{ user: PublicUser }>('/api/auth/me')
       updateUser(res.user)
     } catch {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY)
-      if (!stored) updateUser(null)
+      updateUser(null)
+    }
+  }
+
+  async function verifyEmail(token: string): Promise<PublicUser> {
+    setError(null)
+    try {
+      const res = await apiFetch<{ user: PublicUser; message: string }>('/api/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      })
+      if (res.user) {
+        updateUser(res.user)
+      }
+      return res.user
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Email verification failed')
+      throw e
+    }
+  }
+
+  async function resendVerification(email?: string): Promise<string> {
+    setError(null)
+    try {
+      const res = await apiFetch<{ message: string }>('/api/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
+      return res.message
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to resend verification email')
+      throw e
+    }
+  }
+
+  async function forgotPassword(emailOrUsername: string): Promise<string> {
+    setError(null)
+    try {
+      const body = emailOrUsername.includes('@')
+        ? { email: emailOrUsername }
+        : { username: emailOrUsername }
+      const res = await apiFetch<{ message: string }>('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      return res.message
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Password reset request failed')
+      throw e
+    }
+  }
+
+  async function resetPassword(token: string, newPassword: string): Promise<string> {
+    setError(null)
+    try {
+      const res = await apiFetch<{ message: string }>('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token, newPassword }),
+      })
+      return res.message
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Password reset failed')
+      throw e
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signUp, logIn, logOut, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        signUp,
+        logIn,
+        logOut,
+        refreshUser,
+        verifyEmail,
+        resendVerification,
+        forgotPassword,
+        resetPassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

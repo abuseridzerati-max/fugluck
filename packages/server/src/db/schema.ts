@@ -27,6 +27,16 @@ export const emailVerificationTokens = pgTable("email_verification_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const adminLockoutAttempts = pgTable("admin_lockout_attempts", {
   id: text("id").primaryKey(),
   ipAddress: varchar("ip_address", { length: 64 }).notNull().unique(),
@@ -172,6 +182,8 @@ export const triviaQuestions = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type Friendship = typeof friendships.$inferSelect;
 export type MatchHistoryRecord = typeof matchesHistory.$inferSelect;

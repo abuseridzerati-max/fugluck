@@ -12,6 +12,8 @@ import FriendsPage from './pages/FriendsPage'
 import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 
 type ActiveGame = {
   id: string
@@ -20,7 +22,7 @@ type ActiveGame = {
   mode: 'practice' | 'match'
   matchMode?: MatchSocketMode
 }
-type View = 'home' | 'profile' | 'friends' | 'wallet' | 'settings' | 'login' | 'signup' | 'admin' | 'not-found'
+type View = 'home' | 'profile' | 'friends' | 'wallet' | 'settings' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'not-found'
 
 const GAME_TITLES: Record<string, string> = {
   'neon-runner': 'Neon Runner',
@@ -70,6 +72,8 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/login') return 'login'
   if (cleanPath === '/signup') return 'signup'
   if (cleanPath === '/admin') return 'admin'
+  if (cleanPath === '/verify-email') return 'verify-email'
+  if (cleanPath === '/reset-password') return 'reset-password'
   return 'not-found'
 }
 
@@ -87,6 +91,12 @@ function getPathForView(view: View): string {
       return '/login'
     case 'signup':
       return '/signup'
+    case 'admin':
+      return '/admin'
+    case 'verify-email':
+      return '/verify-email'
+    case 'reset-password':
+      return '/reset-password'
     case 'home':
       return '/'
     case 'not-found':
@@ -147,6 +157,10 @@ function AppShell() {
         return t('meta.titleSignup')
       case 'admin':
         return t('meta.titleAdmin')
+      case 'verify-email':
+        return 'ArcadeClash — Verify Account'
+      case 'reset-password':
+        return 'ArcadeClash — Reset Password'
       case 'not-found':
         return t('meta.titleNotFound')
       case 'home':
@@ -262,6 +276,16 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onInviteFriend={handleInviteFriend}
+        />
+      ) : view === 'verify-email' ? (
+        <VerifyEmailPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateLogin={() => navigateTo('login')}
+        />
+      ) : view === 'reset-password' ? (
+        <ResetPasswordPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateLogin={() => navigateTo('login')}
         />
       ) : view === 'not-found' ? (
         <NotFoundPage

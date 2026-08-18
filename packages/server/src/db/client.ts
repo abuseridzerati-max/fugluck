@@ -33,6 +33,13 @@ export async function ensureUserSchema() {
       expires_at timestamp with time zone NOT NULL,
       created_at timestamp with time zone NOT NULL DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id text PRIMARY KEY,
+      user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash text NOT NULL UNIQUE,
+      expires_at timestamp with time zone NOT NULL,
+      created_at timestamp with time zone NOT NULL DEFAULT now()
+    );
   `);
   schemaEnsured = true;
 }
