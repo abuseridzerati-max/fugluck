@@ -17,6 +17,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
   const [recoveryIdentifier, setRecoveryIdentifier] = useState('')
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
@@ -36,6 +37,11 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
     setInfoMessage(null)
     try {
       if (mode === 'signup') {
+        if (!agreeToTerms) {
+          setInfoMessage('You must agree to the Terms of Service and Privacy Policy.')
+          setSubmitting(false)
+          return
+        }
         await signUp(username, password, email || undefined)
         if (email && email.trim().length > 0) {
           setMode('verification-sent')
@@ -247,13 +253,57 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 </label>
               )}
 
+              {mode === 'signup' && (
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)', cursor: 'pointer', marginTop: 'var(--space-1)' }}>
+                  <input
+                    type="checkbox"
+                    checked={agreeToTerms}
+                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                    required
+                    style={{ marginTop: 3, accentColor: 'var(--color-primary, #00f0ff)', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
+                    I agree to the{' '}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--color-accent, #2de2ff)', textDecoration: 'underline' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Terms of Service
+                    </a>{' '}
+                    and acknowledge the{' '}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--color-accent, #2de2ff)', textDecoration: 'underline' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Privacy Policy
+                    </a>.
+                  </span>
+                </label>
+              )}
+
+              {infoMessage && (
+                <p style={{ color: 'var(--color-accent, #2de2ff)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
+                  {infoMessage}
+                </p>
+              )}
+
               {error && (
                 <p style={{ color: 'var(--color-danger, #ff4444)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
                   {error}
                 </p>
               )}
 
-              <button type="submit" className="ac-btn ac-btn--primary" disabled={submitting}>
+              <button
+                type="submit"
+                className="ac-btn ac-btn--primary"
+                disabled={submitting || (mode === 'signup' && !agreeToTerms)}
+              >
                 {submitting
                   ? t('common.pleaseWait')
                   : mode === 'signup'

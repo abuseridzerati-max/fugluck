@@ -180,6 +180,26 @@ export const triviaQuestions = pgTable(
   }),
 );
 
+export const policyAcceptances = pgTable(
+  "policy_acceptances",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    policyType: varchar("policy_type", { length: 32 }).notNull(),
+    policyVersion: varchar("policy_version", { length: 32 }).notNull(),
+    source: varchar("source", { length: 32 }).notNull().default("registration"),
+    ipAddress: varchar("ip_address", { length: 64 }),
+    userAgent: text("user_agent"),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userPolicyIdx: index("idx_policy_acceptances_user_type").on(t.userId, t.policyType),
+    typeVersionIdx: index("idx_policy_acceptances_type_version").on(t.policyType, t.policyVersion),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
@@ -190,4 +210,6 @@ export type MatchHistoryRecord = typeof matchesHistory.$inferSelect;
 export type MatchSettlement = typeof matchSettlements.$inferSelect;
 export type TriviaQuestion = typeof triviaQuestions.$inferSelect;
 export type NewTriviaQuestion = typeof triviaQuestions.$inferInsert;
+export type PolicyAcceptance = typeof policyAcceptances.$inferSelect;
+export type NewPolicyAcceptance = typeof policyAcceptances.$inferInsert;
 

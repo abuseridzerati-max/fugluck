@@ -31,3 +31,5 @@ export { DIAMOND_PACKS, SIGNUP_COIN_GRANT } from "./wallet";
 export type { FriendEntry, FriendshipStatus } from "./friends";
 export type { ReplayAdapter, ReplayOutcome } from "./replay";
 export { checkReplayRequestShape, replayEngine, UnrecognizedActionError, MAX_REPLAY_TICKS, MAX_INPUT_LOG_ENTRIES } from "./replay";
+export type { PolicyType, PolicyAcceptanceRecord, SignupAcceptedPolicies, PolicyNavItem } from "./policies";
+export { CURRENT_POLICY_VERSIONS, POLICY_NAV_ITEMS } from "./policies";

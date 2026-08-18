@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DIAMOND_PACKS } from '@arcadeclash/shared'
+import { DIAMOND_PACKS, type DiamondPack } from '@arcadeclash/shared'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
 
@@ -18,9 +19,15 @@ type WalletPageProps = {
   onNavigateHome: () => void
   onNavigateProfile?: () => void
   onNavigateFriends?: () => void
+  onNavigatePolicy?: (path: string) => void
 }
 
-export default function WalletPage({ onNavigateHome, onNavigateProfile, onNavigateFriends }: WalletPageProps) {
+export default function WalletPage({
+  onNavigateHome,
+  onNavigateProfile,
+  onNavigateFriends,
+  onNavigatePolicy,
+}: WalletPageProps) {
   const { t, i18n } = useTranslation()
   const { user, refreshUser } = useAuth()
   const [history, setHistory] = useState<LedgerHistoryItem[]>([])
@@ -41,10 +48,11 @@ export default function WalletPage({ onNavigateHome, onNavigateProfile, onNaviga
         setHistory(res.history)
       })
       .catch((err) => {
-        const msg = err instanceof ApiError ? err.message : t('wallet.loadHistoryError', { defaultValue: 'Failed to load transaction history.' })
-        setHistoryError(msg)
+        setHistoryError(err instanceof ApiError ? err.message : 'Failed to load transaction history.')
       })
-      .finally(() => setLoadingHistory(false))
+      .finally(() => {
+        setLoadingHistory(false)
+      })
   }
 
   useEffect(() => {
@@ -52,140 +60,160 @@ export default function WalletPage({ onNavigateHome, onNavigateProfile, onNaviga
   }, [user])
 
   async function buyPack(packId: string) {
+    setBuyingId(packId)
     setShopError(null)
     setShopSuccess(null)
-    setBuyingId(packId)
     try {
-      await apiFetch('/api/wallet/purchase-diamonds', {
+      await apiFetch('/api/wallet/diamonds/stub-buy', {
         method: 'POST',
         body: JSON.stringify({ packId }),
       })
       await refreshUser()
       loadHistory()
-      setShopSuccess(t('wallet.purchaseSuccess', { defaultValue: 'Diamonds granted successfully (Test Mode).' }))
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : t('wallet.purchaseFailed', { defaultValue: 'Failed to complete transaction.' })
-      setShopError(msg)
+      setShopSuccess(t('wallet.purchaseSuccess', { defaultValue: 'Diamonds granted successfully!' }))
+    } catch (e) {
+      setShopError(e instanceof ApiError ? e.message : t('wallet.purchaseFailed', { defaultValue: 'Purchase failed' }))
     } finally {
       setBuyingId(null)
     }
   }
 
+  function formatTimestamp(iso: string): string {
+    try {
+      const d = new Date(iso)
+      const dateStr = d.toLocaleDateString(currentLang, { month: 'short', day: 'numeric', year: 'numeric' })
+      const timeStr = d.toLocaleTimeString(currentLang, { hour: '2-digit', minute: '2-digit' })
+      return `${dateStr} • ${timeStr}`
+    } catch {
+      return iso
+    }
+  }
+
   return (
-    <>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar
         onNavigateHome={onNavigateHome}
-        onNavigateProfile={onNavigateProfile || onNavigateHome}
+        onNavigateProfile={onNavigateProfile ?? onNavigateHome}
         onNavigateFriends={onNavigateFriends}
       />
-      <main style={{ maxWidth: 840, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-        <h1 style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
-          💳 {t('wallet.title', { defaultValue: 'Wallet & Finances' })}
+      <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
+        <h1 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
+          {t('wallet.title', { defaultValue: 'Wallet & Ledger' })}
         </h1>
 
-        {/* Balance Overview Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
-          <div className="ac-panel" style={{ padding: 'var(--space-4)' }}>
-            <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {t('common.coins', { defaultValue: 'COINS' })}
+        {/* Live Balance Summary Cards */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 'var(--space-4)',
+            marginBottom: 'var(--space-6)',
+          }}
+        >
+          <div className="ac-card" style={{ padding: 'var(--space-5)' }}>
+            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+              {t('wallet.coinsLabel', { defaultValue: 'COINS Balance' })}
             </div>
-            <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'bold', color: 'var(--color-secondary, #fbbf24)', marginTop: '4px' }}>
-              {user?.balances.coins ?? 0}
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--color-accent, #2de2ff)' }}>
+              🪙 {user?.balances.coins.toLocaleString() ?? '0'}
             </div>
-            <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', margin: 'var(--space-2) 0 0' }}>
-              {t('wallet.coinsDesc', { defaultValue: 'Used for Free Play and 0% rake in-game fun matches.' })}
-            </p>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+              {t('wallet.coinsDesc', { defaultValue: 'Free-play virtual currency (0% rake fee)' })}
+            </div>
           </div>
 
-          <div className="ac-panel" style={{ padding: 'var(--space-4)' }}>
-            <div className="ac-text-muted" style={{ fontSize: 'var(--space-xs)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {t('common.diamonds', { defaultValue: 'DIAMONDS' })}
+          <div className="ac-card" style={{ padding: 'var(--space-5)' }}>
+            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+              {t('wallet.diamondsLabel', { defaultValue: 'DIAMONDS Balance' })}
             </div>
-            <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'bold', color: 'var(--color-primary, #38bdf8)', marginTop: '4px' }}>
-              {user?.balances.diamonds ?? 0}
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: '#38bdf8' }}>
+              💎 {user?.balances.diamonds.toLocaleString() ?? '0'}
             </div>
-            <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', margin: 'var(--space-2) 0 0' }}>
-              {t('wallet.diamondsDesc', { defaultValue: 'Used for competitive staking matches (5% platform rake).' })}
-            </p>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+              {t('wallet.diamondsDesc', { defaultValue: 'Competitive staking currency (5% rake fee)' })}
+            </div>
           </div>
         </div>
 
-        {/* Transaction History Section */}
-        <section style={{ marginBottom: 'var(--space-8)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-              📜 {t('wallet.historyTitle', { defaultValue: 'Transaction History' })}
+        {/* Ledger Transaction History Section */}
+        <section className="ac-card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+            <h2 style={{ fontSize: 'var(--font-size-lg)', margin: 0 }}>
+              {t('wallet.historyTitle', { defaultValue: 'Transaction History' })}
             </h2>
             <button
               type="button"
-              className="ac-btn ac-btn--ghost"
               onClick={loadHistory}
               disabled={loadingHistory}
-              style={{ fontSize: 'var(--font-size-xs)' }}
+              className="ac-btn ac-btn--ghost"
+              style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--space-1) var(--space-3)' }}
             >
               🔄 {t('common.refresh', { defaultValue: 'Refresh' })}
             </button>
           </div>
 
           {loadingHistory ? (
-            <p className="ac-text-muted">{t('wallet.loadingHistory', { defaultValue: 'Loading transaction ledger…' })}</p>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+              {t('wallet.loadingHistory', { defaultValue: 'Loading transaction ledger…' })}
+            </p>
           ) : historyError ? (
-            <div className="ac-panel" style={{ padding: 'var(--space-4)', borderColor: 'var(--color-danger, #f87171)' }}>
-              <p style={{ color: 'var(--color-danger, #f87171)', margin: '0 0 var(--space-3)' }}>{historyError}</p>
-              <button type="button" className="ac-btn ac-btn--primary" onClick={loadHistory}>
+            <div style={{ padding: 'var(--space-4) 0', color: 'var(--color-danger, #f87171)' }}>
+              <p style={{ margin: '0 0 var(--space-3)' }}>{historyError}</p>
+              <button type="button" onClick={loadHistory} className="ac-btn ac-btn--primary">
                 🔄 {t('common.retry', { defaultValue: 'Retry' })}
               </button>
             </div>
           ) : history.length === 0 ? (
-            <p className="ac-text-muted">{t('wallet.noHistory', { defaultValue: 'No transactions recorded yet.' })}</p>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+              {t('wallet.noHistory', { defaultValue: 'No transactions recorded yet.' })}
+            </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {history.map((item) => {
-                const isPositive = item.amount > 0
-                return (
-                  <div
-                    key={item.id}
-                    className="ac-panel"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: 'var(--space-3) var(--space-4)',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>
-                        {item.label}
-                      </div>
-                      <div className="ac-text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
-                        {new Date(item.createdAt).toLocaleString(currentLang)} · {item.reason}
-                      </div>
-                    </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 'var(--font-size-sm)' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Type / Description</th>
+                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Amount</th>
+                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Currency</th>
+                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Date & Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((tx) => {
+                    const isCredit = tx.amount > 0
+                    const isZero = tx.amount === 0
+                    const sign = isCredit ? '+' : ''
+                    const amountColor = isZero ? 'var(--color-text-muted)' : isCredit ? '#22c55e' : '#f87171'
 
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        fontSize: 'var(--font-size-sm)',
-                        color: isPositive ? '#22c55e' : 'var(--color-danger, #f87171)',
-                        textAlign: 'right',
-                      }}
-                    >
-                      {isPositive ? `+${item.amount}` : item.amount} {item.currency}
-                    </div>
-                  </div>
-                )
-              })}
+                    return (
+                      <tr key={tx.id} style={{ borderBottom: '1px solid color-mix(in srgb, var(--color-border) 40%, transparent)' }}>
+                        <td style={{ padding: 'var(--space-3) var(--space-2)', fontWeight: 500 }}>{tx.label}</td>
+                        <td style={{ padding: 'var(--space-3) var(--space-2)', color: amountColor, fontWeight: 'bold' }}>
+                          {sign}{tx.amount.toLocaleString()}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-2)' }}>
+                          {tx.currency === 'COINS' ? '🪙 COINS' : '💎 DIAMONDS'}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-2)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
+                          {formatTimestamp(tx.createdAt)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </section>
 
-        {/* Diamond Shop (Test / Dev Mode) */}
-        <section>
-          <h2 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-xl)' }}>
-            💎 {t('wallet.diamondShopTitle', { defaultValue: 'Diamond Shop' })}
+        {/* Diamond Shop Section (Development Sandbox) */}
+        <section className="ac-card" style={{ padding: 'var(--space-6)' }}>
+          <h2 style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-2)' }}>
+            {t('wallet.diamondShopTitle', { defaultValue: 'Diamond Shop' })}
           </h2>
+
           <div
-            className="ac-panel"
+            className="ac-card"
             style={{
               padding: 'var(--space-3) var(--space-4)',
               background: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
@@ -204,7 +232,7 @@ export default function WalletPage({ onNavigateHome, onNavigateProfile, onNaviga
           {shopSuccess && <p style={{ color: '#22c55e', marginBottom: 'var(--space-3)' }}>{shopSuccess}</p>}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {DIAMOND_PACKS.map((pack) => (
+            {DIAMOND_PACKS.map((pack: DiamondPack) => (
               <button
                 key={pack.id}
                 type="button"
@@ -220,6 +248,7 @@ export default function WalletPage({ onNavigateHome, onNavigateProfile, onNaviga
           </div>
         </section>
       </main>
-    </>
+      <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
+    </div>
   )
 }

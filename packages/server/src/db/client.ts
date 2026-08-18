@@ -40,6 +40,18 @@ export async function ensureUserSchema() {
       expires_at timestamp with time zone NOT NULL,
       created_at timestamp with time zone NOT NULL DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS policy_acceptances (
+      id text PRIMARY KEY,
+      user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      policy_type varchar(32) NOT NULL,
+      policy_version varchar(32) NOT NULL,
+      source varchar(32) NOT NULL DEFAULT 'registration',
+      ip_address varchar(64),
+      user_agent text,
+      accepted_at timestamp with time zone NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_policy_acceptances_user_type ON policy_acceptances (user_id, policy_type);
+    CREATE INDEX IF NOT EXISTS idx_policy_acceptances_type_version ON policy_acceptances (policy_type, policy_version);
   `);
   schemaEnsured = true;
 }

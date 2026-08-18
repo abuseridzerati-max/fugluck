@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { PublicUser } from '@arcadeclash/shared'
+import { CURRENT_POLICY_VERSIONS, type PublicUser, type SignupAcceptedPolicies } from '@arcadeclash/shared'
 import { apiFetch, ApiError } from '../lib/api'
 
 const AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
@@ -12,7 +12,7 @@ type AuthContextValue = {
   user: PublicUser | null
   loading: boolean
   error: string | null
-  signUp: (username: string, password: string, email?: string) => Promise<{ user: PublicUser; verificationMessage?: string }>
+  signUp: (username: string, password: string, email?: string, acceptedPolicies?: SignupAcceptedPolicies) => Promise<{ user: PublicUser; verificationMessage?: string }>
   logIn: (username: string, password: string) => Promise<void>
   logOut: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -73,12 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  async function signUp(username: string, password: string, email?: string) {
+  async function signUp(
+    username: string,
+    password: string,
+    email?: string,
+    acceptedPolicies?: SignupAcceptedPolicies,
+  ) {
     setError(null)
+    const policies = acceptedPolicies ?? {
+      termsVersion: CURRENT_POLICY_VERSIONS.TERMS,
+      privacyVersion: CURRENT_POLICY_VERSIONS.PRIVACY,
+    }
     try {
       const res = await apiFetch<{ user: PublicUser; verificationMessage?: string }>('/api/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ username, password, email }),
+        body: JSON.stringify({ username, password, email, acceptedPolicies: policies }),
       })
       updateUser(res.user)
       return res

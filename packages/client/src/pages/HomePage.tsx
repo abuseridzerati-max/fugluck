@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import AuthModal from '../components/AuthModal'
+import Footer from '../components/Footer'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
 import TrendingArena from '../components/TrendingArena'
@@ -13,6 +14,7 @@ type HomePageProps = {
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet?: () => void
+  onNavigatePolicy?: (path: string) => void
   initialAuthModalMode?: 'login' | 'signup'
 }
 
@@ -24,6 +26,7 @@ export default function HomePage({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
+  onNavigatePolicy,
   initialAuthModalMode,
 }: HomePageProps) {
   const { user } = useAuth()
@@ -36,7 +39,7 @@ export default function HomePage({
   }, [user])
 
   return (
-    <>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar
         onNavigateHome={() => {
           setSelectedCategory('all')
@@ -50,7 +53,7 @@ export default function HomePage({
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
-      <main style={{ maxWidth: 1400, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      <main style={{ flex: 1, maxWidth: 1400, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}
@@ -62,7 +65,9 @@ export default function HomePage({
           onClearSearch={() => setSearchQuery('')}
         />
       </main>
+      <Footer onNavigate={onNavigatePolicy ?? (() => {})} />
       {authModalMode && <AuthModal initialMode={authModalMode} onClose={() => setAuthModalMode(null)} />}
-    </>
+    </div>
   )
 }
+

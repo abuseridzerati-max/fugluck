@@ -31,9 +31,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0004_atomic_wager_lifecycle.sql",
     "0005_reconcile_schema_parity.sql",
     "0006_password_reset_tokens.sql",
+    "0007_policy_acceptances.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0006) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0007) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -77,6 +78,7 @@ async function verifySchema(pool: Pool): Promise<void> {
     "users",
     "email_verification_tokens",
     "password_reset_tokens",
+    "policy_acceptances",
     "admin_lockout_attempts",
     "admin_audit_logs",
     "ledger_entries",
@@ -115,6 +117,19 @@ async function verifySchema(pool: Pool): Promise<void> {
   check("password_reset_tokens has token_hash column", resetCols.has("token_hash"));
   check("password_reset_tokens has expires_at column", resetCols.has("expires_at"));
   check("password_reset_tokens has created_at column", resetCols.has("created_at"));
+
+  const policyAcceptanceCols = await pool.query(
+    `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'policy_acceptances'`,
+  );
+  const policyCols = new Set(policyAcceptanceCols.rows.map((r: any) => r.column_name));
+  check("policy_acceptances has id column", policyCols.has("id"));
+  check("policy_acceptances has user_id column", policyCols.has("user_id"));
+  check("policy_acceptances has policy_type column", policyCols.has("policy_type"));
+  check("policy_acceptances has policy_version column", policyCols.has("policy_version"));
+  check("policy_acceptances has source column", policyCols.has("source"));
+  check("policy_acceptances has ip_address column", policyCols.has("ip_address"));
+  check("policy_acceptances has user_agent column", policyCols.has("user_agent"));
+  check("policy_acceptances has accepted_at column", policyCols.has("accepted_at"));
 
   const lockoutCols = await pool.query(
     `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'admin_lockout_attempts'`,
@@ -159,6 +174,7 @@ async function verifySchema(pool: Pool): Promise<void> {
   const fks = new Set(fkRes.rows.map((r: any) => `${r.table_name}->${r.foreign_table_name}`));
   check("email_verification_tokens FK to users", fks.has("email_verification_tokens->users"));
   check("password_reset_tokens FK to users", fks.has("password_reset_tokens->users"));
+  check("policy_acceptances FK to users", fks.has("policy_acceptances->users"));
   check("admin_audit_logs FK to users", fks.has("admin_audit_logs->users"));
   check("ledger_entries FK to users", fks.has("ledger_entries->users"));
   check("friendships FK to users", fks.has("friendships->users"));
@@ -187,6 +203,8 @@ async function verifySchema(pool: Pool): Promise<void> {
   `);
   const indexes = new Set(idxRes.rows.map((r: any) => `${r.tablename}.${r.indexname}`));
   check("Index 'idx_trivia_cat_id' exists on trivia_questions", indexes.has("trivia_questions.idx_trivia_cat_id"));
+  check("Index 'idx_policy_acceptances_user_type' exists on policy_acceptances", indexes.has("policy_acceptances.idx_policy_acceptances_user_type"));
+  check("Index 'idx_policy_acceptances_type_version' exists on policy_acceptances", indexes.has("policy_acceptances.idx_policy_acceptances_type_version"));
   check("Unique index 'ledger_user_reason_unique' exists on ledger_entries", indexes.has("ledger_entries.ledger_user_reason_unique"));
   check("Index 'ledger_user_currency_idx' exists on ledger_entries", indexes.has("ledger_entries.ledger_user_currency_idx"));
   check("Unique index 'friendships_pair_unique' exists on friendships", indexes.has("friendships.friendships_pair_unique"));
@@ -234,6 +252,13 @@ async function verifySchema(pool: Pool): Promise<void> {
   );
   check("DML smoke: INSERT into password_reset_tokens succeeds", resetInsert.rows.length === 1);
 
+  const policyInsert = await pool.query(
+    `INSERT INTO policy_acceptances (id, user_id, policy_type, policy_version, source, ip_address, user_agent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    ["pa_test_" + Date.now(), testUserId, "TERMS", "2026-08-18", "registration", "127.0.0.1", "Mozilla/5.0"],
+  );
+  check("DML smoke: INSERT into policy_acceptances succeeds", policyInsert.rows.length === 1);
+
   const lockoutInsert = await pool.query(
     `INSERT INTO admin_lockout_attempts (id, ip_address, attempt_count)
      VALUES ($1, $2, $3) RETURNING id`,
@@ -268,6 +293,7 @@ async function verifySchema(pool: Pool): Promise<void> {
   // Clean up smoke rows
   await pool.query(`DELETE FROM email_verification_tokens WHERE user_id = $1`, [testUserId]);
   await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = $1`, [testUserId]);
+  await pool.query(`DELETE FROM policy_acceptances WHERE user_id = $1`, [testUserId]);
   await pool.query(`DELETE FROM admin_audit_logs WHERE admin_user_id = $1`, [testUserId]);
   await pool.query(`DELETE FROM users WHERE id = $1`, [testUserId]);
 }
