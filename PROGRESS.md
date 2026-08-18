@@ -3,6 +3,37 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 46 (2026-08-18): Real-Money Diamond Economy Architecture & System Design Audit
+
+### Baseline
+- `c47b2f0` (PR #10 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Locked Product & Architecture Decisions
+1. **Direct Diamond Purchase Flow**:
+   - `Real Money (Payment Processor) -> Direct Diamond Purchase -> Diamond Balance -> Wager in Skill Matches -> Diamond Prize -> Cash-Out Request -> Withdrawal Execution -> Real Money Paid to Player`.
+   - **Explicitly Rejected**: There is deliberately **no general-purpose user cash-storage wallet** (`Money -> ArcadeClash Cash Wallet -> Diamonds`).
+2. **Economic & Compliance Invariant**:
+   - Diamonds are treated internally as real-value economic liabilities backed by real funds, not arbitrary game tokens.
+   - Dual-currency separation remains strict: `COINS` are 100% free-play/fun currency (0% rake, non-withdrawable, monthly refill); `DIAMONDS` are real-value competitive staking currency (5% rake, cash-out eligible).
+3. **Provider Agnostic Infrastructure**:
+   - Provider implementation is NOT started yet. Core ledger remains authoritative.
+   - Payment/payout provider abstractions (`PaymentProvider`, `PayoutProvider`) decouple business logic from external gateways (Stripe, PayPal, eMoney, etc.).
+4. **Current Status of Related Phases**:
+   - Real-money economy is **DESIGNED & AUDITED (PLANNED)**; payment provider APIs are **NOT implemented yet**.
+   - User-facing match replay remains **REMOVED BY PRODUCT DECISION / NOT PART OF PRODUCT**.
+   - Admin panel completion remains deferred until immediately before the full desktop website acceptance check.
+   - Unity and Mobile remain deferred until desktop website acceptance is complete.
+
+### Audit Findings & System Design Artifacts
+- **Audited Files**: `packages/server/src/wallet/ledger.ts`, `packages/server/src/routes/wallet.ts`, `packages/server/src/db/schema.ts`, `packages/server/src/matchmaking/`, `packages/server/src/routes/admin.ts`, `migrations 0000..0005`.
+- **Created Architecture Spec**: `real_money_diamond_economy_architecture.md` defining:
+  - 14 financial invariants (conservation of currency, single settlement, idempotent ingestion, atomic withdrawal escrow).
+  - Purchase lifecycle state machine (`CREATED` -> `PENDING` -> `PAID` -> `CREDITED` -> `REFUNDED` / `DISPUTED`).
+  - Cash-out lifecycle state machine (`REQUESTED` -> `COMPLIANCE_REVIEW` -> `APPROVED` -> `PROCESSING` -> `PAID` / `FAILED` / `REJECTED`).
+  - Proposed Drizzle tables: `diamond_purchases`, `diamond_withdrawals`, `payment_webhook_events`, `user_compliance_profiles`.
+  - Origin tracking (purchased vs winnings vs promo), chargeback cascade accounting, reconciliation formula, and concurrency threat matrix.
+  - Phased implementation roadmap (Stages 1 through 5).
+
 ## Session 45 (2026-08-18): Complete Remaining Normal-User Desktop Web Mechanics
 
 ### Baseline
