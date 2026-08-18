@@ -8,10 +8,11 @@ import { apiFetch, ApiError } from '../lib/api'
 type FriendsPageProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
+  onNavigateWallet?: () => void
   onInviteFriend: (friendUserId: string, gameId: string, gameTitle: string) => void
 }
 
-export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInviteFriend }: FriendsPageProps) {
+export default function FriendsPage({ onNavigateHome, onNavigateProfile, onNavigateWallet, onInviteFriend }: FriendsPageProps) {
   const { t } = useTranslation()
   const [friends, setFriends] = useState<FriendEntry[]>([])
   const [username, setUsername] = useState('')
@@ -20,15 +21,21 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
   const [inviteFor, setInviteFor] = useState<FriendEntry | null>(null)
 
   async function refresh() {
-    const res = await apiFetch<{ friends: FriendEntry[] }>('/api/friends')
-    setFriends(res.friends)
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await apiFetch<{ friends: FriendEntry[] }>('/api/friends')
+      setFriends(res.friends)
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t('friends.loadFailed', { defaultValue: 'Failed to load friends list.' }))
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
     refresh()
-      .catch((e) => setError(e instanceof ApiError ? e.message : t('friends.loadFailed')))
-      .finally(() => setLoading(false))
-  }, [t])
+  }, [])
 
   async function sendRequest(e: React.FormEvent) {
     e.preventDefault()
@@ -41,7 +48,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       setUsername('')
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('friends.couldNotSend'))
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotSend', { defaultValue: 'Could not send friend request.' }))
     }
   }
 
@@ -51,7 +58,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       await apiFetch(`/api/friends/${id}/accept`, { method: 'POST' })
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('friends.couldNotAccept'))
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotAccept', { defaultValue: 'Could not accept friend request.' }))
     }
   }
 
@@ -61,7 +68,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
       await apiFetch(`/api/friends/${id}/reject`, { method: 'POST' })
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('friends.couldNotReject'))
+      setError(err instanceof ApiError ? err.message : t('friends.couldNotReject', { defaultValue: 'Could not reject friend request.' }))
     }
   }
 
@@ -91,7 +98,12 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
 
   return (
     <>
-      <Navbar onNavigateHome={onNavigateHome} onNavigateProfile={onNavigateProfile} onNavigateFriends={() => {}} />
+      <Navbar
+        onNavigateHome={onNavigateHome}
+        onNavigateProfile={onNavigateProfile}
+        onNavigateWallet={onNavigateWallet}
+        onNavigateFriends={() => {}}
+      />
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
         <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-3xl)' }}>{t('friends.title')}</h1>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-6)' }}>
@@ -120,7 +132,12 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onInvit
         </form>
 
         {error && (
-          <p style={{ color: 'var(--color-danger, #f87171)', marginBottom: 'var(--space-4)' }}>{error}</p>
+          <div className="ac-panel" style={{ padding: 'var(--space-3) var(--space-4)', borderColor: 'var(--color-danger, #f87171)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--color-danger, #f87171)' }}>{error}</span>
+            <button type="button" className="ac-btn ac-btn--ghost" onClick={refresh} style={{ fontSize: 'var(--font-size-xs)' }}>
+              🔄 Retry
+            </button>
+          </div>
         )}
 
         {loading ? (

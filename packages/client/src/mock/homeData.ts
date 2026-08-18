@@ -1,48 +1,27 @@
 import type { GameEngine } from '@arcadeclash/games'
 
-// Placeholder homepage data. Replace with real API calls once the game
-// registry has entries and the matchmaking/leaderboard services exist.
-
-export type MockGame = {
+export type CatalogGame = {
   id: string
   title: string
   engine: GameEngine
-  plays: number
-  rating: number
+  tagline?: string
 }
 
-export const trendingGames: MockGame[] = [
-  { id: 'neon-runner', title: 'Neon Runner', engine: 'runner', plays: 1250, rating: 4.9 },
-  { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', plays: 980, rating: 4.8 },
-  { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', plays: 1100, rating: 4.8 },
-  { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', plays: 1350, rating: 4.9 },
-  { id: 'speed-trivia', title: 'Speed Trivia Clash', engine: 'quiz', plays: 1420, rating: 4.9 },
-  { id: 'tf-sprint', title: 'True / False Sprint', engine: 'quiz', plays: 0, rating: 0 },
+export const activeGames: CatalogGame[] = [
+  { id: 'neon-runner', title: 'Neon Runner', engine: 'runner', tagline: 'High-speed neon runner survival race' },
+  { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', tagline: 'Precision rooftop dash and leap reflex challenge' },
+  { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', tagline: 'Retro vector arcade space shooter' },
+  { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', tagline: 'Synthwave road-crossing timing and evasion' },
+  { id: 'speed-trivia', title: 'Speed Trivia Clash', engine: 'quiz', tagline: '10-question speed trivia speed duel' },
+  { id: 'tf-sprint', title: 'True / False Sprint', engine: 'quiz', tagline: 'Rapid-fire True or False trivia clash' },
 ]
 
-export const featuredGame: {
-  id: string
-  title: string
-  engine: GameEngine
-  tagline: string
-  description: string
-} = {
-  id: 'neon-runner',
-  title: 'Neon Runner',
-  engine: 'runner',
-  tagline: 'FEATURED GAME OF THE WEEK',
-  description: 'Outrun the cyber collapse in a high-speed neon runner survival race!',
-}
+export const trendingGames = activeGames
 
-// Static placeholder until the matchmaking/WebSocket layer reports a real count.
-export const liveArenaCount = 128
-
-export const navFilters: Array<{ label: string; engine: GameEngine | 'all' | 'hot' }> = [
+export const navFilters: Array<{ label: string; engine: GameEngine | 'all' }> = [
   { label: 'All', engine: 'all' },
   { label: 'Runner', engine: 'runner' },
   { label: 'Arena Shooter', engine: 'arena-shooter' },
-  { label: 'Falling Block', engine: 'falling-block' },
   { label: 'Reflex Timing', engine: 'reflex-timing' },
   { label: 'Quiz', engine: 'quiz' },
-  { label: 'Hot', engine: 'hot' },
 ]

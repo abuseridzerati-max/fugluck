@@ -5,22 +5,28 @@ import { navFilters } from '../mock/homeData'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
 import LanguageSwitcher from './LanguageSwitcher'
-import { BellIcon, SearchIcon } from './icons'
+import { SearchIcon } from './icons'
 
 type NavbarProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateFriends?: () => void
+  onNavigateWallet?: () => void
   selectedCategory?: string
   onSelectCategory?: (category: string) => void
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 export default function Navbar({
   onNavigateHome,
   onNavigateProfile,
   onNavigateFriends,
+  onNavigateWallet,
   selectedCategory = 'all',
   onSelectCategory,
+  searchQuery = '',
+  onSearchChange,
 }: NavbarProps) {
   const { t } = useTranslation()
   const { user, logOut } = useAuth()
@@ -54,26 +60,57 @@ export default function Navbar({
         ArcadeClash
       </button>
 
-      <label className="ac-search" style={{ flex: 1, maxWidth: 380 }}>
-        <SearchIcon />
-        <input type="text" placeholder={t('common.search')} />
-      </label>
-
-      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-        {navFilters.map((f) => {
-          const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
-          return (
+      {onSearchChange && (
+        <label className="ac-search" style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
+          <SearchIcon />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={t('common.search', { defaultValue: 'Search games…' })}
+            style={{ paddingRight: searchQuery ? '32px' : undefined }}
+          />
+          {searchQuery && (
             <button
-              key={f.label}
               type="button"
-              className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
-              onClick={() => onSelectCategory?.(f.engine)}
+              onClick={() => onSearchChange('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-text-muted)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                padding: '4px',
+              }}
+              title="Clear search"
             >
-              {f.label}
+              ✕
             </button>
-          )
-        })}
-      </div>
+          )}
+        </label>
+      )}
+
+      {onSelectCategory && (
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
+          {navFilters.map((f) => {
+            const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
+            return (
+              <button
+                key={f.label}
+                type="button"
+                className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
+                onClick={() => onSelectCategory(f.engine)}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginLeft: 'auto' }}>
         <LanguageSwitcher />
@@ -85,7 +122,9 @@ export default function Navbar({
               gap: 'var(--space-3)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-muted)',
+              cursor: onNavigateWallet ? 'pointer' : 'default',
             }}
+            onClick={onNavigateWallet}
             title={t('navigation.coinsTooltip')}
           >
             <span>
@@ -98,22 +137,6 @@ export default function Navbar({
             </span>
           </div>
         )}
-
-        <button
-          type="button"
-          aria-label={t('navigation.notifications')}
-          className="ac-btn--ghost"
-          style={{
-            display: 'inline-flex',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--color-text-muted)',
-            cursor: 'pointer',
-            padding: 'var(--space-2)',
-          }}
-        >
-          <BellIcon />
-        </button>
 
         {user ? (
           <div style={{ position: 'relative' }}>
@@ -144,6 +167,15 @@ export default function Navbar({
                     onNavigateProfile()
                   }}
                 />
+                {onNavigateWallet && (
+                  <MenuItem
+                    label={t('navigation.wallet', { defaultValue: 'Wallet' })}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onNavigateWallet()
+                    }}
+                  />
+                )}
                 {onNavigateFriends && (
                   <MenuItem
                     label={t('navigation.friends')}
