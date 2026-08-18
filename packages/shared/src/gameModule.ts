@@ -81,3 +81,9 @@ export const GAME_REGISTRY: GameRegistryItem[] = [
   { id: "tf-sprint", name: "True / False Sprint", engine: "quiz", modulePath: "./tf-sprint/index.ts" },
 ];
 
+export function getGameTitle(gameId: string): string {
+  const item = GAME_REGISTRY.find((g) => g.id === gameId);
+  return item?.name ?? gameId;
+}
+
+

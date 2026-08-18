@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GameModuleFactory, InviteReceivedPayload } from '@arcadeclash/shared'
+import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@arcadeclash/shared'
 import { AuthProvider } from './auth/AuthContext'
 import GameLoader from './game-loader/GameLoader'
 import { gameFactories } from './game-loader/gameFactories'
@@ -14,6 +14,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
+import { apiFetch } from './lib/api'
 
 type ActiveGame = {
   id: string
@@ -22,16 +23,7 @@ type ActiveGame = {
   mode: 'practice' | 'match'
   matchMode?: MatchSocketMode
 }
-type View = 'home' | 'profile' | 'friends' | 'wallet' | 'settings' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'not-found'
-
-const GAME_TITLES: Record<string, string> = {
-  'neon-runner': 'Neon Runner',
-  'pixel-ninja-dash': 'Pixel Ninja Dash',
-  'space-blaster': 'Space Blaster',
-  'cyber-hopper': 'Cyber Hopper',
-  'speed-trivia': 'Speed Trivia Clash',
-  'tf-sprint': 'True / False Sprint',
-}
+type View = 'home' | 'profile' | 'friends' | 'wallet' | 'settings' | 'login' | 'signup' | 'admin' | 'verify-email' | 'reset-password' | 'invite' | 'not-found'
 
 const ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
 
@@ -74,6 +66,7 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/admin') return 'admin'
   if (cleanPath === '/verify-email') return 'verify-email'
   if (cleanPath === '/reset-password') return 'reset-password'
+  if (cleanPath.startsWith('/invite/')) return 'invite'
   return 'not-found'
 }
 
@@ -99,6 +92,7 @@ function getPathForView(view: View): string {
       return '/reset-password'
     case 'home':
       return '/'
+    case 'invite':
     case 'not-found':
     default:
       return window.location.pathname
@@ -215,6 +209,30 @@ function AppShell() {
     setActiveGame({ id, title, factory: mod.default, mode, matchMode })
   }
 
+  useEffect(() => {
+    if (view === 'invite') {
+      const match = window.location.pathname.match(/^\/invite\/([a-zA-Z0-9_-]+)/)
+      const code = match ? match[1] : null
+      if (code) {
+        apiFetch<{ valid: boolean; gameId: string; hostUsername: string }>(`/api/matches/guest-link/${code}`)
+          .then((res) => {
+            if (res.valid && res.gameId && gameFactories[res.gameId]) {
+              const title = getGameTitle(res.gameId)
+              storeActiveMatch({ id: res.gameId, title })
+              void loadGame(res.gameId, title, 'match', { kind: 'joinGuest', code })
+            } else {
+              navigateTo('home')
+            }
+          })
+          .catch(() => {
+            navigateTo('home')
+          })
+      } else {
+        navigateTo('home')
+      }
+    }
+  }, [view])
+
   function handlePlayGame(id: string, title: string) {
     return loadGame(id, title, 'practice')
   }
@@ -224,13 +242,18 @@ function AppShell() {
     return loadGame(id, title, 'match', { kind: 'queue', stake, currency })
   }
 
+  function handleLaunchGuestInvite(id: string, title: string) {
+    storeActiveMatch({ id, title })
+    return loadGame(id, title, 'match', { kind: 'createGuest' })
+  }
+
   function handleInviteFriend(friendUserId: string, gameId: string, gameTitle: string) {
     storeActiveMatch({ id: gameId, title: gameTitle })
     return loadGame(gameId, gameTitle, 'match', { kind: 'sendInvite', friendUserId })
   }
 
   function handleAcceptInvite(invite: InviteReceivedPayload) {
-    const title = GAME_TITLES[invite.gameId] ?? invite.gameId
+    const title = getGameTitle(invite.gameId)
     storeActiveMatch({ id: invite.gameId, title })
     void loadGame(invite.gameId, title, 'match', { kind: 'acceptInvite', inviteId: invite.inviteId })
   }
@@ -299,6 +322,7 @@ function AppShell() {
         <HomePage
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
+          onLaunchGuestInvite={handleLaunchGuestInvite}
           loadingGameId={loadingGameId}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}

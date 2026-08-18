@@ -16,6 +16,8 @@ export type MatchSocketMode =
   | { kind: 'queue'; stake?: number; currency?: 'COINS' | 'DIAMONDS' }
   | { kind: 'sendInvite'; friendUserId: string }
   | { kind: 'acceptInvite'; inviteId: string }
+  | { kind: 'createGuest' }
+  | { kind: 'joinGuest'; code: string }
   | { kind: 'resume' }
 
 export type UseMatchSocketResult = {
@@ -24,6 +26,7 @@ export type UseMatchSocketResult = {
   resolution: MatchResolvedPayload | null
   error: string | null
   waitingLabel: string | null
+  guestLinkCode: string | null
   submitScore: (payload: SubmitScorePayload) => void
   // Evidence-only, fire-and-forget — see PROGRESS.md's freeze-frame Known
   // Gaps entry. No-ops if there's no active match yet (nothing to report
@@ -33,7 +36,7 @@ export type UseMatchSocketResult = {
 }
 
 // Owns exactly one socket connection for one matchmaking attempt — queue,
-// outbound friend invite, or accept-invite. Connect on mount, act, disconnect
+// outbound friend invite, accept-invite, or guest link. Connect on mount, act, disconnect
 // on unmount. Same lifecycle as before; mode only changes the first emit.
 export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: 'queue' }): UseMatchSocketResult {
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
@@ -42,6 +45,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
   const [resolution, setResolution] = useState<MatchResolvedPayload | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [waitingLabel, setWaitingLabel] = useState<string | null>(null)
+  const [guestLinkCode, setGuestLinkCode] = useState<string | null>(null)
 
   useEffect(() => {
     const token = getStoredAuthToken()
@@ -63,6 +67,12 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       } else if (mode.kind === 'acceptInvite') {
         setWaitingLabel('Joining match…')
         socket.emit('respondInvite', { inviteId: mode.inviteId, accept: true })
+      } else if (mode.kind === 'createGuest') {
+        setWaitingLabel('Creating shareable guest link…')
+        socket.emit('createGuestLink', { gameId })
+      } else if (mode.kind === 'joinGuest') {
+        setWaitingLabel('Joining guest match…')
+        socket.emit('joinGuestLink', { code: mode.code })
       } else {
         // The server checks authenticated sockets for an active match before
         // this callback runs and emits the authoritative matched payload when
@@ -71,8 +81,18 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       }
     })
 
+    socket.on('guestLinkCreated', (payload) => {
+      setGuestLinkCode(payload.code)
+      setWaitingLabel('Waiting for opponent to join via link…')
+    })
+
     socket.on('inviteSent', (payload) => {
-      setWaitingLabel(`Waiting for ${payload.toUsername} to accept…`)
+      if (payload.toUsername === 'Guest Link') {
+        setGuestLinkCode(payload.inviteId)
+        setWaitingLabel('Waiting for opponent to join via link…')
+      } else {
+        setWaitingLabel(`Waiting for ${payload.toUsername} to accept…`)
+      }
     })
 
     socket.on('inviteRejected', (payload) => {
@@ -143,6 +163,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     resolution,
     error,
     waitingLabel,
+    guestLinkCode,
     submitScore,
     reportVisibilityHidden,
     disconnect,

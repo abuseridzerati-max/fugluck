@@ -5,6 +5,7 @@ import { db } from "../db/client";
 import { matchesHistory, users } from "../db/schema";
 
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+import { getGuestLinkInfo } from "../matchmaking/invites";
 
 const matchHistoryLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -13,6 +14,17 @@ const matchHistoryLimiter = createRateLimiterMiddleware({
 });
 
 export const matchesRouter = Router();
+
+// Lookup guest link metadata (public endpoint, guests and recipients can access without login)
+matchesRouter.get("/guest-link/:code", (req, res) => {
+  const code = String(req.params.code);
+  const info = getGuestLinkInfo(code);
+  if (!info.valid) {
+    res.status(404).json({ error: info.error ?? "Invalid or expired guest invite link." });
+    return;
+  }
+  res.json({ valid: true, gameId: info.gameId, hostUsername: info.hostUsername });
+});
 
 matchesRouter.get("/history", attachSession, requireAuth, matchHistoryLimiter, async (req, res) => {
   const userId = req.userId!;

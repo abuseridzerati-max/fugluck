@@ -55,9 +55,10 @@ export default function MatchLoader({
   matchMode = { kind: 'queue' },
   onMatchResolved,
 }: MatchLoaderProps) {
-  const { connectionState, match, resolution, error, waitingLabel, submitScore, reportVisibilityHidden, disconnect } =
+  const { connectionState, match, resolution, error, waitingLabel, guestLinkCode, submitScore, reportVisibilityHidden, disconnect } =
     useMatchSocket(gameId, matchMode)
   const [phase, setPhase] = useState<Phase>({ kind: 'queued' })
+  const [copied, setCopied] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const moduleRef = useRef<GameModule | null>(null)
 
@@ -186,6 +187,17 @@ export default function MatchLoader({
     onExit()
   }
 
+  const modeLabel =
+    matchMode.kind === 'queue'
+      ? 'Find Opponent'
+      : matchMode.kind === 'resume'
+      ? 'Reconnect'
+      : matchMode.kind === 'createGuest'
+      ? 'Instant Guest Link'
+      : matchMode.kind === 'joinGuest'
+      ? 'Guest Match'
+      : 'Friend Match'
+
   return (
     <div
       style={{
@@ -207,7 +219,7 @@ export default function MatchLoader({
         }}
       >
         <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-          {gameTitle} · {matchMode.kind === 'queue' ? 'Find Opponent' : matchMode.kind === 'resume' ? 'Reconnect' : 'Friend Match'}
+          {gameTitle} · {modeLabel}
         </span>
         <button
           type="button"
@@ -224,21 +236,91 @@ export default function MatchLoader({
 
         {phase.kind === 'queued' && (
           <Overlay>
-            <div className="ac-panel" style={{ textAlign: 'center', minWidth: 280 }}>
-              <h2 style={{ margin: '0 0 var(--space-2)' }}>
-                {matchMode.kind === 'queue' ? 'Finding an opponent...' : matchMode.kind === 'resume' ? 'Restoring match...' : 'Friend invite'}
-              </h2>
-              <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)' }}>
-                {waitingLabel ??
-                  (matchMode.kind === 'queue'
-                    ? `Waiting for another ${gameTitle} player`
-                    : matchMode.kind === 'resume'
-                      ? 'Reconnecting to your active match…'
-                    : 'Setting up your match…')}
-              </p>
-              <button type="button" className="ac-btn ac-btn--ghost" onClick={handleLeave}>
-                Cancel
-              </button>
+            <div className="ac-panel" style={{ textAlign: 'center', minWidth: 320, maxWidth: 440, padding: 'var(--space-6)' }}>
+              {matchMode.kind === 'createGuest' ? (
+                <>
+                  <h2 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-xl)' }}>Instant Guest Match</h2>
+                  <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
+                    Share this link with anyone to play immediately:
+                  </p>
+                  {guestLinkCode ? (
+                    <div style={{ marginBottom: 'var(--space-5)' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 'var(--space-2)',
+                          background: 'var(--color-surface-raised, #1e293b)',
+                          padding: 'var(--space-2) var(--space-3)',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-border)',
+                          alignItems: 'center',
+                          marginBottom: 'var(--space-3)',
+                        }}
+                      >
+                        <input
+                          readOnly
+                          value={`${window.location.origin}/invite/${guestLinkCode}`}
+                          style={{
+                            flex: 1,
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-text)',
+                            fontSize: 'var(--font-size-xs)',
+                            outline: 'none',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="ac-btn ac-btn--primary"
+                          style={{ padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--font-size-xs)', fontWeight: 'bold' }}
+                          onClick={() => {
+                            void navigator.clipboard.writeText(`${window.location.origin}/invite/${guestLinkCode}`)
+                            setCopied(true)
+                            setTimeout(() => setCopied(false), 2500)
+                          }}
+                        >
+                          {copied ? '✓ Copied' : '📋 Copy'}
+                        </button>
+                      </div>
+                      <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', margin: 0 }}>
+                        Waiting for opponent to open link and join…
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
+                      Generating invite link…
+                    </p>
+                  )}
+                  <button type="button" className="ac-btn ac-btn--ghost" onClick={handleLeave}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 style={{ margin: '0 0 var(--space-2)' }}>
+                    {matchMode.kind === 'queue'
+                      ? 'Finding an opponent...'
+                      : matchMode.kind === 'resume'
+                      ? 'Restoring match...'
+                      : matchMode.kind === 'joinGuest'
+                      ? 'Joining guest match...'
+                      : 'Friend invite'}
+                  </h2>
+                  <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)' }}>
+                    {waitingLabel ??
+                      (matchMode.kind === 'queue'
+                        ? `Waiting for another ${gameTitle} player`
+                        : matchMode.kind === 'resume'
+                        ? 'Reconnecting to your active match…'
+                        : matchMode.kind === 'joinGuest'
+                        ? 'Connecting to host…'
+                        : 'Setting up your match…')}
+                  </p>
+                  <button type="button" className="ac-btn ac-btn--ghost" onClick={handleLeave}>
+                    Cancel
+                  </button>
+                </>
+              )}
             </div>
           </Overlay>
         )}

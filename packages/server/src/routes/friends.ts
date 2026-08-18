@@ -153,3 +153,48 @@ friendsRouter.post("/:friendshipId/reject", socialLimiter, async (req, res) => {
   await db.update(friendships).set({ status: "rejected" }).where(eq(friendships.id, friendship.id));
   res.status(204).end();
 });
+
+// Cancel outgoing pending friend request (requester only)
+friendsRouter.delete("/:friendshipId/cancel", socialLimiter, async (req, res) => {
+  const me = req.userId!;
+  const friendshipId = String(req.params.friendshipId);
+  const friendship = await db.query.friendships.findFirst({
+    where: eq(friendships.id, friendshipId),
+  });
+  if (!friendship || friendship.requesterId !== me || friendship.status !== "pending") {
+    res.status(404).json({ error: "No pending outgoing request found to cancel." });
+    return;
+  }
+  await db.delete(friendships).where(eq(friendships.id, friendship.id));
+  res.json({ success: true, friendshipId });
+});
+
+friendsRouter.post("/:friendshipId/cancel", socialLimiter, async (req, res) => {
+  const me = req.userId!;
+  const friendshipId = String(req.params.friendshipId);
+  const friendship = await db.query.friendships.findFirst({
+    where: eq(friendships.id, friendshipId),
+  });
+  if (!friendship || friendship.requesterId !== me || friendship.status !== "pending") {
+    res.status(404).json({ error: "No pending outgoing request found to cancel." });
+    return;
+  }
+  await db.delete(friendships).where(eq(friendships.id, friendship.id));
+  res.json({ success: true, friendshipId });
+});
+
+// Remove / Unfriend accepted friendship (either participant)
+friendsRouter.delete("/:friendshipId", socialLimiter, async (req, res) => {
+  const me = req.userId!;
+  const friendshipId = String(req.params.friendshipId);
+  const friendship = await db.query.friendships.findFirst({
+    where: eq(friendships.id, friendshipId),
+  });
+  if (!friendship || (friendship.requesterId !== me && friendship.addresseeId !== me) || friendship.status !== "accepted") {
+    res.status(404).json({ error: "Friendship not found or not accepted." });
+    return;
+  }
+  await db.delete(friendships).where(eq(friendships.id, friendship.id));
+  res.json({ success: true, friendshipId });
+});
+
