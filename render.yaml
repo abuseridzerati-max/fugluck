@@ -1,0 +1,36 @@
+# =============================================================================
+# ArcadeClash Staging Backend Service Specification (Render Blueprint)
+# =============================================================================
+services:
+  - type: web
+    name: arcadeclash-server-staging
+    runtime: node
+    plan: starter
+    region: ohio
+    buildCommand: npm install && npm run build:server
+    startCommand: npm run start:server
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard: Staging PostgreSQL connection string
+      - key: JWT_SECRET
+        sync: false # Set in Render Dashboard: Random 64+ char secret string
+      - key: CLIENT_ORIGIN
+        value: https://staging.arcadeclash.com
+      - key: ALLOWED_ORIGINS
+        value: https://staging.arcadeclash.com
+      - key: APP_URL
+        value: https://staging.arcadeclash.com
+      - key: COOKIE_DOMAIN
+        value: .arcadeclash.com
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: ENABLE_DEV_DIAMOND_STUB
+        value: "false"
+      - key: EMAIL_PROVIDER
+        value: logger
+      - key: EMAIL_FROM
+        value: ArcadeClash Staging <no-reply@arcadeclash.com>

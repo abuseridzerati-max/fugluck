@@ -60,10 +60,21 @@ walletRouter.get("/packs", (_req, res) => {
   res.json({ packs: DIAMOND_PACKS });
 });
 
-// Stub purchase — no Stripe yet. Grants diamonds immediately so the dual-
-// currency UI and shop flow can be exercised end-to-end. Replace with a real
-// payment webhook before any production money moves.
-walletRouter.post("/purchase-diamonds", walletMutationLimiter, async (req, res) => {
+function isDevDiamondStubAllowed(): boolean {
+  if (process.env.ENABLE_DEV_DIAMOND_STUB === "true") return true;
+  if (process.env.ENABLE_DEV_DIAMOND_STUB === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+// Development Sandbox stub purchase — no real payment processor. Grants diamonds
+// in dev/sandbox environments so the dual-currency UI and match staking can be tested.
+// Gated off in production/staging unless explicitly enabled via ENABLE_DEV_DIAMOND_STUB=true.
+const handleDiamondPurchaseStub = async (req: import("express").Request, res: import("express").Response) => {
+  if (!isDevDiamondStubAllowed()) {
+    res.status(403).json({ error: "Diamond purchases are disabled in this environment." });
+    return;
+  }
+
   const packId = req.body?.packId;
   if (typeof packId !== "string") {
     res.status(400).json({ error: "packId is required." });
@@ -78,7 +89,10 @@ walletRouter.post("/purchase-diamonds", walletMutationLimiter, async (req, res) 
   await ensureSignupGrant(req.userId!);
   const balances = await grantDiamondsStub(req.userId!, pack.diamonds, pack.id);
   res.json({ balances, granted: pack.diamonds, packId: pack.id, stub: true });
-});
+};
+
+walletRouter.post("/purchase-diamonds", walletMutationLimiter, handleDiamondPurchaseStub);
+walletRouter.post("/diamonds/stub-buy", walletMutationLimiter, handleDiamondPurchaseStub);
 
 // Convenience re-export for callers that already have balances and just want
 // a refresh without the grant side-effect — still idempotent via ensure.
