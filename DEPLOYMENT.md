@@ -54,7 +54,7 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
    * **Root Directory**: Leave blank (monorepo root).
    * **Build Command**:
      ```bash
-     npm install && npm run build:server
+     npm install --include=dev && npm run build:server
      ```
    * **Start Command**:
      ```bash
