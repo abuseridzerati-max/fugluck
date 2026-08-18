@@ -64,7 +64,7 @@ app.get("/", (_req, res) => {
   res.json({
     name: "ArcadeClash API Server",
     status: "online",
-    health: `http://localhost:${port}/api/health`,
+    health: "/api/health",
     endpoints: ["/api/auth", "/api/wallet", "/api/friends", "/api/matches"],
   });
 });
@@ -83,6 +83,7 @@ const httpServer = createServer(app);
 const io: MatchmakingServer = attachMatchmaking(httpServer);
 
 const port = Number(process.env.PORT ?? 4000);
+const host = process.env.HOST || "0.0.0.0";
 
 let isShuttingDown = false;
 
@@ -132,9 +133,14 @@ process.on("SIGINT", () => {
 });
 
 async function startServer() {
-  await ensureUserSchema();
-  httpServer.listen(port, () => {
-    logger.info(`[server] listening on http://localhost:${port}`);
+  try {
+    await ensureUserSchema();
+  } catch (err) {
+    logger.warn("[server] ensureUserSchema non-fatal boot notice:", err);
+  }
+
+  httpServer.listen(port, host, () => {
+    logger.info(`[server] listening on http://${host}:${port}`);
   });
 }
 

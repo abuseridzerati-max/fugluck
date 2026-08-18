@@ -3,6 +3,25 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 50 (2026-08-19): Fix Render 502 Runtime Port & Host Binding (0.0.0.0 Wildcard)
+
+### Baseline
+- `313dac6` (PR #14 merged, local `main == origin/main == live GitHub main`, clean working tree).
+
+### Task and Objective
+Diagnose and resolve Render 502 Bad Gateway runtime error on `https://fugluck-api-staging.onrender.com/health`:
+1. **Root Cause Analysis**:
+   - `httpServer.listen(port)` in `packages/server/src/index.ts` was invoked without specifying the host address parameter.
+   - On Linux containers inside Render's infrastructure, omitting the host parameter causes Node.js to bind to `localhost` (`127.0.0.1` / `::1`) rather than the wildcard IPv4 interface `0.0.0.0`.
+   - Render's edge load balancer and reverse proxy route inbound traffic to `0.0.0.0:$PORT`. Because the container was not listening on `0.0.0.0`, the proxy could not connect, resulting in a persistent `502 Bad Gateway`.
+2. **Resolution & Hardening**:
+   - Defined `const host = process.env.HOST || "0.0.0.0";` and updated `httpServer.listen(port, host, ...)` in `packages/server/src/index.ts`.
+   - Added try/catch safety around boot-time `ensureUserSchema()` to prevent unhandled database hiccups from aborting the listen sequence before HTTP listeners are bound.
+   - Added Section 7 assertions to `scripts/staging-readiness-check.ts` verifying that `PORT` is loaded from `process.env.PORT`, `HOST` defaults to `0.0.0.0`, and `host` is explicitly passed to `httpServer.listen()`.
+3. **Verification**:
+   - Ran `npm run typecheck` across all 5 workspace projects (0 errors).
+   - Ran all 27 automated test suites including `staging-readiness-check` (34 PASS, 0 FAIL; all test suites 100% pass).
+
 ## Session 49 (2026-08-19): Fix Render Server Build Failure (devDependencies & tsx Runtime Placement)
 
 ### Baseline

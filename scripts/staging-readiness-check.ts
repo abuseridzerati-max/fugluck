@@ -107,6 +107,14 @@ check("Root package.json has db:migrate", typeof rootPkg.scripts?.["db:migrate"]
 check("Root package.json has typecheck", typeof rootPkg.scripts?.["typecheck"] === "string");
 check("Server package.json has start", typeof serverPkg.scripts?.start === "string");
 
+// 7. Server Host & Port Binding Configuration
+console.log("\nSection 7: Server Host & Port Binding");
+const serverIndexContent = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/index.ts"), "utf-8");
+check("Server index.ts reads PORT from process.env.PORT", serverIndexContent.includes("process.env.PORT"));
+check("Server index.ts binds host defaulting to 0.0.0.0", serverIndexContent.includes('"0.0.0.0"') || serverIndexContent.includes("'0.0.0.0'"));
+check("Server index.ts passes host to httpServer.listen", serverIndexContent.includes("httpServer.listen(port, host"));
+
+
 console.log(`\n==================================================`);
 console.log(`Staging Deployment Readiness Check: ${passes} PASS, ${failures} FAIL`);
 console.log(`==================================================\n`);
