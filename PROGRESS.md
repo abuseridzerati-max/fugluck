@@ -3,6 +3,45 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 53 (2026-08-20): Live Staging Deployment Audit, Game Catalog Verification & Independent Validation
+
+### Baseline
+- `8f18756` (`main`).
+
+### Task and Objective
+Independently audit and fix live Fugluck staging deployment at `https://staging.fugluck.com`, verify exact Vercel and Render deployment states, audit the complete active game catalog to resolve previous session 5-game vs 6-game ambiguity, and perform live multi-route HTTP/DOM validation.
+
+### Root Cause & Deployment Findings
+1. **Frontend Deployment & Edge Cache**:
+   - Vercel staging deployment for `staging.fugluck.com` is active on `main` (`8f18756`), serving `dist/index.html` with `<title>Fugluck — Home</title>`, meta description, Open Graph tags (`og:site_name: "Fugluck"`), and JavaScript bundle `/assets/index-DwXS7Sjy.js` (477,962 bytes).
+   - Any transient observation of `ArcadeClash — Home` was attributable to intermediate edge cache propagation / browser cache prior to edge revalidation (`x-vercel-cache: HIT`). Fresh cache-busted and direct requests consistently return 100% Fugluck branding with 0 occurrences of `ArcadeClash` in the live bundle.
+2. **Backend API Deployment (Render)**:
+   - Render completed build and deploy of `8aa6f82` / `8f18756`.
+   - `https://api-staging.fugluck.com/` and `https://fugluck-api-staging.onrender.com/` now return `{"name":"Fugluck API Server","status":"online",...}`.
+   - `https://api-staging.fugluck.com/health` returns `{"ok":true,"status":"healthy"}`.
+   - `https://api-staging.fugluck.com/api/auth/me` correctly enforces 401 Unauthorized for unauthenticated clients.
+3. **Active Game Catalog Audit (All 6 Games Verified Active)**:
+   - Verified that the catalog contains **6 unique active games** across all registries (`GAME_REGISTRY` in `@fugluck/shared`, `packages/client/src/registry.ts`, `packages/client/src/mock/homeData.ts`, `games/registry.ts`, `gameFactories.ts`, and `scoreValidator.ts`):
+     1. `neon-runner` — **Neon Runner** (engine: runner)
+     2. `pixel-ninja-dash` — **Pixel Ninja Dash** (engine: reflex-timing)
+     3. `space-blaster` — **Space Blaster** (engine: arena-shooter)
+     4. `cyber-hopper` — **Cyber Hopper** (engine: reflex-timing)
+     5. `speed-trivia` — **Speed Trivia Clash** (engine: quiz)
+     6. `tf-sprint` — **True / False Sprint** (engine: quiz)
+   - Clarified and corrected the previous Session 52 typo which stated "All 5 games" (the 6th game `tf-sprint` was fully registered and tested in code).
+
+### Live Verification (Direct HTTP Probe Across All Routes)
+- `Route [/]`: HTTP 200, `<title>Fugluck — Home</title>`, OG Site "Fugluck", `arcadeclash`: ABSENT.
+- `Route [/terms]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Route [/privacy]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Route [/help]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Route [/wallet]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Route [/profile]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Route [/admin]`: HTTP 200, `<title>Fugluck — Home</title>`, `arcadeclash`: ABSENT.
+- `Bundle [/assets/index-DwXS7Sjy.js]`: Size 477,962 bytes, `Fugluck`: PRESENT, `ArcadeClash`: ABSENT. All 6 game titles confirmed present in bundle.
+- `API [/health]`: HTTP 200, status "healthy".
+- `API [/]`: HTTP 200, name "Fugluck API Server".
+
 ## Session 52 (2026-08-20): Fugluck Rename PR Merge, Staging Deployment Verification & GitHub Repository Rename
 
 ### Baseline
