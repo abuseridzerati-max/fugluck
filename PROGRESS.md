@@ -3,6 +3,41 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 52 (2026-08-20): Fugluck Rename PR Merge, Staging Deployment Verification & GitHub Repository Rename
+
+### Baseline
+- `8aa6f82` (`main`, PR #16 merged).
+
+### Task and Objective
+Complete the Fugluck rollout: create and review PR against `main`, merge cleanly, synchronize local `main`, verify live staging deployment and endpoints (`https://staging.fugluck.com`, `https://api-staging.fugluck.com`, `https://fugluck-api-staging.onrender.com`), rename the GitHub repository from `abuseridzerati-max/arcadeclash` to `abuseridzerati-max/fugluck`, update Git remote URLs, audit external provider configurations, and perform post-rename validation.
+
+### Work Accomplished & Architectural Decisions
+1. **Pull Request & Clean Merge (`chore/rename-arcadeclash-to-fugluck` -> `main`)**:
+   - Created PR #16 (`Complete project-wide rename from ArcadeClash to Fugluck`).
+   - Verified clean diff across 109 changed files (+467 / -378).
+   - Merged PR #16 via fast-forward merge (`8aa6f82`) and deleted feature branch.
+   - Synchronized local `main` to `origin/main` (`8aa6f82`).
+2. **Staging Deployment & Live Endpoint Verification**:
+   - **Frontend Staging (`https://staging.fugluck.com`)**: Verified live Vercel deployment: HTTP 200, document title `Fugluck — Home`, `manifest.json` (`name: "Fugluck"`), zero `arcadeclash` branding in rendered DOM/meta tags, production JavaScript bundle loads with Fugluck assets.
+   - **Backend API Staging (`https://api-staging.fugluck.com` & `https://fugluck-api-staging.onrender.com`)**: Verified live API endpoints: `/health` returns `{ "ok": true, "status": "healthy" }` (HTTP 200), `/api/auth/me` returns 401 Unauthorized for unauthenticated requests, root `/` returns `{ name: "Fugluck API Server" }`.
+3. **GitHub Repository Rename**:
+   - Executed `gh repo rename fugluck --yes` to rename GitHub repository identity from `abuseridzerati-max/arcadeclash` to `abuseridzerati-max/fugluck`.
+   - Updated local Git remote: `origin -> https://github.com/abuseridzerati-max/fugluck.git`.
+   - Verified remote fetch and branch tracking (`git fetch origin`, `git status`).
+4. **Intentional Retained Legacy Identifiers Audit**:
+   - Machine cookie identifiers `ac_session` and `ac_admin_session` retained to protect active staging sessions.
+   - Browser storage fallback keys `arcadeclash_auth_user` and `arcadeclash_active_match` retained in `AuthContext.tsx` and `App.tsx`.
+   - Weak password list guard for `arcadeclash` retained in `packages/server/src/auth/password.ts`.
+   - Disposable test DB pattern `arcadeclash_atomic_test` retained for compatibility with remote test database instance.
+   - Historical logs in `PROGRESS.md`, `REPO-STATE.md`, and `RECOVERY-STATE.md` preserved as immutable historical records.
+5. **Local Checkout Path**:
+   - Canonical remote URL is `https://github.com/abuseridzerati-max/fugluck.git`. Local folder `C:\Users\abuse\arcadeclash` can be renamed to `C:\Users\abuse\fugluck` when active agent IDE session closes.
+
+### Verification (Ran All Tests on Merged `main`)
+- `npm run typecheck`: **0 errors** across all 5 workspace packages; client built cleanly.
+- `npm test`: **All 27 test suites passed 100% (27/27)**.
+- `git status`: Clean working tree on `main`, synchronized with `origin/main` (`8aa6f82`).
+
 ## Session 51 (2026-08-20): Complete Repository-Wide Brand Rename to Fugluck
 
 ### Baseline
