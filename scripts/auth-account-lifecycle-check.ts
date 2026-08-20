@@ -36,7 +36,7 @@ function hashToken(rawToken: string): string {
 
 async function runAuthAccountLifecycleSuite(): Promise<void> {
   console.log("\n=======================================================");
-  console.log("ArcadeClash Complete Account & Auth Lifecycle Check");
+  console.log("Fugluck Complete Account & Auth Lifecycle Check");
   console.log("=======================================================\n");
 
   const runId = Date.now();

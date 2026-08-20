@@ -6,7 +6,7 @@ import type {
   MatchedPayload,
   MatchResolvedPayload,
   PlayerResult,
-} from '@arcadeclash/shared'
+} from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { useMatchSocket, type MatchSocketMode } from '../matchmaking/useMatchSocket'
 
@@ -169,9 +169,9 @@ export default function MatchLoader({
   useEffect(() => {
     const prevTitle = document.title
     if (phase.kind === 'queued') {
-      document.title = `ArcadeClash — Matchmaking: ${gameTitle}`
+      document.title = `Fugluck — Matchmaking: ${gameTitle}`
     } else {
-      document.title = `ArcadeClash — Match: ${gameTitle}`
+      document.title = `Fugluck — Match: ${gameTitle}`
     }
     return () => {
       document.title = prevTitle

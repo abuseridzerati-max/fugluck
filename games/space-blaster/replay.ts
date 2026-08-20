@@ -1,4 +1,4 @@
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { SpaceBlasterEngine, type SpaceBlasterInput } from "./engine";
 
 export const spaceBlasterReplayAdapter: ReplayAdapter<SpaceBlasterInput, SpaceBlasterEngine> = {

@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
-import { gameRegistry } from "@arcadeclash/games";
-import type { QueueStateEntry } from "@arcadeclash/shared";
+import { gameRegistry } from "@fugluck/games";
+import type { QueueStateEntry } from "@fugluck/shared";
 import type { MatchmakingSocket } from "./socketAuth";
 
 export type QueueEntry = {

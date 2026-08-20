@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DIAMOND_PACKS, type DiamondPack } from '@arcadeclash/shared'
+import { DIAMOND_PACKS, type DiamondPack } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../auth/AuthContext'

@@ -1,4 +1,4 @@
-import type { FriendEntry } from "@arcadeclash/shared";
+import type { FriendEntry } from "@fugluck/shared";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 import { Router } from "express";

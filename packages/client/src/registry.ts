@@ -1,4 +1,4 @@
-import { GAME_REGISTRY, type GameRegistryItem } from "@arcadeclash/shared";
+import { GAME_REGISTRY, type GameRegistryItem } from "@fugluck/shared";
 
 export { GAME_REGISTRY, type GameRegistryItem };
 

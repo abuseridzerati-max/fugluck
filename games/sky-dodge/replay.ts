@@ -1,4 +1,4 @@
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { SkyDodgeEngine, type EngineInput } from "./engine";
 
 export const skyDodgeReplayAdapter: ReplayAdapter<EngineInput, SkyDodgeEngine> = {

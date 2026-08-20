@@ -1,4 +1,4 @@
-import { SIGNUP_COIN_GRANT, type Currency, type WalletBalances } from "@arcadeclash/shared";
+import { SIGNUP_COIN_GRANT, type Currency, type WalletBalances } from "@fugluck/shared";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
@@ -16,7 +16,7 @@ export type DbClientOrTx = typeof db | Parameters<Parameters<typeof db.transacti
 // also makes the invariant visible in application code and lets a caller lock
 // both match participants in a deterministic order before checking either
 // balance. hashtext is stable inside PostgreSQL and the two-int form
-// keeps these locks in an ArcadeClash-specific namespace.
+// keeps these locks in a Fugluck-specific namespace.
 export async function lockWalletUsers(client: DbClientOrTx, userIds: string[]): Promise<void> {
   const uniqueIds = [...new Set(userIds)].sort();
   for (const userId of uniqueIds) {

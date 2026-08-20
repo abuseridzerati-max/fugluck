@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { CURRENT_POLICY_VERSIONS, type PublicUser, type SignupAcceptedPolicies } from '@arcadeclash/shared'
+import { CURRENT_POLICY_VERSIONS, type PublicUser, type SignupAcceptedPolicies } from '@fugluck/shared'
 import { apiFetch, ApiError } from '../lib/api'
 
-const AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
+const AUTH_STORAGE_KEY = 'fugluck_auth_user'
+const LEGACY_AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
 
 export function getStoredAuthToken(): string | null {
   return null
@@ -27,7 +28,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(() => {
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY)
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem(LEGACY_AUTH_STORAGE_KEY)
       return stored ? JSON.parse(stored) : null
     } catch {
       return null
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u))
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY)
+        localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY)
       }
     } catch {
       // Ignore storage errors

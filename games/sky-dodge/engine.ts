@@ -1,4 +1,4 @@
-import { createSeededRandom, type RandomFn } from "@arcadeclash/shared";
+import { createSeededRandom, type RandomFn } from "@fugluck/shared";
 import { METEOR, PALETTE, SHIP, WORLD } from "./constants";
 
 export type EngineInput = {

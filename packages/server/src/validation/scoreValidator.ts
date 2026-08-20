@@ -15,8 +15,8 @@ import {
   UnrecognizedActionError,
   type InputLogEntry,
   type ScoreVerdict,
-} from "@arcadeclash/shared";
-import { replayAdapters } from "@arcadeclash/games/replayAdapters";
+} from "@fugluck/shared";
+import { replayAdapters } from "@fugluck/games/replayAdapters";
 
 export type ValidateScoreInput = {
   gameId: string;

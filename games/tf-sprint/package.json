@@ -1,5 +1,5 @@
 {
-  "name": "@arcadeclash/game-tf-sprint",
+  "name": "@fugluck/game-tf-sprint",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,6 +8,6 @@
     ".": "./index.ts"
   },
   "dependencies": {
-    "@arcadeclash/shared": "workspace:*"
+    "@fugluck/shared": "workspace:*"
   }
 }

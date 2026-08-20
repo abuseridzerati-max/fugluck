@@ -35,11 +35,11 @@ const invalidBadUrl = validateStartupConfig({
 check("Rejects non-postgres protocol in DATABASE_URL", invalidBadUrl.errors.some((e) => e.includes("protocol")));
 
 const validProdConfig = validateStartupConfig({
-  DATABASE_URL: "postgresql://user:pass@host:5432/arcadeclash_staging?sslmode=require",
+  DATABASE_URL: "postgresql://user:pass@host:5432/fugluck_staging?sslmode=require",
   JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
   PORT: "4000",
   NODE_ENV: "production",
-  CLIENT_ORIGIN: "https://staging.arcadeclash.com",
+  CLIENT_ORIGIN: "https://staging.fugluck.com",
 });
 check("Accepts valid staging/production configuration", validProdConfig.valid === true);
 check("No errors on valid configuration", validProdConfig.errors.length === 0);
@@ -48,18 +48,18 @@ check("No errors on valid configuration", validProdConfig.errors.length === 0);
 console.log("\nSection 2: Cookie Security & Cross-Subdomain Options");
 const originalEnv = { ...process.env };
 process.env.NODE_ENV = "production";
-process.env.COOKIE_DOMAIN = ".arcadeclash.com";
+process.env.COOKIE_DOMAIN = ".fugluck.com";
 process.env.COOKIE_SAMESITE = "lax";
 
 const sessionOpts = getSessionCookieOptions();
 check("Production session cookie is HttpOnly", sessionOpts.httpOnly === true);
 check("Production session cookie is Secure", sessionOpts.secure === true);
-check("Production session cookie has Domain=.arcadeclash.com", sessionOpts.domain === ".arcadeclash.com");
+check("Production session cookie has Domain=.fugluck.com", sessionOpts.domain === ".fugluck.com");
 check("Production session cookie has SameSite=lax", sessionOpts.sameSite === "lax");
 check("Production session cookie maxAge is 7 days", sessionOpts.maxAge === 7 * 24 * 60 * 60 * 1000);
 
 const clearOpts = getClearCookieOptions();
-check("Clear cookie options preserve Domain", clearOpts.domain === ".arcadeclash.com");
+check("Clear cookie options preserve Domain", clearOpts.domain === ".fugluck.com");
 check("Clear cookie options preserve SameSite", clearOpts.sameSite === "lax");
 check("Clear cookie options preserve Secure", clearOpts.secure === true);
 

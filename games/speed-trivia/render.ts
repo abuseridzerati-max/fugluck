@@ -1,4 +1,4 @@
-import { VIRTUAL_VIEWPORT } from "@arcadeclash/shared";
+import { VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { PALETTE, TRIVIA_RULES } from "./constants";
 import type { SpeedTriviaEngine } from "./engine";
 

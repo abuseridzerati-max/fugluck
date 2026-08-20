@@ -1,4 +1,4 @@
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { SpeedTriviaEngine, type SpeedTriviaInput } from "./engine";
 
 export const speedTriviaReplayAdapter: ReplayAdapter<SpeedTriviaInput, SpeedTriviaEngine> = {

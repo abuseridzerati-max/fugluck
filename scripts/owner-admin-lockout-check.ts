@@ -1,4 +1,4 @@
-// Comprehensive Private Owner Admin Console & 5-Attempt / 1-Hour Lockout Test Script for ArcadeClash.
+// Comprehensive Private Owner Admin Console & 5-Attempt / 1-Hour Lockout Test Script for Fugluck.
 // Run only with an isolated TEST_DATABASE_URL because lockout state is persisted.
 
 import "./require-disposable-test-database.ts";

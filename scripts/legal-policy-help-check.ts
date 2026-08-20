@@ -27,7 +27,7 @@ function check(label: string, condition: boolean, detail?: string): void {
 
 async function runLegalPolicyHelpSuite(): Promise<void> {
   console.log("\n=======================================================");
-  console.log("ArcadeClash Legal, Policies & Help Center Verification");
+  console.log("Fugluck Legal, Policies & Help Center Verification");
   console.log("=======================================================\n");
 
   // -------------------------------------------------------------------------
@@ -59,7 +59,7 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
 
   check("POLICY_NAV_ITEMS has 16 items (15 policies + Help Center)", POLICY_NAV_ITEMS.length === 16);
   const categories = new Set(POLICY_NAV_ITEMS.map((item) => item.category));
-  check("POLICY_NAV_ITEMS contains ARCADECLASH category", categories.has("ARCADECLASH"));
+  check("POLICY_NAV_ITEMS contains FUGLUCK category", categories.has("FUGLUCK"));
   check("POLICY_NAV_ITEMS contains LEGAL category", categories.has("LEGAL"));
   check("POLICY_NAV_ITEMS contains PLAY_AND_MONEY category", categories.has("PLAY_AND_MONEY"));
   check("POLICY_NAV_ITEMS contains ACCOUNT_AND_SAFETY category", categories.has("ACCOUNT_AND_SAFETY"));

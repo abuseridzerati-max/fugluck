@@ -1,4 +1,4 @@
-import { categoryColors } from '@arcadeclash/theme'
+import { categoryColors } from '@fugluck/theme'
 
 const PALETTE = Object.values(categoryColors)
 

@@ -8,7 +8,7 @@ import {
   type GameModule,
   type GameModuleFactory,
   type InputLogEntry,
-} from "@arcadeclash/shared";
+} from "@fugluck/shared";
 import { SpeedTriviaEngine, type SpeedTriviaInput } from "./engine";
 import { renderSpeedTrivia } from "./render";
 

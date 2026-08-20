@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@arcadeclash/shared";
+import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@fugluck/shared";
 import { asc, eq, or, sql } from "drizzle-orm";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
 import { validateScore } from "../validation/scoreValidator";

@@ -1,4 +1,4 @@
-import { CURRENT_POLICY_VERSIONS, type PolicyType } from '@arcadeclash/shared'
+import { CURRENT_POLICY_VERSIONS, type PolicyType } from '@fugluck/shared'
 
 export type PolicySection = {
   id: string
@@ -24,19 +24,19 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'TERMS',
     slug: 'terms',
     title: 'Terms of Service',
-    subtitle: 'General Terms and Conditions governing use of the ArcadeClash platform.',
+    subtitle: 'General Terms and Conditions governing use of the Fugluck platform.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.TERMS,
     summary:
-      'These Terms of Service constitute a legally binding agreement between you and ArcadeClash. By creating an account or accessing the platform, you agree to these terms, including our server-authoritative matchmaking, anti-cheating, and currency rules.',
+      'These Terms of Service constitute a legally binding agreement between you and Fugluck. By creating an account or accessing the platform, you agree to these terms, including our server-authoritative matchmaking, anti-cheating, and currency rules.',
     sections: [
       {
         id: 'acceptance',
         heading: '1. Acceptance of Terms & Account Registration',
         content: [
-          'By accessing, registering for, or playing on ArcadeClash, you affirm that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, you must not access or use the platform.',
+          'By accessing, registering for, or playing on Fugluck, you affirm that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, you must not access or use the platform.',
           'To access certain features, including competitive matchmaking, wallet balance tracking, and social features, you must register for an account. You agree to provide accurate, current, and complete information during registration and to keep such information updated.',
-          'You are solely responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify ArcadeClash immediately of any unauthorized access or security breach.',
+          'You are solely responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify Fugluck immediately of any unauthorized access or security breach.',
           'Each individual is permitted to operate only one active player account. Creating multiple accounts or operating puppet accounts for the purpose of rating manipulation, matchmaking evasion, or bonus exploitation is strictly prohibited.',
         ],
       },
@@ -44,7 +44,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'modes-and-gameplay',
         heading: '2. Platform Access & Game Modes',
         content: [
-          'ArcadeClash provides skill-based arcade video games across multiple gameplay modes:',
+          'Fugluck provides skill-based arcade video games across multiple gameplay modes:',
           '• Practice Mode: Single-player offline or local play designed for skill acquisition. No wagers or financial transactions occur.',
           '• Free Play (Guest Instant Matches): Unauthenticated or peer-to-peer matches conducted at zero stake (stake = 0). Open to all eligible players without financial risk.',
           '• COIN Matches: Competitive matches played with COINS (our free virtual currency). Winner receives the prize pot with 0% platform rake. COINS have no cash value and cannot be redeemed for real money.',
@@ -55,7 +55,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'server-authority',
         heading: '3. Server Authority, Seeding & Score Validation',
         content: [
-          'All competitive matches on ArcadeClash are strictly server-authoritative. The ArcadeClash server generates and issues a cryptographically secure pseudo-random seed to both match participants simultaneously upon match start.',
+          'All competitive matches on Fugluck are strictly server-authoritative. The Fugluck server generates and issues a cryptographically secure pseudo-random seed to both match participants simultaneously upon match start.',
           'Physics, obstacle placement, scoring events, and difficulty scaling run deterministically from the canonical seed at a fixed 60 FPS tick rate. Client display resolution does not alter gameplay physics or scoring distance (Fixed Virtual Viewport invariant).',
           'At match completion, clients submit an input log alongside their claimed score. The server headlessly simulates the entire match run to independently calculate and verify the authoritative score before settling match stakes.',
         ],
@@ -74,7 +74,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'currencies-and-wallet',
         heading: '5. Virtual Currencies, Purchases & Cash-Outs',
         content: [
-          'ArcadeClash operates a dual-currency ledger model: COINS (free-play virtual currency) and DIAMONDS (competitive staking currency).',
+          'Fugluck operates a dual-currency ledger model: COINS (free-play virtual currency) and DIAMONDS (competitive staking currency).',
           'COINS are granted freely upon registration (1,000 COINS) and topped up monthly. COINS carry zero monetary value and cannot be exchanged, transferred, or cashed out.',
           'DIAMONDS represent competitive units that may be acquired via payment processors and used to enter competitive matches. Real-money Diamond purchases and cash-out/withdrawal functionality will be governed by our Diamond & Wallet Terms and Withdrawal Policy once payment gateway infrastructure is operational.',
         ],
@@ -91,14 +91,14 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'intellectual-property',
         heading: '7. Intellectual Property',
         content: [
-          'All game code, graphic assets, animations, audio, logos, trademarks, and user interfaces on ArcadeClash are the proprietary intellectual property of ArcadeClash or its licensors. You are granted a limited, personal, revocable license to access and play the games for individual entertainment.',
+          'All game code, graphic assets, animations, audio, logos, trademarks, and user interfaces on Fugluck are the proprietary intellectual property of Fugluck or its licensors. You are granted a limited, personal, revocable license to access and play the games for individual entertainment.',
         ],
       },
       {
         id: 'termination',
         heading: '8. Account Suspension & Termination',
         content: [
-          'ArcadeClash reserves the right to suspend, restrict, or terminate any account that violates these Terms of Service, engages in fraudulent activity, or poses a security risk to other players. In the event of account closure, you may request data access in accordance with our Privacy Policy.',
+          'Fugluck reserves the right to suspend, restrict, or terminate any account that violates these Terms of Service, engages in fraudulent activity, or poses a security risk to other players. In the event of account closure, you may request data access in accordance with our Privacy Policy.',
         ],
       },
       {
@@ -116,11 +116,11 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'PRIVACY',
     slug: 'privacy',
     title: 'Privacy Policy',
-    subtitle: 'How ArcadeClash collects, uses, protects, and handles your personal information.',
+    subtitle: 'How Fugluck collects, uses, protects, and handles your personal information.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.PRIVACY,
     summary:
-      'ArcadeClash is committed to player privacy and data transparency. We process only the information necessary to operate our accounts, verify game integrity, ensure financial ledger accuracy, and prevent cheating.',
+      'Fugluck is committed to player privacy and data transparency. We process only the information necessary to operate our accounts, verify game integrity, ensure financial ledger accuracy, and prevent cheating.',
     sections: [
       {
         id: 'information-collected',
@@ -177,18 +177,18 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'COOKIES',
     slug: 'cookies',
     title: 'Cookie & Storage Policy',
-    subtitle: 'Transparent disclosure of browser storage, sessions, and cookies used on ArcadeClash.',
+    subtitle: 'Transparent disclosure of browser storage, sessions, and cookies used on Fugluck.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.COOKIES,
     summary:
-      'ArcadeClash utilizes strictly necessary cookies and local browser storage to provide secure session management, language preferences, and active match resumption. We do not use third-party advertising tracking cookies.',
+      'Fugluck utilizes strictly necessary cookies and local browser storage to provide secure session management, language preferences, and active match resumption. We do not use third-party advertising tracking cookies.',
     sections: [
       {
         id: 'storage-overview',
         heading: '1. What Storage Technologies We Use',
         content: [
-          'ArcadeClash utilizes standard browser storage technologies:',
-          '• HTTP-Only Session Cookies: Secure, server-set cookies (e.g., arcadeclash_session) used solely to maintain authenticated user sessions.',
+          'Fugluck utilizes standard browser storage technologies:',
+          '• HTTP-Only Session Cookies: Secure, server-set cookies (e.g., fugluck_session) used solely to maintain authenticated user sessions.',
           '• LocalStorage: Client-side storage used to remember your preferred language (en, ka, ru) and client-side UI preferences.',
           '• SessionStorage: Temporary browser memory used to store active match references so a match can be reconnected if you refresh during play.',
         ],
@@ -197,7 +197,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'strict-necessity',
         heading: '2. Strictly Necessary Classification',
         content: [
-          'All cookies and storage items currently employed by ArcadeClash are strictly necessary for the technical operation, security, and authentication of the website.',
+          'All cookies and storage items currently employed by Fugluck are strictly necessary for the technical operation, security, and authentication of the website.',
           'Because we do not deploy third-party advertising trackers or invasive marketing pixels, our storage usage qualifies as essential under major data protection frameworks.',
         ],
       },
@@ -216,17 +216,17 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'RULES',
     slug: 'rules',
     title: 'Competition & Game Rules',
-    subtitle: 'Official gameplay, scoring, validation, and outcome rules across all ArcadeClash arenas.',
+    subtitle: 'Official gameplay, scoring, validation, and outcome rules across all Fugluck arenas.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.RULES,
     summary:
-      'Every competitive match on ArcadeClash is governed by deterministic rules, synchronized seeds, fixed 60 FPS physics loops, and headless score validation to guarantee 100% fair and equal competition.',
+      'Every competitive match on Fugluck is governed by deterministic rules, synchronized seeds, fixed 60 FPS physics loops, and headless score validation to guarantee 100% fair and equal competition.',
     sections: [
       {
         id: 'skill-foundation',
         heading: '1. Skill-Based Competition Architecture',
         content: [
-          'ArcadeClash games are pure skill competitions. Random elements (e.g., obstacle spawns, trivia question sequences, platform arrangements) are synchronized between opponents via a single server-issued random seed.',
+          'Fugluck games are pure skill competitions. Random elements (e.g., obstacle spawns, trivia question sequences, platform arrangements) are synchronized between opponents via a single server-issued random seed.',
           'Both players compete against identical obstacle patterns, identical physics constants, and identical scoring multipliers. No player receives an unfair positional or procedural advantage.',
         ],
       },
@@ -265,17 +265,17 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'DIAMONDS',
     slug: 'diamonds',
     title: 'Diamond & Wallet Terms',
-    subtitle: 'Economic principles, currency distinctions, and wallet rules for ArcadeClash.',
+    subtitle: 'Economic principles, currency distinctions, and wallet rules for Fugluck.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.DIAMONDS,
     summary:
-      'Learn how the ArcadeClash dual-currency model works. Understand the distinction between free COINS and competitive DIAMONDS, our append-only ledger, and future cash-out mechanics.',
+      'Learn how the Fugluck dual-currency model works. Understand the distinction between free COINS and competitive DIAMONDS, our append-only ledger, and future cash-out mechanics.',
     sections: [
       {
         id: 'dual-currency',
         heading: '1. Dual Currency Model: COINS vs DIAMONDS',
         content: [
-          'ArcadeClash maintains strict architectural separation between our two currencies:',
+          'Fugluck maintains strict architectural separation between our two currencies:',
           '• COINS: 100% free-play currency. Granted upon registration (1,000 COINS), refilled monthly, with 0% platform rake. COINS have no cash value, cannot be sold, and cannot be redeemed for real money.',
           '• DIAMONDS: Premium competitive staking currency designed for real-value skill matches. Staked in Diamond matches with a 5% platform rake fee. Eligible winnings may be submitted for cash-out once payout infrastructure is live.',
         ],
@@ -348,13 +348,13 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.REFUNDS,
     summary:
-      'ArcadeClash provides automatic, database-enforced refunds for match draws, disconnects, and server interruptions. Learn how match refunds and purchase refund requests are handled.',
+      'Fugluck provides automatic, database-enforced refunds for match draws, disconnects, and server interruptions. Learn how match refunds and purchase refund requests are handled.',
     sections: [
       {
         id: 'match-refunds',
         heading: '1. Match Entry Refunds (Automatic)',
         content: [
-          'The ArcadeClash ledger engine automatically issues 100% stake refunds in the following scenarios:',
+          'The Fugluck ledger engine automatically issues 100% stake refunds in the following scenarios:',
           '• Match Draws: Both players receive a full refund of their staked entry amounts when verified scores tie.',
           '• Technical Interruptions & Crashes: If a server restart or network drop interrupts an active match, our orphan recovery engine voids the match and refunds both participants.',
           '• Opponent No-Show / Queue Timeout: If an opponent disconnects during queueing or pre-game synchronization, your entry stake is immediately returned.',
@@ -386,7 +386,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.RESPONSIBLE_PLAY,
     summary:
-      'ArcadeClash is dedicated to providing a safe, enjoyable, and balanced gaming environment. We encourage all players to compete responsibly and maintain healthy boundaries.',
+      'Fugluck is dedicated to providing a safe, enjoyable, and balanced gaming environment. We encourage all players to compete responsibly and maintain healthy boundaries.',
     sections: [
       {
         id: 'principles',
@@ -402,7 +402,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'player-controls',
         heading: '2. Available Account Controls',
         content: [
-          'ArcadeClash provides tools to help manage your platform engagement:',
+          'Fugluck provides tools to help manage your platform engagement:',
           '• Free Practice & Free Play: You can always play offline Practice Mode or zero-stake guest matches without financial commitments.',
           '• Account Pause & Cool-Off: You can request temporary account suspension or self-exclusion through our support desk.',
           '• Account Closure: You may permanently close your account at any time.',
@@ -427,7 +427,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.ELIGIBILITY,
     summary:
-      'ArcadeClash complies with applicable legal, age, and jurisdictional standards for skill-based gaming. Learn about player eligibility requirements and geographical restrictions.',
+      'Fugluck complies with applicable legal, age, and jurisdictional standards for skill-based gaming. Learn about player eligibility requirements and geographical restrictions.',
     sections: [
       {
         id: 'age-requirements',
@@ -440,15 +440,15 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'jurisdiction-rules',
         heading: '2. Geographical & Jurisdictional Availability',
         content: [
-          'Skill-based gaming laws vary by country, state, and province. It is the responsibility of each player to ensure that accessing ArcadeClash and participating in competitive matches is lawful in their location.',
-          'ArcadeClash reserves the right to restrict access from sanctioned regions, jurisdictions where skill gaming is restricted, or locations where regulatory licensing is required.',
+          'Skill-based gaming laws vary by country, state, and province. It is the responsibility of each player to ensure that accessing Fugluck and participating in competitive matches is lawful in their location.',
+          'Fugluck reserves the right to restrict access from sanctioned regions, jurisdictions where skill gaming is restricted, or locations where regulatory licensing is required.',
         ],
       },
       {
         id: 'identity-verification',
         heading: '3. Identity Verification (KYC)',
         content: [
-          'Prior to processing real-money transactions or cash-out requests, ArcadeClash may require identity verification (including proof of identity and address) to comply with anti-fraud and anti-money laundering requirements.',
+          'Prior to processing real-money transactions or cash-out requests, Fugluck may require identity verification (including proof of identity and address) to comply with anti-fraud and anti-money laundering requirements.',
         ],
       },
     ],
@@ -463,7 +463,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.FAIR_PLAY,
     summary:
-      'Cheating, botting, score manipulation, and unfair tactics are strictly prohibited on ArcadeClash. Our server-authoritative simulation engine detects and rejects modified runs automatically.',
+      'Cheating, botting, score manipulation, and unfair tactics are strictly prohibited on Fugluck. Our server-authoritative simulation engine detects and rejects modified runs automatically.',
     sections: [
       {
         id: 'prohibited-tools',
@@ -546,7 +546,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
           'Under applicable data protection frameworks, you have the right to:',
           '• Access & Export: Request an electronic copy of your profile data, match history, and ledger records.',
           '• Correction: Request correction of inaccurate profile or account information.',
-          '• Account Closure: Request permanent closure of your ArcadeClash account.',
+          '• Account Closure: Request permanent closure of your Fugluck account.',
         ],
       },
       {
@@ -576,7 +576,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.SECURITY,
     summary:
-      'ArcadeClash is engineered with enterprise security controls: salted password hashing, HTTP-only session cookies, PostgreSQL advisory transaction locks, and server-side rate limiters.',
+      'Fugluck is engineered with enterprise security controls: salted password hashing, HTTP-only session cookies, PostgreSQL advisory transaction locks, and server-side rate limiters.',
     sections: [
       {
         id: 'authentication-security',
@@ -610,18 +610,18 @@ export const POLICIES: Record<string, PolicyDocument> = {
   about: {
     type: 'ABOUT',
     slug: 'about',
-    title: 'About ArcadeClash',
+    title: 'About Fugluck',
     subtitle: 'The modern competitive skill-arcade platform where true player skill decides the victory.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.ABOUT,
     summary:
-      'ArcadeClash is an online skill-based gaming arena built for quick, intense head-to-head arcade battles. Every match is 100% server-authoritative, deterministic, and fair.',
+      'Fugluck is an online skill-based gaming arena built for quick, intense head-to-head arcade battles. Every match is 100% server-authoritative, deterministic, and fair.',
     sections: [
       {
         id: 'our-mission',
         heading: '1. Our Mission',
         content: [
-          'ArcadeClash was built on a simple premise: competitive gaming should reward skill, speed, and precision—without pay-to-win mechanics or hidden algorithms.',
+          'Fugluck was built on a simple premise: competitive gaming should reward skill, speed, and precision—without pay-to-win mechanics or hidden algorithms.',
           'Whether you are dodging obstacles in Neon Runner, testing lightning reflexes in Pixel Ninja Dash, clearing waves in Space Blaster, or answering fast in Speed Trivia Clash, you compete against real players under perfectly identical conditions.',
         ],
       },
@@ -650,7 +650,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'CONTACT',
     slug: 'contact',
     title: 'Contact & Support',
-    subtitle: 'Get in touch with the ArcadeClash team for player support, inquiries, or feedback.',
+    subtitle: 'Get in touch with the Fugluck team for player support, inquiries, or feedback.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.CONTACT,
     summary:

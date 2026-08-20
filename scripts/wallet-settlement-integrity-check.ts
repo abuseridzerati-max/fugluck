@@ -1,4 +1,4 @@
-// Comprehensive Wallet Settlement Integrity, Idempotency, Concurrency & Crash Safety Test Suite for ArcadeClash.
+// Comprehensive Wallet Settlement Integrity, Idempotency, Concurrency & Crash Safety Test Suite for Fugluck.
 // Run only with an isolated TEST_DATABASE_URL.
 
 import "./require-disposable-test-database.ts";

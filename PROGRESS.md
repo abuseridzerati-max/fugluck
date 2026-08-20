@@ -1,7 +1,75 @@
-# ArcadeClash — Progress Log
+# Fugluck — Progress Log
 
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
+
+## Session 51 (2026-08-20): Complete Repository-Wide Brand Rename to Fugluck
+
+### Baseline
+- `313dac6` (Dedicated branch `chore/rename-arcadeclash-to-fugluck`).
+
+### Task and Objective
+Execute a comprehensive, systematic project-wide rename from **ArcadeClash** to **Fugluck** across all monorepo workspaces, packages, client assets, legal docs, configuration blueprints, and automated test scripts while preserving 100% of application functionality and backward compatibility.
+
+### Work Accomplished & Architectural Decisions
+1. **Monorepo Package Scopes & Dependencies (`@arcadeclash/*` -> `@fugluck/*`)**:
+   - Renamed root package to `"fugluck"` and updated workspace script invocations.
+   - Renamed all package names: `@fugluck/client`, `@fugluck/server`, `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/game-tf-sprint`.
+   - Updated package dependency references and imported paths across all 61 monorepo source files in `games/`, `packages/client/src/`, `packages/server/src/`, and `scripts/`.
+   - Re-linked npm workspace dependencies with `npm.cmd install`.
+2. **Client HTML, Metadata, Navigation, & Locale Translations**:
+   - `packages/client/index.html`: Updated page title (`Fugluck — Home`), meta descriptions, Open Graph (`og:site_name`, `og:title`, `og:url`), Twitter meta tags, and canonical URLs to `fugluck.com`.
+   - `packages/client/public/site.webmanifest`: Updated `name` and `short_name` to `Fugluck`.
+   - `packages/client/src/components/Navbar.tsx` & `Footer.tsx`: Brand text, category item filters (`FUGLUCK`), and copyright notice updated to `Fugluck`.
+   - `packages/client/src/locales/` (`en.json`, `ka.json`, `ru.json`): Updated all page titles (`titleHome`, `titleProfile`, `titleFriends`, `titleWallet`, `titleSettings`, `titleLogin`, `titleSignup`, `titleAdmin`, `titleNotFound`) and `policies.nav.about` to Fugluck across English, Georgian (`Fugluck-ის შესახებ`), and Russian (`О платформе Fugluck`).
+   - `packages/client/src/legal/policyData.ts` & `faqData.ts`: Replaced platform references and FAQ item IDs (`what-is-fugluck`, `is-fugluck-free`).
+   - `packages/client/src/admin/AdminConsolePage.tsx`: Updated page title and console heading to `FUGLUCK OPERATIONAL CONSOLE`.
+   - `packages/client/src/game-loader/GameLoader.tsx` & `MatchLoader.tsx`: Updated document titles (`Fugluck — Practice: ${title}`, `Fugluck — Matchmaking: ${title}`, `Fugluck — Match: ${title}`).
+3. **Session & Cookie Storage Backward Compatibility**:
+   - Maintained legacy machine cookie names `ac_session` and `ac_admin_session` to avoid invalidating active staging user sessions.
+   - Updated client `AuthContext.tsx` and `App.tsx` to read canonical keys (`fugluck_auth_user`, `fugluck_active_match`) with automatic fallback to legacy keys (`arcadeclash_auth_user`, `arcadeclash_active_match`).
+4. **Backend Server, Email Service, & Configuration Templates**:
+   - `packages/server/src/index.ts`: Updated root endpoint payload to `"Fugluck API Server"`.
+   - `packages/server/src/email/emailService.ts`: Updated transactional email templates, subject lines (`Verify your Fugluck account`, `Reset your Fugluck password`), and sender address (`Fugluck <no-reply@fugluck.com>`).
+   - `packages/server/src/config/cors.ts`: Updated fallback production origins to `https://fugluck.com`, `https://www.fugluck.com`, `https://staging.fugluck.com`.
+   - `packages/server/src/auth/password.ts`: Added `fugluck123` and `fugluck2026` to breached password list while retaining `arcadeclash` weak password guard.
+   - `render.yaml`: Updated Blueprint web service name to `fugluck-server-staging`, origins to `staging.fugluck.com`, and cookie domain to `.fugluck.com`.
+   - `.env.example`, `packages/client/.env.example`, `packages/server/.env.example`: Updated environment templates to `staging.fugluck.com` and `api-staging.fugluck.com`.
+   - `DEPLOYMENT.md`, `README.md`, `LEGAL_REVIEW_REQUIRED.md`: Updated documentation and staging runbooks to Fugluck.
+5. **Database Safety & Verification Scripts**:
+   - `scripts/test-database-safety.ts`: Updated test database regex to `/^(?:arcadeclash|fugluck)(?:_[a-z0-9]+)*_test$/` supporting both existing Neon `arcadeclash_atomic_test` and future `fugluck_*_test` disposable test DBs.
+   - Updated all test scripts in `scripts/` to assert Fugluck branding, domains, and policy categories.
+
+### Verification (Ran All Tests)
+- `npm run typecheck`: **0 errors** across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, and `@fugluck/client` (built production bundle cleanly).
+- **All 27 Test Suites in `npm test` Passed 100%**:
+  1. `test-database-safety-check.ts`: **18/18 PASS**
+  2. `migration-schema-parity-check.ts`: **80/80 PASS**
+  3. `auth-account-lifecycle-check.ts`: **31/31 PASS**
+  4. `legal-policy-help-check.ts`: **53/53 PASS**
+  5. `i18n-check.ts`: **48/48 PASS**
+  6. `wallet-friends-check.ts`: **32/32 PASS**
+  7. `financial-reconnection-check.ts`: **5/5 PASS**
+  8. `matchmaking-check.ts`: **28/28 PASS**
+  9. `determinism-check.ts`: **21/21 PASS**
+  10. `score-validation-check.ts`: **22/22 PASS**
+  11. `canvas-render-check.ts`: **7/7 PASS** (294,295 verified 2D draw operations)
+  12. `rate-limit-check.ts`: **9/9 PASS**
+  13. `sql-injection-check.ts`: **26/26 PASS**
+  14. `xss-security-check.ts`: **20/20 PASS**
+  15. `password-security-check.ts`: **11/11 PASS**
+  16. `admin-security-check.ts`: **17/17 PASS**
+  17. `admin-console-check.ts`: **22/22 PASS**
+  18. `cors-audit-check.ts`: **16/16 PASS**
+  19. `registration-verification-check.ts`: **9/9 PASS**
+  20. `owner-admin-lockout-check.ts`: **11/11 PASS**
+  21. `request-logging-audit-check.ts`: **12/12 PASS**
+  22. `password-policy-check.ts`: **15/15 PASS**
+  23. `file-upload-audit-check.ts`: **4/4 PASS**
+  24. `wallet-settlement-concurrency-check.ts`: **14/14 PASS**
+  25. `wallet-settlement-integrity-check.ts`: **14/14 PASS**
+  26. `match-lifecycle-durability-check.ts`: **21/21 PASS**
+  27. `staging-readiness-check.ts`: **34/34 PASS**
 
 ## Session 50 (2026-08-19): Fix Render 502 Runtime Port & Host Binding (0.0.0.0 Wildcard)
 

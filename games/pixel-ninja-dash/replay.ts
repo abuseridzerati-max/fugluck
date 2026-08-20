@@ -3,7 +3,7 @@
 // via WORLD.raceTimeLimitSec regardless of inputLog length or the shared
 // tick cap (see packages/shared/src/replay.ts), since "timeout" is a
 // terminal result here just like "finished".
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { DashEngine, type EngineInput, type EngineResult } from "./engine";
 
 export const pixelNinjaDashReplayAdapter: ReplayAdapter<EngineInput, DashEngine> = {

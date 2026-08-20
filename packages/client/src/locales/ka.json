@@ -142,19 +142,19 @@
     "securityAudits": "უსაფრთხოების აუდიტი"
   },
   "meta": {
-    "titleHome": "ArcadeClash — მთავარი",
-    "titleProfile": "ArcadeClash — პროფილი",
-    "titleFriends": "ArcadeClash — მეგობრები",
-    "titleWallet": "ArcadeClash — საფულე",
-    "titleSettings": "ArcadeClash — პარამეტრები",
-    "titleLogin": "ArcadeClash — შესვლა",
-    "titleSignup": "ArcadeClash — რეგისტრაცია",
-    "titleAdmin": "ArcadeClash — ადმინ კონსოლი",
-    "titleNotFound": "ArcadeClash — 404 გვერდი ვერ მოიძებნა"
+    "titleHome": "Fugluck — მთავარი",
+    "titleProfile": "Fugluck — პროფილი",
+    "titleFriends": "Fugluck — მეგობრები",
+    "titleWallet": "Fugluck — საფულე",
+    "titleSettings": "Fugluck — პარამეტრები",
+    "titleLogin": "Fugluck — შესვლა",
+    "titleSignup": "Fugluck — რეგისტრაცია",
+    "titleAdmin": "Fugluck — ადმინ კონსოლი",
+    "titleNotFound": "Fugluck — 404 გვერდი ვერ მოიძებნა"
   },
   "policies": {
     "nav": {
-      "about": "ArcadeClash-ის შესახებ",
+      "about": "Fugluck-ის შესახებ",
       "help": "დახმარების ცენტრი & FAQ",
       "contact": "კონტაქტი & მხარდაჭერა",
       "terms": "მომსახურების პირობები",

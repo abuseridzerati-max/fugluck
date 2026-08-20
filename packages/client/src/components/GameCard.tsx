@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { GameEngine } from '@arcadeclash/games'
-import { categoryColors } from '@arcadeclash/theme'
+import type { GameEngine } from '@fugluck/games'
+import { categoryColors } from '@fugluck/theme'
 import { engineLabel } from '../lib/format'
 import LaunchModal from './LaunchModal'
 

@@ -2,7 +2,7 @@
 // outcome. Pure function, no I/O — matches.ts calls this once both sides are
 // known (both submitted, or the forfeit timer fired) and sends the result to
 // each socket.
-import type { MatchOutcome, ScoreVerdict } from "@arcadeclash/shared";
+import type { MatchOutcome, ScoreVerdict } from "@fugluck/shared";
 
 export type SidedSubmission = {
   score: number;

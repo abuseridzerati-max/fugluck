@@ -1,5 +1,5 @@
 {
-  "name": "@arcadeclash/client",
+  "name": "@fugluck/client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@arcadeclash/games": "*",
-    "@arcadeclash/shared": "*",
-    "@arcadeclash/theme": "*",
+    "@fugluck/games": "*",
+    "@fugluck/shared": "*",
+    "@fugluck/theme": "*",
     "@supabase/supabase-js": "^2.112.2",
     "i18next": "^24.2.2",
     "i18next-browser-languagedetector": "^8.0.4",

@@ -5,7 +5,7 @@ import type {
   MatchResolvedPayload,
   ServerToClientEvents,
   SubmitScorePayload,
-} from '@arcadeclash/shared'
+} from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
 import { API_URL } from '../lib/api'
 import { getStoredAuthToken } from '../auth/AuthContext'

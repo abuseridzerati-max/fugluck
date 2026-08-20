@@ -8,7 +8,7 @@ import {
   type GameModule,
   type GameModuleFactory,
   type InputLogEntry,
-} from "@arcadeclash/shared";
+} from "@fugluck/shared";
 import { TFSprintEngine, type TFSprintInput } from "./engine";
 import { renderTFSprint } from "./render";
 

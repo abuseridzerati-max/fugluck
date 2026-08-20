@@ -148,19 +148,19 @@
     "securityAudits": "Аудит безопасности"
   },
   "meta": {
-    "titleHome": "ArcadeClash — Главная",
-    "titleProfile": "ArcadeClash — Профиль",
-    "titleFriends": "ArcadeClash — Друзья",
-    "titleWallet": "ArcadeClash — Кошелек",
-    "titleSettings": "ArcadeClash — Настройки",
-    "titleLogin": "ArcadeClash — Вход",
-    "titleSignup": "ArcadeClash — Регистрация",
-    "titleAdmin": "ArcadeClash — Панель администратора",
-    "titleNotFound": "ArcadeClash — 404 Страница не найдена"
+    "titleHome": "Fugluck — Главная",
+    "titleProfile": "Fugluck — Профиль",
+    "titleFriends": "Fugluck — Друзья",
+    "titleWallet": "Fugluck — Кошелек",
+    "titleSettings": "Fugluck — Настройки",
+    "titleLogin": "Fugluck — Вход",
+    "titleSignup": "Fugluck — Регистрация",
+    "titleAdmin": "Fugluck — Панель администратора",
+    "titleNotFound": "Fugluck — 404 Страница не найдена"
   },
   "policies": {
     "nav": {
-      "about": "О платформе ArcadeClash",
+      "about": "О платформе Fugluck",
       "help": "Центр помощи и FAQ",
       "contact": "Контакты и поддержка",
       "terms": "Условия обслуживания",

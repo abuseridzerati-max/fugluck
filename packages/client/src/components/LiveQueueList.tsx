@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getGameTitle, type QueueStateEntry, type ServerToClientEvents, type ClientToServerEvents } from '@arcadeclash/shared'
+import { getGameTitle, type QueueStateEntry, type ServerToClientEvents, type ClientToServerEvents } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
 import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'

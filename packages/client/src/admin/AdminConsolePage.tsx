@@ -86,7 +86,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    document.title = 'ArcadeClash — Admin Console'
+    document.title = 'Fugluck — Admin Console'
     if (user) {
       fetchDashboard()
     }
@@ -323,7 +323,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       {/* Header Bar */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#12131c', borderBottom: '1px solid #1e2030' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fbbf24', letterSpacing: '0.05em' }}>ARCADECLASH OPERATIONAL CONSOLE</span>
+          <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fbbf24', letterSpacing: '0.05em' }}>FUGLUCK OPERATIONAL CONSOLE</span>
           <span style={{ fontSize: '12px', background: '#1e293b', color: '#94a3b8', padding: '2px 8px', borderRadius: '4px' }}>SERVER AUTHORIZED</span>
           <span style={{ fontSize: '12px', color: '#64748b' }}>User: {user.username}</span>
         </div>

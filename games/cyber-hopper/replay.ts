@@ -1,4 +1,4 @@
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { CyberHopperEngine, type CyberHopperInput } from "./engine";
 
 export const cyberHopperReplayAdapter: ReplayAdapter<CyberHopperInput, CyberHopperEngine> = {

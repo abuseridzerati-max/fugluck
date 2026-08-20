@@ -1,4 +1,4 @@
-// Comprehensive File Upload Audit Test Script for ArcadeClash.
+// Comprehensive File Upload Audit Test Script for Fugluck.
 // Run: npx tsx scripts/file-upload-audit-check.ts
 
 import dotenv from "dotenv";

@@ -1,4 +1,4 @@
-// Comprehensive Registration Email Verification Test Script for ArcadeClash.
+// Comprehensive Registration Email Verification Test Script for Fugluck.
 // Run: npx tsx scripts/registration-verification-check.ts
 
 import dotenv from "dotenv";

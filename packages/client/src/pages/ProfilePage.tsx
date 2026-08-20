@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getGameTitle } from '@arcadeclash/shared'
+import { getGameTitle } from '@fugluck/shared'
 import Avatar from '../components/Avatar'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'

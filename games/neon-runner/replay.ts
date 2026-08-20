@@ -7,7 +7,7 @@
 // (both ultimately mirror the same jumpPressed/jumpReleased/slidePressed
 // vocabulary the DOM handlers in index.ts log), since nothing enforces that
 // automatically.
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { RunnerEngine, type EngineInput } from "./engine";
 
 export const neonRunnerReplayAdapter: ReplayAdapter<EngineInput, RunnerEngine> = {

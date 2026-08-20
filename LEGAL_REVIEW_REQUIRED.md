@@ -1,4 +1,4 @@
-# ArcadeClash — Legal, Regulatory & Policy Review Register
+# Fugluck — Legal, Regulatory & Policy Review Register
 
 > **Status:** ACTIVE REGISTER  
 > **Last Updated:** 2026-08-18  
@@ -10,7 +10,7 @@
 
 | Item | Current System Status | Open Legal / Compliance Determination | Action Needed Before Real-Money Launch |
 | :--- | :--- | :--- | :--- |
-| **Skill-Gaming Classification** | Server-authoritative deterministic 60 FPS physics loop, synchronized seed, headless score anti-cheat validation. | Formal jurisdictional classification of ArcadeClash mini-games under skill-based gaming vs prize gaming vs gambling statutes in primary target markets (e.g. EU, US states, Georgia, UK). | Obtain legal opinion letters per operating territory confirming skill-game status. |
+| **Skill-Gaming Classification** | Server-authoritative deterministic 60 FPS physics loop, synchronized seed, headless score anti-cheat validation. | Formal jurisdictional classification of Fugluck mini-games under skill-based gaming vs prize gaming vs gambling statutes in primary target markets (e.g. EU, US states, Georgia, UK). | Obtain legal opinion letters per operating territory confirming skill-game status. |
 | **Platform Licensing** | Platform code makes zero claims of specific gaming or lottery licenses. | Determine whether operating as a skill gaming operator requires a specific contest/skill-gaming license, corporate registration, or notification in target jurisdictions. | Consult gaming regulatory counsel. |
 | **Tax Treatment of Winnings** | Platform tracks gross winnings, entry wagers, and rake in immutable PostgreSQL ledger. | Tax reporting obligations (e.g. 1099-MISC in US, DAC7 in EU, local withholding rules) on player Diamond net winnings. | Retain tax advisor for gaming platform reporting rules. |
 

@@ -1,4 +1,4 @@
-import type { GameEngine } from '@arcadeclash/games'
+import type { GameEngine } from '@fugluck/games'
 
 export type CatalogGame = {
   id: string

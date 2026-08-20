@@ -1,4 +1,4 @@
-import { createSeededRandom, VIRTUAL_VIEWPORT } from "@arcadeclash/shared";
+import { createSeededRandom, VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { TRIVIA_RULES } from "./constants";
 import { QUESTION_POOL, type ActiveQuestion, type RawQuestion } from "./questions";
 
