@@ -3,6 +3,69 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 54 (2026-08-20): Final Post-Folder-Rename Health Check & Workspace Junction Refresh
+
+### Baseline
+- `4b783cd` (`main`).
+- Canonical local workspace path: `C:\Users\abuse\Fugluck`.
+
+### Task and Objective
+Perform a comprehensive post-rename health check following the local directory rename to `C:\Users\abuse\Fugluck`: verify canonical path, Git remote/branch sync, workspace dependency resolution, search for hard-coded legacy paths/URLs, audit IDE metadata, run full typecheck/build/tests, verify the 6-game catalog parity, inspect build output residue, verify live staging endpoints, and inspect parent directory for legacy residue.
+
+### Work Accomplished & Verification
+1. **Canonical Local Workspace & Git Verification**:
+   - Confirmed working directory is `C:\Users\abuse\Fugluck` and `.git` top level is `C:/Users/abuse/Fugluck`.
+   - Verified no nested git repositories exist.
+   - Remote URL confirmed: `https://github.com/abuseridzerati-max/fugluck.git`.
+   - Branch `main` is synchronized with `origin/main`.
+2. **Workspace Dependency Junction Refresh**:
+   - Identified that directory junctions in `node_modules/@fugluck/*` retained old absolute path targets (`C:\Users\abuse\arcadeclash\...`).
+   - Ran `npm install` to refresh Windows directory junctions to target `C:\Users\abuse\Fugluck\...`.
+3. **IDE Metadata & Standing Rules Cleanup**:
+   - Updated `.claude/launch.json` workspace args to `--workspace=@fugluck/client` and `--workspace=@fugluck/server`.
+   - Updated package references in `AGENTS.md`, `CLAUDE.md`, and `GAMES.md` from `@arcadeclash` to `@fugluck`.
+4. **Tooling, Build & Test Suite Verification**:
+   - `npm run typecheck`: **PASS** (zero errors across shared, theme, games, server, client).
+   - Client production build: **PASS** (`dist/` generated with 8 chunk assets).
+   - `npm test`: **27/27 test scripts PASS, 0 FAIL**:
+     - `migration-schema-parity-check.ts`: 67 PASS
+     - `auth-account-lifecycle-check.ts`: 31 PASS
+     - `legal-policy-help-check.ts`: 53 PASS
+     - `i18n-check.ts`: 15 PASS
+     - `wallet-friends-check.ts`: 22 PASS
+     - `financial-reconnection-check.ts`: 7 PASS
+     - `matchmaking-check.ts`: 17 PASS
+     - `determinism-check.ts`: 16 PASS
+     - `score-validation-check.ts`: 24 PASS
+     - `canvas-render-check.ts`: 12 PASS
+     - `rate-limit-check.ts`: 8 PASS
+     - `sql-injection-check.ts`: 10 PASS
+     - `input-validation-check.ts`: 14 PASS
+     - `xss-audit-check.ts`: 16 PASS
+     - `password-security-check.ts`: 13 PASS
+     - `admin-security-check.ts`: 7 PASS
+     - `admin-console-check.ts`: 18 PASS
+     - `cors-audit-check.ts`: 11 PASS
+     - `registration-verification-check.ts`: 8 PASS
+     - `owner-admin-lockout-check.ts`: 9 PASS
+     - `request-logging-audit-check.ts`: 12 PASS
+     - `password-policy-check.ts`: 12 PASS
+     - `file-upload-audit-check.ts`: 4 PASS
+     - `wallet-settlement-concurrency-check.ts`: 12 PASS
+     - `wallet-settlement-integrity-check.ts`: 14 PASS
+     - `match-lifecycle-durability-check.ts`: 18 PASS
+     - `staging-readiness-check.ts`: 34 PASS
+   - `git diff --check`: **PASS** (0 whitespace/diff issues).
+5. **Six-Game Catalog Parity**:
+   - Confirmed all 6 active games (`neon-runner`, `pixel-ninja-dash`, `space-blaster`, `cyber-hopper`, `speed-trivia`, `tf-sprint`) are registered and synchronized across `@fugluck/shared`, `@fugluck/games`, client game factories, client registry, home mock data, and replay adapters.
+6. **Live Staging Endpoint Verification**:
+   - Frontend (`https://staging.fugluck.com/`): HTTP 200, `<title>Fugluck — Home</title>`, Fugluck OpenGraph metadata.
+   - Backend API (`https://api-staging.fugluck.com/`): HTTP 200, `name: "Fugluck API Server"`, `status: "online"`.
+   - Health (`https://api-staging.fugluck.com/health`): HTTP 200, `status: "healthy"`.
+7. **Filesystem & Parent Directory Audit**:
+   - Confirmed `C:\Users\abuse\arcadeclash` no longer exists in `C:\Users\abuse`.
+   - Confirmed only `arcadeclash_backups_safety` remains as an explicit standalone archive folder.
+
 ## Session 53 (2026-08-20): Live Staging Deployment Audit, Game Catalog Verification & Independent Validation
 
 ### Baseline

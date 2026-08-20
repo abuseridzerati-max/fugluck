@@ -62,7 +62,7 @@ has its own fully independent `engine.ts` state/physics/scoring logic —
 (verified by reading all 3 files). As of session 13 (2026-07-30) this is
 no longer "zero shared code" in the absolute sense, though: all 3 games'
 `engine.ts` and `index.ts` now import real shared infrastructure from
-`@arcadeclash/shared` — seeded RNG (`rng.ts`) and a fixed-timestep loop
+`@fugluck/shared` — seeded RNG (`rng.ts`) and a fixed-timestep loop
 (`fixedTimestepLoop.ts`), the first genuine cross-game code sharing in
 this repo. That's scheduling/randomness infrastructure, not game logic —
 it doesn't move this repo any closer to a validated shared-*engine*

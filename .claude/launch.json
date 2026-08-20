@@ -4,13 +4,13 @@
     {
       "name": "client",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace=@arcadeclash/client"],
+      "runtimeArgs": ["run", "dev", "--workspace=@fugluck/client"],
       "port": 5173
     },
     {
       "name": "server",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace=@arcadeclash/server"],
+      "runtimeArgs": ["run", "dev", "--workspace=@fugluck/server"],
       "port": 4000
     }
   ]

@@ -1,4 +1,4 @@
-# ArcadeClash — standing rules
+# Fugluck — standing rules
 
 Read `PROGRESS.md` first (self-contained handoff doc, updated every
 session) and `GAMES.md` (per-game manifest) before doing anything else.
@@ -60,7 +60,7 @@ in `PROGRESS.md`.
 
 ## Architecture Invariant: Fixed Virtual Resolution (added 2026-08-10)
 
-- **Canonical Virtual Viewport**: All game engines (`RunnerEngine`, `DashEngine`) and replay adapters MUST run strictly against `VIRTUAL_VIEWPORT = { width: 1280, height: 720 }` (`@arcadeclash/shared`).
+- **Canonical Virtual Viewport**: All game engines (`RunnerEngine`, `DashEngine`) and replay adapters MUST run strictly against `VIRTUAL_VIEWPORT = { width: 1280, height: 720 }` (`@fugluck/shared`).
 - **Letterboxed Client Rendering**: Physical canvas elements MUST letterbox (`object-fit: contain`, 16:9 aspect ratio) inside host containers.
 - **Equal Stakes Integrity**: `engine.resize()` MUST always receive `1280x720` to guarantee identical physics, obstacle travel distance, and scoring regardless of client monitor resolution or display width.
 
@@ -91,7 +91,7 @@ in `PROGRESS.md`.
 
 - **Database Match Persistence**: Upon match completion in `emitResolved()`, match metadata (`id`, `gameId`, `player1Id`, `player2Id`, `winnerId`, `currency`, `stake`, `seed`, `inputLogP1`, `inputLogP2`, `scoreP1`, `scoreP2`) is asynchronously persisted to the `matches_history` PostgreSQL table.
 - **REST Match History Endpoint**: `GET /api/matches/history` returns the authenticated user's past 20 matches enriched with opponent usernames and outcome flags (`win`, `loss`, `draw`).
-- **Deterministic Server-Side Anti-Cheat Validation**: Server feeds match `seed` and player `inputLog` into the generic `replayEngine` (`@arcadeclash/shared`) and game-specific `replayAdapters` (`@arcadeclash/games`) in `scoreValidator.ts` for authoritative headless score validation. (Client-facing `ReplayModal` removed by product decision).
+- **Deterministic Server-Side Anti-Cheat Validation**: Server feeds match `seed` and player `inputLog` into the generic `replayEngine` (`@fugluck/shared`) and game-specific `replayAdapters` (`@fugluck/games`) in `scoreValidator.ts` for authoritative headless score validation. (Client-facing `ReplayModal` removed by product decision).
 
 ## Architecture Invariant: Interactive Betting Window & Stake Selection (added 2026-08-10)
 
@@ -128,22 +128,22 @@ in `PROGRESS.md`.
 
 - **Plug-and-Play Expansion Contract**: Space Blaster (`games/space-blaster/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` canonical virtual resolution. The retired `game-3` compatibility alias was permanently removed during Games build-health stabilization.
 - **Headless Replay Adapter Integration**: `spaceBlasterReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Space Blaster match replays without modifying backend validation logic.
-- **Client & Matchmaking Registration**: `space-blaster` is registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
+- **Client & Matchmaking Registration**: `space-blaster` is registered in `GAME_REGISTRY` (`@fugluck/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
 - **Ship Visibility & Coordinate Alignment**: Player ship starts at `(640, 620)` with `60x60` bounds, clamped strictly between `30 <= x <= 1250` and `30 <= y <= 690`. Rendered via multi-layer high-contrast vector fallback renderer (`#00ffff` fuselage, `#7000ff` wings, `#e0f7fa` canopy, `#ff0055` dual thrusters).
 
 ## Architecture Invariant: Game Module #4 ("Cyber Hopper") Multi-Game Expansion (added 2026-08-11)
 
 - **Plug-and-Play Expansion Contract**: Cyber Hopper (`games/cyber-hopper/`) implements `GameModule` interface (`init`, `start`, `pause`, `destroy`) with 60 FPS fixed-timestep physics loop and `1280x720` canonical virtual resolution (20x11 grid). The retired `game-4` compatibility alias was permanently removed during Games build-health stabilization.
 - **Headless Replay Adapter Integration**: `cyberHopperReplayAdapter` registered in `games/replayAdapters.ts` and `games/registry.ts`, allowing server-side `validateScore()` to validate Cyber Hopper match replays without modifying backend validation logic.
-- **Client & Matchmaking Registration**: `cyber-hopper` is registered in `GAME_REGISTRY` (`@arcadeclash/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
+- **Client & Matchmaking Registration**: `cyber-hopper` is registered in `GAME_REGISTRY` (`@fugluck/shared` and `packages/client/src/registry.ts`), `gameFactories.ts`, and `homeData.ts`, enabling instant matchmaking, launch modal binding, and profile match history replay playback.
 - **Active Playable Games Only & Clean Registry**: `GAME_REGISTRY` and dashboard game cards render strictly 4 unique, active playable games: `Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, and `Cyber Hopper`. Duplicate `(Game #3)` / `(Game #4)` labels and deprecated `Sky Dodge` are purged from active registries.
 - **Game Card CTA Button Height**: Game card buttons in `GameCard.tsx` use fixed string `▶ Play` with locked 40px height (`h-10`) and `whiteSpace: nowrap` to ensure 100% uniform button height across all cards without vertical swelling.
 - **Dashboard Category Filtering**: Nav pill filters (`All`, `Runner`, `Reflex Timing`, `Arena Shooter`) filter `trendingGames` dynamically by `game.engine`. Active category pill is styled with `.ac-pill--active` accent background. Selecting `All` restores full 4-game display.
 - **Hero Spotlight Removal**: Featured "Game of the Week" hero banner section is removed from `HomePage.tsx`, focusing the top layout directly on category filtering, live matchmaking lobby, and active game grid.
 - **Universal Deterministic Dynamic Difficulty Scaling**: All 4 active games (`Neon Runner`, `Pixel Ninja Dash`, `Space Blaster`, `Cyber Hopper`) calculate difficulty scale strictly from tick count: `const difficultyScale = 1.0 + Math.pow(tickCount / 5400, 1.4) * 1.5`. At 90s (5,400 ticks), velocity and spawn rates reach 2.5x speed while preserving 100% deterministic score validation and replay playback.
 - **Leaderboards Link Removal**: Non-functional "View Leaderboards" link is removed from `TrendingArena.tsx` header for a clean, non-cluttered header layout.
-- **Quiz Category Expansion**: `GameCategory` type union in `@arcadeclash/shared/src/gameModule.ts` and `GameEngine` in `games/registry.ts` include `"quiz"`. Nav category pills in `homeData.ts` render `'Quiz'`, allowing real-time category filtering.
+- **Quiz Category Expansion**: `GameCategory` type union in `@fugluck/shared/src/gameModule.ts` and `GameEngine` in `games/registry.ts` include `"quiz"`. Nav category pills in `homeData.ts` render `'Quiz'`, allowing real-time category filtering.
 - **Speed Trivia Clash (Quiz Mini-Game #1)**: `games/speed-trivia/` implements `GameModule` interface with 60 FPS tick loop, 10 questions per match, tick-based speed scoring `Points = Math.round(1000 * (ticksRemaining / 600))`, and `speedTriviaReplayAdapter` registered in `replayAdapters.ts` for headless score validation. Seeding maps `match.seed` to question selection and 4-option shuffling deterministically.
-- **Speed Trivia Package Exports**: `"./speed-trivia": "./speed-trivia/index.ts"` in `games/package.json` exports map resolvable by `@arcadeclash/client` with Vite dev server restarted to clear resolution cache.
+- **Speed Trivia Package Exports**: `"./speed-trivia": "./speed-trivia/index.ts"` in `games/package.json` exports map resolvable by `@fugluck/client` with Vite dev server restarted to clear resolution cache.
 
 
