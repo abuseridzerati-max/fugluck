@@ -1,5 +1,5 @@
 {
-  "name": "@arcadeclash/games",
+  "name": "@fugluck/games",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -43,6 +43,6 @@
     }
   },
   "dependencies": {
-    "@arcadeclash/shared": "*"
+    "@fugluck/shared": "*"
   }
 }

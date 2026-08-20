@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@arcadeclash/shared'
+import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@fugluck/shared'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import AuthModal from './components/AuthModal'
 import GameLoader from './game-loader/GameLoader'
@@ -63,14 +63,19 @@ type View =
   | `policy:${PolicySlug}`
   | 'not-found'
 
-const ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
+const ACTIVE_MATCH_STORAGE_KEY = 'fugluck_active_match'
+const LEGACY_ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
 
 type StoredActiveMatch = { id: string; title: string }
 
 function storeActiveMatch(match: StoredActiveMatch | null) {
   try {
-    if (match) sessionStorage.setItem(ACTIVE_MATCH_STORAGE_KEY, JSON.stringify(match))
-    else sessionStorage.removeItem(ACTIVE_MATCH_STORAGE_KEY)
+    if (match) {
+      sessionStorage.setItem(ACTIVE_MATCH_STORAGE_KEY, JSON.stringify(match))
+    } else {
+      sessionStorage.removeItem(ACTIVE_MATCH_STORAGE_KEY)
+      sessionStorage.removeItem(LEGACY_ACTIVE_MATCH_STORAGE_KEY)
+    }
   } catch {
     // A disabled storage surface should not prevent ordinary matchmaking.
   }
@@ -78,7 +83,7 @@ function storeActiveMatch(match: StoredActiveMatch | null) {
 
 function readStoredActiveMatch(): StoredActiveMatch | null {
   try {
-    const raw = sessionStorage.getItem(ACTIVE_MATCH_STORAGE_KEY)
+    const raw = sessionStorage.getItem(ACTIVE_MATCH_STORAGE_KEY) || sessionStorage.getItem(LEGACY_ACTIVE_MATCH_STORAGE_KEY)
     if (!raw) return null
     const value = JSON.parse(raw) as Partial<StoredActiveMatch>
     if (typeof value.id !== 'string' || typeof value.title !== 'string' || !gameFactories[value.id]) {
@@ -147,7 +152,7 @@ function getPathForView(view: View): string {
 }
 
 function updateSocialMetaTags(title: string, path: string) {
-  const baseUrl = 'https://arcadeclash.com'
+  const baseUrl = 'https://fugluck.com'
   const fullUrl = `${baseUrl}${path}`
 
   const ogTitle = document.querySelector('meta[property="og:title"]')
@@ -199,7 +204,7 @@ function AppShell() {
     if (targetView.startsWith('policy:')) {
       const slug = targetView.slice(7)
       const formattedSlug = slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
-      return `ArcadeClash — ${formattedSlug}`
+      return `Fugluck — ${formattedSlug}`
     }
     switch (targetView) {
       case 'profile':
@@ -215,11 +220,11 @@ function AppShell() {
       case 'admin':
         return t('meta.titleAdmin')
       case 'verify-email':
-        return 'ArcadeClash — Verify Account'
+        return 'Fugluck — Verify Account'
       case 'reset-password':
-        return 'ArcadeClash — Reset Password'
+        return 'Fugluck — Reset Password'
       case 'help':
-        return 'ArcadeClash — Help Center & FAQ'
+        return 'Fugluck — Help Center & FAQ'
       case 'not-found':
         return t('meta.titleNotFound')
       case 'home':

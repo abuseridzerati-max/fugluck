@@ -1,5 +1,5 @@
 import type { Server as HttpServer } from "node:http";
-import type { ClientToServerEvents, ServerToClientEvents } from "@arcadeclash/shared";
+import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { Server, type DefaultEventsMap } from "socket.io";
 import {
   cancelInvitesForSocket,

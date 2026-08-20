@@ -8,7 +8,7 @@ import {
   type GameModule,
   type GameModuleFactory,
   type InputLogEntry,
-} from "@arcadeclash/shared";
+} from "@fugluck/shared";
 import { SkyDodgeEngine, type EngineInput } from "./engine";
 
 const COUNTDOWN_STEPS = ["3", "2", "1", "GO!"];

@@ -1,4 +1,4 @@
-// Comprehensive Wallet Settlement Idempotency & Concurrency Audit Script for ArcadeClash.
+// Comprehensive Wallet Settlement Idempotency & Concurrency Audit Script for Fugluck.
 // Run only with an isolated TEST_DATABASE_URL.
 
 import "./require-disposable-test-database.ts";

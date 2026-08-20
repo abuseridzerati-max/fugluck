@@ -6,8 +6,8 @@
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret-for-wallet-check";
 
-import { DIAMOND_PACKS, SIGNUP_COIN_GRANT, type PublicUser } from "@arcadeclash/shared";
-import { getGameTitle } from "@arcadeclash/shared";
+import { DIAMOND_PACKS, SIGNUP_COIN_GRANT, type PublicUser } from "@fugluck/shared";
+import { getGameTitle } from "@fugluck/shared";
 import { activeGames, navFilters } from "../packages/client/src/mock/homeData";
 
 let failures = 0;
@@ -54,12 +54,12 @@ async function run() {
 
   // Auth Session Persistence & Token Storage Simulation
   const mockSessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken";
-  const mockAuthStorageKey = "arcadeclash_auth_token";
+  const mockAuthStorageKey = "fugluck_auth_token";
   const mockStorage: Record<string, string> = {};
   mockStorage[mockAuthStorageKey] = mockSessionToken;
 
-  check("Auth session token stores in localStorage mock", mockStorage["arcadeclash_auth_token"] === mockSessionToken);
-  check("Auth loading gate rehydrates user state prior to network sync", Boolean(mockStorage["arcadeclash_auth_token"]));
+  check("Auth session token stores in localStorage mock", mockStorage["fugluck_auth_token"] === mockSessionToken);
+  check("Auth loading gate rehydrates user state prior to network sync", Boolean(mockStorage["fugluck_auth_token"]));
 
   // Ledger Reason Key Format Verification
   const testMatchId = "match-unit-test-456";

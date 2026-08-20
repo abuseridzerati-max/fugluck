@@ -1,4 +1,4 @@
-import { createSeededRandom } from "@arcadeclash/shared";
+import { createSeededRandom } from "@fugluck/shared";
 
 export type SeededTriviaQuestion = {
   id: number;

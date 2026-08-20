@@ -1,4 +1,4 @@
-// Comprehensive verification script for the ArcadeClash Administrative Console.
+// Comprehensive verification script for the Fugluck Administrative Console.
 // Run: npx tsx scripts/admin-console-check.ts
 
 import dotenv from "dotenv";

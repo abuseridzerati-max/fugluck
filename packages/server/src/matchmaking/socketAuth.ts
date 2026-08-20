@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ClientToServerEvents, ServerToClientEvents } from "@arcadeclash/shared";
+import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { eq } from "drizzle-orm";
 import type { DefaultEventsMap, Socket } from "socket.io";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "../auth/jwt";

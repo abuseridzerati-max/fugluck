@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { POLICY_NAV_ITEMS } from '@arcadeclash/shared'
+import { POLICY_NAV_ITEMS } from '@fugluck/shared'
 
 type FooterProps = {
   onNavigate: (path: string) => void
@@ -8,7 +8,7 @@ type FooterProps = {
 export default function Footer({ onNavigate }: FooterProps) {
   const { t } = useTranslation()
 
-  const arcadeClashItems = POLICY_NAV_ITEMS.filter((item) => item.category === 'ARCADECLASH')
+  const fugluckItems = POLICY_NAV_ITEMS.filter((item) => item.category === 'FUGLUCK')
   const legalItems = POLICY_NAV_ITEMS.filter((item) => item.category === 'LEGAL')
   const playMoneyItems = POLICY_NAV_ITEMS.filter((item) => item.category === 'PLAY_AND_MONEY')
   const accountSafetyItems = POLICY_NAV_ITEMS.filter((item) => item.category === 'ACCOUNT_AND_SAFETY')
@@ -40,7 +40,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           marginBottom: 'var(--space-8, 2.5rem)',
         }}
       >
-        {/* Col 1: Brand & ArcadeClash */}
+        {/* Col 1: Brand & Fugluck */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <span style={{ fontSize: '1.5rem', filter: 'drop-shadow(0 0 8px rgba(0,240,255,0.5))' }}>⚡</span>
@@ -54,14 +54,14 @@ export default function Footer({ onNavigate }: FooterProps) {
                 textTransform: 'uppercase',
               }}
             >
-              ArcadeClash
+              Fugluck
             </span>
           </div>
           <p style={{ lineHeight: 1.6, margin: '0 0 var(--space-4)', fontSize: '0.8125rem' }}>
             The competitive skill-arcade platform where true player reflex and precision decide victory. 100% server-authoritative and fair by design.
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {arcadeClashItems.map((item) => (
+            {fugluckItems.map((item) => (
               <li key={item.path}>
                 <a
                   href={item.path}
@@ -69,7 +69,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                   style={linkStyle}
                   className="ac-footer-link"
                 >
-                  {t(item.titleKey, item.id === 'ABOUT' ? 'About ArcadeClash' : item.id === 'HELP' ? 'Help Center & FAQ' : 'Contact & Support')}
+                  {t(item.titleKey, item.id === 'ABOUT' ? 'About Fugluck' : item.id === 'HELP' ? 'Help Center & FAQ' : 'Contact & Support')}
                 </a>
               </li>
             ))}
@@ -88,7 +88,14 @@ export default function Footer({ onNavigate }: FooterProps) {
                   style={linkStyle}
                   className="ac-footer-link"
                 >
-                  {t(item.titleKey, item.id === 'TERMS' ? 'Terms of Service' : item.id === 'PRIVACY' ? 'Privacy Policy' : 'Cookie & Storage Policy')}
+                  {t(
+                    item.titleKey,
+                    item.id === 'TERMS'
+                      ? 'Terms of Service'
+                      : item.id === 'PRIVACY'
+                      ? 'Privacy Policy'
+                      : 'Cookie Policy'
+                  )}
                 </a>
               </li>
             ))}
@@ -97,7 +104,7 @@ export default function Footer({ onNavigate }: FooterProps) {
 
         {/* Col 3: Play & Money */}
         <div>
-          <h4 style={headingStyle}>{t('policies.footer.playMoneyHeading', 'Play & Money')}</h4>
+          <h4 style={headingStyle}>{t('policies.footer.playHeading', 'Play & Balances')}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {playMoneyItems.map((item) => (
               <li key={item.path}>
@@ -110,11 +117,11 @@ export default function Footer({ onNavigate }: FooterProps) {
                   {t(
                     item.titleKey,
                     item.id === 'RULES'
-                      ? 'Competition Rules'
+                      ? 'Official Rules'
                       : item.id === 'DIAMONDS'
-                      ? 'Diamond & Wallet Terms'
+                      ? 'Diamonds & Coins'
                       : item.id === 'WITHDRAWALS'
-                      ? 'Cash-Out Policy'
+                      ? 'Withdrawal Policy'
                       : item.id === 'REFUNDS'
                       ? 'Refund Policy'
                       : item.id === 'RESPONSIBLE_PLAY'
@@ -129,7 +136,7 @@ export default function Footer({ onNavigate }: FooterProps) {
 
         {/* Col 4: Account & Safety */}
         <div>
-          <h4 style={headingStyle}>{t('policies.footer.accountSafetyHeading', 'Account & Safety')}</h4>
+          <h4 style={headingStyle}>{t('policies.footer.accountHeading', 'Account & Safety')}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {accountSafetyItems.map((item) => (
               <li key={item.path}>
@@ -142,11 +149,11 @@ export default function Footer({ onNavigate }: FooterProps) {
                   {t(
                     item.titleKey,
                     item.id === 'ELIGIBILITY'
-                      ? 'Eligibility & Restrictions'
+                      ? 'Player Eligibility'
                       : item.id === 'DISPUTES'
-                      ? 'Complaints & Disputes'
+                      ? 'Dispute Resolution'
                       : item.id === 'DATA_RIGHTS'
-                      ? 'Data Rights & Account Closure'
+                      ? 'Your Data Rights'
                       : 'Platform Security'
                   )}
                 </a>
@@ -173,10 +180,10 @@ export default function Footer({ onNavigate }: FooterProps) {
         }}
       >
         <p style={{ margin: 0, maxWidth: 800, lineHeight: 1.5 }}>
-          ArcadeClash is a skill-based competitive gaming platform. COINS are virtual play currency with zero monetary value. Diamond staking and future cash-out redemption are subject to eligibility and platform terms.
+          Fugluck is a skill-based competitive gaming platform. COINS are virtual play currency with zero monetary value. Diamond staking and future cash-out redemption are subject to eligibility and platform terms.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-4)' }}>
-          <span>© 2026 ArcadeClash. All rights reserved.</span>
+          <span>© 2026 Fugluck. All rights reserved.</span>
           <span>•</span>
           <span>Deterministic 60 FPS Fixed Engine</span>
           <span>•</span>

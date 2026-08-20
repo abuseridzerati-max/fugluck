@@ -7,7 +7,7 @@ import {
   type GameModule,
   type GameOverPayload,
   type InputLogEntry,
-} from "@arcadeclash/shared";
+} from "@fugluck/shared";
 import { PALETTE } from "./constants";
 import { DashEngine, type EngineInput } from "./engine";
 

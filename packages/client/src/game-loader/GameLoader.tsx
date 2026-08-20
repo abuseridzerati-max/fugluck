@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { GameModule, GameModuleFactory, GameOverPayload } from '@arcadeclash/shared'
+import type { GameModule, GameModuleFactory, GameOverPayload } from '@fugluck/shared'
 
 type GameLoaderProps = {
   createModule: GameModuleFactory
@@ -35,7 +35,7 @@ export default function GameLoader({ createModule, gameTitle, onExit }: GameLoad
 
   useEffect(() => {
     const prevTitle = document.title
-    document.title = `ArcadeClash — Practice: ${gameTitle}`
+    document.title = `Fugluck — Practice: ${gameTitle}`
     return () => {
       document.title = prevTitle
     }

@@ -56,14 +56,14 @@ export type PolicyNavItem = {
   id: PolicyType | "HELP";
   titleKey: string;
   path: string;
-  category: "ARCADECLASH" | "LEGAL" | "PLAY_AND_MONEY" | "ACCOUNT_AND_SAFETY";
+  category: "FUGLUCK" | "LEGAL" | "PLAY_AND_MONEY" | "ACCOUNT_AND_SAFETY";
 };
 
 export const POLICY_NAV_ITEMS: PolicyNavItem[] = [
-  // ARCADECLASH
-  { id: "ABOUT", titleKey: "policies.nav.about", path: "/about", category: "ARCADECLASH" },
-  { id: "HELP", titleKey: "policies.nav.help", path: "/help", category: "ARCADECLASH" },
-  { id: "CONTACT", titleKey: "policies.nav.contact", path: "/contact", category: "ARCADECLASH" },
+  // FUGLUCK
+  { id: "ABOUT", titleKey: "policies.nav.about", path: "/about", category: "FUGLUCK" },
+  { id: "HELP", titleKey: "policies.nav.help", path: "/help", category: "FUGLUCK" },
+  { id: "CONTACT", titleKey: "policies.nav.contact", path: "/contact", category: "FUGLUCK" },
 
   // LEGAL
   { id: "TERMS", titleKey: "policies.nav.terms", path: "/terms", category: "LEGAL" },

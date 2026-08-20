@@ -1,4 +1,4 @@
-import { createSeededRandom, type RandomFn } from "@arcadeclash/shared";
+import { createSeededRandom, type RandomFn } from "@fugluck/shared";
 import {
   CELL_HEIGHT,
   CELL_WIDTH,

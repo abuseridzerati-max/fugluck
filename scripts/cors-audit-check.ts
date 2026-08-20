@@ -1,4 +1,4 @@
-// Comprehensive CORS Audit Verification Script for ArcadeClash.
+// Comprehensive CORS Audit Verification Script for Fugluck.
 // Run: npx tsx scripts/cors-audit-check.ts
 
 import dotenv from "dotenv";
@@ -86,10 +86,10 @@ async function main() {
   console.log("\nTest 5: Production Environment Isolation Simulation");
 
   process.env.NODE_ENV = "production";
-  process.env.ALLOWED_ORIGINS = "https://arcadeclash.com, https://play.arcadeclash.com";
+  process.env.ALLOWED_ORIGINS = "https://fugluck.com, https://play.fugluck.com";
 
   const prodOrigins = getAllowedOrigins();
-  check("Production mode enforces explicit ALLOWED_ORIGINS env var", prodOrigins.includes("https://arcadeclash.com") && prodOrigins.includes("https://play.arcadeclash.com"));
+  check("Production mode enforces explicit ALLOWED_ORIGINS env var", prodOrigins.includes("https://fugluck.com") && prodOrigins.includes("https://play.fugluck.com"));
   check("Production mode excludes localhost by default when env var specified", !prodOrigins.includes("http://localhost:5173"));
 
   if (failures > 0) {

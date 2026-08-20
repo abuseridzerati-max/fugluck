@@ -13,6 +13,8 @@ const COMMON_BREACHED_PASSWORDS = new Set([
   "qwerty123",
   "admin12345",
   "arcadeclash",
+  "fugluck123",
+  "fugluck2026",
   "letmein123",
   "welcome123",
   "iloveyou123",

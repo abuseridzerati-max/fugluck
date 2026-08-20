@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { ClientToServerEvents, InviteReceivedPayload, ServerToClientEvents } from '@arcadeclash/shared'
+import type { ClientToServerEvents, InviteReceivedPayload, ServerToClientEvents } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
 import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'

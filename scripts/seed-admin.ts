@@ -41,7 +41,7 @@ async function main() {
     await db.insert(users).values({
       id: "usr_admin_default",
       username: adminUsername,
-      email: "admin@arcadeclash.com",
+      email: "admin@fugluck.com",
       passwordHash,
       role: "SUPER_ADMIN",
       status: "active",

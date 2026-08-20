@@ -62,7 +62,7 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "ArcadeClash API Server",
+    name: "Fugluck API Server",
     status: "online",
     health: "/api/health",
     endpoints: ["/api/auth", "/api/wallet", "/api/friends", "/api/matches"],

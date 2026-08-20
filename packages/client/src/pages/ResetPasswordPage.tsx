@@ -120,7 +120,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
               Choose New Password
             </h1>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
-              Set a strong password for your ArcadeClash account.
+              Set a strong password for your Fugluck account.
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

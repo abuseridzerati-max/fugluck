@@ -43,7 +43,7 @@ import {
   handleJoinGuestLink,
 } from "../packages/server/src/matchmaking/invites.ts";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
-import { replayEngine, type InputLogEntry } from "@arcadeclash/shared";
+import { replayEngine, type InputLogEntry } from "@fugluck/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { db } from "../packages/server/src/db/client.ts";

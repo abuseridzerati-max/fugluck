@@ -1,4 +1,4 @@
-// Transactional Email Service for ArcadeClash
+// Transactional Email Service for Fugluck
 // Supports environment-driven provider configuration: SMTP, Resend, or safe dev/test logger.
 
 export type EmailDeliveryResult = {
@@ -38,7 +38,7 @@ export function getAppBaseUrl(): string {
 }
 
 export function getSenderEmail(): string {
-  return process.env.EMAIL_FROM || "ArcadeClash <no-reply@arcadeclash.com>";
+  return process.env.EMAIL_FROM || "Fugluck <no-reply@fugluck.com>";
 }
 
 /**
@@ -51,11 +51,11 @@ export async function sendVerificationEmail(
 ): Promise<EmailDeliveryResult> {
   const baseUrl = getAppBaseUrl();
   const verifyUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
-  const subject = "Verify your ArcadeClash account";
-  const text = `Hello ${username},\n\nWelcome to ArcadeClash! Please verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis verification link expires in 24 hours.\n\nIf you did not register for an ArcadeClash account, you can safely ignore this email.\n\n— The ArcadeClash Team`;
+  const subject = "Verify your Fugluck account";
+  const text = `Hello ${username},\n\nWelcome to Fugluck! Please verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis verification link expires in 24 hours.\n\nIf you did not register for a Fugluck account, you can safely ignore this email.\n\n— The Fugluck Team`;
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #0f111a; color: #f0f4f8; border-radius: 8px;">
-      <h2 style="color: #2de2ff; margin-top: 0;">Welcome to ArcadeClash!</h2>
+      <h2 style="color: #2de2ff; margin-top: 0;">Welcome to Fugluck!</h2>
       <p>Hello <strong>${username}</strong>,</p>
       <p>Thank you for creating an account. Please verify your email address to enable competitive matchmaking and full platform features:</p>
       <p style="margin: 28px 0;">
@@ -93,13 +93,13 @@ export async function sendPasswordResetEmail(
 ): Promise<EmailDeliveryResult> {
   const baseUrl = getAppBaseUrl();
   const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
-  const subject = "Reset your ArcadeClash password";
-  const text = `Hello ${username},\n\nWe received a request to reset your ArcadeClash account password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis password reset link expires in 1 hour and can only be used once.\n\nIf you did not request a password reset, your account is still secure and you can ignore this email.\n\n— The ArcadeClash Team`;
+  const subject = "Reset your Fugluck password";
+  const text = `Hello ${username},\n\nWe received a request to reset your Fugluck account password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis password reset link expires in 1 hour and can only be used once.\n\nIf you did not request a password reset, your account is still secure and you can ignore this email.\n\n— The Fugluck Team`;
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #0f111a; color: #f0f4f8; border-radius: 8px;">
       <h2 style="color: #ff0055; margin-top: 0;">Password Reset Request</h2>
       <p>Hello <strong>${username}</strong>,</p>
-      <p>We received a request to reset your ArcadeClash password. Click below to choose a new password:</p>
+      <p>We received a request to reset your Fugluck password. Click below to choose a new password:</p>
       <p style="margin: 28px 0;">
         <a href="${resetUrl}" style="background: #ff0055; color: #ffffff; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 4px; display: inline-block;">
           Reset Password

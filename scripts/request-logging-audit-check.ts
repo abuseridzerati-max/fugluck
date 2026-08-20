@@ -1,4 +1,4 @@
-// Comprehensive Request Logging & Persistence Audit Test Script for ArcadeClash.
+// Comprehensive Request Logging & Persistence Audit Test Script for Fugluck.
 // Run: npx tsx scripts/request-logging-audit-check.ts
 
 import dotenv from "dotenv";

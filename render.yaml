@@ -1,9 +1,9 @@
 # =============================================================================
-# ArcadeClash Staging Backend Service Specification (Render Blueprint)
+# Fugluck Staging Backend Service Specification (Render Blueprint)
 # =============================================================================
 services:
   - type: web
-    name: arcadeclash-server-staging
+    name: fugluck-server-staging
     runtime: node
     plan: starter
     region: ohio
@@ -19,13 +19,13 @@ services:
       - key: JWT_SECRET
         sync: false # Set in Render Dashboard: Random 64+ char secret string
       - key: CLIENT_ORIGIN
-        value: https://staging.arcadeclash.com
+        value: https://staging.fugluck.com
       - key: ALLOWED_ORIGINS
-        value: https://staging.arcadeclash.com
+        value: https://staging.fugluck.com
       - key: APP_URL
-        value: https://staging.arcadeclash.com
+        value: https://staging.fugluck.com
       - key: COOKIE_DOMAIN
-        value: .arcadeclash.com
+        value: .fugluck.com
       - key: COOKIE_SAMESITE
         value: lax
       - key: ENABLE_DEV_DIAMOND_STUB
@@ -33,4 +33,4 @@ services:
       - key: EMAIL_PROVIDER
         value: logger
       - key: EMAIL_FROM
-        value: ArcadeClash Staging <no-reply@arcadeclash.com>
+        value: Fugluck Staging <no-reply@fugluck.com>

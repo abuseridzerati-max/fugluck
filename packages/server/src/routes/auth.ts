@@ -1,4 +1,4 @@
-import { CURRENT_POLICY_VERSIONS, type PolicyType, type PublicUser } from "@arcadeclash/shared";
+import { CURRENT_POLICY_VERSIONS, type PolicyType, type PublicUser } from "@fugluck/shared";
 import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, or } from "drizzle-orm";
 import { Router } from "express";

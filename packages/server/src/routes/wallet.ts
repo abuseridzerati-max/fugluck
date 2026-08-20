@@ -1,4 +1,4 @@
-import { DIAMOND_PACKS } from "@arcadeclash/shared";
+import { DIAMOND_PACKS } from "@fugluck/shared";
 import { desc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { attachSession, requireAuth } from "../auth/middleware";

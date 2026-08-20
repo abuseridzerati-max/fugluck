@@ -57,7 +57,7 @@ export default function Navbar({
           padding: 0,
         }}
       >
-        ArcadeClash
+        Fugluck
       </button>
 
       {onSearchChange && (

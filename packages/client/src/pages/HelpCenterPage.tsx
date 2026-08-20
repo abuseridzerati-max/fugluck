@@ -56,7 +56,7 @@ export default function HelpCenterPage({ onNavigate }: HelpCenterPageProps) {
             Help Center & FAQ
           </h1>
           <p style={{ fontSize: '1.05rem', color: '#94a3b8', maxWidth: 600, margin: '0 auto var(--space-6)', lineHeight: 1.5 }}>
-            Everything you need to know about ArcadeClash game modes, rules, matchmaking, anti-cheat, and wallet balances.
+            Everything you need to know about Fugluck game modes, rules, matchmaking, anti-cheat, and wallet balances.
           </p>
 
           {/* Search Bar */}

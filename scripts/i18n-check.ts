@@ -12,7 +12,7 @@ function assert(condition: boolean, message: string) {
 }
 
 async function runI18nAudit() {
-  console.log('\n--- ArcadeClash i18n System Comprehensive Verification ---\n')
+  console.log('\n--- Fugluck i18n System Comprehensive Verification ---\n')
 
   // Test 1: Translation Resources Loading & Structural Parity
   console.log('Test 1: Translation Resources Structure & Parity')

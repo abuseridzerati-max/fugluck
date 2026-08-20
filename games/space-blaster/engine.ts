@@ -1,4 +1,4 @@
-import { createSeededRandom, type RandomFn } from "@arcadeclash/shared";
+import { createSeededRandom, type RandomFn } from "@fugluck/shared";
 import {
   ASTEROID_MAX_SIZE,
   ASTEROID_MAX_SPEED,

@@ -27,7 +27,7 @@
 // copy of that mapping per game, and this suite and the real validator
 // provably run the same code path: a broken adapter fails both, not just
 // one silently.
-import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC, replayEngine, type InputLogEntry } from "@arcadeclash/shared";
+import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC, replayEngine, type InputLogEntry } from "@fugluck/shared";
 import { RunnerEngine } from "../games/neon-runner/engine.ts";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";

@@ -1,8 +1,8 @@
-# ArcadeClash — Staging Deployment Guide
+# Fugluck — Staging Deployment Guide
 
-This guide provides the complete, step-by-step procedure to deploy ArcadeClash to a **Public Staging Environment** for real-browser testing on actual domain names:
-* **Frontend Web App**: `https://staging.arcadeclash.com` (Hosted on **Vercel**)
-* **Backend API & WebSocket Server**: `https://api-staging.arcadeclash.com` (Hosted on **Render**)
+This guide provides the complete, step-by-step procedure to deploy Fugluck to a **Public Staging Environment** for real-browser testing on actual domain names:
+* **Frontend Web App**: `https://staging.fugluck.com` (Hosted on **Vercel**)
+* **Backend API & WebSocket Server**: `https://api-staging.fugluck.com` (Hosted on **Render**)
 * **Database**: Dedicated, isolated Staging PostgreSQL database
 
 > [!IMPORTANT]
@@ -18,9 +18,9 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
 ```
 [ Browser / Desktop Player ]
              │
-             ├──► https://staging.arcadeclash.com (Vercel Client / Static SPA)
+             ├──► https://staging.fugluck.com (Vercel Client / Static SPA)
              │
-             └──► https://api-staging.arcadeclash.com (Render Node.js / Express 5 + Socket.IO)
+             └──► https://api-staging.fugluck.com (Render Node.js / Express 5 + Socket.IO)
                                   │
                                   ▼
              [ Dedicated Staging PostgreSQL Database (Neon / Supabase) ]
@@ -33,7 +33,7 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
 ### STEP 1 — Create an Isolated Staging PostgreSQL Database
 
 1. Log in to your PostgreSQL cloud provider (e.g. [Neon](https://neon.tech), [Supabase](https://supabase.com), or Render PostgreSQL).
-2. Create a new database project named **`arcadeclash-staging`** (or a separate database on your cluster).
+2. Create a new database project named **`fugluck-staging`** (or a separate database on your cluster).
 3. Copy the connection string URI. It will look like:
    ```
    postgresql://[user]:[password]@[host]:5432/[staging_db_name]?sslmode=require
@@ -48,7 +48,7 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
 2. Click **New +** -> **Web Service**.
 3. Connect your GitHub repository (`arcadeclash`).
 4. Configure the Web Service settings:
-   * **Name**: `arcadeclash-server-staging`
+   * **Name**: `fugluck-server-staging`
    * **Region**: Choose the region closest to your database (e.g. `Ohio (US East)` or `Frankfurt (EU)`).
    * **Runtime**: `Node`
    * **Root Directory**: Leave blank (monorepo root).
@@ -69,15 +69,15 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
 | `NODE_ENV` | `production` | No |
 | `DATABASE_URL` | *Paste your Staging PostgreSQL URI from Step 1* | **YES (Secret)** |
 | `JWT_SECRET` | *Generate a 64-character random hex string* (see below) | **YES (Secret)** |
-| `CLIENT_ORIGIN` | `https://staging.arcadeclash.com` | No |
-| `ALLOWED_ORIGINS` | `https://staging.arcadeclash.com` | No |
-| `APP_URL` | `https://staging.arcadeclash.com` | No |
-| `COOKIE_DOMAIN` | `.arcadeclash.com` | No |
+| `CLIENT_ORIGIN` | `https://staging.fugluck.com` | No |
+| `ALLOWED_ORIGINS` | `https://staging.fugluck.com` | No |
+| `APP_URL` | `https://staging.fugluck.com` | No |
+| `COOKIE_DOMAIN` | `.fugluck.com` | No |
 | `COOKIE_SAMESITE` | `lax` | No |
 | `TRUST_PROXY` | `1` | No |
 | `ENABLE_DEV_DIAMOND_STUB` | `false` | No |
 | `EMAIL_PROVIDER` | `logger` | No |
-| `EMAIL_FROM` | `ArcadeClash Staging <no-reply@arcadeclash.com>` | No |
+| `EMAIL_FROM` | `Fugluck Staging <no-reply@fugluck.com>` | No |
 
 > [!TIP]
 > **Generating a Secure JWT Secret:**
@@ -87,7 +87,7 @@ This guide provides the complete, step-by-step procedure to deploy ArcadeClash t
 > ```
 
 6. Click **Create Web Service**. Wait for the initial build and deployment to complete.
-7. Render will provide a default URL (e.g. `https://arcadeclash-server-staging.onrender.com`).
+7. Render will provide a default URL (e.g. `https://fugluck-server-staging.onrender.com`).
 
 ---
 
@@ -119,7 +119,7 @@ Before using the application, apply the official database migration chain (`0000
 
 | Variable Name | Value |
 |---|---|
-| `VITE_API_URL` | `https://api-staging.arcadeclash.com` (or your Render URL until DNS is active) |
+| `VITE_API_URL` | `https://api-staging.fugluck.com` (or your Render URL until DNS is active) |
 | `VITE_SUPABASE_URL` | *Your public Supabase project URL (optional)* |
 | `VITE_SUPABASE_ANON_KEY` | *Your public Supabase anon key (optional)* |
 
@@ -135,12 +135,12 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 | Record Type | Host / Name | Target / Points To | Notes |
 |---|---|---|---|
 | **CNAME** | `staging` | `cname.vercel-dns.com` | Frontend (Vercel) |
-| **CNAME** | `api-staging` | `arcadeclash-server-staging.onrender.com` | Backend (Render) |
+| **CNAME** | `api-staging` | `fugluck-server-staging.onrender.com` | Backend (Render) |
 
-1. In Vercel Project Settings -> **Domains**, add `staging.arcadeclash.com`.
-2. In Render Web Service Settings -> **Custom Domains**, add `api-staging.arcadeclash.com`.
+1. In Vercel Project Settings -> **Domains**, add `staging.fugluck.com`.
+2. In Render Web Service Settings -> **Custom Domains**, add `api-staging.fugluck.com`.
 3. Render and Vercel will automatically provision free SSL/TLS certificates for both subdomains.
-4. Verify that `https://api-staging.arcadeclash.com/health` returns `{ "ok": true, "status": "healthy" }`.
+4. Verify that `https://api-staging.fugluck.com/health` returns `{ "ok": true, "status": "healthy" }`.
 
 ---
 
@@ -152,16 +152,16 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 | `JWT_SECRET` | Server | **Yes** | *64+ char random string* | Key for signing HTTP-only session cookies |
 | `PORT` | Server | Auto-injected | `4000` / `10000` | Port on which the HTTP server listens |
 | `NODE_ENV` | Server | **Yes** | `production` | Sets server runtime mode and security defaults |
-| `CLIENT_ORIGIN` | Server | **Yes** | `https://staging.arcadeclash.com` | CORS origin allowed for credentialed cookies |
-| `ALLOWED_ORIGINS` | Server | **Yes** | `https://staging.arcadeclash.com` | Comma-separated allowlist for CORS & WebSockets |
-| `APP_URL` | Server | **Yes** | `https://staging.arcadeclash.com` | Base URL used in verification emails & reset links |
-| `COOKIE_DOMAIN` | Server | **Yes** | `.arcadeclash.com` | Domain for cookie scoping across subdomains |
+| `CLIENT_ORIGIN` | Server | **Yes** | `https://staging.fugluck.com` | CORS origin allowed for credentialed cookies |
+| `ALLOWED_ORIGINS` | Server | **Yes** | `https://staging.fugluck.com` | Comma-separated allowlist for CORS & WebSockets |
+| `APP_URL` | Server | **Yes** | `https://staging.fugluck.com` | Base URL used in verification emails & reset links |
+| `COOKIE_DOMAIN` | Server | **Yes** | `.fugluck.com` | Domain for cookie scoping across subdomains |
 | `COOKIE_SAMESITE` | Server | Optional | `lax` | SameSite cookie attribute (`lax` / `none`) |
 | `TRUST_PROXY` | Server | Optional | `1` | Reverse proxy hop count for secure headers & IP |
 | `ENABLE_DEV_DIAMOND_STUB` | Server | Optional | `false` | Disables test diamond generation button |
 | `EMAIL_PROVIDER` | Server | Optional | `logger` | Transactional email provider (`logger`, `resend`, `smtp`) |
-| `EMAIL_FROM` | Server | Optional | `ArcadeClash <no-reply@arcadeclash.com>` | From email address header |
-| `VITE_API_URL` | Client | **Yes** | `https://api-staging.arcadeclash.com` | Public API & WebSocket endpoint for frontend |
+| `EMAIL_FROM` | Server | Optional | `Fugluck <no-reply@fugluck.com>` | From email address header |
+| `VITE_API_URL` | Client | **Yes** | `https://api-staging.fugluck.com` | Public API & WebSocket endpoint for frontend |
 
 ---
 
@@ -170,14 +170,14 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 After completing the deployment steps above, conduct the following live browser verification:
 
 ### 1. Home & Navigation
-- [ ] Open `https://staging.arcadeclash.com` in Chrome, Safari, and Firefox.
+- [ ] Open `https://staging.fugluck.com` in Chrome, Safari, and Firefox.
 - [ ] Verify that styles, typography, SVG assets, and game canvas components render cleanly.
 - [ ] Open Browser DevTools (F12) -> Console: confirm zero unhandled errors or missing assets.
 
 ### 2. Direct SPA Page Routing (Deep Links)
-- [ ] Navigate directly to `https://staging.arcadeclash.com/terms` and refresh (F5) — page loads with full text.
-- [ ] Navigate directly to `https://staging.arcadeclash.com/privacy` and refresh (F5).
-- [ ] Navigate directly to `https://staging.arcadeclash.com/help` — search and category accordions work.
+- [ ] Navigate directly to `https://staging.fugluck.com/terms` and refresh (F5) — page loads with full text.
+- [ ] Navigate directly to `https://staging.fugluck.com/privacy` and refresh (F5).
+- [ ] Navigate directly to `https://staging.fugluck.com/help` — search and category accordions work.
 - [ ] Navigate to an invalid URL (`/unknown-page`) — renders the custom 404 page with Home button.
 
 ### 3. User Registration & Consent
@@ -204,7 +204,7 @@ After completing the deployment steps above, conduct the following live browser 
 - [ ] Complete the match rounds and verify winner resolution, score submission, and payout.
 
 ### 6. Wallet & Financial Safety
-- [ ] Open `https://staging.arcadeclash.com/wallet`.
+- [ ] Open `https://staging.fugluck.com/wallet`.
 - [ ] Verify COINS balance reflects game outcomes and grants.
 - [ ] Verify the Diamond Shop displays the **Development Sandbox** warning notice.
 - [ ] Confirm that clicking diamond pack grants returns disabled error if `ENABLE_DEV_DIAMOND_STUB=false`.
@@ -214,18 +214,18 @@ After completing the deployment steps above, conduct the following live browser 
 - [ ] In DevTools -> Application -> Cookies:
   - `ac_session` cookie has `HttpOnly: true`.
   - `ac_session` cookie has `Secure: true`.
-  - `ac_session` cookie domain is `.arcadeclash.com` or `api-staging.arcadeclash.com`.
+  - `ac_session` cookie domain is `.fugluck.com` or `api-staging.fugluck.com`.
   - `SameSite` is `Lax`.
-- [ ] Network tab: Verify backend responds with `Access-Control-Allow-Origin: https://staging.arcadeclash.com`.
+- [ ] Network tab: Verify backend responds with `Access-Control-Allow-Origin: https://staging.fugluck.com`.
 
 ---
 
 ## Troubleshooting & Maintenance
 
 * **CORS Error in Browser Console**:
-  Confirm that `CLIENT_ORIGIN` and `ALLOWED_ORIGINS` in Render match `https://staging.arcadeclash.com` exactly (no trailing slashes).
+  Confirm that `CLIENT_ORIGIN` and `ALLOWED_ORIGINS` in Render match `https://staging.fugluck.com` exactly (no trailing slashes).
 * **Socket.IO Fails to Connect**:
-  Verify `VITE_API_URL` in Vercel is set to `https://api-staging.arcadeclash.com` and that Render has completed its deployment.
+  Verify `VITE_API_URL` in Vercel is set to `https://api-staging.fugluck.com` and that Render has completed its deployment.
 * **Database Connection Failure**:
   Ensure `DATABASE_URL` includes `?sslmode=require` if required by your cloud PostgreSQL provider.
 * **Restarting Backend**:

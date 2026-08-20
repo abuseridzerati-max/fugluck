@@ -1,5 +1,5 @@
 // This game's own neon palette — deliberately distinct from the app-shell
-// theme (@arcadeclash/theme's violet/gold). Each game module owns its
+// theme (@fugluck/theme's violet/gold). Each game module owns its
 // in-canvas visual identity; the shared theme only governs app chrome
 // (nav, homepage, HUD-adjacent React UI like the results screen).
 export const PALETTE = {

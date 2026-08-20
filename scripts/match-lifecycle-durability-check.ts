@@ -1,4 +1,4 @@
-// Comprehensive Match Lifecycle & Historical Persistence Audit Script for ArcadeClash.
+// Comprehensive Match Lifecycle & Historical Persistence Audit Script for Fugluck.
 // Run only with an isolated TEST_DATABASE_URL.
 
 import "./require-disposable-test-database.ts";
@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
 
 import { randomUUID } from "node:crypto";
-import { replayEngine, type InputLogEntry } from "@arcadeclash/shared";
+import { replayEngine, type InputLogEntry } from "@fugluck/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import type { QueueEntry } from "../packages/server/src/matchmaking/queue.ts";
 import type { MatchmakingSocket } from "../packages/server/src/matchmaking/socketAuth.ts";

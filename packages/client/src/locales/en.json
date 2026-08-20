@@ -142,19 +142,19 @@
     "securityAudits": "Security Audit Checks"
   },
   "meta": {
-    "titleHome": "ArcadeClash — Home",
-    "titleProfile": "ArcadeClash — Profile",
-    "titleFriends": "ArcadeClash — Friends",
-    "titleWallet": "ArcadeClash — Wallet",
-    "titleSettings": "ArcadeClash — Settings",
-    "titleLogin": "ArcadeClash — Log In",
-    "titleSignup": "ArcadeClash — Sign Up",
-    "titleAdmin": "ArcadeClash — Admin Console",
-    "titleNotFound": "ArcadeClash — 404 Page Not Found"
+    "titleHome": "Fugluck — Home",
+    "titleProfile": "Fugluck — Profile",
+    "titleFriends": "Fugluck — Friends",
+    "titleWallet": "Fugluck — Wallet",
+    "titleSettings": "Fugluck — Settings",
+    "titleLogin": "Fugluck — Log In",
+    "titleSignup": "Fugluck — Sign Up",
+    "titleAdmin": "Fugluck — Admin Console",
+    "titleNotFound": "Fugluck — 404 Page Not Found"
   },
   "policies": {
     "nav": {
-      "about": "About ArcadeClash",
+      "about": "About Fugluck",
       "help": "Help Center & FAQ",
       "contact": "Contact & Support",
       "terms": "Terms of Service",

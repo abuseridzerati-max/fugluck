@@ -5,13 +5,13 @@ export type PostgreSqlDestination = {
 };
 
 const DEFAULT_POSTGRESQL_PORT = "5432";
-const TEST_DATABASE_NAME_PATTERN = /^arcadeclash(?:_[a-z0-9]+)*_test$/;
+const TEST_DATABASE_NAME_PATTERN = /^(?:arcadeclash|fugluck)(?:_[a-z0-9]+)*_test$/;
 
 function refusal(reason: string): Error {
   return new Error(
     `Refusing PostgreSQL integration test: ${reason} ` +
-      "A dedicated, disposable PostgreSQL database with a clearly test-only ArcadeClash name is required. " +
-      "The normal ArcadeClash database must not be used.",
+      "A dedicated, disposable PostgreSQL database with a clearly test-only Fugluck name is required. " +
+      "The normal Fugluck database must not be used.",
   );
 }
 
@@ -73,7 +73,7 @@ export function assertDisposableTestDatabase(
   if (!TEST_DATABASE_NAME_PATTERN.test(test.databaseName)) {
     throw refusal(
       `database name "${test.databaseName}" is not clearly test-only; expected ` +
-        `"arcadeclash_test" or "arcadeclash_<purpose>_test".`,
+        `"fugluck_test", "fugluck_<purpose>_test", or legacy "arcadeclash_<purpose>_test".`,
     );
   }
 

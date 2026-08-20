@@ -1,4 +1,4 @@
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { TFSprintEngine, type TFSprintInput } from "./engine";
 
 export const tfSprintReplayAdapter: ReplayAdapter<TFSprintInput, TFSprintEngine> = {

@@ -1,4 +1,4 @@
-import type { GameEngine } from '@arcadeclash/games'
+import type { GameEngine } from '@fugluck/games'
 
 export function formatPlays(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`

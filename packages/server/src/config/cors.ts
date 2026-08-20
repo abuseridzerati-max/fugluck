@@ -22,7 +22,7 @@ export function getAllowedOrigins(): string[] {
 
   // Production fallback if no ALLOWED_ORIGINS specified
   if (parsedOrigins.length === 0) {
-    return ["https://arcadeclash.com", "https://www.arcadeclash.com"];
+    return ["https://fugluck.com", "https://www.fugluck.com", "https://staging.fugluck.com"];
   }
 
   return parsedOrigins;

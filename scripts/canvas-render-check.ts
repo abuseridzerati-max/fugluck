@@ -4,7 +4,7 @@
 //
 // Run: npx tsx scripts/canvas-render-check.ts
 
-import { VIRTUAL_VIEWPORT } from "@arcadeclash/shared";
+import { VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { RunnerEngine } from "../games/neon-runner/engine";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay";
 import { DashEngine } from "../games/pixel-ninja-dash/engine";

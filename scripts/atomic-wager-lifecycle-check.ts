@@ -5,7 +5,7 @@
 import "./require-disposable-test-database.ts";
 
 import { randomUUID } from "node:crypto";
-import type { InputLogEntry, SubmitScorePayload } from "@arcadeclash/shared";
+import type { InputLogEntry, SubmitScorePayload } from "@fugluck/shared";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
 
 type Emitted = { event: string; payload: any };

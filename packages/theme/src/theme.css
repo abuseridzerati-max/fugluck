@@ -1,5 +1,5 @@
 /*
-  ArcadeClash design system — cinematic dark UI.
+  Fugluck design system — cinematic dark UI.
   Single source of truth for color, type, spacing, radius, and shadow tokens.
   Import this once at the app root (main.tsx); CSS custom properties cascade
   from :root to every component and mounted game module automatically.

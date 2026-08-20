@@ -16,7 +16,7 @@
 // adapter can produce it. Sky Dodge's honest keyboard-only run is folded
 // into Test 1 below instead — that's the path every real Sky Dodge match now
 // always takes.
-import { MAX_INPUT_LOG_ENTRIES, MAX_REPLAY_TICKS, replayEngine, type InputLogEntry } from "@arcadeclash/shared";
+import { MAX_INPUT_LOG_ENTRIES, MAX_REPLAY_TICKS, replayEngine, type InputLogEntry } from "@fugluck/shared";
 import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay.ts";

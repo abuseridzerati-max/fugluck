@@ -19,7 +19,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
   {
     id: 'getting-started',
     title: 'Getting Started',
-    description: 'Basic concepts, game modes, and how to start playing on ArcadeClash.',
+    description: 'Basic concepts, game modes, and how to start playing on Fugluck.',
     icon: '🚀',
   },
   {
@@ -69,19 +69,19 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
 export const FAQ_ITEMS: FAQItem[] = [
   // Getting Started
   {
-    id: 'what-is-arcadeclash',
+    id: 'what-is-fugluck',
     categoryId: 'getting-started',
-    question: 'What is ArcadeClash?',
+    question: 'What is Fugluck?',
     answer:
-      'ArcadeClash is a competitive online arcade platform where players compete head-to-head in fast, skill-based retro games. All matches are 100% server-authoritative and deterministic, ensuring that pure player skill decides every outcome.',
+      'Fugluck is a competitive online arcade platform where players compete head-to-head in fast, skill-based retro games. All matches are 100% server-authoritative and deterministic, ensuring that pure player skill decides every outcome.',
     tags: ['about', 'platform', 'introduction', 'basics'],
     relatedPolicySlug: 'about',
-    relatedPolicyLabel: 'About ArcadeClash',
+    relatedPolicyLabel: 'About Fugluck',
   },
   {
-    id: 'is-arcadeclash-free',
+    id: 'is-fugluck-free',
     categoryId: 'getting-started',
-    question: 'Is ArcadeClash free to play?',
+    question: 'Is Fugluck free to play?',
     answer:
       'Yes! You can play offline in Practice Mode or compete in online multiplayer matches using COINS (our free virtual currency). Every new player receives 1,000 COINS upon registration, and coin balances are automatically topped off to 1,000 every month.',
     tags: ['free', 'cost', 'practice', 'coins'],
@@ -145,7 +145,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     categoryId: 'playing-matches',
     question: 'What happens if I disconnect during a match?',
     answer:
-      'If your connection drops, ArcadeClash provides a 10-second grace window to reconnect and resume the match seamlessly. If you cannot reconnect within 10 seconds, the match is recorded as a forfeit in favor of the connected opponent.',
+      'If your connection drops, Fugluck provides a 10-second grace window to reconnect and resume the match seamlessly. If you cannot reconnect within 10 seconds, the match is recorded as a forfeit in favor of the connected opponent.',
     tags: ['disconnect', 'connection', 'forfeit', 'grace window'],
     relatedPolicySlug: 'rules',
     relatedPolicyLabel: 'Competition Rules',
@@ -197,9 +197,9 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'how-are-scores-verified',
     categoryId: 'fairness-and-security',
-    question: 'How does ArcadeClash verify scores?',
+    question: 'How does Fugluck verify scores?',
     answer:
-      'Clients submit a frame-by-frame input log (keystrokes and clicks) at match end. The ArcadeClash server headlessly runs the deterministic game engine using the match seed and input log to re-derive the score. Modified scores that do not match the physics simulation are rejected immediately.',
+      'Clients submit a frame-by-frame input log (keystrokes and clicks) at match end. The Fugluck server headlessly runs the deterministic game engine using the match seed and input log to re-derive the score. Modified scores that do not match the physics simulation are rejected immediately.',
     tags: ['anti cheat', 'score verification', 'headless simulation', 'security'],
     relatedPolicySlug: 'fair-play',
     relatedPolicyLabel: 'Fair Play Policy',
@@ -293,7 +293,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'what-data-is-stored',
     categoryId: 'privacy-and-data',
-    question: 'What information does ArcadeClash store?',
+    question: 'What information does Fugluck store?',
     answer:
       'We store your username, salted password hash, optional email address, match history records, and append-only ledger entries. We do not store plain-text passwords or third-party advertising tracking cookies.',
     tags: ['privacy', 'data storage', 'information', 'cookies'],
@@ -325,7 +325,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'how-to-contact-support',
     categoryId: 'support-and-help',
-    question: 'How do I contact ArcadeClash support?',
+    question: 'How do I contact Fugluck support?',
     answer:
       'You can reach our team directly through our Contact page at /contact or browse our Help Center categories for instant guidance.',
     tags: ['contact', 'support', 'help desk', 'inquiries'],

@@ -10,7 +10,7 @@
 // to pick up a new game anyway (see gameRegistry) — no benefit to deferring
 // the load, and it keeps score validation fully synchronous (see
 // packages/server/src/validation/scoreValidator.ts for why that matters).
-import type { ReplayAdapter } from "@arcadeclash/shared";
+import type { ReplayAdapter } from "@fugluck/shared";
 import { neonRunnerReplayAdapter } from "./neon-runner/replay";
 import { pixelNinjaDashReplayAdapter } from "./pixel-ninja-dash/replay";
 import { spaceBlasterReplayAdapter } from "./space-blaster/replay";

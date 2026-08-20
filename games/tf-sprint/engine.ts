@@ -1,4 +1,4 @@
-import { createSeededRandom, VIRTUAL_VIEWPORT } from "@arcadeclash/shared";
+import { createSeededRandom, VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { getMultiplier, TF_RULES } from "./constants";
 import { TF_QUESTION_POOL, type TFQuestion } from "./questions";
 

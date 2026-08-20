@@ -1,4 +1,4 @@
-// Comprehensive Password Policy Audit & Verification Script for ArcadeClash.
+// Comprehensive Password Policy Audit & Verification Script for Fugluck.
 // Run: npx tsx scripts/password-policy-check.ts
 
 import dotenv from "dotenv";
@@ -39,7 +39,7 @@ async function main() {
   // ---------------------------------------------------------------------------
   console.log("\nTest 2: Common & Breached Password Blocklist Rejection");
 
-  const commonList = ["password", "password123", "12345678", "123456789", "qwertyuiop", "admin12345", "arcadeclash", "letmein123"];
+  const commonList = ["password", "password123", "12345678", "123456789", "qwertyuiop", "admin12345", "arcadeclash", "fugluck123", "letmein123"];
 
   for (const common of commonList) {
     const res = validatePasswordPolicy(common);
@@ -64,7 +64,7 @@ async function main() {
 
   const strongList = [
     "correct-horse-battery-staple-99",
-    "arcade_clash_champion_2026!",
+    "fugluck_champion_2026!",
     "Str0ngP@ssw0rd!2026_Secure",
     "my-long-randomized-passphrase-is-very-secure",
   ];
