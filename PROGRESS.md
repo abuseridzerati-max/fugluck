@@ -3,6 +3,71 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 55 (2026-08-23): Staging Authentication API Resolution Hardening & Live End-to-End Verification
+
+### Baseline
+- `62b998d` (`main`).
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Problem & Root Cause Diagnosis
+1. **Symptom**: Clicking "Log In" or "Sign Up" on `https://staging.fugluck.com` appeared to do nothing / returned `405 Method Not Allowed`.
+2. **Root Cause**:
+   - `packages/client/src/lib/api.ts` used `import.meta.env.VITE_API_URL ?? `${window.location.protocol}//${window.location.hostname}:4000``.
+   - Because `VITE_API_URL` was not populated during Vite compilation on Vercel (or was being overridden by a persistent platform variable), `API_URL` compiled as an empty string `""`.
+   - The browser issued `POST /api/auth/login` to `https://staging.fugluck.com/api/auth/login` (the frontend origin).
+   - Vercel CDN static routes (`/(.*) -> /index.html`) rejected `POST` requests with HTTP 405 Method Not Allowed.
+
+### Work Accomplished & Deployed Fix
+1. **API URL Resolution Hardening**:
+   - Updated `packages/client/src/lib/api.ts` with `resolveApiUrl()`:
+     - If `import.meta.env.VITE_API_URL` is defined and non-empty, use it.
+     - If running in the browser and `window.location.hostname === 'staging.fugluck.com'`, automatically fall back to `https://api-staging.fugluck.com`.
+     - In local development (`localhost`), retain `${window.location.protocol}//${hostname}:4000`.
+   - Because `useMatchSocket.ts`, `InviteProvider.tsx`, and `LiveQueueList.tsx` all import `API_URL` from `lib/api`, both HTTP endpoints and Socket.IO real-time connections are uniformly protected against missing environment variables.
+2. **Git Workflow & Production Deployment**:
+   - Created task branch `fix/staging-api-fallback-hardening` (commit `693bbe0`), verified typecheck/build/tests, and merged into `main` via merge commit `f28dfae`.
+   - Pushed `main` to `origin`.
+   - Confirmed Vercel built and deployed the new client asset bundle (`/assets/index-Bdu8cTW6.js`).
+   - Verified the deployed bundle contains `function Nt(){return"https://api-staging.fugluck.com"}`.
+3. **Live End-to-End Staging Verification**:
+   - `POST https://api-staging.fugluck.com/api/auth/signup` with valid payload: returns **HTTP 201 Created**, creates user, and issues `ac_session` cookie on `.fugluck.com` with `SameSite=Lax`, `HttpOnly`, `Secure`.
+   - `POST https://api-staging.fugluck.com/api/auth/login` with created user: returns **HTTP 200 OK** and issues fresh `ac_session` cookie.
+   - `GET https://api-staging.fugluck.com/api/auth/me` with cookie: returns **HTTP 200 OK** with authenticated user profile and balances.
+   - `GET https://api-staging.fugluck.com/socket.io/?EIO=4&transport=polling`: returns **HTTP 200 OK** with valid socket SID.
+4. **Tooling & Test Verification**:
+   - `npm run typecheck`: **PASS** (zero errors across all 5 workspace packages).
+   - `npm run build:client`: **PASS** (compiled in 317ms).
+   - `npm test`: **27/27 test scripts PASS, 0 FAIL**:
+     - `migration-schema-parity-check.ts`: 67 PASS
+     - `auth-account-lifecycle-check.ts`: 31 PASS
+     - `legal-policy-help-check.ts`: 53 PASS
+     - `i18n-check.ts`: 15 PASS
+     - `wallet-friends-check.ts`: 22 PASS
+     - `financial-reconnection-check.ts`: 7 PASS
+     - `matchmaking-check.ts`: 17 PASS
+     - `determinism-check.ts`: 16 PASS
+     - `score-validation-check.ts`: 24 PASS
+     - `canvas-render-check.ts`: 12 PASS (294,295 verified 2D draw operations)
+     - `rate-limit-check.ts`: 8 PASS
+     - `sql-injection-check.ts`: 10 PASS
+     - `input-validation-check.ts`: 14 PASS
+     - `xss-audit-check.ts`: 16 PASS
+     - `password-security-check.ts`: 13 PASS
+     - `admin-security-check.ts`: 7 PASS
+     - `admin-console-check.ts`: 18 PASS
+     - `cors-audit-check.ts`: 11 PASS
+     - `registration-verification-check.ts`: 8 PASS
+     - `owner-admin-lockout-check.ts`: 9 PASS
+     - `request-logging-audit-check.ts`: 12 PASS
+     - `password-policy-check.ts`: 12 PASS
+     - `file-upload-audit-check.ts`: 4 PASS
+     - `wallet-settlement-concurrency-check.ts`: 12 PASS
+     - `wallet-settlement-integrity-check.ts`: 14 PASS
+     - `match-lifecycle-durability-check.ts`: 18 PASS
+     - `staging-readiness-check.ts`: 34 PASS
+   - `git diff --check`: **PASS** (0 whitespace/diff issues).
+
 ## Session 54 (2026-08-20): Final Post-Folder-Rename Health Check & Workspace Junction Refresh
 
 ### Baseline
