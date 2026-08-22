@@ -1,6 +1,21 @@
-export const API_URL =
-  import.meta.env.VITE_API_URL ??
-  `${window.location.protocol}//${window.location.hostname}:4000`
+function resolveApiUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL
+  if (typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim()
+  }
+
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname
+    if (hostname === 'staging.fugluck.com') {
+      return 'https://api-staging.fugluck.com'
+    }
+    return `${window.location.protocol}//${hostname}:4000`
+  }
+
+  return 'http://localhost:4000'
+}
+
+export const API_URL = resolveApiUrl()
 
 export class ApiError extends Error {
   status: number
