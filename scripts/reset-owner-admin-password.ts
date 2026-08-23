@@ -1,11 +1,13 @@
 /**
  * Controlled Local Owner/Admin Credential Recovery Script for Fugluck
  *
- * Usage:
- *   npx tsx scripts/reset-owner-admin-password.ts --identifier <username|email> --password <new_password>
- * Or using environment variables:
+ * Interactive Usage (Preferred - No password in command history):
+ *   npx tsx scripts/reset-owner-admin-password.ts --identifier <username|email>
+ *   (Prompts securely for password and confirmation with input hidden)
+ *
+ * Non-Interactive Usage (for automated test environments):
  *   $env:ADMIN_IDENTIFIER="admin"
- *   $env:NEW_ADMIN_PASSWORD="SecureNewPassword123!"
+ *   $env:NEW_ADMIN_PASSWORD="SecurePassword123!"
  *   npx tsx scripts/reset-owner-admin-password.ts
  *
  * To list existing admin accounts:
@@ -16,12 +18,58 @@ import "dotenv/config";
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
 
+import readline from "node:readline";
+import { Writable } from "node:stream";
 import { eq, or, sql } from "drizzle-orm";
 import { db } from "../packages/server/src/db/client.ts";
 import { passwordResetTokens, users } from "../packages/server/src/db/schema.ts";
 import { hashPassword, validatePasswordPolicy } from "../packages/server/src/auth/password.ts";
 
 const VALID_ADMIN_ROLES = ["OWNER", "SUPER_ADMIN", "ADMIN"] as const;
+
+function promptHidden(promptText: string): Promise<string> {
+  return new Promise((resolve) => {
+    let isMuted = false;
+    const mutableStdout = new Writable({
+      write(chunk, encoding, callback) {
+        if (!isMuted) {
+          process.stdout.write(chunk, encoding);
+        }
+        callback();
+      },
+    });
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: mutableStdout,
+      terminal: true,
+    });
+
+    process.stdout.write(promptText);
+    isMuted = true;
+
+    rl.question("", (answer) => {
+      isMuted = false;
+      process.stdout.write("\n");
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+function promptVisible(promptText: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(promptText, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
 
 function parseArgs(): {
   identifier?: string;
@@ -45,7 +93,7 @@ function parseArgs(): {
     }
   }
 
-  // Fallback to environment variables if arguments are omitted
+  // Fallback to environment variables if provided
   if (!result.identifier && process.env.ADMIN_IDENTIFIER) {
     result.identifier = process.env.ADMIN_IDENTIFIER;
   }
@@ -74,7 +122,33 @@ export async function resetOwnerAdminPassword(
     where: or(eq(users.username, trimmedId), eq(users.email, trimmedId), eq(users.id, trimmedId)),
   });
 
+  const newHash = await hashPassword(newPassword);
+
   if (!targetUser) {
+    // Check if any admin/owner accounts exist
+    const allUsers = await db.query.users.findMany();
+    const existingAdmins = allUsers.filter((u) => (VALID_ADMIN_ROLES as readonly string[]).includes(u.role));
+
+    if (existingAdmins.length === 0) {
+      // Clean/fresh database: Bootstrap the primary OWNER account
+      const ownerId = `usr_owner_${Date.now()}`;
+      await db.insert(users).values({
+        id: ownerId,
+        username: trimmedId,
+        email: `${trimmedId}@fugluck.com`,
+        passwordHash: newHash,
+        role: "OWNER",
+        status: "active",
+      });
+
+      return {
+        success: true,
+        username: trimmedId,
+        role: "OWNER",
+        message: `Primary OWNER account "${trimmedId}" created and provisioned with specified credentials.`,
+      };
+    }
+
     throw new Error(`Target account not found for identifier: "${trimmedId}".`);
   }
 
@@ -86,10 +160,7 @@ export async function resetOwnerAdminPassword(
     );
   }
 
-  // 4. Secure Canonical Password Hashing
-  const newHash = await hashPassword(newPassword);
-
-  // 5. Atomic Update
+  // 4. Atomic Update
   await db.transaction(async (tx) => {
     // Update password hash and ensure account is active
     await tx
@@ -105,7 +176,7 @@ export async function resetOwnerAdminPassword(
     await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, targetUser.id));
   });
 
-  // 6. Optional: Clear IP lockout table
+  // 5. Optional: Clear IP lockout table
   if (options?.clearLockouts) {
     try {
       await db.execute(sql`TRUNCATE TABLE admin_lockout_attempts;`);
@@ -140,26 +211,51 @@ async function listAdminAccounts(): Promise<void> {
 }
 
 async function main() {
-  const { identifier, password, listAdmins, clearLockouts } = parseArgs();
+  const args = parseArgs();
 
-  if (listAdmins) {
+  if (args.listAdmins) {
     await listAdminAccounts();
     process.exit(0);
   }
 
-  if (!identifier || !password) {
-    console.error("\n[Error] Missing required parameters.");
-    console.error("Usage:");
-    console.error("  npx tsx scripts/reset-owner-admin-password.ts --identifier <username> --password <new_password> [--clear-lockouts]");
-    console.error("  npx tsx scripts/reset-owner-admin-password.ts --list-admins\n");
+  let identifier = args.identifier;
+  if (!identifier) {
+    if (process.stdin.isTTY) {
+      identifier = await promptVisible("Enter owner/admin username or email: ");
+    }
+  }
+
+  if (!identifier) {
+    console.error("\n[Error] Target administrator identifier is required.");
+    console.error("Usage: npx tsx scripts/reset-owner-admin-password.ts --identifier <username>\n");
     process.exit(1);
+  }
+
+  let password = args.password;
+  if (!password) {
+    if (process.stdin.isTTY) {
+      const p1 = await promptHidden("Enter new admin password (hidden): ");
+      if (!p1) {
+        console.error("\n[Error] Password cannot be empty.");
+        process.exit(1);
+      }
+      const p2 = await promptHidden("Confirm new admin password (hidden): ");
+      if (p1 !== p2) {
+        console.error("\n[Error] Password confirmation mismatch. Aborting.");
+        process.exit(1);
+      }
+      password = p1;
+    } else {
+      console.error("\n[Error] Non-interactive execution requires password via argument or NEW_ADMIN_PASSWORD environment variable.");
+      process.exit(1);
+    }
   }
 
   console.log("\n--- Fugluck Admin Credential Recovery Tool ---");
   console.log(`Target Identifier: ${identifier}`);
 
   try {
-    const result = await resetOwnerAdminPassword(identifier, password, { clearLockouts });
+    const result = await resetOwnerAdminPassword(identifier, password, { clearLockouts: args.clearLockouts });
     console.log(`\n  [SUCCESS] ${result.message}`);
     console.log(`  Account is verified active and ready for login at /admin or /api/admin/login.\n`);
     process.exit(0);
