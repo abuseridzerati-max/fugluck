@@ -3,6 +3,48 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 60 (2026-08-23): Admin Access Recovery Tool & Administrative Security Audit
+
+### Baseline
+- `f58bb71` (`main`).
+- Task branch: `fix/admin-access-security`.
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Task and Objective
+1. Perform owner/admin access recovery for forgotten administrator credentials safely without weakening security, exposing backdoors, or printing hashes.
+2. Conduct a comprehensive security audit of the administrative architecture: route exposure (`/admin`), server-side authorization guards, session security (`ac_admin_session`), lockout and brute-force defenses, audit logging, CORS/CSRF/XSS, and multi-factor authentication (MFA).
+
+### Work Accomplished & Security Findings
+1. **Controlled Operator Recovery CLI Tool (`scripts/reset-owner-admin-password.ts`)**:
+   - Built a secure CLI utility for operators to restore owner/admin access directly in the database.
+   - Validates the new password against canonical Fugluck password policies (`validatePasswordPolicy`).
+   - Verifies target user exists and holds an authorized administrative role (`OWNER`, `SUPER_ADMIN`, `ADMIN`), rejecting non-admin users.
+   - Computes canonical 10-round bcrypt hashes via `hashPassword`.
+   - Atomically updates target password hash and purges pending password reset tokens.
+   - Never logs or exposes plaintext passwords, password hashes, or sensitive tokens.
+   - Supports optional `--clear-lockouts` to reset IP lockout state.
+2. **Dedicated Test Suite (`scripts/admin-reset-recovery-check.ts`)**:
+   - 6 automated regression test sections covering unknown account rejection, non-admin rejection, weak password policy rejection, authorized owner password reset, isolation of unrelated accounts, and token cleanup.
+3. **Administrative Security Audit Summary**:
+   - **`/admin` Route Exposure**: Audited and confirmed that `/admin` URL discoverability is NOT a security vulnerability. The actual security boundary is enforced strictly on the server across 100% of `/api/admin/*` routes via `requireOwnerAdmin` and `requirePermission` middleware. Unauthenticated clients receive only static HTML/JS without privileged data.
+   - **Session Security**: `ac_admin_session` cookie enforces `HttpOnly`, `Secure` (production/staging), `SameSite=Lax`, and dynamic domain scoping. No admin JWTs stored in client storage.
+   - **Lockout & Brute-Force**: 5 failed login attempts trigger a 1-hour IP lockout persisted in `admin_lockout_attempts`, supported by a 10 req/15min sliding rate limiter.
+   - **Audit Logging**: All mutating administrative actions (bans, unbans, suspensions, voids, currency grants, ledger reversals) create immutable rows in `admin_audit_logs` without logging secret credentials.
+   - **Pre-Production MFA Requirement**: Confirmed that administrative Multi-Factor Authentication (TOTP / WebAuthn) is currently absent and is a **mandatory pre-production security requirement** before real-money diamond wagering or production launch.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero compilation errors across all 5 packages).
+- `scripts/admin-reset-recovery-check.ts`: **100% PASS** (6 test sections).
+- `scripts/admin-security-check.ts`: **100% PASS** (4 test sections).
+- `scripts/admin-console-check.ts`: **100% PASS** (8 test sections).
+- `scripts/owner-admin-lockout-check.ts`: **100% PASS** (6 test sections).
+- `scripts/rate-limit-check.ts`: **100% PASS** (4 test sections).
+- `scripts/request-logging-audit-check.ts`: **100% PASS** (3 test sections).
+- `scripts/cors-audit-check.ts`: **100% PASS** (5 test sections).
+- Full test suite `npm test` (all 28 check scripts): **100% PASS**.
+- Live Staging API check: `GET /api/admin/dashboard` returns `HTTP 401 {"error":"Not authenticated as administrator"}`.
+
 ## Session 59 (2026-08-23): Language Selector Redesign, Native Matchmaking Lobby & Complete i18n Localization
 
 ### Baseline
