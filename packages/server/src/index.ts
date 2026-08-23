@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import { attachMatchmaking, type MatchmakingServer } from "./matchmaking";
+import { accountRouter } from "./routes/account";
 import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
 import { friendsRouter } from "./routes/friends";
@@ -39,6 +40,7 @@ app.use(express.json());
 app.use(requestLoggerMiddleware);
 
 app.use("/api/auth", authRouter);
+app.use("/api/account", accountRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/matches", matchesRouter);
@@ -76,7 +78,7 @@ app.get("/", (_req, res) => {
     name: "Fugluck API Server",
     status: "online",
     health: "/api/health",
-    endpoints: ["/api/auth", "/api/wallet", "/api/friends", "/api/matches"],
+    endpoints: ["/api/auth", "/api/account", "/api/wallet", "/api/friends", "/api/matches"],
   });
 });
 

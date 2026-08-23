@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getGameTitle } from '@fugluck/shared'
 import Avatar from '../components/Avatar'
+import ChangePasswordModal from '../components/ChangePasswordModal'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../auth/AuthContext'
@@ -33,6 +34,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
   const [matches, setMatches] = useState<MatchHistoryItem[]>([])
   const [loadingMatches, setLoadingMatches] = useState(true)
   const [matchError, setMatchError] = useState<string | null>(null)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
 
   const currentLang = i18n.language || 'en'
 
@@ -128,17 +130,25 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
           {onNavigateWallet && (
-            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateWallet} style={{ flex: 1 }}>
+            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateWallet} style={{ flex: '1 1 180px' }}>
               💳 {t('wallet.openWallet', { defaultValue: 'View Wallet & Ledger' })}
             </button>
           )}
           {onNavigateFriends && (
-            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateFriends} style={{ flex: 1 }}>
+            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateFriends} style={{ flex: '1 1 180px' }}>
               👥 {t('friends.openFriendsList', { defaultValue: 'Friends & Invites' })}
             </button>
           )}
+          <button
+            type="button"
+            className="ac-btn ac-btn--ghost"
+            onClick={() => setIsChangePasswordOpen(true)}
+            style={{ flex: '1 1 180px' }}
+          >
+            🔒 {t('auth.changePassword', { defaultValue: 'Change Password' })}
+          </button>
         </div>
 
         {/* Match History Section */}
@@ -222,6 +232,11 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
             </div>
           )}
         </section>
+
+        <ChangePasswordModal
+          isOpen={isChangePasswordOpen}
+          onClose={() => setIsChangePasswordOpen(false)}
+        />
       </main>
       <Footer onNavigate={onNavigateHome} />
     </>

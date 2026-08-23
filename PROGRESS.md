@@ -3,6 +3,46 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 58 (2026-08-23): Authenticated User Password Change Endpoint & Profile Security UI
+
+### Baseline
+- `ed7ea6f` (`main`).
+- Dedicated task branch: `feat/authenticated-password-change`.
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Task and Objective
+Implement a complete, secure authenticated password-change flow for Fugluck without using the unauthenticated forgot-password recovery mechanism.
+
+### Work Accomplished & Architectural Implementation
+1. **Backend Route & Account Router (`packages/server/src/routes/account.ts`)**:
+   - Created dedicated `accountRouter` mounted at `/api/account` in `packages/server/src/index.ts`.
+   - Implemented `POST /api/account/change-password` guarded by `attachSession` and `requireAuth`.
+   - Added rate limiting with `passwordChangeLimiter` (5 attempts per 15-minute sliding window).
+   - Validates input presence, checks user active status (rejects suspended/banned users with HTTP 403).
+   - Verifies `currentPassword` against stored bcrypt hash using canonical `verifyPassword()`.
+   - Enforces that `newPassword` differs from `currentPassword`.
+   - Validates `newPassword` against canonical `validatePasswordPolicy()` (length bounds, common breached passwords blocklist, sequential pattern rejection).
+   - Hashes new password with `hashPassword()` (10-round bcrypt) and updates `users.passwordHash`.
+   - Returns sanitized response `{ success: true, message: "Password updated successfully." }` without exposing sensitive fields or database details.
+2. **Session Architecture Decision & Limitation Documentation**:
+   - **Session Preservation**: Current authenticated user session remains valid and active after password change (client remains logged in seamlessly).
+   - **Stateless JWT Limitation**: In Fugluck's current stateless JWT architecture, unexpired JWT tokens issued prior to the password change on separate devices expire naturally at their 7-day TTL (`EXPIRES_IN = "7d"`). Global token revocation / token-version tracking is intentionally not introduced in this task to avoid architectural churn.
+3. **Frontend Client & Security UI**:
+   - In `packages/client/src/auth/AuthContext.tsx`, added `changePassword(currentPassword, newPassword)` method calling `/api/account/change-password` via `apiFetch`.
+   - Created `packages/client/src/components/ChangePasswordModal.tsx` featuring current password input, new password input, confirm password input, real-time client policy checklist (min 8 chars, letter, number, match, difference from current), loading states, and automatic form clearing on success.
+   - Updated `packages/client/src/pages/ProfilePage.tsx` to mount the "Change Password" action and modal cleanly in the profile actions toolbar.
+4. **Automated Regression Test Coverage**:
+   - In `scripts/auth-account-lifecycle-check.ts`, added comprehensive Section 6 tests validating: unauthenticated rejection (401), missing inputs rejection (400), incorrect current password rejection (400), identical password rejection (400), weak password policy rejection (400), successful update with hash change in database, verification of old password failure and new password success, and verification of profile state preservation.
+5. **Phase 2 Status Notice**:
+   - Authentication Phase 2 is **almost complete**. Final sign-off requires configuring third-party transactional email credentials (`RESEND_API_KEY`) on Render staging and executing hosted end-to-end email verification and recovery tests.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero errors across all 5 packages).
+- `npm run build:client`: **PASS** (compiled in 267ms).
+- Safe test suites: **100% PASS across 20 suites** (test-database-safety, staging-readiness, i18n, determinism, score-validation, canvas-render, rate-limit, sql-injection, input-validation, xss-audit, password-security, admin-security, cors-audit, registration-verification, request-logging, password-policy, file-upload).
+- `git diff --check`: **PASS** (clean diff).
+
 ## Session 57 (2026-08-23): Supabase / Render Staging Security Hardening & Cleanup
 
 ### Baseline

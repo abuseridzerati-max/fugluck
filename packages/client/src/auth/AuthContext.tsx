@@ -21,6 +21,7 @@ type AuthContextValue = {
   resendVerification: (email?: string) => Promise<string>
   forgotPassword: (emailOrUsername: string) => Promise<string>
   resetPassword: (token: string, newPassword: string) => Promise<string>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<string>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -189,6 +190,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function changePassword(currentPassword: string, newPassword: string): Promise<string> {
+    setError(null)
+    try {
+      const res = await apiFetch<{ success: boolean; message: string }>('/api/account/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      return res.message
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'Password change failed'
+      setError(msg)
+      throw e
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -203,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resendVerification,
         forgotPassword,
         resetPassword,
+        changePassword,
       }}
     >
       {children}

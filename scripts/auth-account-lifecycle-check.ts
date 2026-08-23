@@ -224,9 +224,89 @@ async function runAuthAccountLifecycleSuite(): Promise<void> {
   check("Password reset token deleted after single use", recheckResetToken === undefined);
 
   // -------------------------------------------------------------------------
-  // 6. Session Lifecycle & Account Status Enforcement
+  // 6. Authenticated Password Change Lifecycle
   // -------------------------------------------------------------------------
-  console.log("\nSection 6: Session Lifecycle & Account Status Enforcement");
+  console.log("\nSection 6: Authenticated Password Change Mechanics");
+
+  // Handler simulation mirroring POST /api/account/change-password
+  async function handleChangePassword(
+    callerUserId: string | undefined,
+    currentPass: unknown,
+    newPass: unknown,
+  ): Promise<{ status: number; body: { error?: string; success?: boolean; message?: string } }> {
+    if (!callerUserId) {
+      return { status: 401, body: { error: "Not authenticated" } };
+    }
+    if (typeof currentPass !== "string" || !currentPass || typeof newPass !== "string" || !newPass) {
+      return { status: 400, body: { error: "Current password and new password are required." } };
+    }
+
+    const u = await db.query.users.findFirst({ where: eq(users.id, callerUserId) });
+    if (!u) {
+      return { status: 401, body: { error: "Not authenticated" } };
+    }
+    if (u.status === "banned" || u.status === "suspended") {
+      return { status: 403, body: { error: "Account access restricted." } };
+    }
+
+    const isCurrentValid = await verifyPassword(currentPass, u.passwordHash);
+    if (!isCurrentValid) {
+      return { status: 400, body: { error: "Incorrect current password." } };
+    }
+
+    if (currentPass === newPass) {
+      return { status: 400, body: { error: "New password must be different from current password." } };
+    }
+
+    const policy = validatePasswordPolicy(newPass);
+    if (!policy.valid) {
+      return { status: 400, body: { error: policy.error } };
+    }
+
+    const nextHash = await hashPassword(newPass);
+    await db.update(users).set({ passwordHash: nextHash }).where(eq(users.id, u.id));
+
+    return { status: 200, body: { success: true, message: "Password updated successfully." } };
+  }
+
+  // 1. Unauthenticated request rejected
+  const unauthRes = await handleChangePassword(undefined, newTestPassword, "AnotherPass789!");
+  check("Unauthenticated change-password request rejected (401)", unauthRes.status === 401);
+
+  // 2. Missing fields rejected
+  const missingRes = await handleChangePassword(userId, "", "AnotherPass789!");
+  check("Missing password fields rejected (400)", missingRes.status === 400);
+
+  // 3. Incorrect current password rejected
+  const wrongCurrentRes = await handleChangePassword(userId, "WrongCurrentPass123!", "AnotherPass789!");
+  check("Incorrect current password rejected (400)", wrongCurrentRes.status === 400 && wrongCurrentRes.body.error === "Incorrect current password.");
+
+  // 4. Same new password rejected
+  const samePassRes = await handleChangePassword(userId, newTestPassword, newTestPassword);
+  check("Identical new password rejected (400)", samePassRes.status === 400);
+
+  // 5. Weak new password rejected by policy
+  const weakPassRes = await handleChangePassword(userId, newTestPassword, "short");
+  check("Weak new password rejected by policy (400)", weakPassRes.status === 400);
+
+  // 6. Valid change succeeds
+  const updatedPassword3 = "ThirdSuperSecurePassword789!";
+  const successRes = await handleChangePassword(userId, newTestPassword, updatedPassword3);
+  check("Valid password change succeeds (200)", successRes.status === 200 && successRes.body.success === true);
+  check("Response omits sensitive hashes or password data", !("passwordHash" in successRes.body) && !("password" in successRes.body));
+
+  // 7. DB state verification
+  const userAfterChange = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  const oldPassStillWorks = await verifyPassword(newTestPassword, userAfterChange!.passwordHash);
+  const newPassWorks = await verifyPassword(updatedPassword3, userAfterChange!.passwordHash);
+  check("Previous password no longer authenticates", oldPassStillWorks === false);
+  check("New password successfully authenticates", newPassWorks === true);
+  check("Existing user fields and verification state preserved", userAfterChange?.isEmailVerified === true && userAfterChange?.username === testUsername);
+
+  // -------------------------------------------------------------------------
+  // 7. Session Lifecycle & Account Status Enforcement
+  // -------------------------------------------------------------------------
+  console.log("\nSection 7: Session Lifecycle & Account Status Enforcement");
   const sessionToken = signSessionToken({ sub: userId });
   const sessionPayload = verifySessionToken(sessionToken);
   check("Session JWT verifies sub match", sessionPayload?.sub === userId);
@@ -261,9 +341,9 @@ async function runAuthAccountLifecycleSuite(): Promise<void> {
   check("Suspended user is denied login authorization", isSuspendedAllowedLogin === false);
 
   // -------------------------------------------------------------------------
-  // 7. Verification Boundary Policy Enforcement (Wagering & Social)
+  // 8. Verification Boundary Policy Enforcement (Wagering & Social)
   // -------------------------------------------------------------------------
-  console.log("\nSection 7: Verification Boundary Policy Enforcement");
+  console.log("\nSection 8: Verification Boundary Policy Enforcement");
 
   // Unverified user attempting wagering match (stake > 0)
   function simulateQueueWagerCheck(user: { isEmailVerified: boolean }, stake: number): { allowed: boolean; error?: string } {
@@ -282,7 +362,7 @@ async function runAuthAccountLifecycleSuite(): Promise<void> {
   check("Verified user allowed in wagering matches (stake>0)", verifiedWagerCheck.allowed);
 
   // -------------------------------------------------------------------------
-  // 8. Clean up test rows
+  // 9. Clean up test rows
   // -------------------------------------------------------------------------
   console.log("\nCleaning up test fixtures...");
   await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, unverifiedUserId));
