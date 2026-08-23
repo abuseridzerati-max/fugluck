@@ -193,13 +193,34 @@ export async function resetOwnerAdminPassword(
   };
 }
 
+function getSanitizedDbTarget(): { host: string; db: string } {
+  try {
+    const raw = process.env.DATABASE_URL || "";
+    const u = new URL(raw);
+    return { host: u.hostname, db: u.pathname.replace(/^\//, "") };
+  } catch {
+    return { host: "unknown", db: "unknown" };
+  }
+}
+
+async function checkActiveLockouts(): Promise<{ ip: string; attempts: number; lockedUntil: Date | null }[]> {
+  try {
+    const records = await db.query.adminLockoutAttempts.findMany();
+    return records.map((r) => ({ ip: r.ipAddress, attempts: r.attemptCount, lockedUntil: r.lockedUntil }));
+  } catch {
+    return [];
+  }
+}
+
 async function listAdminAccounts(): Promise<void> {
+  const target = getSanitizedDbTarget();
+  console.log("\n=======================================================");
+  console.log(`Fugluck Administrator Accounts [Target: ${target.host} / ${target.db}]`);
+  console.log("=======================================================");
+
   const allUsers = await db.query.users.findMany();
   const admins = allUsers.filter((u) => (VALID_ADMIN_ROLES as readonly string[]).includes(u.role));
 
-  console.log("\n=======================================================");
-  console.log("Fugluck Administrator Accounts");
-  console.log("=======================================================");
   if (admins.length === 0) {
     console.log("  No accounts with OWNER, SUPER_ADMIN, or ADMIN role found.");
   } else {
@@ -207,6 +228,18 @@ async function listAdminAccounts(): Promise<void> {
       console.log(`  - Username: ${a.username} | Role: ${a.role} | Status: ${a.status} | ID: ${a.id}`);
     }
   }
+
+  const lockouts = await checkActiveLockouts();
+  const activeLockouts = lockouts.filter((l) => l.lockedUntil && l.lockedUntil.getTime() > Date.now());
+  if (activeLockouts.length > 0) {
+    console.log("\nActive Admin Lockouts:");
+    for (const l of activeLockouts) {
+      console.log(`  - IP: ${l.ip} | Attempts: ${l.attempts} | Locked Until: ${l.lockedUntil?.toISOString()}`);
+    }
+  } else {
+    console.log("\n  Active IP Lockouts: None (0)");
+  }
+
   console.log("=======================================================\n");
 }
 
@@ -216,6 +249,20 @@ async function main() {
   if (args.listAdmins) {
     await listAdminAccounts();
     process.exit(0);
+  }
+
+  const target = getSanitizedDbTarget();
+  console.log("\n--- Fugluck Admin Credential Recovery Tool ---");
+  console.log(`Database Target: host=${target.host} | database=${target.db}`);
+
+  // Check active lockouts
+  const lockouts = await checkActiveLockouts();
+  const activeLockouts = lockouts.filter((l) => l.lockedUntil && l.lockedUntil.getTime() > Date.now());
+  if (activeLockouts.length > 0) {
+    console.log(`[Notice] ${activeLockouts.length} active IP lockout(s) present in database.`);
+    if (!args.clearLockouts) {
+      console.log(`         Pass --clear-lockouts or -c to clear active lockouts.`);
+    }
   }
 
   let identifier = args.identifier;
@@ -251,12 +298,14 @@ async function main() {
     }
   }
 
-  console.log("\n--- Fugluck Admin Credential Recovery Tool ---");
   console.log(`Target Identifier: ${identifier}`);
 
   try {
     const result = await resetOwnerAdminPassword(identifier, password, { clearLockouts: args.clearLockouts });
     console.log(`\n  [SUCCESS] ${result.message}`);
+    if (args.clearLockouts) {
+      console.log("  [SUCCESS] Admin IP lockout attempts cleared.");
+    }
     console.log(`  Account is verified active and ready for login at /admin or /api/admin/login.\n`);
     process.exit(0);
   } catch (err: any) {

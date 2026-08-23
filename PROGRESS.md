@@ -3,6 +3,40 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 61 (2026-08-24): Security & Code-Quality Review of `fix/admin-session-staging-resolution` & Clean Tooling Extraction
+
+### Baseline
+- `027f389` (`main`).
+- Reviewed branch: `fix/admin-session-staging-resolution` (commits `c64b87b`, `942023c`).
+- Clean extraction task branch: `fix/admin-tooling-hardening`.
+- Staging Target: Supabase PostgreSQL (`aws-0-ap-northeast-1.pooler.supabase.com:5432`).
+
+### Review & Security Audit Verdict
+1. **Rejected Session Bridging (`packages/server/src/auth/middleware.ts`, `packages/server/src/routes/admin.ts`)**:
+   - **Finding**: Commit `c64b87b` modified `requireOwnerAdmin` to fallback to `req.cookies?.[SESSION_COOKIE_NAME]` (`ac_session`), and updated `/api/admin/login` & `/api/admin/logout` to set/clear both `ac_admin_session` and `ac_session`.
+   - **Verdict**: **REJECTED (DROPPED)**.
+   - **Rationale**: Bridging normal user and privileged admin session cookies breaks the strict privilege separation boundary. Staging admin login is already fully resolved with the Supabase database. Allowing standard player sessions to satisfy admin guards broadens the attack surface and creates cookie ambiguity/precedence risks. Privileged admin operations must strictly require `ac_admin_session`.
+2. **Retained Hardened Operator Tooling (`scripts/seed-admin.ts`, `scripts/reset-owner-admin-password.ts`)**:
+   - **Hardened Admin Seeder (`scripts/seed-admin.ts`)**: Replaced insecure hardcoded credentials (`admin` / `admin12345`) and raw DDL with interactive hidden password prompting, password confirmation, canonical policy enforcement (`validatePasswordPolicy`), duplicate OWNER prevention, collision refusal, canonical 10-round bcrypt hashing, and sanitized DB target reporting.
+   - **Sanitized DB & Lockout Diagnostics (`scripts/reset-owner-admin-password.ts`)**: Added credential-free DB target reporting (`hostname` and `database` name only) and active IP lockout reporting (`checkActiveLockouts`).
+   - **Regression Suite (`scripts/seed-admin-check.ts`)**: Created automated test suite validating weak password rejection, breached password rejection, successful OWNER seeding, DB row creation, bcrypt verification, duplicate username prevention, and duplicate OWNER prevention against isolated disposable test databases.
+   - **Monorepo Test Integration (`package.json`)**: Added `seed-admin-check.ts` to `npm test`.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (0 errors across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, `@fugluck/client`).
+- `scripts/seed-admin-check.ts`: **100% PASS** (4 test suites).
+- `scripts/admin-reset-recovery-check.ts`: **100% PASS** (6 test suites).
+- `scripts/admin-security-check.ts`: **100% PASS** (4 test suites).
+- `scripts/admin-console-check.ts`: **100% PASS** (8 test suites).
+- `scripts/owner-admin-lockout-check.ts`: **100% PASS** (6 test suites).
+- `scripts/password-security-check.ts`: **100% PASS** (5 test suites).
+- `scripts/password-policy-check.ts`: **100% PASS** (4 test suites).
+- Full test suite `npm test` (all 28 check scripts): **100% PASS (28/28 scripts)**.
+- `git diff --check`: **PASS** (0 whitespace/formatting issues).
+
+### Next Recommended Admin Task
+Proceed with the planned Admin Console feature completion work (Dashboard real-time telemetry metrics, granular user moderation actions, match voiding with automated ledger compensation, and immutable audit log viewer) while maintaining strict `ac_admin_session` cookie isolation.
+
 ## Session 60 (2026-08-23): Admin Access Recovery Tool & Administrative Security Audit
 
 ### Baseline
