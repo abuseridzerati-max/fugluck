@@ -3,6 +3,35 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 57 (2026-08-23): Supabase / Render Staging Security Hardening & Cleanup
+
+### Baseline
+- `37f075c` (`main`).
+- Dedicated task branch: `fix/staging-security-cleanup` (`7bd12ff`).
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Task and Objective
+Perform a focused security cleanup of recent Supabase/Render staging integration changes: audit PostgreSQL TLS handling, eliminate any global TLS disabling, restore sanitized HTTP error responses, sanitize `/api/health` database readiness reporting, verify secret leakage absence, and ensure all tests pass.
+
+### Work Accomplished & Security Hardening
+1. **Scoped PostgreSQL TLS Audit**:
+   - Confirmed that `NODE_TLS_REJECT_UNAUTHORIZED` is completely absent from all repository source, deployment configs, and environment templates.
+   - Audited PostgreSQL connection creation in `packages/server/src/db/client.ts` and `scripts/migration-schema-parity-check.ts`.
+   - Documented that `ssl: { rejectUnauthorized: false }` is strictly scoped to the PostgreSQL client connection pool to accommodate Supabase Supavisor pooler proxy TLS transport without altering global Node.js TLS verification.
+2. **Sanitization of Global Error Responses & Health Endpoint**:
+   - In `packages/server/src/index.ts`, restored standard sanitized 500 error response `{ error: "Internal server error" }` without exposing internal error messages, SQL errors, or error codes to HTTP clients.
+   - In `packages/server/src/index.ts`, sanitized `GET /api/health` so that database connectivity checks return a generic `database: "connected"` or `database: "unavailable"` without leaking database errors, stack traces, hostnames, or credentials.
+3. **Repository Secret Leakage Audit**:
+   - Conducted repository-wide git search across all tracked files for database passwords, JWT tokens, session cookies, and Supabase project credentials. Confirmed 0 secrets committed.
+   - Confirmed owner is independently rotating the exposed database password in Supabase Dashboard and Render Environment settings.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero errors across all 5 workspace packages).
+- `npm run build:client`: **PASS** (compiled in 281ms).
+- Safe test suites: **100% PASS across 20 suites** (test-database-safety, staging-readiness, i18n, determinism, score-validation, canvas-render, rate-limit, sql-injection, input-validation, xss-audit, password-security, admin-security, admin-console, cors-audit, registration-verification, request-logging, password-policy, file-upload, wallet-friends).
+- `git diff --check`: **PASS** (clean diff).
+
 ## Session 56 (2026-08-23): New Supabase Staging Database Connection, Schema Migration & Live End-to-End Verification
 
 ### Baseline
