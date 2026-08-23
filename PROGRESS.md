@@ -3,6 +3,46 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 59 (2026-08-23): Language Selector Redesign, Native Matchmaking Lobby & Complete i18n Localization
+
+### Baseline
+- `f1ebfec` (`main`).
+- Dedicated task branch: `feat/lobby-language-ux`.
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Task and Objective
+Implement a focused desktop UI/UX improvement pass:
+1. Compact flag-based language selector in the header navigation inspired by Matsne styling.
+2. Rebuild the Live Matchmaking Lobby as a native Fugluck gameplay/dashboard component instead of a generic data-table grid.
+3. Complete localization of the Matchmaking Lobby across English (en), Georgian (ka), and Russian (ru).
+
+### Work Accomplished & UI/UX Implementations
+1. **Compact Flag-Based Language Selector (`packages/client/src/components/LanguageSwitcher.tsx`, `packages/client/src/components/FlagIcons.tsx`)**:
+   - Created crisp vector SVG flags for UK/English (🇬🇧), Georgia (🇬🇪), and Russia (🇷🇺) with high-DPI scaling and border-radius.
+   - Replaced exposed wide pill switcher with a compact header control displaying the active language flag and animated chevron.
+   - Built a sleek popover dropdown revealing flag icons and readable localized language names with active indicator checkmarks.
+   - Implemented full keyboard accessibility (Enter/Space to open, Arrow keys navigation, Escape to close, Tab handling), ARIA attributes (`role="listbox"`, `aria-haspopup="listbox"`, `aria-expanded`, `aria-selected`), and outside click dismiss handling.
+   - Seamless language switching without page reloads using existing `i18n.changeLanguage()`.
+2. **Native Gaming Matchmaking Lobby (`packages/client/src/components/LiveQueueList.tsx`)**:
+   - Redesigned the component from an HTML table / data grid into an integrated dark gaming panel with glowing live status indicators.
+   - Structured matchmaking entries as clean challenger cards displaying player avatar, username, `(You)` badge, game title, live animated searching timer, and currency/stake pills (`Free Play`, `Coins`, `Diamonds`).
+   - Added clear primary action buttons (`▶ Match`) with hover glow effects and dedicated "Waiting for opponent…" status indicators for self-queued matches.
+   - Implemented a friendly integrated empty state with gamepad icon and localized copy prompting players to start a queue.
+   - Suppressed accidental text selection on interactive chrome (`userSelect: 'none'`) and clarified cursor pointer affordances.
+3. **Complete Matchmaking Localization across EN, KA, RU (`packages/client/src/locales/*.json`)**:
+   - Audited and moved 100% of user-facing matchmaking strings into the i18n dictionary under the `lobby` namespace.
+   - Added complete translation resources and pluralization rules for English, Georgian, and Russian (titles, subtitles, player count status, searching timers, free play, stakes, match buttons, guest wager errors, insufficient balance messages).
+   - Added `selectLanguage` and `clearSearch` to navigation/common localization dictionaries.
+4. **Automated i18n & Monorepo Test Coverage (`scripts/i18n-check.ts`)**:
+   - Added Section 9 test in `scripts/i18n-check.ts` validating key parity, base keys matching (164 keys across all 3 languages), and dynamic language switching for lobby strings.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero errors across shared, theme, games, server, client).
+- `npm run build:client`: **PASS** (compiled in 261ms).
+- `scripts/i18n-check.ts`: **100% PASS across 9 test sections** (164 base keys identical across EN, KA, RU).
+- All 27 safe test suites (`npm test`): **100% PASS** (migration-schema-parity, auth-account-lifecycle, legal-policy-help, i18n, wallet-friends, financial-reconnection, matchmaking, determinism, score-validation, canvas-render, rate-limit, sql-injection, input-validation, xss-audit, password-security, admin-security, admin-console, cors-audit, registration-verification, owner-admin-lockout, request-logging, password-policy, file-upload, wallet-settlement-concurrency, wallet-settlement-integrity, match-lifecycle-durability, staging-readiness).
+
 ## Session 58 (2026-08-23): Authenticated User Password Change Endpoint & Profile Security UI
 
 ### Baseline

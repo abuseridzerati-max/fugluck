@@ -11,7 +11,8 @@
     "back": "Back",
     "accept": "Accept",
     "reject": "Reject",
-    "pleaseWait": "Please wait…"
+    "pleaseWait": "Please wait…",
+    "clearSearch": "Clear search"
   },
   "navigation": {
     "home": "Home",
@@ -25,7 +26,8 @@
     "admin": "Admin Console",
     "accountMenu": "Account menu",
     "notifications": "Notifications",
-    "coinsTooltip": "Coins are free play money. Diamonds are premium."
+    "coinsTooltip": "Coins are free play money. Diamonds are premium.",
+    "selectLanguage": "Select language"
   },
   "auth": {
     "loginTitle": "Log in",
@@ -176,5 +178,21 @@
       "playMoneyHeading": "Play & Money",
       "accountSafetyHeading": "Account & Safety"
     }
+  },
+  "lobby": {
+    "title": "Live Matchmaking Lobby",
+    "subtitle": "Real-time arena queue — click Match to instantly join and play",
+    "playersWaiting_one": "{{count}} player waiting",
+    "playersWaiting_other": "{{count}} players waiting",
+    "noPlayersWaiting": "0 players waiting",
+    "emptyTitle": "No Active Queues",
+    "emptyMessage": "No players are currently waiting in the public queue. Select any game below to start playing or create an open match!",
+    "searching": "Searching {{time}}",
+    "you": "(You)",
+    "freePlay": "Free Play",
+    "matchBtn": "Match",
+    "waitingOpponent": "Waiting for opponent…",
+    "guestWagerError": "Guests cannot join wager matches. Please sign up or log in.",
+    "insufficientBalance": "Insufficient {{currency}} balance ({{available}} available, {{required}} required)."
   }
 }

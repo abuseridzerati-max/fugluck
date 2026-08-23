@@ -162,6 +162,47 @@ async function runI18nAudit() {
     )
   })
 
+  // Test 9: Matchmaking Lobby Translation Parity & Dynamic Localization
+  console.log('\nTest 9: Matchmaking Lobby Translation Parity')
+  const lobbyKeys = [
+    'title',
+    'subtitle',
+    'noPlayersWaiting',
+    'emptyTitle',
+    'emptyMessage',
+    'searching',
+    'you',
+    'freePlay',
+    'matchBtn',
+    'waitingOpponent',
+    'guestWagerError',
+    'insufficientBalance',
+  ]
+
+  lobbyKeys.forEach((key) => {
+    assert(
+      typeof (en as any).lobby[key] === 'string' &&
+        typeof (ka as any).lobby[key] === 'string' &&
+        typeof (ru as any).lobby[key] === 'string',
+      `Lobby key "${key}" has translations across en, ka, ru`,
+    )
+  })
+
+  await i18n.changeLanguage('en')
+  assert(i18n.t('lobby.title') === 'Live Matchmaking Lobby', 'EN lobby title: Live Matchmaking Lobby')
+  assert(i18n.t('lobby.playersWaiting', { count: 1 }) === '1 player waiting', 'EN lobby 1 player waiting')
+  assert(i18n.t('lobby.playersWaiting', { count: 3 }) === '3 players waiting', 'EN lobby 3 players waiting')
+
+  await i18n.changeLanguage('ka')
+  assert(i18n.t('lobby.title') === 'ცოცხალი მატჩმეიკინგის ლობი', 'KA lobby title: ცოცხალი მატჩმეიკინგის ლობი')
+  assert(i18n.t('lobby.playersWaiting', { count: 1 }) === '1 მოთამაშე ელოდება', 'KA lobby 1 მოთამაშე ელოდება')
+
+  await i18n.changeLanguage('ru')
+  assert(i18n.t('lobby.title') === 'Лобби живого подбора матчей', 'RU lobby title: Лобби живого подбора матчей')
+  assert(i18n.t('lobby.playersWaiting', { count: 1 }) === '1 игрок в очереди', 'RU lobby 1 игрок в очереди')
+  assert(i18n.t('lobby.playersWaiting', { count: 3 }) === '3 игрока в очереди', 'RU lobby 3 игрока в очереди')
+  assert(i18n.t('lobby.playersWaiting', { count: 5 }) === '5 игроков в очереди', 'RU lobby 5 игроков в очереди')
+
   console.log('\nAll i18n checks passed 100% successfully!\n')
 }
 

@@ -86,7 +86,8 @@ export default function Navbar({
                 fontSize: '12px',
                 padding: '4px',
               }}
-              title="Clear search"
+              title={t('common.clearSearch', { defaultValue: 'Clear search' })}
+              aria-label={t('common.clearSearch', { defaultValue: 'Clear search' })}
             >
               ✕
             </button>
