@@ -299,7 +299,23 @@ async function verifySchema(pool: Pool): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const connectionString = process.env.DATABASE_URL!;
+  const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+  const isSslRequired =
+    !isLocalhost &&
+    (connectionString.includes("sslmode=require") ||
+      connectionString.includes("supabase.com") ||
+      connectionString.includes("neon.tech") ||
+      process.env.NODE_ENV === "production");
+
+  const cleanConnectionString = isSslRequired
+    ? connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "")
+    : connectionString;
+
+  const pool = new Pool({
+    connectionString: cleanConnectionString,
+    ssl: isSslRequired ? { rejectUnauthorized: false } : undefined,
+  });
   try {
     await applyMigrations(pool);
     await verifySchema(pool);

@@ -15,7 +15,22 @@ if (!connectionString) {
 
 import { sql } from "drizzle-orm";
 
-export const pool = new Pool({ connectionString });
+const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+const isSslRequired =
+  !isLocalhost &&
+  (connectionString.includes("sslmode=require") ||
+    connectionString.includes("supabase.com") ||
+    connectionString.includes("neon.tech") ||
+    process.env.NODE_ENV === "production");
+
+const cleanConnectionString = isSslRequired
+  ? connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "")
+  : connectionString;
+
+export const pool = new Pool({
+  connectionString: cleanConnectionString,
+  ssl: isSslRequired ? { rejectUnauthorized: false } : undefined,
+});
 export const db = drizzle(pool, { schema });
 
 let schemaEnsured = false;
