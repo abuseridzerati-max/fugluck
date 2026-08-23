@@ -88,7 +88,11 @@ app.get("/", (_req, res) => {
 // during initial testing, before the upgrade).
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   logger.error("[server] unhandled error:", err);
-  res.status(500).json({ error: "Internal server error" });
+  res.status(500).json({
+    error: "Internal server error",
+    detail: err?.message || String(err),
+    code: err?.code,
+  });
 };
 app.use(errorHandler);
 
