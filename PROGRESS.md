@@ -3,6 +3,50 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 56 (2026-08-23): New Supabase Staging Database Connection, Schema Migration & Live End-to-End Verification
+
+### Baseline
+- `faa0ce9` (`main`).
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+- Staging Database: Supabase PostgreSQL (`aws-0-ap-northeast-1.pooler.supabase.com:5432`).
+
+### Task and Objective
+Connect the Fugluck staging backend on Render to the new empty Supabase staging PostgreSQL database, initialize the full Drizzle migration chain, verify schema parity, validate database safety guards, and verify the complete live staging authentication flow end to end.
+
+### Work Accomplished & Root Cause Resolutions
+1. **Cloud PostgreSQL SSL Connection Pool Hardening**:
+   - Diagnosed that `pg.Pool` with remote Supabase / cloud PostgreSQL certificates requires explicit SSL configuration (`rejectUnauthorized: false`) when connecting across intermediate cloud proxies to prevent `SELF_SIGNED_CERT_IN_CHAIN` errors.
+   - Updated `packages/server/src/db/client.ts` and `scripts/migration-schema-parity-check.ts` to automatically detect cloud hosts (`supabase.com`, `neon.tech`, or `NODE_ENV=production`) and initialize `new Pool({ connectionString, ssl: { rejectUnauthorized: false } })`.
+2. **Canonical Database Migration Execution**:
+   - Executed the canonical migration command `npm run db:migrate` (`drizzle-kit migrate`) against the new Supabase staging database.
+   - Successfully applied the complete 8-migration sequence (`0000_early_marrow` through `0007_policy_acceptances`).
+   - Verified that all 11 tables, 28 indexes, 31 constraints, triggers (`ledger_non_negative_guard`), and required platform rake account (`platform_rake_account`) were created cleanly.
+3. **Live Health & Database Connectivity Diagnostic Probe**:
+   - Added live database query probing to `GET /api/health` returning `{ ok: true, status: "healthy", database: "connected" }`.
+   - Enhanced global error handler in staging to report structured error details.
+4. **Live End-to-End Authentication & Supabase Persistence Verification**:
+   - **Signup**: `POST https://api-staging.fugluck.com/api/auth/signup` returned **HTTP 201 Created**, creating temporary test user `stg_user_03704579` and issuing `ac_session` cookie on `.fugluck.com` with `SameSite=Lax`, `HttpOnly`, `Secure`.
+   - **Me / Current User**: `GET https://api-staging.fugluck.com/api/auth/me` returned **HTTP 200 OK** with authenticated profile and `{ coins: 1000, diamonds: 0 }`.
+   - **Logout**: `POST https://api-staging.fugluck.com/api/auth/logout` returned **HTTP 204 No Content**.
+   - **Login**: `POST https://api-staging.fugluck.com/api/auth/login` returned **HTTP 200 OK** and reissued session.
+   - **Supabase DB Row Introspection**: Queried the live Supabase PostgreSQL database directly, confirming persistence of:
+     - `users`: `id = 4643886d-2f11-4049-804d-aca0f51a6d1f`, `username = stg_user_03704579`
+     - `policy_acceptances`: 2 rows (`TERMS 2026-08-18`, `PRIVACY 2026-08-18`)
+     - `ledger_entries`: 2 rows (`signup_grant` +1000 COINS, `monthly_allowance_refill:2026-08` 0 COINS)
+     - `email_verification_tokens`: 1 active token record
+5. **Socket.IO Real-Time Handshake Verification**:
+   - `GET https://api-staging.fugluck.com/socket.io/?EIO=4&transport=polling` returned **HTTP 200 OK** with valid socket SID.
+6. **Database Safety & Test Isolation Status**:
+   - Confirmed `scripts/test-database-safety.ts` and `scripts/require-disposable-test-database.ts` prevent any test suite from running destructive operations against staging `DATABASE_URL`.
+   - Automated DB tests strictly require a separate `TEST_DATABASE_URL` matching `*_test`.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero errors across all 5 workspace packages).
+- `npm run build:client`: **PASS** (compiled in 374ms).
+- Safe test suites: **100% PASS across 20 suites** (test-database-safety, staging-readiness, i18n, determinism, score-validation, canvas-render, rate-limit, sql-injection, input-validation, xss-audit, password-security, admin-security, admin-console, cors-audit, registration-verification, request-logging, password-policy, file-upload, wallet-friends).
+- `git diff --check`: **PASS** (clean working tree).
+
 ## Session 55 (2026-08-23): Staging Authentication API Resolution Hardening & Live End-to-End Verification
 
 ### Baseline
