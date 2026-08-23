@@ -56,8 +56,21 @@ app.get("/health", (_req, res) => {
   res.json(healthPayload());
 });
 
-app.get("/api/health", (_req, res) => {
-  res.json(healthPayload());
+app.get("/api/health", async (_req, res) => {
+  let dbStatus = "unknown";
+  let dbError: string | undefined;
+  try {
+    const check = await pool.query("SELECT 1 as ping");
+    dbStatus = check.rows.length > 0 ? "connected" : "unexpected_response";
+  } catch (err: any) {
+    dbStatus = "error";
+    dbError = err?.message || String(err);
+  }
+  res.json({
+    ...healthPayload(),
+    database: dbStatus,
+    ...(dbError ? { databaseError: dbError } : {}),
+  });
 });
 
 app.get("/", (_req, res) => {
