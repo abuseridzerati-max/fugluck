@@ -30,15 +30,7 @@ const isSslRequired =
     process.env.NODE_ENV === "production");
 
 const cleanConnectionString = isSslRequired
-  ? (() => {
-      try {
-        const u = new URL(connectionString);
-        u.searchParams.delete("sslmode");
-        return u.toString();
-      } catch {
-        return connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "");
-      }
-    })()
+  ? connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "")
   : connectionString;
 
 export const pool = new Pool({
