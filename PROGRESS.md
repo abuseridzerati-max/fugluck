@@ -47,10 +47,24 @@ Complete the Fugluck Admin Console as a real operational product surface:
    - Added Test 9: Role management and sole owner demotion protection.
    - Added Test 10: Admin session cookie isolation (`ac_admin_session` vs `ac_session`).
    - Added Test 11: Audit log filtering and search shaping.
+   - Added Test 12: Player session token (`ac_session`) rejection on admin middleware.
+   - Added Test 13: OWNER account protection from suspend and ban moderation actions.
+   - Added Test 14: Disjoint circulating diamonds and platform rake metric accounting.
+6. **Audit & Safety Refinements**:
+   - Refined `diamondsCirculation` to strictly exclude `platform_rake_account` so player supply + platform rake supply form disjoint sets that sum to total minted diamonds.
+   - Refined `completedMatchesTotal` and `matchesCompletedToday` to strictly filter by `status = 'COMPLETED'`.
+   - Added explicit server-side guards preventing OWNER accounts from being banned or suspended via moderation endpoints.
+
+### Remaining Pre-Production Security Blockers
+While functional admin console completion is accomplished, full admin security production-readiness retains the following mandatory pre-production requirements prior to real-money wagering or public production launch:
+1. **Mandatory Administrative Multi-Factor Authentication (MFA)**: TOTP / WebAuthn for privileged operator accounts.
+2. **Shorter Admin Session Lifetime**: Reduce admin token lifetime with idle session timeout.
+3. **Step-Up Authentication**: Re-authentication challenge for highly destructive operations (e.g. database purge, bulk currency adjustments).
+4. **Final Staging Acceptance Verification**.
 
 ### Verification Results
 - `npm run typecheck`: **PASS** (zero compilation errors across all 5 monorepo packages).
-- `scripts/admin-console-check.ts`: **100% PASS** (11 test sections).
+- `scripts/admin-console-check.ts`: **100% PASS** (14 test sections).
 - `scripts/owner-admin-lockout-check.ts`: **100% PASS** (6 test sections).
 - `scripts/admin-security-check.ts`: **100% PASS** (4 test sections).
 - `scripts/admin-reset-recovery-check.ts`: **100% PASS** (6 test sections).

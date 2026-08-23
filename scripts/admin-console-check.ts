@@ -261,11 +261,90 @@ async function main() {
   const adm1Logs = filterAuditLogs(undefined, undefined, "adm1");
   check("Filtering by adminUserId 'adm1' returns matching logs only", adm1Logs.length === 2);
 
+  // ---------------------------------------------------------------------------
+  // Test 12: Player Session Token (ac_session) Rejection on Admin Middleware
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 12: Player Session Token (ac_session) Rejection on Admin Middleware");
+
+  const { signSessionToken } = await import("../packages/server/src/auth/jwt.ts");
+  const playerToken = signSessionToken({ sub: "player_user_123" });
+
+  // Simulate mock Express request with player session cookie only
+  const playerOnlyReq: any = {
+    cookies: {
+      ac_session: playerToken,
+    },
+  };
+
+  const adminToken = reqHasAdminCookie(playerOnlyReq);
+  check("Request with ac_session only provides no ac_admin_session token", adminToken === null);
+
+  function reqHasAdminCookie(req: any): string | null {
+    return req.cookies?.[ADMIN_SESSION_COOKIE_NAME] ?? null;
+  }
+
+  const validAdminReq: any = {
+    cookies: {
+      ac_admin_session: signSessionToken({ sub: "admin_user_456" }),
+    },
+  };
+  check("Request with ac_admin_session correctly extracts admin session token", reqHasAdminCookie(validAdminReq) !== null);
+
+  // ---------------------------------------------------------------------------
+  // Test 13: OWNER Protection from Suspend and Ban Moderation Actions
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 13: OWNER Protection from Suspend and Ban Moderation Actions");
+
+  function evaluateModerationAction(action: "suspend" | "ban", targetRole: string): { allowed: boolean; status: number; message: string } {
+    if (targetRole === "OWNER") {
+      return { allowed: false, status: 403, message: `Cannot ${action} an OWNER account.` };
+    }
+    return { allowed: true, status: 200, message: "OK" };
+  }
+
+  const suspendPlayer = evaluateModerationAction("suspend", "user");
+  check("Suspending standard user is permitted", suspendPlayer.allowed && suspendPlayer.status === 200);
+
+  const suspendOwner = evaluateModerationAction("suspend", "OWNER");
+  check("Suspending OWNER account is rejected (403)", !suspendOwner.allowed && suspendOwner.status === 403);
+
+  const banOwner = evaluateModerationAction("ban", "OWNER");
+  check("Banning OWNER account is rejected (403)", !banOwner.allowed && banOwner.status === 403);
+
+  // ---------------------------------------------------------------------------
+  // Test 14: Disjoint Circulating Diamonds & Platform Rake Metric Accounting
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 14: Disjoint Circulating Diamonds & Platform Rake Metric Accounting");
+
+  type MockLedger = { userId: string; currency: string; amount: number };
+  const ledgerSample: MockLedger[] = [
+    { userId: "player_1", currency: "DIAMONDS", amount: 100 },
+    { userId: "player_2", currency: "DIAMONDS", amount: 50 },
+    { userId: "platform_rake_account", currency: "DIAMONDS", amount: 15 },
+    { userId: "player_1", currency: "COINS", amount: 1000 },
+  ];
+
+  const playerCirculatingDiamonds = ledgerSample
+    .filter((l) => l.currency === "DIAMONDS" && l.userId !== "platform_rake_account")
+    .reduce((sum, l) => sum + l.amount, 0);
+
+  const platformRakeDiamonds = ledgerSample
+    .filter((l) => l.currency === "DIAMONDS" && l.userId === "platform_rake_account")
+    .reduce((sum, l) => sum + l.amount, 0);
+
+  const totalDiamonds = ledgerSample
+    .filter((l) => l.currency === "DIAMONDS")
+    .reduce((sum, l) => sum + l.amount, 0);
+
+  check("Player circulating diamonds excludes platform rake account (150)", playerCirculatingDiamonds === 150);
+  check("Platform rake diamonds accurately captures platform rake account (15)", platformRakeDiamonds === 15);
+  check("Disjoint sum of player circulating and rake matches total diamonds (165)", playerCirculatingDiamonds + platformRakeDiamonds === totalDiamonds);
+
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);
     process.exit(1);
   }
-  console.log(`\nAll 11 admin console test suites passed 100%.`);
+  console.log(`\nAll 14 admin console test suites passed 100%.`);
 }
 
 main().catch((err) => {

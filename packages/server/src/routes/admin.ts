@@ -118,13 +118,13 @@ adminRouter.get("/dashboard", requirePermission("ADMIN_VIEW_AUDIT"), async (_req
   const [suspendedUsersRes] = await db.select({ value: count() }).from(users).where(eq(users.status, "suspended"));
   const [bannedUsersRes] = await db.select({ value: count() }).from(users).where(eq(users.status, "banned"));
 
-  const [totalMatchesRes] = await db.select({ value: count() }).from(matchesHistory);
-  const [todayMatchesRes] = await db.select({ value: count() }).from(matchesHistory).where(gte(matchesHistory.createdAt, startOfDay));
+  const [totalMatchesRes] = await db.select({ value: count() }).from(matchesHistory).where(eq(matchesHistory.status, "COMPLETED"));
+  const [todayMatchesRes] = await db.select({ value: count() }).from(matchesHistory).where(and(eq(matchesHistory.status, "COMPLETED"), gte(matchesHistory.createdAt, startOfDay)));
   const [todayVoidedRes] = await db.select({ value: count() }).from(matchesHistory).where(and(eq(matchesHistory.status, "VOIDED"), gte(matchesHistory.createdAt, startOfDay)));
   const [totalVoidedRes] = await db.select({ value: count() }).from(matchesHistory).where(eq(matchesHistory.status, "VOIDED"));
 
   const [coinsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(eq(ledgerEntries.currency, "COINS"));
-  const [diamondsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(eq(ledgerEntries.currency, "DIAMONDS"));
+  const [diamondsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.currency, "DIAMONDS"), sql`${ledgerEntries.userId} != 'platform_rake_account'`));
   const [platformRakeRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, "platform_rake_account"), eq(ledgerEntries.currency, "DIAMONDS")));
 
   const recentAuditLogs = await db.query.adminAuditLogs.findMany({
@@ -282,6 +282,10 @@ adminRouter.post("/users/:id/suspend", requirePermission("USERS_SUSPEND"), async
     res.status(404).json({ error: "Target user not found." });
     return;
   }
+  if (target.role === "OWNER") {
+    res.status(403).json({ error: "Cannot suspend an OWNER account." });
+    return;
+  }
 
   await db.update(users).set({ status: "suspended", statusReason: reason }).where(eq(users.id, targetId));
 
@@ -311,6 +315,10 @@ adminRouter.post("/users/:id/ban", requirePermission("USERS_BAN"), async (req, r
   const target = await db.query.users.findFirst({ where: eq(users.id, targetId) });
   if (!target) {
     res.status(404).json({ error: "Target user not found." });
+    return;
+  }
+  if (target.role === "OWNER") {
+    res.status(403).json({ error: "Cannot ban an OWNER account." });
     return;
   }
 
