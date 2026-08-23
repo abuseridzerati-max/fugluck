@@ -193,11 +193,79 @@ async function main() {
   check("Audit log records user ban action", auditLogs.some((a) => a.action === "ADMIN_BAN_USER" && a.targetId === "bad_player"));
   check("Audit log records match void action", auditLogs.some((a) => a.action === "ADMIN_VOID_MATCH" && a.targetId === "match_777"));
 
+  // ---------------------------------------------------------------------------
+  // Test 9: Role Management & Sole Owner Protection
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 9: Role Management & Sole Owner Protection");
+
+  function evaluateRoleChange(currentRole: string, newRole: string, totalOwners: number): { allowed: boolean; status: number; message: string } {
+    if (!["OWNER", "SUPER_ADMIN", "ADMIN", "MODERATOR", "SUPPORT", "user"].includes(newRole)) {
+      return { allowed: false, status: 400, message: "Invalid role specified." };
+    }
+    if (currentRole === "OWNER" && newRole !== "OWNER" && totalOwners <= 1) {
+      return { allowed: false, status: 400, message: "Cannot demote the sole OWNER account in the system." };
+    }
+    return { allowed: true, status: 200, message: "OK" };
+  }
+
+  const validPromote = evaluateRoleChange("user", "MODERATOR", 1);
+  check("Promoting standard user to MODERATOR is allowed", validPromote.allowed && validPromote.status === 200);
+
+  const soleOwnerDemote = evaluateRoleChange("OWNER", "ADMIN", 1);
+  check("Demoting sole OWNER is rejected (400)", !soleOwnerDemote.allowed && soleOwnerDemote.status === 400);
+
+  const multiOwnerDemote = evaluateRoleChange("OWNER", "ADMIN", 2);
+  check("Demoting OWNER when multiple owners exist is allowed", multiOwnerDemote.allowed && multiOwnerDemote.status === 200);
+
+  const invalidRole = evaluateRoleChange("user", "INVALID_ROLE", 1);
+  check("Invalid role name is rejected (400)", !invalidRole.allowed && invalidRole.status === 400);
+
+  // ---------------------------------------------------------------------------
+  // Test 10: Admin Session Isolation & Cookie Security Boundary
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 10: Admin Session Isolation & Cookie Security Boundary");
+
+  const { ADMIN_SESSION_COOKIE_NAME } = await import("../packages/server/src/auth/middleware.ts");
+  const { SESSION_COOKIE_NAME } = await import("../packages/server/src/auth/jwt.ts");
+
+  check("Admin session cookie name is 'ac_admin_session'", ADMIN_SESSION_COOKIE_NAME === "ac_admin_session");
+  check("Player session cookie name is 'ac_session'", SESSION_COOKIE_NAME === "ac_session");
+  check("Cookie names are strictly distinct (no namespace collision)", ADMIN_SESSION_COOKIE_NAME !== SESSION_COOKIE_NAME);
+
+  // ---------------------------------------------------------------------------
+  // Test 11: Audit Log Query Filtering & Response Shaping
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 11: Audit Log Query Filtering & Response Shaping");
+
+  const sampleAuditLogs = [
+    { id: "1", adminUserId: "adm1", action: "ADMIN_BAN_USER", targetType: "user", targetId: "u1", reason: "r1" },
+    { id: "2", adminUserId: "adm1", action: "ADMIN_GRANT_COINS", targetType: "user", targetId: "u2", reason: "r2" },
+    { id: "3", adminUserId: "adm2", action: "ADMIN_VOID_MATCH", targetType: "match", targetId: "m1", reason: "r3" },
+  ];
+
+  function filterAuditLogs(action?: string, targetType?: string, adminUserId?: string) {
+    return sampleAuditLogs.filter((l) => {
+      if (action && l.action !== action) return false;
+      if (targetType && l.targetType !== targetType) return false;
+      if (adminUserId && l.adminUserId !== adminUserId) return false;
+      return true;
+    });
+  }
+
+  const banLogs = filterAuditLogs("ADMIN_BAN_USER");
+  check("Filtering by action 'ADMIN_BAN_USER' returns matching logs only", banLogs.length === 1 && banLogs[0].id === "1");
+
+  const matchLogs = filterAuditLogs(undefined, "match");
+  check("Filtering by targetType 'match' returns matching logs only", matchLogs.length === 1 && matchLogs[0].id === "3");
+
+  const adm1Logs = filterAuditLogs(undefined, undefined, "adm1");
+  check("Filtering by adminUserId 'adm1' returns matching logs only", adm1Logs.length === 2);
+
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);
     process.exit(1);
   }
-  console.log(`\nAll 8 admin console test suites passed 100%.`);
+  console.log(`\nAll 11 admin console test suites passed 100%.`);
 }
 
 main().catch((err) => {

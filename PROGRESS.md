@@ -3,6 +3,59 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 62 (2026-08-24): Fugluck Admin Console Completion & Operational Surface Hardening
+
+### Baseline
+- `027f389` (`main`).
+- Task branch: `feat/admin-console-completion`.
+- Frontend: `https://staging.fugluck.com` (Vercel).
+- Backend: `https://api-staging.fugluck.com` (Render).
+
+### Task and Objective
+Complete the Fugluck Admin Console as a real operational product surface:
+1. Operational telemetry dashboard with active match counters and circulating supply aggregates.
+2. User discovery, filtering (query, status, role), user detail inspection, and moderation controls (suspend, ban, unban, role update).
+3. Match operations with filtering (game, status, currency, ID), match detail inspector, and safe voiding with automatic compensating ledger refunds.
+4. Wallet and ledger explorer with currency/user filters, direct currency grants, and append-only compensating reversal actions.
+5. Audit log explorer with filtering (action, target type, target ID, admin ID) and formatted JSON detail inspection.
+6. Fix the Stale Admin Lockout Banner Bug via automatic session rehydration (`GET /api/admin/me`) and clean error resets on successful login.
+7. Permission-aware UX utilizing shared `@fugluck/shared` permission matrix.
+8. Destructive action UX with explicit contextual confirmation modals requiring operational reasons and displaying financial/account impacts.
+
+### Work Accomplished
+1. **Canonical Admin Types & Permissions (`packages/shared/src/admin.ts`)**:
+   - Exported `AdminRole`, `AdminPermission`, `ROLE_PERMISSIONS`, `hasPermission`, and `PERMISSION_ALIAS_MAP` from `@fugluck/shared`.
+   - Wired server `packages/server/src/auth/permissions.ts` to consume canonical shared permissions.
+2. **Backend API Polish (`packages/server/src/routes/admin.ts`)**:
+   - Added `GET /api/admin/me` returning current authenticated operator profile and granted permission list.
+   - Enhanced `GET /api/admin/dashboard` returning active user breakdowns, active match counts, today's completed/voided totals, circulating coins/diamonds, and platform diamond rake.
+   - Enhanced `GET /api/admin/users` with `role` query parameter filter.
+   - Added `POST /api/admin/users/:id/role` guarded by `ADMIN_MANAGE_ADMINS` permission with sole-owner demotion protection and audit logging.
+   - Enhanced `GET /api/admin/audit-logs` supporting `action`, `targetType`, `targetId`, and `adminUserId` filtering.
+3. **Admin Console Frontend Architecture (`packages/client/src/admin/`)**:
+   - `adminTypes.ts`: Typed data models for users, matches, ledger, audit logs, and detail views.
+   - `AdminModals.tsx`:
+     - `ActionConfirmModal`: Contextual confirmation dialogs for destructive actions (Suspend, Ban, Unban, Role Update, Match Void, Ledger Reversal) displaying impact warnings and requiring audit reasons.
+     - `GrantCurrencyModal`: Dedicated dialog for issuing bounded (1 - 100,000) integer minor unit Coins or Diamonds.
+     - `UserDetailModal`: Full drawer/modal displaying profile, balances, recent matches, ledger activity, and user audit history.
+     - `MatchDetailModal`: Full inspector showing match players, scores, pot/stakes, settlement records, related ledger entries, and audit logs.
+   - `AdminConsolePage.tsx`: Complete overhaul with dark operational UI, 5 primary tabs, server authorization badges, live telemetry refresh, pagination across all tables, permission-aware action buttons, and automatic session checking.
+4. **Stale Admin Lockout Bug Resolution**:
+   - On component mount, the client calls `GET /api/admin/me` to automatically rehydrate active `ac_admin_session` cookies without prompting for re-authentication.
+   - Login submission resets error states and clears stale lockout messages upon successful authentication. Genuine HTTP 429 lockout errors continue to be displayed properly from the backend.
+5. **Test Suite Expansion (`scripts/admin-console-check.ts`)**:
+   - Added Test 9: Role management and sole owner demotion protection.
+   - Added Test 10: Admin session cookie isolation (`ac_admin_session` vs `ac_session`).
+   - Added Test 11: Audit log filtering and search shaping.
+
+### Verification Results
+- `npm run typecheck`: **PASS** (zero compilation errors across all 5 monorepo packages).
+- `scripts/admin-console-check.ts`: **100% PASS** (11 test sections).
+- `scripts/owner-admin-lockout-check.ts`: **100% PASS** (6 test sections).
+- `scripts/admin-security-check.ts`: **100% PASS** (4 test sections).
+- `scripts/admin-reset-recovery-check.ts`: **100% PASS** (6 test sections).
+- Full test suite `npm test` (all 28 check scripts): **100% PASS**.
+
 ## Session 60 (2026-08-23): Admin Access Recovery Tool & Administrative Security Audit
 
 ### Baseline

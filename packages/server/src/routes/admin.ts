@@ -88,17 +88,44 @@ adminRouter.post("/logout", (_req, res) => {
 // Guard all operational admin routes with server-side requireOwnerAdmin
 adminRouter.use(requireOwnerAdmin);
 
+adminRouter.get("/me", async (req, res) => {
+  const user = await db.query.users.findFirst({ where: eq(users.id, req.userId!) });
+  if (!user) {
+    res.status(401).json({ error: "Admin session invalid." });
+    return;
+  }
+
+  const { ROLE_PERMISSIONS } = await import("../auth/permissions");
+  const role = (user.role in ROLE_PERMISSIONS ? user.role : "user") as import("../auth/permissions").AdminRole;
+  res.json({
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    },
+    permissions: ROLE_PERMISSIONS[role] ?? [],
+  });
+});
+
 adminRouter.get("/dashboard", requirePermission("ADMIN_VIEW_AUDIT"), async (_req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
   const [totalUsersRes] = await db.select({ value: count() }).from(users);
+  const [activeUsersRes] = await db.select({ value: count() }).from(users).where(eq(users.status, "active"));
+  const [suspendedUsersRes] = await db.select({ value: count() }).from(users).where(eq(users.status, "suspended"));
+  const [bannedUsersRes] = await db.select({ value: count() }).from(users).where(eq(users.status, "banned"));
+
   const [totalMatchesRes] = await db.select({ value: count() }).from(matchesHistory);
   const [todayMatchesRes] = await db.select({ value: count() }).from(matchesHistory).where(gte(matchesHistory.createdAt, startOfDay));
   const [todayVoidedRes] = await db.select({ value: count() }).from(matchesHistory).where(and(eq(matchesHistory.status, "VOIDED"), gte(matchesHistory.createdAt, startOfDay)));
+  const [totalVoidedRes] = await db.select({ value: count() }).from(matchesHistory).where(eq(matchesHistory.status, "VOIDED"));
 
   const [coinsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(eq(ledgerEntries.currency, "COINS"));
   const [diamondsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(eq(ledgerEntries.currency, "DIAMONDS"));
+  const [platformRakeRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, "platform_rake_account"), eq(ledgerEntries.currency, "DIAMONDS")));
 
   const recentAuditLogs = await db.query.adminAuditLogs.findMany({
     limit: 10,
@@ -110,27 +137,29 @@ adminRouter.get("/dashboard", requirePermission("ADMIN_VIEW_AUDIT"), async (_req
   res.json({
     metrics: {
       registeredUsers: totalUsersRes?.value ?? 0,
+      activeUsers: activeUsersRes?.value ?? 0,
+      suspendedUsers: suspendedUsersRes?.value ?? 0,
+      bannedUsers: bannedUsersRes?.value ?? 0,
       activeMatchesCount,
       completedMatchesTotal: totalMatchesRes?.value ?? 0,
       matchesCompletedToday: todayMatchesRes?.value ?? 0,
       matchesVoidedToday: todayVoidedRes?.value ?? 0,
+      totalMatchesVoided: totalVoidedRes?.value ?? 0,
       coinsCirculation: coinsCirculationRes?.value ?? 0,
       diamondsCirculation: diamondsCirculationRes?.value ?? 0,
+      platformRakeDiamonds: platformRakeRes?.value ?? 0,
     },
     recentAuditLogs,
   });
 });
 
 // ---------------------------------------------------------------------------
-// 1. Dashboard Overview
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// 2. User Search & Detail Management
+// 1. User Search & Detail Management
 // ---------------------------------------------------------------------------
 adminRouter.get("/users", requirePermission("USERS_VIEW"), async (req, res) => {
   const query = typeof req.query.query === "string" ? req.query.query.trim() : "";
   const status = typeof req.query.status === "string" ? req.query.status.trim() : "";
+  const role = typeof req.query.role === "string" ? req.query.role.trim() : "";
   const page = Math.max(1, Number(req.query.page ?? 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? 20)));
   const offset = (page - 1) * limit;
@@ -141,6 +170,9 @@ adminRouter.get("/users", requirePermission("USERS_VIEW"), async (req, res) => {
   }
   if (status.length > 0 && (status === "active" || status === "suspended" || status === "banned")) {
     conditions.push(eq(users.status, status));
+  }
+  if (role.length > 0 && ["OWNER", "SUPER_ADMIN", "ADMIN", "MODERATOR", "SUPPORT", "user"].includes(role)) {
+    conditions.push(eq(users.role, role));
   }
 
   const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
@@ -326,6 +358,51 @@ adminRouter.post("/users/:id/unban", requirePermission("USERS_UNBAN"), async (re
   });
 
   res.json({ success: true, status: "active", auditLogId });
+});
+
+adminRouter.post("/users/:id/role", requirePermission("ADMIN_MANAGE_ADMINS"), async (req, res) => {
+  const adminUserId = req.userId!;
+  const targetId = String(req.params.id);
+  const { role, reason } = req.body ?? {};
+
+  if (!["OWNER", "SUPER_ADMIN", "ADMIN", "MODERATOR", "SUPPORT", "user"].includes(role)) {
+    res.status(400).json({ error: "Invalid role specified." });
+    return;
+  }
+  if (typeof reason !== "string" || reason.trim().length === 0) {
+    res.status(400).json({ error: "An explicit reason is required to modify user role." });
+    return;
+  }
+
+  const target = await db.query.users.findFirst({ where: eq(users.id, targetId) });
+  if (!target) {
+    res.status(404).json({ error: "Target user not found." });
+    return;
+  }
+
+  if (target.role === "OWNER" && role !== "OWNER") {
+    const allUsers = await db.query.users.findMany();
+    const owners = allUsers.filter((u) => u.role === "OWNER");
+    if (owners.length <= 1) {
+      res.status(400).json({ error: "Cannot demote the sole OWNER account in the system." });
+      return;
+    }
+  }
+
+  await db.update(users).set({ role }).where(eq(users.id, targetId));
+
+  const auditLogId = `audit_${randomUUID()}`;
+  await db.insert(adminAuditLogs).values({
+    id: auditLogId,
+    adminUserId,
+    action: "ADMIN_UPDATE_USER_ROLE",
+    targetType: "user",
+    targetId,
+    reason,
+    details: { previousRole: target.role, newRole: role },
+  });
+
+  res.json({ success: true, role, auditLogId });
 });
 
 // ---------------------------------------------------------------------------
@@ -743,17 +820,30 @@ adminRouter.post("/wallet/reverse", requirePermission("WALLET_REVERSE_TRANSACTIO
 // 5. Audit Log Explorer
 // ---------------------------------------------------------------------------
 adminRouter.get("/audit-logs", requirePermission("ADMIN_VIEW_AUDIT"), async (req, res) => {
+  const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
+  const targetType = typeof req.query.targetType === "string" ? req.query.targetType.trim() : "";
+  const targetId = typeof req.query.targetId === "string" ? req.query.targetId.trim() : "";
+  const adminUserId = typeof req.query.adminUserId === "string" ? req.query.adminUserId.trim() : "";
   const page = Math.max(1, Number(req.query.page ?? 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? 20)));
   const offset = (page - 1) * limit;
 
+  const conditions = [];
+  if (action.length > 0) conditions.push(eq(adminAuditLogs.action, action));
+  if (targetType.length > 0) conditions.push(eq(adminAuditLogs.targetType, targetType));
+  if (targetId.length > 0) conditions.push(eq(adminAuditLogs.targetId, targetId));
+  if (adminUserId.length > 0) conditions.push(eq(adminAuditLogs.adminUserId, adminUserId));
+
+  const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
   const logs = await db.query.adminAuditLogs.findMany({
+    where: whereCondition,
     limit,
     offset,
     orderBy: [desc(adminAuditLogs.createdAt)],
   });
 
-  const [totalRes] = await db.select({ value: count() }).from(adminAuditLogs);
+  const [totalRes] = await db.select({ value: count() }).from(adminAuditLogs).where(whereCondition);
 
   res.json({
     auditLogs: logs,

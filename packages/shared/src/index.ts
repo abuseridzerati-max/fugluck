@@ -33,3 +33,5 @@ export type { ReplayAdapter, ReplayOutcome } from "./replay";
 export { checkReplayRequestShape, replayEngine, UnrecognizedActionError, MAX_REPLAY_TICKS, MAX_INPUT_LOG_ENTRIES } from "./replay";
 export type { PolicyType, PolicyAcceptanceRecord, SignupAcceptedPolicies, PolicyNavItem } from "./policies";
 export { CURRENT_POLICY_VERSIONS, POLICY_NAV_ITEMS } from "./policies";
+export type { AdminRole, AdminPermission } from "./admin";
+export { ROLE_PERMISSIONS, ALL_ADMIN_PERMISSIONS, hasPermission, PERMISSION_ALIAS_MAP } from "./admin";
