@@ -300,6 +300,7 @@ async function verifySchema(pool: Pool): Promise<void> {
 
 async function main(): Promise<void> {
   const connectionString = process.env.DATABASE_URL!;
+  // Scoped SSL config for cloud PostgreSQL connections (Supabase/Neon)
   const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
   const isSslRequired =
     !isLocalhost &&

@@ -58,18 +58,16 @@ app.get("/health", (_req, res) => {
 
 app.get("/api/health", async (_req, res) => {
   let dbStatus = "unknown";
-  let dbError: string | undefined;
   try {
     const check = await pool.query("SELECT 1 as ping");
-    dbStatus = check.rows.length > 0 ? "connected" : "unexpected_response";
+    dbStatus = check.rows.length > 0 ? "connected" : "unavailable";
   } catch (err: any) {
-    dbStatus = "error";
-    dbError = err?.message || String(err);
+    logger.warn("[health] database connectivity check failed:", err?.message || err);
+    dbStatus = "unavailable";
   }
   res.json({
     ...healthPayload(),
     database: dbStatus,
-    ...(dbError ? { databaseError: dbError } : {}),
   });
 });
 
@@ -88,11 +86,7 @@ app.get("/", (_req, res) => {
 // during initial testing, before the upgrade).
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   logger.error("[server] unhandled error:", err);
-  res.status(500).json({
-    error: "Internal server error",
-    detail: err?.message || String(err),
-    code: err?.code,
-  });
+  res.status(500).json({ error: "Internal server error" });
 };
 app.use(errorHandler);
 

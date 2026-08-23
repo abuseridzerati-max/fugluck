@@ -15,6 +15,12 @@ if (!connectionString) {
 
 import { sql } from "drizzle-orm";
 
+// Determine SSL requirements. Remote cloud PostgreSQL providers (Supabase Supavisor
+// pooler, Neon, AWS) use intermediate cloud connection proxies. In Node.js 'pg',
+// connecting with TLS encryption to Supabase poolers requires rejectUnauthorized: false
+// unless Supabase's private root CA certificate is injected into the trust store.
+// This setting is strictly scoped to the PostgreSQL client connection pool and does
+// NOT affect global Node.js TLS verification.
 const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 const isSslRequired =
   !isLocalhost &&
