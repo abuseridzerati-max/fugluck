@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@fugluck/shared'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -7,6 +7,7 @@ import GameLoader from './game-loader/GameLoader'
 import { gameFactories } from './game-loader/gameFactories'
 import MatchLoader from './game-loader/MatchLoader'
 import { InviteProvider } from './invites/InviteProvider'
+import InviteLanding from './invites/InviteLanding'
 import type { MatchSocketMode } from './matchmaking/useMatchSocket'
 import AdminConsolePage from './admin/AdminConsolePage'
 import FriendsPage from './pages/FriendsPage'
@@ -18,7 +19,7 @@ import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import WalletPage from './pages/WalletPage'
-import { apiFetch } from './lib/api'
+import { apiFetch, ApiError } from './lib/api'
 
 type ActiveGame = {
   id: string
@@ -97,6 +98,11 @@ function readStoredActiveMatch(): StoredActiveMatch | null {
   }
 }
 
+function parseInviteCode(pathname: string): string | null {
+  const match = pathname.match(/^\/(?:play\/)?invite\/([a-zA-Z0-9_-]+)/)
+  return match?.[1] ?? null
+}
+
 function getViewFromPath(pathname: string): View {
   const cleanPath = pathname.replace(/\/$/, '') || '/'
   if (cleanPath === '/' || cleanPath === '/home') return 'home'
@@ -109,7 +115,7 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/verify-email') return 'verify-email'
   if (cleanPath === '/reset-password') return 'reset-password'
   if (cleanPath === '/help') return 'help'
-  if (cleanPath.startsWith('/invite/')) return 'invite'
+  if (cleanPath.startsWith('/invite/') || cleanPath.startsWith('/play/invite/')) return 'invite'
 
   const stripped = cleanPath.slice(1)
   if (POLICY_SLUGS.includes(stripped as PolicySlug)) {
@@ -177,6 +183,14 @@ function AppShell() {
   const [restoringActiveMatch, setRestoringActiveMatch] = useState(() => readStoredActiveMatch() !== null)
   const [pendingRedirectView, setPendingRedirectView] = useState<View | null>(null)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
+  const [inviteJoin, setInviteJoin] = useState<{
+    status: 'looking-up' | 'joining' | 'error'
+    code: string
+    hostUsername?: string
+    gameTitle?: string
+    message?: string
+  } | null>(null)
+  const inviteJoinAttemptRef = useRef<string | null>(null)
 
   useEffect(() => {
     const stored = readStoredActiveMatch()
@@ -280,28 +294,44 @@ function AppShell() {
   }
 
   useEffect(() => {
-    if (view === 'invite') {
-      const match = window.location.pathname.match(/^\/invite\/([a-zA-Z0-9_-]+)/)
-      const code = match ? match[1] : null
-      if (code) {
-        apiFetch<{ valid: boolean; gameId: string; hostUsername: string }>(`/api/matches/guest-link/${code}`)
-          .then((res) => {
-            if (res.valid && res.gameId && gameFactories[res.gameId]) {
-              const title = getGameTitle(res.gameId)
-              storeActiveMatch({ id: res.gameId, title })
-              void loadGame(res.gameId, title, 'match', { kind: 'joinGuest', code })
-            } else {
-              navigateTo('home')
-            }
-          })
-          .catch(() => {
-            navigateTo('home')
-          })
-      } else {
-        navigateTo('home')
-      }
+    if (view !== 'invite') {
+      inviteJoinAttemptRef.current = null
+      if (inviteJoin) setInviteJoin(null)
+      return
     }
+    const code = parseInviteCode(window.location.pathname)
+    if (!code) {
+      setInviteJoin({ status: 'error', code: '', message: 'This invite link is missing a code.' })
+      return
+    }
+    void joinInviteLink(code)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
+
+  async function joinInviteLink(code: string) {
+    if (inviteJoinAttemptRef.current === code) return
+    inviteJoinAttemptRef.current = code
+    setInviteJoin({ status: 'looking-up', code })
+    try {
+      const res = await apiFetch<{ valid: boolean; gameId: string; hostUsername: string }>(`/api/matches/guest-link/${code}`)
+      if (!res.valid || !res.gameId || !gameFactories[res.gameId]) {
+        setInviteJoin({
+          status: 'error',
+          code,
+          message: 'This invite expired or the host went offline.',
+        })
+        return
+      }
+      const title = getGameTitle(res.gameId)
+      setInviteJoin({ status: 'joining', code, hostUsername: res.hostUsername, gameTitle: title })
+      storeActiveMatch({ id: res.gameId, title })
+      await loadGame(res.gameId, title, 'match', { kind: 'joinGuest', code })
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not reach the server. Check your connection and try again.'
+      setInviteJoin({ status: 'error', code, message })
+    }
+  }
 
   function handlePlayGame(id: string, title: string) {
     return loadGame(id, title, 'practice')
@@ -342,6 +372,8 @@ function AppShell() {
           key={activeGame.id}
           createModule={activeGame.factory}
           gameTitle={activeGame.title}
+          gameId={activeGame.id}
+          onPlayMatch={() => handleFindOpponent(activeGame.id, activeGame.title)}
           onExit={() => setActiveGame(null)}
         />
       ) : activeGame?.mode === 'match' ? (
@@ -352,9 +384,26 @@ function AppShell() {
           gameId={activeGame.id}
           matchMode={activeGame.matchMode}
           onMatchResolved={clearActiveMatch}
+          onFindNewOpponent={() => {
+            const stake = activeGame.matchMode && 'stake' in activeGame.matchMode ? activeGame.matchMode.stake : undefined
+            const currency = activeGame.matchMode && 'currency' in activeGame.matchMode ? activeGame.matchMode.currency : undefined
+            clearActiveMatch()
+            setActiveGame(null)
+            setTimeout(() => {
+              void handleFindOpponent(activeGame.id, activeGame.title, stake, currency)
+            }, 50)
+          }}
+          onPlayPractice={() => {
+            clearActiveMatch()
+            setActiveGame(null)
+            setTimeout(() => {
+              void handlePlayGame(activeGame.id, activeGame.title)
+            }, 50)
+          }}
           onExit={() => {
             clearActiveMatch()
             setActiveGame(null)
+            if (view === 'invite') navigateTo('home')
           }}
         />
       ) : view === 'profile' ? (
@@ -394,6 +443,23 @@ function AppShell() {
         <PolicyPage
           policySlug={view.slice(7)}
           onNavigate={(path) => navigateTo(getViewFromPath(path))}
+        />
+      ) : view === 'invite' ? (
+        <InviteLanding
+          status={inviteJoin?.status ?? 'looking-up'}
+          code={inviteJoin?.code ?? parseInviteCode(window.location.pathname) ?? ''}
+          hostUsername={inviteJoin?.hostUsername}
+          gameTitle={inviteJoin?.gameTitle}
+          message={inviteJoin?.message}
+          onRetry={inviteJoin?.code ? () => {
+            inviteJoinAttemptRef.current = null
+            void joinInviteLink(inviteJoin.code)
+          } : undefined}
+          onHome={() => {
+            inviteJoinAttemptRef.current = null
+            setInviteJoin(null)
+            navigateTo('home')
+          }}
         />
       ) : view === 'not-found' ? (
         <NotFoundPage

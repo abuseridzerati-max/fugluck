@@ -24,7 +24,9 @@ import "./require-disposable-test-database.ts";
 import {
   createMatch,
   FORFEIT_GRACE_MS,
+  handleDeclineRematch,
   handleDisconnect,
+  handleRequestRematch,
   submitScore,
 } from "../packages/server/src/matchmaking/matches.ts";
 import {
@@ -39,6 +41,7 @@ import {
 import {
   cancelInvitesForSocket,
   getGuestLinkInfo,
+  handleCancelGuestLink,
   handleCreateGuestLink,
   handleJoinGuestLink,
 } from "../packages/server/src/matchmaking/invites.ts";
@@ -526,15 +529,17 @@ console.log("\nTest 13: instant guest invite link lifecycle\n");
 
   const guestLinkCreated = host.emitted.find((e) => e.event === "guestLinkCreated")?.payload as any;
   const inviteSent = host.emitted.find((e) => e.event === "inviteSent")?.payload as any;
+  const code = guestLinkCreated?.code as string;
 
   check("handleCreateGuestLink emits guestLinkCreated with code and gameId", Boolean(guestLinkCreated?.code && guestLinkCreated?.gameId === "neon-runner"));
   check("handleCreateGuestLink emits inviteSent with code as inviteId", Boolean(inviteSent?.inviteId === guestLinkCreated?.code));
-
-  const code = guestLinkCreated.code;
+  check("guestLinkCreated includes expiresAt", typeof guestLinkCreated?.expiresAt === "number" && guestLinkCreated.expiresAt > Date.now());
+  check("guest link code is at least 12 characters", typeof code === "string" && code.length >= 12);
 
   // Lookup metadata
   const validInfo = getGuestLinkInfo(code);
   check("getGuestLinkInfo returns valid=true with gameId and hostUsername for active link", validInfo.valid === true && validInfo.gameId === "neon-runner" && validInfo.hostUsername === "HostGamer");
+  check("getGuestLinkInfo reports hostOnline=true while host socket is connected", validInfo.hostOnline === true);
 
   const invalidInfo = getGuestLinkInfo("nonexistent_code");
   check("getGuestLinkInfo returns valid=false for unknown link", invalidInfo.valid === false);
@@ -575,7 +580,126 @@ console.log("\nTest 13: instant guest invite link lifecycle\n");
 
   cancelInvitesForSocket(host2);
   const infoAfterDC = getGuestLinkInfo(dcCode);
-  check("cancelInvitesForSocket cleans up hosted guest link upon host disconnect", infoAfterDC.valid === false);
+  check("host disconnect parks the guest link instead of destroying it immediately", infoAfterDC.valid === true && infoAfterDC.hostOnline === false);
+
+  const host2b = fakeSocket("user_host_dc", "HostDC");
+  handleCreateGuestLink(host2b, { gameId: "space-blaster" });
+  const rebound = host2b.emitted.find((e) => e.event === "guestLinkCreated")?.payload as any;
+  check("host reconnect reuses the same guest link code", rebound?.code === dcCode);
+
+  handleCancelGuestLink(host2b);
+  const infoAfterCancel = getGuestLinkInfo(dcCode);
+  check("handleCancelGuestLink destroys the parked guest link immediately", infoAfterCancel.valid === false);
+
+  // Host blip while a guest is waiting: joiner is held, then matched on rebind.
+  const host3 = fakeSocket("user_host_pending", "HostPending");
+  handleCreateGuestLink(host3, { gameId: "cyber-hopper" });
+  const pendingCode = (host3.emitted.find((e) => e.event === "guestLinkCreated")?.payload as any)?.code;
+  host3.connected = false;
+  cancelInvitesForSocket(host3);
+  const waitingGuest = fakeSocket("guest_waiter", "WaitingGuest");
+  handleJoinGuestLink(waitingGuest, { code: pendingCode });
+  const pendingEvt = waitingGuest.emitted.find((e) => e.event === "guestLinkPending")?.payload as any;
+  check("guest joining during host reconnect grace is held as pending", pendingEvt?.message?.includes("reconnect"));
+
+  const host3b = fakeSocket("user_host_pending", "HostPending");
+  handleCreateGuestLink(host3b, { gameId: "cyber-hopper" });
+  await waitForEvent(waitingGuest, "matched");
+  await waitForEvent(host3b, "matched");
+  check("pending guest is matched when the host reconnects with the same code", waitingGuest.emitted.some((e) => e.event === "matched"));
+  check("rebinding host is matched with the pending guest", host3b.emitted.some((e) => e.event === "matched"));
+}
+
+// ---------------------------------------------------------------------------
+// Test 14: rematch after both players finish
+// ---------------------------------------------------------------------------
+console.log("\nTest 14: rematch after resolved match\n");
+
+{
+  const p1 = fakeSocket("user_rm_a", "RematchA");
+  const p2 = fakeSocket("user_rm_b", "RematchB");
+  const seed = generateSeed();
+  await createMatch(
+    "neon-runner",
+    { socket: p1, userId: "user_rm_a", username: "RematchA", currency: "COINS", stake: 0 },
+    { socket: p2, userId: "user_rm_b", username: "RematchB", currency: "COINS", stake: 0 },
+    seed,
+  );
+  const firstMatchId = (p1.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId as string;
+  const p1Log = periodicLog("jumpPressed", "jumpReleased", 20, 25);
+  const p2Log: InputLogEntry[] = [];
+  const p1Outcome = replayEngine(neonRunnerReplayAdapter, seed, p1Log, VIEWPORT);
+  const p2Outcome = replayEngine(neonRunnerReplayAdapter, seed, p2Log, VIEWPORT);
+
+  await submitScore(p1, {
+    matchId: firstMatchId,
+    score: p1Outcome.finalScore,
+    reason: "collision",
+    durationMs: Math.round((p1Outcome.finalTick / 60) * 1000),
+    inputLog: p1Log,
+    viewport: VIEWPORT,
+  });
+  await submitScore(p2, {
+    matchId: firstMatchId,
+    score: p2Outcome.finalScore,
+    reason: "collision",
+    durationMs: Math.round((p2Outcome.finalTick / 60) * 1000),
+    inputLog: p2Log,
+    viewport: VIEWPORT,
+  });
+
+  const resolved1 = p1.emitted.find((e) => e.event === "matchResolved")?.payload as any;
+  const resolved2 = p2.emitted.find((e) => e.event === "matchResolved")?.payload as any;
+  check("resolved payload offers rematch while both sockets stay connected", resolved1?.canRematch === true && resolved2?.canRematch === true);
+
+  handleRequestRematch(p1, { matchId: firstMatchId });
+  check("first rematch request puts requester in waiting state", p1.emitted.some((e) => e.event === "rematchWaiting"));
+  check("opponent receives rematchOffered", p2.emitted.some((e) => e.event === "rematchOffered"));
+
+  const matchedBefore = p1.emitted.filter((e) => e.event === "matched").length;
+  handleRequestRematch(p2, { matchId: firstMatchId });
+  const rematchDeadline = Date.now() + 5_000;
+  while (p1.emitted.filter((e) => e.event === "matched").length < matchedBefore + 1 && Date.now() < rematchDeadline) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  const matchedAfter = p1.emitted.filter((e) => e.event === "matched").length;
+  const rematchPayload = [...p1.emitted].reverse().find((e) => e.event === "matched")?.payload as any;
+  check("both rematch requests start a new match", matchedAfter === matchedBefore + 1);
+  check("rematch issues a new matchId", Boolean(rematchPayload?.matchId) && rematchPayload.matchId !== firstMatchId);
+  check("rematch keeps the same gameId", rematchPayload?.gameId === "neon-runner");
+
+  const p3 = fakeSocket("user_rm_c", "RematchC");
+  const p4 = fakeSocket("user_rm_d", "RematchD");
+  const seed2 = generateSeed();
+  await createMatch(
+    "neon-runner",
+    { socket: p3, userId: "user_rm_c", username: "RematchC", currency: "COINS", stake: 0 },
+    { socket: p4, userId: "user_rm_d", username: "RematchD", currency: "COINS", stake: 0 },
+    seed2,
+  );
+  const declineMatchId = (p3.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId as string;
+  const p3Log: InputLogEntry[] = [];
+  const p3Outcome = replayEngine(neonRunnerReplayAdapter, seed2, p3Log, VIEWPORT);
+  await submitScore(p3, {
+    matchId: declineMatchId,
+    score: p3Outcome.finalScore,
+    reason: "collision",
+    durationMs: Math.round((p3Outcome.finalTick / 60) * 1000),
+    inputLog: p3Log,
+    viewport: VIEWPORT,
+  });
+  await submitScore(p4, {
+    matchId: declineMatchId,
+    score: p3Outcome.finalScore,
+    reason: "collision",
+    durationMs: Math.round((p3Outcome.finalTick / 60) * 1000),
+    inputLog: p3Log,
+    viewport: VIEWPORT,
+  });
+  handleRequestRematch(p3, { matchId: declineMatchId });
+  handleDeclineRematch(p4, { matchId: declineMatchId });
+  const declined = p3.emitted.find((e) => e.event === "rematchUnavailable")?.payload as any;
+  check("declining rematch notifies the requester", typeof declined?.reason === "string" && declined.reason.length > 0);
 }
 
 // ---------------------------------------------------------------------------

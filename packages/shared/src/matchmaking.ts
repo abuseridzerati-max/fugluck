@@ -80,6 +80,9 @@ export type MatchResolvedPayload = {
   outcome: MatchOutcome;
   you: PlayerResult;
   opponent: PlayerResult;
+  // True when the opponent is still on the results screen and a rematch can
+  // be offered. False after a disconnect resolution or if they already left.
+  canRematch: boolean;
 };
 
 // Evidence-only — logged server-side, never affects a verdict or outcome.
@@ -142,6 +145,25 @@ export type QueueStateUpdatePayload = {
 export type GuestLinkCreatedPayload = {
   code: string;
   gameId: string;
+  expiresAt: number;
+};
+
+export type GuestLinkPendingPayload = {
+  message: string;
+};
+
+export type RematchOfferedPayload = {
+  matchId: string;
+  fromUsername: string;
+};
+
+export type RematchWaitingPayload = {
+  matchId: string;
+};
+
+export type RematchUnavailablePayload = {
+  matchId: string;
+  reason: string;
 };
 
 export interface ClientToServerEvents {
@@ -154,6 +176,11 @@ export interface ClientToServerEvents {
   cancelInvite: (payload: { inviteId: string }) => void;
   createGuestLink: (payload: { gameId: string }) => void;
   joinGuestLink: (payload: { code: string }) => void;
+  // Host explicitly cancelled the waiting screen — destroy the link immediately
+  // rather than waiting out the reconnect grace window.
+  cancelGuestLink: () => void;
+  requestRematch: (payload: { matchId: string }) => void;
+  declineRematch: (payload: { matchId: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -166,6 +193,10 @@ export interface ServerToClientEvents {
   // Echoed to the inviter so the waiting UI knows which inviteId to cancel.
   inviteSent: (payload: { inviteId: string; gameId: string; toUsername: string }) => void;
   guestLinkCreated: (payload: GuestLinkCreatedPayload) => void;
+  guestLinkPending: (payload: GuestLinkPendingPayload) => void;
+  rematchOffered: (payload: RematchOfferedPayload) => void;
+  rematchWaiting: (payload: RematchWaitingPayload) => void;
+  rematchUnavailable: (payload: RematchUnavailablePayload) => void;
   // Real-time broadcast of waiting players in the public matchmaking lobby.
   queueStateUpdate: (payload: QueueStateUpdatePayload) => void;
 }

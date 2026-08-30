@@ -8,6 +8,7 @@ export { createFixedTimestepLoop, FIXED_TIMESTEP_SEC } from "./fixedTimestepLoop
 export type {
   ClientToServerEvents,
   GuestLinkCreatedPayload,
+  GuestLinkPendingPayload,
   InviteErrorPayload,
   InviteFriendPayload,
   InviteReceivedPayload,
@@ -20,6 +21,9 @@ export type {
   QueueErrorPayload,
   QueueStateEntry,
   QueueStateUpdatePayload,
+  RematchOfferedPayload,
+  RematchUnavailablePayload,
+  RematchWaitingPayload,
   RespondInvitePayload,
   ScoreVerdict,
   ServerToClientEvents,

@@ -12,7 +12,7 @@ import {
   refundMatchSettlementInTransaction,
 } from "../wallet/ledger";
 import type { MatchmakingSocket } from "./socketAuth";
-import { removeFromQueue, type QueueEntry } from "./queue";
+import { generateSeed, removeFromQueue, type QueueEntry } from "./queue";
 
 let historyTableEnsured = false;
 export async function ensureMatchesHistoryTable() {
@@ -332,11 +332,17 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
       // @ts-expect-error custom event emission for live balance update
       p2.socket.emit("balanceUpdate", { balances: balances.p2Balances });
     }
+    const canRematch = Boolean(
+      !disconnectedPlayer && p1.socket.connected && p2.socket.connected,
+    );
+    if (canRematch) {
+      openRematchWindow(match);
+    }
     if (p1.socket.connected) {
-      p1.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.a, you: r1, opponent: r2 });
+      p1.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.a, you: r1, opponent: r2, canRematch });
     }
     if (p2.socket.connected) {
-      p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1 });
+      p2.socket.emit("matchResolved", { matchId: match.id, outcome: outcome.b, you: r2, opponent: r1, canRematch });
     }
   } catch (err) {
     match.resolutionInFlight = false;
@@ -370,6 +376,10 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
 // against a bogus matchId, same spirit as submitScore's own matchId check.
 export function isSocketInMatch(socket: MatchmakingSocket, matchId: string): boolean {
   return socketToMatch.get(socket) === matchId;
+}
+
+export function getMatchIdForSocket(socket: MatchmakingSocket): string | undefined {
+  return socketToMatch.get(socket);
 }
 
 export async function createMatch(
@@ -510,6 +520,7 @@ async function executeDisconnectForfeit(match: MatchState, disconnected: MatchPl
 // If reconnected before grace period expires, match state resumes seamlessly.
 export async function handleDisconnect(socket: MatchmakingSocket, graceMs: number = RECONNECT_GRACE_MS): Promise<void> {
   removeFromQueue(socket);
+  cancelRematchForSocket(socket, "Opponent left.");
 
   const matchId = socketToMatch.get(socket);
   if (!matchId) return;
@@ -540,6 +551,7 @@ export async function handleDisconnect(socket: MatchmakingSocket, graceMs: numbe
 
 // Re-attaches a reconnected socket to an active match if within the grace window.
 export function handleReconnect(userId: string, newSocket: MatchmakingSocket): boolean {
+  rebindRematchSocket(userId, newSocket);
   for (const [matchId, match] of matches) {
     const player = playerForUserId(match, userId);
     if (player && !player.result) {
@@ -625,4 +637,160 @@ export async function recoverOrphanMatches(): Promise<number> {
     }
   }
   return recoveredCount;
+}
+
+export const REMATCH_WINDOW_MS = 90_000;
+
+type RematchPlayer = {
+  userId: string;
+  username: string;
+  socket: MatchmakingSocket;
+  wantsRematch: boolean;
+};
+
+type RematchWindow = {
+  originalMatchId: string;
+  gameId: string;
+  currency: "COINS" | "DIAMONDS";
+  stake: number;
+  players: [RematchPlayer, RematchPlayer];
+  timer: ReturnType<typeof setTimeout>;
+};
+
+const rematchByMatchId = new Map<string, RematchWindow>();
+const socketToRematch = new Map<MatchmakingSocket, string>();
+
+function rematchPlayerFor(window: RematchWindow, socket: MatchmakingSocket): RematchPlayer | null {
+  if (window.players[0].socket === socket) return window.players[0];
+  if (window.players[1].socket === socket) return window.players[1];
+  return null;
+}
+
+function rematchPlayerForUserId(window: RematchWindow, userId: string): RematchPlayer | null {
+  if (window.players[0].userId === userId) return window.players[0];
+  if (window.players[1].userId === userId) return window.players[1];
+  return null;
+}
+
+function closeRematchWindow(window: RematchWindow, reason?: string, exceptSocket?: MatchmakingSocket): void {
+  clearTimeout(window.timer);
+  rematchByMatchId.delete(window.originalMatchId);
+  for (const player of window.players) {
+    if (socketToRematch.get(player.socket) === window.originalMatchId) {
+      socketToRematch.delete(player.socket);
+    }
+    if (reason && player.socket.connected && player.socket !== exceptSocket) {
+      player.socket.emit("rematchUnavailable", { matchId: window.originalMatchId, reason });
+    }
+  }
+}
+
+function openRematchWindow(match: MatchState): void {
+  const existing = rematchByMatchId.get(match.id);
+  if (existing) closeRematchWindow(existing);
+
+  const [p1, p2] = match.players;
+  const timer = setTimeout(() => {
+    const active = rematchByMatchId.get(match.id);
+    if (active) closeRematchWindow(active, "Rematch offer expired.");
+  }, REMATCH_WINDOW_MS);
+  if (typeof timer === "object" && timer !== null && "unref" in timer) {
+    (timer as { unref: () => void }).unref();
+  }
+
+  const window: RematchWindow = {
+    originalMatchId: match.id,
+    gameId: match.gameId,
+    currency: match.currency,
+    stake: match.stake,
+    players: [
+      { userId: p1.userId, username: p1.username, socket: p1.socket, wantsRematch: false },
+      { userId: p2.userId, username: p2.username, socket: p2.socket, wantsRematch: false },
+    ],
+    timer,
+  };
+  rematchByMatchId.set(match.id, window);
+  socketToRematch.set(p1.socket, match.id);
+  socketToRematch.set(p2.socket, match.id);
+}
+
+function rebindRematchSocket(userId: string, newSocket: MatchmakingSocket): void {
+  for (const window of rematchByMatchId.values()) {
+    const player = rematchPlayerForUserId(window, userId);
+    if (!player) continue;
+    if (socketToRematch.get(player.socket) === window.originalMatchId) {
+      socketToRematch.delete(player.socket);
+    }
+    player.socket = newSocket;
+    socketToRematch.set(newSocket, window.originalMatchId);
+  }
+}
+
+function cancelRematchForSocket(socket: MatchmakingSocket, reason: string): void {
+  const matchId = socketToRematch.get(socket);
+  if (!matchId) return;
+  const window = rematchByMatchId.get(matchId);
+  if (!window) {
+    socketToRematch.delete(socket);
+    return;
+  }
+  closeRematchWindow(window, reason);
+}
+
+export function handleRequestRematch(socket: MatchmakingSocket, payload: { matchId?: unknown }): void {
+  if (!payload || typeof payload.matchId !== "string") {
+    socket.emit("rematchUnavailable", { matchId: "", reason: "Invalid rematch request." });
+    return;
+  }
+
+  const window = rematchByMatchId.get(payload.matchId);
+  const player = window ? rematchPlayerFor(window, socket) : null;
+  if (!window || !player) {
+    socket.emit("rematchUnavailable", { matchId: payload.matchId, reason: "Rematch is no longer available." });
+    return;
+  }
+
+  player.wantsRematch = true;
+  const opponent = window.players[0] === player ? window.players[1] : window.players[0];
+
+  if (opponent.wantsRematch) {
+    if (!player.socket.connected || !opponent.socket.connected) {
+      closeRematchWindow(window, "Opponent left.");
+      return;
+    }
+    const gameId = window.gameId;
+    const a: QueueEntry = {
+      socket: window.players[0].socket,
+      userId: window.players[0].userId,
+      username: window.players[0].username,
+      currency: window.currency,
+      stake: window.stake,
+    };
+    const b: QueueEntry = {
+      socket: window.players[1].socket,
+      userId: window.players[1].userId,
+      username: window.players[1].username,
+      currency: window.currency,
+      stake: window.stake,
+    };
+    closeRematchWindow(window);
+    void createMatch(gameId, a, b, generateSeed());
+    return;
+  }
+
+  socket.emit("rematchWaiting", { matchId: window.originalMatchId });
+  if (opponent.socket.connected) {
+    opponent.socket.emit("rematchOffered", {
+      matchId: window.originalMatchId,
+      fromUsername: player.username,
+    });
+  }
+}
+
+export function handleDeclineRematch(socket: MatchmakingSocket, payload: { matchId?: unknown }): void {
+  const matchId = typeof payload?.matchId === "string" ? payload.matchId : socketToRematch.get(socket);
+  if (!matchId) return;
+  const window = rematchByMatchId.get(matchId);
+  if (!window || !rematchPlayerFor(window, socket)) return;
+  closeRematchWindow(window, "Opponent declined a rematch.", socket);
 }

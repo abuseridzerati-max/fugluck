@@ -3,6 +3,93 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 64 (2026-08-30): Full Audit, Live Verification & Integration of Rematch and Guest Invite Links onto Main
+
+### Baseline
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Alternate remote: `gigondziii` (`https://github.com/Gigondziii/arcadeclash.git`)
+- Integration branch: `fix/integrate-rematch-invite` (based on `origin/main` `11620f3`)
+
+### Audit Findings & Verification
+1. **Remote Upstream Audit**:
+   - Pulled and analyzed the commit from the other computer (`8518bd9`: `fix(fugluck): add rematch flow and repair invite links`).
+   - Confirmed full end-to-end integration across `@fugluck/shared`, `@fugluck/server`, and `@fugluck/client`.
+2. **Rematch Flow Verification**:
+   - Traced `openRematchWindow`, `handleRequestRematch`, `handleDeclineRematch`, and automatic socket rebinds in `packages/server/src/matchmaking/matches.ts`.
+   - Verified that guest rematches preserve `stake: 0` invariant and registered player rematches cleanly separate initial match settlement from rematch escrow.
+   - Fixed background `REMATCH_WINDOW_MS` timer to include `.unref()` so background expiration does not block the Node.js event loop during headless test execution.
+3. **Guest Invite Link Verification**:
+   - Traced 12-char secure code generation, 10-minute link TTL, 45s host reconnect grace parking, and pending joiner queues in `packages/server/src/matchmaking/invites.ts`.
+   - Verified unauthenticated guest handshake (`packages/server/src/matchmaking/socketAuth.ts`) and guest ID persistence in localStorage (`packages/client/src/lib/guestId.ts`).
+   - Fixed background `ttlTimer` and `reconnectTimer` to include `.unref()`.
+   - Verified `/invite/:code` and `/play/invite/:code` route resolution and interactive UI in `packages/client/src/invites/InviteLanding.tsx` and `packages/client/src/App.tsx`.
+4. **Test Suite Execution (100% PASS)**:
+   - `npm.cmd run typecheck`: **PASS** (all monorepo packages + Vite production bundle).
+   - `scripts/matchmaking-check.ts`: **PASS** (all 14 test suites, including Test 13 guest invite link lifecycle & Test 14 rematch flow).
+   - `scripts/atomic-wager-lifecycle-check.ts`: **PASS** (all 37/37 assertions).
+   - `scripts/financial-reconnection-check.ts`: **PASS**.
+   - `scripts/wallet-settlement-concurrency-check.ts`: **PASS**.
+   - `scripts/wallet-settlement-integrity-check.ts`: **PASS**.
+   - `scripts/match-lifecycle-durability-check.ts`: **PASS**.
+   - `scripts/determinism-check.ts`: **PASS**.
+   - `scripts/score-validation-check.ts`: **PASS**.
+   - `scripts/canvas-render-check.ts`: **PASS**.
+   - `scripts/i18n-check.ts`, `legal-policy-help-check.ts`, `rate-limit-check.ts`, `sql-injection-check.ts`, `input-validation-check.ts`, `xss-audit-check.ts`: **PASS**.
+   - `scripts/admin-security-check.ts`, `admin-console-check.ts`, `admin-reset-recovery-check.ts`, `seed-admin-check.ts`, `cors-audit-check.ts`, `registration-verification-check.ts`, `owner-admin-lockout-check.ts`, `request-logging-audit-check.ts`, `password-policy-check.ts`, `file-upload-audit-check.ts`, `staging-readiness-check.ts`: **PASS**.
+
+### Next Steps
+- Deploy updated commit to staging environment and perform end-to-end browser smoke testing.
+
+
+## Session 63 (2026-08-28): Reliable invite links + rematch button
+
+### Baseline
+- Workspace: local `fugluck-main` checkout (no new git commit this session).
+- Task: invite copy/join was flaky; add a rematch button after matches.
+
+### Task and Objective
+1. Make copied invite links join reliably instead of sometimes failing silently.
+2. Add a rematch button on the match-complete screen.
+
+### Root cause (verified by reading code, not assumed)
+1. **Clipboard reported success even when it failed.** `navigator.clipboard.writeText` was fire-and-forget; the UI showed "Copied" before the promise resolved. Common on non-HTTPS, unfocused documents, and Safari.
+2. **Logged-out joiners were rejected as `unauthorized`.** Socket auth required an explicit `isGuest` handshake flag. Recipients without a session cookie could not connect, even though guest instant play is an architecture invariant.
+3. **Any host socket blip destroyed the copied URL.** Guest links were keyed by socket object and deleted on disconnect. Socket.IO reconnect then minted a *new* 8-char code, so the copied link 404'd. Joiners were silently redirected home.
+4. **REST lookup failure dumped the joiner to Home with no error.** Expired/offline/API-down all looked like "the link does nothing."
+
+### Work Accomplished
+1. **Stable guest links (`packages/server/src/matchmaking/invites.ts`)** — BUILT, verified by reading the new code:
+   - 12-char codes keyed by host `userId`, not socket instance.
+   - 45s reconnect grace: disconnect parks the link instead of destroying it; host reconnect rebinds the **same** code.
+   - Joiner arriving during the grace window is held as pending and matched when the host rebinds.
+   - Explicit cancel (`cancelGuestLink`) still destroys immediately.
+2. **Guest sockets without login (`socketAuth.ts` + `lib/guestId.ts`)** — BUILT, verified by reading:
+   - Unauthenticated connections are guests by default (cookie/session still wins when present).
+   - Client persists `fugluck_guest_id` in localStorage so reconnects keep the same `guest_<id>`.
+   - `joinQueue` now emits `guests_cannot_wager` for `stake > 0` (architecture invariant that was documented but missing in `index.ts`).
+3. **Copy/join UX (`MatchLoader.tsx`, `InviteLanding.tsx`, `App.tsx`)** — BUILT, verified by TypeScript client build:
+   - Copy waits for success; execCommand fallback; tap-to-select; native Share on mobile; "Copied" only after a real copy.
+   - `/invite/:code` and `/play/invite/:code` show a landing page with retry instead of a silent home redirect.
+   - Transient Socket.IO disconnects no longer tear down a waiting invite or in-progress match.
+4. **Rematch (`matches.ts` + results screen)** — BUILT, verified by reading:
+   - After a completed match while both sockets are still connected, `canRematch: true`.
+   - Either player clicks Rematch; opponent sees Accept/Decline; both ready starts a new match with the same `gameId`/`currency`/`stake` (guests still forced to stake 0).
+   - Decline, disconnect, or 90s timeout emits `rematchUnavailable`.
+
+### Verification
+- `npx tsc` shared + theme + games + server: **PASS** (read compiler exit 0).
+- `@fugluck/client` production build: **PASS** (Vite build succeeded).
+- `scripts/i18n-check.ts`: **PASS** (all sections).
+- `scripts/determinism-check.ts`: **PASS**.
+- `scripts/canvas-render-check.ts`: **PASS**.
+- `scripts/test-database-safety-check.ts`: **PASS** (18/18).
+- `scripts/matchmaking-check.ts` (Tests 13–14 cover guest-link reconnect + rematch): **NOT RUN** — this machine has no `TEST_DATABASE_URL` / `packages/server/.env`. Do not treat invite/rematch server logic as live-DB verified.
+- Browser click-through of copy + rematch: **NOT RUN** — no local API env on this Mac checkout. UI compile-verified only.
+
+### Next
+Run `scripts/matchmaking-check.ts` against the disposable test DB once `TEST_DATABASE_URL` is available, then a two-browser invite + rematch pass on staging.
+
 ## Session 62 (2026-08-24): Fugluck Admin Console Completion & Operational Surface Hardening
 
 ### Baseline

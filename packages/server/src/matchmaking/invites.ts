@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, or } from "drizzle-orm";
 import { db } from "../db/client";
 import { friendships } from "../db/schema";
-import { createMatch } from "./matches";
+import { createMatch, getMatchIdForSocket } from "./matches";
 import { getOnlineSocket } from "./presence";
 import { generateSeed, isValidGameId, removeFromQueue, type QueueEntry } from "./queue";
 import type { MatchmakingSocket } from "./socketAuth";
@@ -60,11 +60,7 @@ export function cancelInvitesForSocket(socket: MatchmakingSocket): void {
     }
   }
 
-  const guestCode = guestLinksBySocket.get(socket);
-  if (guestCode) {
-    const link = guestLinksByCode.get(guestCode);
-    if (link) clearGuestLink(link);
-  }
+  parkGuestLinkForReconnect(socket);
 }
 
 export async function handleInviteFriend(
@@ -189,114 +185,216 @@ export function handleCancelInvite(socket: MatchmakingSocket, payload: { inviteI
   target?.emit("inviteRejected", { inviteId: payload.inviteId, reason: "Invite cancelled." });
 }
 
-const GUEST_LINK_TTL_MS = 600_000; // 10 minutes
+export const GUEST_LINK_TTL_MS = 600_000; // 10 minutes
+export const GUEST_LINK_RECONNECT_GRACE_MS = 45_000;
 
 type GuestInviteLink = {
   code: string;
-  hostSocket: MatchmakingSocket;
+  hostUserId: string;
+  hostUsername: string;
+  hostSocket: MatchmakingSocket | null;
   gameId: string;
   createdAt: number;
-  timer: ReturnType<typeof setTimeout>;
+  expiresAt: number;
+  ttlTimer: ReturnType<typeof setTimeout>;
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
+  pendingJoiner: MatchmakingSocket | null;
 };
 
 const guestLinksByCode = new Map<string, GuestInviteLink>();
-const guestLinksBySocket = new Map<MatchmakingSocket, string>();
+const guestLinksByUserId = new Map<string, string>();
 
-function clearGuestLink(link: GuestInviteLink): void {
-  clearTimeout(link.timer);
+function generateGuestCode(): string {
+  for (let i = 0; i < 8; i++) {
+    const code = randomUUID().replace(/-/g, "").slice(0, 12);
+    if (!guestLinksByCode.has(code)) return code;
+  }
+  return randomUUID().replace(/-/g, "");
+}
+
+function destroyGuestLink(link: GuestInviteLink, pendingReason?: string): void {
+  clearTimeout(link.ttlTimer);
+  if (link.reconnectTimer) {
+    clearTimeout(link.reconnectTimer);
+    link.reconnectTimer = null;
+  }
   guestLinksByCode.delete(link.code);
-  if (guestLinksBySocket.get(link.hostSocket) === link.code) {
-    guestLinksBySocket.delete(link.hostSocket);
+  if (guestLinksByUserId.get(link.hostUserId) === link.code) {
+    guestLinksByUserId.delete(link.hostUserId);
+  }
+  const pending = link.pendingJoiner;
+  link.pendingJoiner = null;
+  if (pendingReason && pending?.connected) {
+    pending.emit("inviteError", { message: pendingReason });
   }
 }
 
-export function getGuestLinkInfo(code: string): { valid: boolean; gameId?: string; hostUsername?: string; error?: string } {
+function emitGuestLinkCreated(socket: MatchmakingSocket, link: GuestInviteLink): void {
+  socket.emit("inviteSent", {
+    inviteId: link.code,
+    gameId: link.gameId,
+    toUsername: "Guest Link",
+  });
+  socket.emit("guestLinkCreated", {
+    code: link.code,
+    gameId: link.gameId,
+    expiresAt: link.expiresAt,
+  });
+}
+
+function startGuestMatch(link: GuestInviteLink, guest: MatchmakingSocket): void {
+  const host = link.hostSocket;
+  if (!host || !host.connected) {
+    if (link.pendingJoiner && link.pendingJoiner !== guest && link.pendingJoiner.connected) {
+      guest.emit("inviteError", { message: "Someone else is already joining this link." });
+      return;
+    }
+    link.pendingJoiner = guest;
+    guest.emit("guestLinkPending", { message: "Waiting for the host to reconnect…" });
+    return;
+  }
+
+  if (host.data.userId === guest.data.userId) {
+    guest.emit("inviteError", { message: "You cannot join your own guest link." });
+    return;
+  }
+
+  removeFromQueue(host);
+  removeFromQueue(guest);
+
+  const a: QueueEntry = {
+    socket: host,
+    userId: host.data.userId,
+    username: host.data.username,
+    currency: "COINS",
+    stake: 0,
+  };
+  const b: QueueEntry = {
+    socket: guest,
+    userId: guest.data.userId,
+    username: guest.data.username,
+    currency: "COINS",
+    stake: 0,
+  };
+
+  const gameId = link.gameId;
+  destroyGuestLink(link);
+  void createMatch(gameId, a, b, generateSeed());
+}
+
+function parkGuestLinkForReconnect(socket: MatchmakingSocket): void {
+  const code = guestLinksByUserId.get(socket.data.userId);
+  if (!code) return;
   const link = guestLinksByCode.get(code);
-  if (!link || !link.hostSocket.connected) {
+  if (!link || (link.hostSocket && link.hostSocket !== socket)) return;
+
+  link.hostSocket = null;
+  if (link.reconnectTimer) clearTimeout(link.reconnectTimer);
+  link.reconnectTimer = setTimeout(() => {
+    const active = guestLinksByCode.get(code);
+    if (active && !active.hostSocket?.connected) {
+      destroyGuestLink(active, "Guest invite link expired or host is offline.");
+    }
+  }, GUEST_LINK_RECONNECT_GRACE_MS);
+  if (typeof link.reconnectTimer === "object" && link.reconnectTimer !== null && "unref" in link.reconnectTimer) {
+    (link.reconnectTimer as { unref: () => void }).unref();
+  }
+}
+
+export function getGuestLinkInfo(code: string): {
+  valid: boolean;
+  gameId?: string;
+  hostUsername?: string;
+  hostOnline?: boolean;
+  error?: string;
+} {
+  const link = guestLinksByCode.get(code);
+  if (!link) {
     return { valid: false, error: "Guest invite link expired or host is offline." };
   }
   return {
     valid: true,
     gameId: link.gameId,
-    hostUsername: link.hostSocket.data.username,
+    hostUsername: link.hostUsername,
+    hostOnline: Boolean(link.hostSocket?.connected),
   };
 }
 
+export function handleCancelGuestLink(socket: MatchmakingSocket): void {
+  const code = guestLinksByUserId.get(socket.data.userId);
+  if (!code) return;
+  const link = guestLinksByCode.get(code);
+  if (!link) return;
+  destroyGuestLink(link, "The host cancelled this invite.");
+}
+
 export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { gameId?: unknown }): void {
+  if (getMatchIdForSocket(socket)) return;
   if (!payload || typeof payload.gameId !== "string" || !isValidGameId(payload.gameId)) {
     socket.emit("inviteError", { message: "Invalid game for guest link." });
     return;
   }
 
-  // Clear any existing guest link hosted by this socket
-  const existingCode = guestLinksBySocket.get(socket);
+  const existingCode = guestLinksByUserId.get(socket.data.userId);
   if (existingCode) {
     const existing = guestLinksByCode.get(existingCode);
-    if (existing) clearGuestLink(existing);
+    if (existing && existing.gameId === payload.gameId) {
+      existing.hostSocket = socket;
+      existing.hostUsername = socket.data.username;
+      if (existing.reconnectTimer) {
+        clearTimeout(existing.reconnectTimer);
+        existing.reconnectTimer = null;
+      }
+      emitGuestLinkCreated(socket, existing);
+      if (existing.pendingJoiner?.connected) {
+        const joiner = existing.pendingJoiner;
+        existing.pendingJoiner = null;
+        startGuestMatch(existing, joiner);
+      }
+      return;
+    }
+    if (existing) destroyGuestLink(existing, "The host started a new invite.");
   }
 
-  const code = randomUUID().slice(0, 8);
-  const timer = setTimeout(() => {
+  const code = generateGuestCode();
+  const expiresAt = Date.now() + GUEST_LINK_TTL_MS;
+  const ttlTimer = setTimeout(() => {
     const active = guestLinksByCode.get(code);
-    if (active) clearGuestLink(active);
+    if (active) destroyGuestLink(active, "Guest invite link expired or host is offline.");
   }, GUEST_LINK_TTL_MS);
+  if (typeof ttlTimer === "object" && ttlTimer !== null && "unref" in ttlTimer) {
+    (ttlTimer as { unref: () => void }).unref();
+  }
 
   const link: GuestInviteLink = {
     code,
+    hostUserId: socket.data.userId,
+    hostUsername: socket.data.username,
     hostSocket: socket,
     gameId: payload.gameId,
     createdAt: Date.now(),
-    timer,
+    expiresAt,
+    ttlTimer,
+    reconnectTimer: null,
+    pendingJoiner: null,
   };
   guestLinksByCode.set(code, link);
-  guestLinksBySocket.set(socket, code);
-
-  socket.emit("inviteSent", {
-    inviteId: code,
-    gameId: payload.gameId,
-    toUsername: "Guest Link",
-  });
-  socket.emit("guestLinkCreated", {
-    code,
-    gameId: payload.gameId,
-  });
+  guestLinksByUserId.set(socket.data.userId, code);
+  emitGuestLinkCreated(socket, link);
 }
 
 export function handleJoinGuestLink(socket: MatchmakingSocket, payload: { code?: unknown }): void {
+  if (getMatchIdForSocket(socket)) return;
   if (!payload || typeof payload.code !== "string") {
     socket.emit("inviteError", { message: "Invalid guest link code." });
     return;
   }
 
   const link = guestLinksByCode.get(payload.code);
-  if (!link || !link.hostSocket.connected) {
+  if (!link) {
     socket.emit("inviteError", { message: "Guest invite link expired or host is offline." });
     return;
   }
 
-  if (link.hostSocket === socket) {
-    socket.emit("inviteError", { message: "You cannot join your own guest link." });
-    return;
-  }
-
-  removeFromQueue(link.hostSocket);
-  removeFromQueue(socket);
-
-  const a: QueueEntry = {
-    socket: link.hostSocket,
-    userId: link.hostSocket.data.userId,
-    username: link.hostSocket.data.username,
-    currency: "COINS",
-    stake: 0,
-  };
-  const b: QueueEntry = {
-    socket,
-    userId: socket.data.userId,
-    username: socket.data.username,
-    currency: "COINS",
-    stake: 0,
-  };
-
-  clearGuestLink(link);
-  void createMatch(link.gameId, a, b, generateSeed());
+  startGuestMatch(link, socket);
 }

@@ -105,7 +105,7 @@ async function main(): Promise<void> {
     };
   }
 
-  async function waitUntil(condition: () => boolean, timeoutMs = 2_000): Promise<boolean> {
+  async function waitUntil(condition: () => boolean, timeoutMs = 8_000): Promise<boolean> {
     const deadline = Date.now() + timeoutMs;
     while (!condition() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 10));

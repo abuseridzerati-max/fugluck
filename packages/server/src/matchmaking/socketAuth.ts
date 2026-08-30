@@ -30,6 +30,12 @@ function extractSessionCookie(cookieHeader: string | undefined): string | null {
   return null;
 }
 
+function sanitizeGuestId(raw: string | undefined): string {
+  const cleaned = typeof raw === "string" ? raw.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32) : "";
+  if (cleaned.length >= 6) return cleaned;
+  return randomUUID().replace(/-/g, "").slice(0, 12);
+}
+
 function extractSessionToken(socket: MatchmakingSocket): string | null {
   const cookieToken = extractSessionCookie(socket.handshake.headers.cookie);
   if (cookieToken) return cookieToken;
@@ -52,19 +58,18 @@ export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err
   const token = extractSessionToken(socket);
   const payload = token ? verifySessionToken(token) : null;
   if (!payload) {
-    const handshakeAuth = socket.handshake.auth as { isGuest?: boolean; guestId?: string } | undefined;
+    // Unauthenticated connections are guests. Instant invite links and free
+    // play must work without a prior login — requiring an explicit `isGuest`
+    // handshake flag made copied links fail for anyone who wasn't already
+    // signed in.
+    const handshakeAuth = socket.handshake.auth as { guestId?: string } | undefined;
     const handshakeQuery = socket.handshake.query as { guestId?: string } | undefined;
-    const isGuest = Boolean(handshakeAuth?.isGuest || handshakeQuery?.guestId);
-    if (isGuest) {
-      const rawId = handshakeAuth?.guestId || handshakeQuery?.guestId || randomUUID().slice(0, 6);
-      socket.data.userId = `guest_${rawId}`;
-      socket.data.username = `Guest_${rawId.slice(0, 4)}`;
-      socket.data.isGuest = true;
-      socket.data.isEmailVerified = false;
-      next();
-      return;
-    }
-    next(new Error("unauthorized"));
+    const rawId = sanitizeGuestId(handshakeAuth?.guestId || handshakeQuery?.guestId);
+    socket.data.userId = `guest_${rawId}`;
+    socket.data.username = `Guest_${rawId.slice(0, 4)}`;
+    socket.data.isGuest = true;
+    socket.data.isEmailVerified = false;
+    next();
     return;
   }
 

@@ -3,13 +3,23 @@ import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared
 import { Server, type DefaultEventsMap } from "socket.io";
 import {
   cancelInvitesForSocket,
+  handleCancelGuestLink,
   handleCancelInvite,
   handleCreateGuestLink,
   handleInviteFriend,
   handleJoinGuestLink,
   handleRespondInvite,
 } from "./invites";
-import { createMatch, handleDisconnect, handleReconnect, isSocketInMatch, recoverOrphanMatches, submitScore } from "./matches";
+import {
+  createMatch,
+  handleDeclineRematch,
+  handleDisconnect,
+  handleReconnect,
+  handleRequestRematch,
+  isSocketInMatch,
+  recoverOrphanMatches,
+  submitScore,
+} from "./matches";
 import { registerPresence, unregisterPresence } from "./presence";
 import { enqueue, generateSeed, getPublicQueueState, isValidGameId, setOnQueueChange, tryPair } from "./queue";
 import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
@@ -58,6 +68,11 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       let stake = typeof payload.stake === "number" && Number.isFinite(payload.stake) && payload.stake > 0 ? Math.floor(payload.stake) : 0;
       if (stake > 100_000) stake = 100_000;
 
+      if (stake > 0 && socket.data.isGuest) {
+        socket.emit("queueError", { message: "guests_cannot_wager" });
+        return;
+      }
+
       if (stake > 0 && !socket.data.isEmailVerified) {
         socket.emit("queueError", { message: "Email verification is required for wagering matches." });
         return;
@@ -89,14 +104,29 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       handleCancelInvite(socket, payload);
     });
 
-    socket.on("createGuestLink" as any, (payload: any) => {
+    socket.on("createGuestLink", (payload) => {
       if (!checkSocketRateLimit(socket.id, "createGuestLink", 6, 10_000)) return;
       handleCreateGuestLink(socket, payload);
     });
 
-    socket.on("joinGuestLink" as any, (payload: any) => {
+    socket.on("joinGuestLink", (payload) => {
       if (!checkSocketRateLimit(socket.id, "joinGuestLink", 6, 10_000)) return;
       handleJoinGuestLink(socket, payload);
+    });
+
+    socket.on("cancelGuestLink", () => {
+      if (!checkSocketRateLimit(socket.id, "cancelGuestLink", 10, 10_000)) return;
+      handleCancelGuestLink(socket);
+    });
+
+    socket.on("requestRematch", (payload) => {
+      if (!checkSocketRateLimit(socket.id, "requestRematch", 6, 10_000)) return;
+      handleRequestRematch(socket, payload);
+    });
+
+    socket.on("declineRematch", (payload) => {
+      if (!checkSocketRateLimit(socket.id, "declineRematch", 10, 10_000)) return;
+      handleDeclineRematch(socket, payload);
     });
 
     socket.on("submitScore", (payload) => {
