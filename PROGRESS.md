@@ -3,6 +3,36 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 65 (2026-08-30): Repository Branch Cleanup & Main Branch Protection Hardening
+
+### Baseline
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Branch: `main`
+- Initial Main SHA: `bb1f829c5cba54b33f77fa3b85e60a5bea4f21ad`
+
+### Audit & Branch Cleanup
+1. **Ancestry & Code Parity Audit**:
+   - `origin/feat/admin-console-completion` (`f32009e`): Verified as direct ancestor of `origin/main`. All code fully present.
+   - `origin/fix/admin-tooling-hardening` (`75f806d`): Verified as direct ancestor of `origin/main` (merged via `11620f3`).
+   - `origin/fix/staging-api-fallback-hardening` (`693bbe0`): Verified as direct ancestor of `origin/main` (merged via `f28dfae`).
+   - `origin/fix/staging-security-cleanup` (`ed7ea6f`): Verified as direct ancestor of `origin/main`.
+   - `origin/fix/admin-session-staging-resolution` (`942023c`): Audited against `main`. Confirmed that insecure cookie session bridging was intentionally rejected in Session 61, while all hardened admin tooling was extracted to `fix/admin-tooling-hardening` and merged into `main`. No unique unmerged work remained.
+2. **Deletions**:
+   - Remote branches deleted from `origin`: `feat/admin-console-completion`, `fix/admin-session-staging-resolution`, `fix/admin-tooling-hardening`, `fix/staging-api-fallback-hardening`, `fix/staging-security-cleanup`.
+   - Local obsolete tracking branches pruned and deleted.
+   - Authoritative branch remaining on `origin`: `main`.
+
+### Main Branch Protection Hardening
+- Applied GitHub branch protection rules to `main` via GitHub REST API (`gh api`):
+  - `allow_force_pushes: false` (Force pushes to `main` blocked).
+  - `allow_deletions: false` (Deletion of `main` blocked).
+  - `enforce_admins: false` (Administrator/owner emergency override preserved; prevents developer lockout).
+  - `required_pull_request_reviews: null` (No mandatory external reviews for solo development).
+  - `required_status_checks: null` (No blocking on external CI).
+
+
+
 ## Session 64 (2026-08-30): Full Audit, Live Verification & Integration of Rematch and Guest Invite Links onto Main
 
 ### Baseline
