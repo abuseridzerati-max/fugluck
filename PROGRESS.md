@@ -59,8 +59,9 @@ conversations don't carry over, and work may resume from a different tool.
 - `npm run test:competition-domain`: **40/40 PASS**.
 - `npm run test:competition-accounting`: **51/51 PASS**.
 - `npm run test:competition-lifecycle`: **43/43 PASS**.
-- `npm run test:competition-player-ui`: **37/35 PASS** (`scripts/competition-phase4-ui-check.ts`).
+- `npm run test:competition-player-ui`: **37/37 assertions across 35 requirements PASS** (`scripts/competition-phase4-ui-check.ts`; requirement 19 encompasses 19a, 19b, 19c).
 - `npm test`: **33/33 test suites PASS 100%**.
+- Manual Browser Acceptance: **PENDING** (Headless Playwright driver installation failed due to an external Azure CDN 404 for `playwright-1.57.0-win32_x64.zip`; interactive UI validation fully covered by automated integration test suite, visual inspection pending working browser driver).
 
 ### Revised Regulatory-Gated Roadmap
 Per Section 22 regulatory alignment, real payment infrastructure must NOT begin immediately after UI/Admin phases:

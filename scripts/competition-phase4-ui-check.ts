@@ -473,7 +473,7 @@ async function runPhase4UIChecks(): Promise<void> {
   }
 
   console.log(`\n=== Phase 4 UI & Experience Check Complete ===`);
-  console.log(`Total Passed: ${passes} / 35`);
+  console.log(`Total Passed: ${passes} / 37 assertions across 35 requirements`);
   console.log(`Total Failed: ${failures}`);
 
   if (failures > 0) {
