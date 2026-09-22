@@ -71,6 +71,11 @@ export async function handleInviteFriend(
     socket.emit("inviteError", { message: "Invalid invite." });
     return;
   }
+  // Section 11: Paid private friend challenges remain prohibited
+  if ("templateId" in (payload as any) || "entryFee" in (payload as any) || (payload as any).isPaid) {
+    socket.emit("inviteError", { message: "Paid private friend challenges are prohibited." });
+    return;
+  }
   if (!isValidGameId(payload.gameId)) {
     socket.emit("inviteError", { message: "Unknown game." });
     return;

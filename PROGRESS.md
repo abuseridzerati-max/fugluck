@@ -3,6 +3,68 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 69 (2026-09-22): Competition Economy Phase 3 — Server-Side Competition Lifecycle Engine & Matchmaking Integration
+
+### Baseline & Scope
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Phase 2 Merge: Fast-forward merged `feat/competition-economy-phase-2` (`9c39820`) into `main`, pushed to `origin/main` (`9c39820`), and deleted `feat/competition-economy-phase-2`.
+- Phase 3 Branch: `feat/competition-economy-phase-3` (created from `9c39820`).
+- Objective: Implement server-side Competition Lifecycle Engine, template/instance management, continuous matchmaking queue, authoritative replay score validation, snapshotted prize settlement, and orphan crash recovery in sandbox mode.
+- Constraints: No client UI or admin UI screens in this phase; sandbox GEL only; zero real payment rails; casual COINS queue and historical DIAMONDS records remain 100% operational and unaffected.
+
+### Architecture & Work Accomplished
+1. **Competition State Machine (`packages/server/src/competitions/stateMachine.ts`)**:
+   - Enforces valid lifecycle transitions: `PENDING_ENTRANTS` -> `LOCKED` -> `ACTIVE` -> `VERIFYING` -> `SETTLED`; terminal branches `CANCELLED` and `VOIDED`.
+   - Rejects illegal transitions with `InvalidStateTransitionError`.
+
+2. **Template Service & Eligibility Enforcement (`packages/server/src/competitions/templateService.ts`)**:
+   - Template CRUD and validation against `GAME_COMPETITION_ELIGIBILITY_REGISTRY`.
+   - Restricts paid competition creation to sandbox mode for `PAID_COMPETITIVE_CANDIDATE` games (`space-blaster`, `pixel-ninja-dash`, `cyber-hopper`, `neon-runner`).
+   - Strictly prohibits `COIN_COMPETITIVE` games (`speed-trivia`, `tf-sprint`) and unclassified games from paid competition templates.
+   - Enforces invariant that zero games are treated as production-paid approved.
+
+3. **Instance Service & Continuous Queue (`packages/server/src/competitions/instanceService.ts`)**:
+   - Continuous instance queue: incoming players automatically join the current open `PENDING_ENTRANTS` instance or instantiate a new one.
+   - Per-template concurrency mutex (`AsyncMutex`) guarantees serialized seat reservation and atomic lock when `current_participants == participant_capacity`.
+   - Concurrency stress test verified: parallel join requests cannot overfill instances.
+   - Immutable snapshotting: competition instances and instance prize rows duplicate template terms at creation; subsequent template edits never mutate active or pending instances.
+   - Integration with `CompetitionAccountingPort.reserveEntry`: failure safely rejects queue join with no seat reserved.
+
+4. **Competition Lifecycle Engine (`packages/server/src/competitions/lifecycleEngine.ts`)**:
+   - `activateLockedCompetition`: Captures reserved entries via `accountingPort.captureEntry`, generates server-authoritative seed, creates linked `matches_history` record, and transitions instance to `ACTIVE`.
+   - `submitScore`: Reuses existing game-agnostic `validateScore` with deterministic replay simulation; invalid replay or score tampering forces score to 0 and cannot win.
+   - `settleCompetition`: Distributes prizes exclusively according to snapshotted `competition_instance_prizes` using `accountingPort.settleCompetition`. Idempotent against duplicate calls.
+   - Draw / Exact-Tie Refund: Verified identical scores trigger `DRAW`/`VOIDED` transition and invoke `accountingPort.refundCompetition`, returning 100% of entries to participants.
+   - Forfeits: Opponent disconnect/forfeit immediately awards snapshotted prize to active player and marks forfeiter `FORFEITED`.
+   - Waiting Timeout Cancellation: Unfilled `PENDING_ENTRANTS` instances are cancelled on timeout, releasing reservations back to available balances.
+   - Rematch Semantics: Clean rematches create fresh instances, distinct match IDs, fresh seeds, and independent accounting reservations.
+   - Crash & Orphan Recovery: `recoverOrphanCompetitions` inspects non-terminal instances on startup: unfilled pending instances are cancelled with reservations released; locked/active/verifying instances are voided and refunded.
+
+5. **REST API & Matchmaking Integration (`packages/server/src/routes/competitions.ts`, `packages/server/src/matchmaking/index.ts`)**:
+   - REST endpoints: `GET /api/competitions/templates`, `GET /api/competitions/templates/:id`, `GET /api/competitions/instances/:id`, plus admin-guarded `POST /api/competitions/templates` and `PATCH /api/competitions/templates/:id`.
+   - Socket event: `competition:join` enables authenticated queue joins; guests are rejected with `GUEST_NOT_ALLOWED`.
+   - Paid private friend challenges are explicitly rejected (`INVITE_ERROR`).
+   - Server startup hook invokes `lifecycleEngine.recoverOrphanCompetitions()`.
+
+### Verification & Automated Testing
+- `npm run typecheck`: **PASS** (Zero TypeScript diagnostics across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, `@fugluck/client`).
+- `npm run build`: **PASS** (Client production build clean).
+- `npm run build:server`: **PASS** (Server compilation clean).
+- `npm run test:database-safety`: **18/18 PASS**.
+- `npm run test:migration-parity`: **279/279 PASS**.
+- `npm run test:competition-domain`: **40/40 PASS**.
+- `npm run test:competition-accounting`: **51/51 PASS**.
+- `npm run test:competition-lifecycle`: **43/43 PASS** (`scripts/competition-phase3-lifecycle-check.ts`).
+- `npm test`: **32/32 test suites PASS 100%**.
+
+### Production Invariant Confirmations
+- **Zero Client UI Activation**: No competitive GEL screens or controls displayed in the player application.
+- **Zero Real Payment Rails**: Sandbox GEL ledger only; no banking, Stripe, or cashout mechanisms.
+- **COINS & DIAMONDS Untouched**: Free COINS casual matchmaking and historical DIAMONDS records remain intact.
+
+---
+
 ## Session 68 (2026-09-22): Competition Economy Phase 2 — Accounting Port & Sandbox Accounting Adapter
 
 ### Baseline & Scope

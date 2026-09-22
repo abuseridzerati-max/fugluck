@@ -7,6 +7,7 @@ import { attachMatchmaking, type MatchmakingServer } from "./matchmaking";
 import { accountRouter } from "./routes/account";
 import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
+import { competitionsRouter } from "./routes/competitions";
 import { friendsRouter } from "./routes/friends";
 import { matchesRouter } from "./routes/matches";
 import { walletRouter } from "./routes/wallet";
@@ -44,6 +45,7 @@ app.use("/api/account", accountRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/matches", matchesRouter);
+app.use("/api/competitions", competitionsRouter);
 app.use("/api/admin", adminRouter);
 
 const healthPayload = () => ({

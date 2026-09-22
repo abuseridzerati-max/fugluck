@@ -20,13 +20,14 @@ import {
   recoverOrphanMatches,
   submitScore,
 } from "./matches";
-import { registerPresence, unregisterPresence } from "./presence";
+import { getOnlineSocket, registerPresence, unregisterPresence } from "./presence";
 import { enqueue, generateSeed, getPublicQueueState, isValidGameId, setOnQueueChange, tryPair } from "./queue";
 import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
 
 import { checkSocketRateLimit } from "../utils/rateLimiter";
-
 import { socketIoCorsOptions } from "../config/cors";
+import { instanceService, lifecycleEngine } from "../competitions";
+import { SandboxAccountingAdapter } from "../accounting";
 
 export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
 
@@ -36,6 +37,7 @@ export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvent
 export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string }): MatchmakingServer {
   // Trigger crash recovery for any uncompleted active matches from a prior server run
   void recoverOrphanMatches();
+  void lifecycleEngine.recoverOrphanCompetitions();
 
   const io: MatchmakingServer = new Server(httpServer, {
     cors: socketIoCorsOptions,
@@ -84,6 +86,107 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         const [a, b] = pair;
         await createMatch(payload.gameId, a, b, generateSeed());
       }
+    });
+
+    const handleJoinCompetition = async (payload: any) => {
+      if (!checkSocketRateLimit(socket.id, "joinCompetition", 6, 10_000)) {
+        socket.emit("competition:error", {
+          code: "RATE_LIMITED",
+          message: "Too many competition join requests. Please wait a moment.",
+        });
+        return;
+      }
+
+      // Guest Restriction (Section 10)
+      if (socket.data.isGuest) {
+        socket.emit("competition:error", {
+          code: "GUEST_NOT_ALLOWED",
+          message: "Guests are not permitted to enter competitions.",
+        });
+        return;
+      }
+
+      if (!payload || typeof payload.templateId !== "string") {
+        socket.emit("competition:error", {
+          code: "INVALID_PAYLOAD",
+          message: "A valid templateId must be provided.",
+        });
+        return;
+      }
+
+      // Client financial inputs are strictly ignored per Section 9
+      const templateId = payload.templateId;
+
+      try {
+        const joinResult = await instanceService.joinCompetitionQueue(
+          templateId,
+          socket.data.userId,
+          new SandboxAccountingAdapter(),
+          { isGuest: Boolean(socket.data.isGuest) },
+        );
+
+        socket.emit("competition:joined", {
+          instanceId: joinResult.instanceId,
+          templateId: joinResult.templateId,
+          seatIndex: joinResult.seatIndex,
+          currentParticipants: joinResult.currentParticipants,
+          participantCapacity: joinResult.participantCapacity,
+        });
+
+        // If instance is locked (2/2 for head to head), activate match
+        if (joinResult.isLocked) {
+          const matchResult = await lifecycleEngine.activateLockedCompetition(
+            joinResult.instanceId,
+            new SandboxAccountingAdapter(),
+          );
+
+          const p1Socket = getOnlineSocket(matchResult.player1Id);
+          const p2Socket = getOnlineSocket(matchResult.player2Id);
+
+          if (p1Socket) {
+            p1Socket.emit("competition:matched", {
+              matchId: matchResult.matchId,
+              instanceId: joinResult.instanceId,
+              gameId: matchResult.gameId,
+              seed: matchResult.seed,
+              opponentUsername: p2Socket?.data?.username ?? "Opponent",
+            });
+            p1Socket.emit("matched", {
+              matchId: matchResult.matchId,
+              gameId: matchResult.gameId,
+              seed: matchResult.seed,
+              opponentUsername: p2Socket?.data?.username ?? "Opponent",
+            });
+          }
+          if (p2Socket) {
+            p2Socket.emit("competition:matched", {
+              matchId: matchResult.matchId,
+              instanceId: joinResult.instanceId,
+              gameId: matchResult.gameId,
+              seed: matchResult.seed,
+              opponentUsername: p1Socket?.data?.username ?? "Opponent",
+            });
+            p2Socket.emit("matched", {
+              matchId: matchResult.matchId,
+              gameId: matchResult.gameId,
+              seed: matchResult.seed,
+              opponentUsername: p1Socket?.data?.username ?? "Opponent",
+            });
+          }
+        }
+      } catch (err: any) {
+        socket.emit("competition:error", {
+          code: err.code || "COMPETITION_JOIN_FAILED",
+          message: err.message || "Failed to join competition.",
+        });
+      }
+    };
+
+    socket.on("competition:join", handleJoinCompetition);
+    socket.on("joinCompetition", handleJoinCompetition);
+
+    socket.on("challengeFriend" as any, () => {
+      socket.emit("inviteError", { message: "Paid private friend challenges are prohibited." });
     });
 
     socket.on("inviteFriend", (payload) => {

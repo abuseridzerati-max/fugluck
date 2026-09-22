@@ -166,6 +166,31 @@ export type RematchUnavailablePayload = {
   reason: string;
 };
 
+export type JoinCompetitionPayload = {
+  templateId: string;
+};
+
+export type CompetitionJoinedPayload = {
+  instanceId: string;
+  templateId: string;
+  seatIndex: number;
+  currentParticipants: number;
+  participantCapacity: number;
+};
+
+export type CompetitionMatchedPayload = {
+  matchId: string;
+  instanceId: string;
+  gameId: string;
+  seed: number;
+  opponentUsername: string;
+};
+
+export type CompetitionErrorPayload = {
+  code: string;
+  message: string;
+};
+
 export interface ClientToServerEvents {
   joinQueue: (payload: JoinQueuePayload) => void;
   submitScore: (payload: SubmitScorePayload) => void;
@@ -181,6 +206,8 @@ export interface ClientToServerEvents {
   cancelGuestLink: () => void;
   requestRematch: (payload: { matchId: string }) => void;
   declineRematch: (payload: { matchId: string }) => void;
+  "competition:join"?: (payload: JoinCompetitionPayload) => void;
+  joinCompetition?: (payload: JoinCompetitionPayload) => void;
 }
 
 export interface ServerToClientEvents {
@@ -199,4 +226,8 @@ export interface ServerToClientEvents {
   rematchUnavailable: (payload: RematchUnavailablePayload) => void;
   // Real-time broadcast of waiting players in the public matchmaking lobby.
   queueStateUpdate: (payload: QueueStateUpdatePayload) => void;
+  "competition:joined"?: (payload: CompetitionJoinedPayload) => void;
+  "competition:matched"?: (payload: CompetitionMatchedPayload) => void;
+  "competition:error"?: (payload: CompetitionErrorPayload) => void;
 }
+
