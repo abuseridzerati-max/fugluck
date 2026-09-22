@@ -123,6 +123,7 @@ export const matchesHistory = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     endedAt: timestamp("ended_at", { withTimezone: true }),
+    competitionInstanceId: text("competition_instance_id"),
   },
   (t) => ({
     p1Idx: index("idx_matches_p1").on(t.player1Id),
@@ -130,7 +131,8 @@ export const matchesHistory = pgTable(
     gameIdx: index("idx_matches_game").on(t.gameId),
     statusIdx: index("idx_matches_status").on(t.status),
     createdAtIdx: index("idx_matches_created").on(t.createdAt),
-    currencyCheck: check("matches_history_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS')`),
+    compInstanceIdx: index("idx_matches_competition_instance").on(t.competitionInstanceId),
+    currencyCheck: check("matches_history_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS', 'GEL')`),
     stakeCheck: check("matches_history_stake_check", sql`${t.stake} >= 0`),
   }),
 );
@@ -153,7 +155,7 @@ export const matchSettlements = pgTable(
   (t) => ({
     matchFk: foreignKey({ columns: [t.matchId], foreignColumns: [matchesHistory.id] }),
     statusCheck: check("match_settlements_status_check", sql`${t.status} in ('PAYOUT', 'REFUND', 'DRAW', 'VOIDED')`),
-    currencyCheck: check("match_settlements_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS')`),
+    currencyCheck: check("match_settlements_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS', 'GEL')`),
     amountCheck: check(
       "match_settlements_amount_check",
       sql`${t.stake} > 0 and ${t.winnerPayout} >= 0 and ${t.rakeFee} >= 0`,
@@ -200,6 +202,135 @@ export const policyAcceptances = pgTable(
   }),
 );
 
+// ===========================================================================
+// Competition Domain Tables (Phase 1)
+// Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT
+// ===========================================================================
+
+export const competitionTemplates = pgTable(
+  "competition_templates",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    gameId: text("game_id").notNull(),
+    title: varchar("title", { length: 128 }).notNull(),
+    format: varchar("format", { length: 32 }).notNull().default("HEAD_TO_HEAD"),
+    participantCapacity: integer("participant_capacity").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    entryFeeMinor: integer("entry_fee_minor").notNull(),
+    rulesVersion: varchar("rules_version", { length: 32 }).notNull(),
+    skillAssessmentVersion: varchar("skill_assessment_version", { length: 32 }).notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    jurisdiction: varchar("jurisdiction", { length: 8 }).notNull().default("GE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    gameIdx: index("idx_comp_templates_game").on(t.gameId),
+    enabledIdx: index("idx_comp_templates_enabled").on(t.enabled),
+    entryFeeCheck: check("comp_templates_fee_check", sql`${t.entryFeeMinor} >= 0`),
+    capacityCheck: check("comp_templates_cap_check", sql`${t.participantCapacity} >= 2`),
+  }),
+);
+
+export const competitionTemplatePrizes = pgTable(
+  "competition_template_prizes",
+  {
+    id: text("id").primaryKey(),
+    templateId: varchar("template_id", { length: 64 })
+      .notNull()
+      .references(() => competitionTemplates.id),
+    placement: integer("placement").notNull(),
+    amountMinor: integer("amount_minor").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+  },
+  (t) => ({
+    templatePlaceUnique: uniqueIndex("idx_tmpl_prizes_template_place").on(t.templateId, t.placement),
+    amountCheck: check("tmpl_prizes_amount_check", sql`${t.amountMinor} >= 0`),
+    placementCheck: check("tmpl_prizes_placement_check", sql`${t.placement} >= 1`),
+  }),
+);
+
+// CompetitionInstance snapshots all material competition and financial terms
+// from its template upon creation so that subsequent template edits never alter
+// existing instances.
+export const competitionInstances = pgTable(
+  "competition_instances",
+  {
+    id: text("id").primaryKey(),
+    templateId: varchar("template_id", { length: 64 })
+      .notNull()
+      .references(() => competitionTemplates.id),
+    gameId: text("game_id").notNull(),
+    format: varchar("format", { length: 32 }).notNull(),
+    participantCapacity: integer("participant_capacity").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    entryFeeMinor: integer("entry_fee_minor").notNull(),
+    rulesVersion: varchar("rules_version", { length: 32 }).notNull(),
+    skillAssessmentVersion: varchar("skill_assessment_version", { length: 32 }).notNull(),
+    jurisdiction: varchar("jurisdiction", { length: 8 }).notNull(),
+    status: varchar("status", { length: 24 }).notNull().default("PENDING_ENTRANTS"),
+    currentParticipants: integer("current_participants").notNull().default(0),
+    matchId: text("match_id"),
+    winnerUserId: text("winner_user_id").references(() => users.id),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    templateIdx: index("idx_comp_instances_template").on(t.templateId),
+    statusIdx: index("idx_comp_instances_status").on(t.status),
+    capacityCheck: check("comp_instances_cap_check", sql`${t.currentParticipants} <= ${t.participantCapacity}`),
+    entryFeeCheck: check("comp_instances_fee_check", sql`${t.entryFeeMinor} >= 0`),
+  }),
+);
+
+export const competitionInstancePrizes = pgTable(
+  "competition_instance_prizes",
+  {
+    id: text("id").primaryKey(),
+    instanceId: text("instance_id")
+      .notNull()
+      .references(() => competitionInstances.id),
+    placement: integer("placement").notNull(),
+    amountMinor: integer("amount_minor").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    awardedUserId: text("awarded_user_id").references(() => users.id),
+  },
+  (t) => ({
+    instancePlaceUnique: uniqueIndex("idx_inst_prizes_instance_place").on(t.instanceId, t.placement),
+    amountCheck: check("inst_prizes_amount_check", sql`${t.amountMinor} >= 0`),
+    placementCheck: check("inst_prizes_placement_check", sql`${t.placement} >= 1`),
+  }),
+);
+
+export const competitionParticipants = pgTable(
+  "competition_participants",
+  {
+    id: text("id").primaryKey(),
+    instanceId: text("instance_id")
+      .notNull()
+      .references(() => competitionInstances.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    seatIndex: integer("seat_index").notNull(),
+    entryFeeMinor: integer("entry_fee_minor").notNull(),
+    score: integer("score"),
+    rank: integer("rank"),
+    prizeWonMinor: integer("prize_won_minor").notNull().default(0),
+    status: varchar("status", { length: 16 }).notNull().default("REGISTERED"),
+    registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    instanceUserUnique: uniqueIndex("idx_comp_part_instance_user").on(t.instanceId, t.userId),
+    instanceSeatUnique: uniqueIndex("idx_comp_part_instance_seat").on(t.instanceId, t.seatIndex),
+    seatCheck: check("comp_part_seat_check", sql`${t.seatIndex} >= 0`),
+    entryFeeCheck: check("comp_part_fee_check", sql`${t.entryFeeMinor} >= 0`),
+    prizeWonCheck: check("comp_part_prize_check", sql`${t.prizeWonMinor} >= 0`),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
@@ -212,4 +343,15 @@ export type TriviaQuestion = typeof triviaQuestions.$inferSelect;
 export type NewTriviaQuestion = typeof triviaQuestions.$inferInsert;
 export type PolicyAcceptance = typeof policyAcceptances.$inferSelect;
 export type NewPolicyAcceptance = typeof policyAcceptances.$inferInsert;
+
+export type CompetitionTemplateRecord = typeof competitionTemplates.$inferSelect;
+export type NewCompetitionTemplateRecord = typeof competitionTemplates.$inferInsert;
+export type CompetitionTemplatePrizeRecord = typeof competitionTemplatePrizes.$inferSelect;
+export type NewCompetitionTemplatePrizeRecord = typeof competitionTemplatePrizes.$inferInsert;
+export type CompetitionInstanceRecord = typeof competitionInstances.$inferSelect;
+export type NewCompetitionInstanceRecord = typeof competitionInstances.$inferInsert;
+export type CompetitionInstancePrizeRecord = typeof competitionInstancePrizes.$inferSelect;
+export type NewCompetitionInstancePrizeRecord = typeof competitionInstancePrizes.$inferInsert;
+export type CompetitionParticipantRecord = typeof competitionParticipants.$inferSelect;
+export type NewCompetitionParticipantRecord = typeof competitionParticipants.$inferInsert;
 

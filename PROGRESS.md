@@ -3,6 +3,68 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 67 (2026-09-22): Competition Economy Phase 1 — Shared Domain Types, Database Schema & Migration 0008
+
+### Baseline & Scope
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Initial Main SHA: `82101de` (`main`)
+- Branch: `feat/competition-economy-phase-1`
+- Objective: Establish the new Competition domain at the shared-type and database-schema layers WITHOUT activating it in the running product.
+  - Strict Invariants: Runtime matchmaking, settlement, client UI, game engines, and replay validation remain 100% untouched. COINS remain strictly non-monetary. DIAMONDS retired from active flows while historical records remain intact and readable. Entry fee and prize amounts are independent (no pot/rake invariant). All monetary values use integer minor units (no floats). Real payments remain disabled.
+
+### Work Accomplished & Architectural Additions
+1. **Shared Domain Primitives (`packages/shared/src/money.ts`, `packages/shared/src/competitions.ts`)**:
+   - `MoneyAmount`: Strict integer minor units (tetri/cents, e.g. 500 = ₾5.00 GEL).
+   - `createMoney(amountMinor, currency)`: Validates integer only, >= 0, and supported ISO 4217 currencies (`GEL`, `USD`, `EUR`). Prohibits floats, negatives, and virtual `COINS` or retired `DIAMONDS` as monetary currency.
+   - `formatMoneyDisplay(money)`: Deterministic formatting (`₾5.00 GEL`, `$5.00 USD`, `€5.00 EUR`).
+   - `CompetitionFormat`: `"HEAD_TO_HEAD" | "TOURNAMENT_BRACKET" | "LEADERBOARD_RUSH"`.
+   - `CompetitionStatus`: `"PENDING_ENTRANTS" | "LOCKED" | "ACTIVE" | "VERIFYING" | "SETTLED" | "CANCELLED" | "VOIDED"`.
+   - `CompetitionParticipantStatus`: `"REGISTERED" | "PLAYING" | "SUBMITTED" | "FORFEITED" | "DISCONNECTED"`.
+   - `GameCompetitionEligibility`: Four states: `"FREE_PLAY_ONLY" | "COIN_COMPETITIVE" | "PAID_COMPETITIVE_CANDIDATE" | "PAID_COMPETITIVE_APPROVED"`.
+   - `GAME_COMPETITION_ELIGIBILITY_REGISTRY`: Architectural candidate classifications:
+     - `PAID_COMPETITIVE_CANDIDATE`: `space-blaster`, `pixel-ninja-dash`, `cyber-hopper`, `neon-runner`
+     - `COIN_COMPETITIVE`: `speed-trivia`, `tf-sprint`
+     - Invariant: Zero games marked `PAID_COMPETITIVE_APPROVED`.
+   - Domain entity types: `CompetitionTemplate`, `CompetitionTemplatePrize`, `CompetitionInstance`, `CompetitionInstancePrize`, `CompetitionParticipant`.
+
+2. **Drizzle Schema Additions (`packages/server/src/db/schema.ts`)**:
+   - Added 5 normalized tables:
+     - `competition_templates`: Platform canonical terms with constraints `entry_fee_minor >= 0` and `participant_capacity >= 2`.
+     - `competition_template_prizes`: Normalized placement prizes with unique constraint `(template_id, placement)`.
+     - `competition_instances`: Snapshots material terms (`template_id`, `game_id`, `format`, `participant_capacity`, `currency`, `entry_fee_minor`, `rules_version`, `skill_assessment_version`, `jurisdiction`). Constraints: `current_participants <= participant_capacity` and `entry_fee_minor >= 0`.
+     - `competition_instance_prizes`: Snapshots normalized placement prizes with unique constraint `(instance_id, placement)`.
+     - `competition_participants`: Seat and registration management. Unique constraints `(instance_id, user_id)` and `(instance_id, seat_index)`. Constraints: `seat_index >= 0`, `entry_fee_minor >= 0`, `prize_won_minor >= 0`.
+   - `matches_history`: Added nullable `competition_instance_id` column, index, and foreign key to `competition_instances.id`.
+   - Additive check constraints: Updated `matches_history_currency_check` and `match_settlements_currency_check` to `in ('COINS', 'DIAMONDS', 'GEL')`, preserving historical compatibility.
+   - Financial audit safety: All FK constraints use `ON DELETE NO ACTION`. No cascading deletes.
+
+3. **Additive Migration 0008 (`packages/server/drizzle/0008_competition_economy.sql`)**:
+   - Created migration 0008 and updated `packages/server/drizzle/meta/_journal.json`.
+   - Additive-only execution, preserving all existing tables, ledgers, and historical DIAMONDS data.
+
+4. **Entry Fee & Prize Independence Invariant**:
+   - Verified that NO constraint requires `entryFee * capacity = prizes + platformFee`.
+   - Freerolls (`entry_fee_minor = 0`) and promotional prize overlays (prize > entries collected) are fully supported.
+
+### Verification & Automated Testing
+- `npm run typecheck`: **PASS** (Zero errors across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, `@fugluck/client`).
+- `npm run build`: **PASS** (Vite production bundle built cleanly).
+- `npm run build:server`: **PASS** (Server TypeScript compile clean).
+- `npm run test:database-safety`: **18/18 PASS**.
+- `npm run test:competition-domain`: **40/40 PASS** (`scripts/competition-phase1-domain-check.ts`).
+- `npm run test:migration-parity`: **204/204 PASS** (`scripts/migration-schema-parity-check.ts`). Introspected 16 tables, 5 FKs, 13 check constraints, 9 new indexes, and executed full DML smoke tests (Cases A-D, duplicate rejections, negative value rejections, and DIAMONDS/COINS/GEL compatibility).
+- `npm test`: **30/30 suites PASS 100%** (All 29 legacy regression suites + Phase 1 domain suite).
+
+### Production Invariant Confirmations
+- **Runtime Product Behavior**: 100% unchanged. Active matchmaking, socket gameplay, and settlement continue exactly as before.
+- **Real Payments**: Completely disabled. Zero payment provider code or real monetary balances exist.
+- **Historical DIAMONDS Preservation**: All historical DIAMONDS match and settlement records remain valid and readable.
+- **Non-Monetary COINS**: COINS remain non-monetary virtual points; no conversion to or from MoneyAmount.
+
+### Next Phase
+- **Phase 2**: Administrative competition templates & sandbox instance lifecycle engine (template CRUD, template-to-instance snapshotting service, registration state machine, and administrative inspection).
+
 ## Session 66 (2026-08-30): Comprehensive Pre-Staging Verification Gate
 
 ### Baseline & Scope

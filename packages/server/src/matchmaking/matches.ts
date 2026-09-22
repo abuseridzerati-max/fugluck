@@ -41,6 +41,7 @@ export async function ensureMatchesHistoryTable() {
       ALTER TABLE matches_history ALTER COLUMN seed TYPE bigint;
       ALTER TABLE matches_history ADD COLUMN IF NOT EXISTS started_at timestamp with time zone;
       ALTER TABLE matches_history ADD COLUMN IF NOT EXISTS ended_at timestamp with time zone;
+      ALTER TABLE matches_history ADD COLUMN IF NOT EXISTS competition_instance_id text;
       CREATE INDEX IF NOT EXISTS idx_matches_p1 ON matches_history (player1_id);
       CREATE INDEX IF NOT EXISTS idx_matches_p2 ON matches_history (player2_id);
       CREATE INDEX IF NOT EXISTS idx_matches_game ON matches_history (game_id);

@@ -39,3 +39,19 @@ export type { PolicyType, PolicyAcceptanceRecord, SignupAcceptedPolicies, Policy
 export { CURRENT_POLICY_VERSIONS, POLICY_NAV_ITEMS } from "./policies";
 export type { AdminRole, AdminPermission } from "./admin";
 export { ROLE_PERMISSIONS, ALL_ADMIN_PERMISSIONS, hasPermission, PERMISSION_ALIAS_MAP } from "./admin";
+export type { ISO4217Currency, MoneyAmount } from "./money";
+export { createMoney, formatMoneyDisplay } from "./money";
+export type {
+  CompetitionFormat,
+  CompetitionStatus,
+  CompetitionParticipantStatus,
+  GameCompetitionEligibility,
+  GameEligibilityEntry,
+  CompetitionPrize,
+  CompetitionTemplatePrize,
+  CompetitionInstancePrize,
+  CompetitionTemplate,
+  CompetitionInstance,
+  CompetitionParticipant,
+} from "./competitions";
+export { GAME_COMPETITION_ELIGIBILITY_REGISTRY } from "./competitions";
