@@ -13,10 +13,15 @@ export type AdminPermission =
   | "WALLET_VIEW"
   | "WALLET_GRANT_COINS"
   | "WALLET_GRANT_DIAMONDS"
+  | "WALLET_GRANT_SANDBOX"
   | "WALLET_REFUND"
   | "WALLET_REVERSE_TRANSACTION"
   | "ADMIN_VIEW_AUDIT"
   | "ADMIN_MANAGE_ADMINS"
+  | "COMPETITIONS_VIEW"
+  | "COMPETITIONS_MANAGE"
+  | "COMPETITIONS_CANCEL"
+  | "COMPETITIONS_VOID"
   // Canonical lowercase aliases
   | "users.view"
   | "users.suspend"
@@ -30,12 +35,17 @@ export type AdminPermission =
   | "wallet.view"
   | "wallet.grant_coins"
   | "wallet.grant_diamonds"
+  | "wallet.grant_sandbox"
   | "wallet.refund"
   | "wallet.reverse_transaction"
   | "audit.view"
   | "system.view"
   | "admins.manage"
-  | "permissions.manage";
+  | "permissions.manage"
+  | "competitions.view"
+  | "competitions.manage"
+  | "competitions.cancel"
+  | "competitions.void";
 
 export const PERMISSION_ALIAS_MAP: Record<string, AdminPermission> = {
   "users.view": "USERS_VIEW",
@@ -50,12 +60,22 @@ export const PERMISSION_ALIAS_MAP: Record<string, AdminPermission> = {
   "wallet.view": "WALLET_VIEW",
   "wallet.grant_coins": "WALLET_GRANT_COINS",
   "wallet.grant_diamonds": "WALLET_GRANT_DIAMONDS",
+  "wallet.grant_sandbox": "WALLET_GRANT_COINS",
+  "WALLET_GRANT_SANDBOX": "WALLET_GRANT_COINS",
   "wallet.refund": "WALLET_REFUND",
   "wallet.reverse_transaction": "WALLET_REVERSE_TRANSACTION",
   "audit.view": "ADMIN_VIEW_AUDIT",
   "system.view": "ADMIN_VIEW_AUDIT",
   "admins.manage": "ADMIN_MANAGE_ADMINS",
   "permissions.manage": "ADMIN_MANAGE_ADMINS",
+  "competitions.view": "MATCHES_VIEW",
+  "COMPETITIONS_VIEW": "MATCHES_VIEW",
+  "competitions.manage": "WALLET_GRANT_COINS",
+  "COMPETITIONS_MANAGE": "WALLET_GRANT_COINS",
+  "competitions.cancel": "MATCHES_CANCEL",
+  "COMPETITIONS_CANCEL": "MATCHES_CANCEL",
+  "competitions.void": "MATCHES_VOID",
+  "COMPETITIONS_VOID": "MATCHES_VOID",
 };
 
 export const ALL_ADMIN_PERMISSIONS: AdminPermission[] = [
@@ -96,6 +116,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
 
 export function hasPermission(role: string, permission: AdminPermission): boolean {
   const normalizedRole = (role in ROLE_PERMISSIONS ? role : "user") as AdminRole;
+  if (normalizedRole === "user") return false;
+  if (normalizedRole === "OWNER" || normalizedRole === "SUPER_ADMIN") return true;
   const canonicalPermission = PERMISSION_ALIAS_MAP[permission] ?? permission;
   return ROLE_PERMISSIONS[normalizedRole]?.includes(canonicalPermission) ?? false;
 }

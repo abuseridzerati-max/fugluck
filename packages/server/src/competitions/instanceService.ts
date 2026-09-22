@@ -380,6 +380,226 @@ export class CompetitionInstanceService {
       })),
     };
   }
+
+  /**
+   * Administrative filterable query of competition instances.
+   */
+  async listAdminInstances(params: {
+    status?: string;
+    gameId?: string;
+    templateId?: string;
+    instanceId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    instances: Array<{
+      id: string;
+      templateId: string;
+      templateTitle: string;
+      gameId: string;
+      format: string;
+      status: CompetitionStatus;
+      currentParticipants: number;
+      participantCapacity: number;
+      entryFeeMinor: number;
+      currency: string;
+      matchId: string | null;
+      winnerUserId: string | null;
+      createdAt: Date;
+      lockedAt: Date | null;
+      startedAt: Date | null;
+      settledAt: Date | null;
+      totalPrizeMinor: number;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+    const offset = (page - 1) * limit;
+
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (params.status && params.status.trim().length > 0) {
+      conditions.push(`ci.status = $${idx++}`);
+      values.push(params.status.trim());
+    }
+
+    if (params.gameId && params.gameId.trim().length > 0) {
+      conditions.push(`ci.game_id = $${idx++}`);
+      values.push(params.gameId.trim());
+    }
+
+    if (params.templateId && params.templateId.trim().length > 0) {
+      conditions.push(`ci.template_id = $${idx++}`);
+      values.push(params.templateId.trim());
+    }
+
+    if (params.instanceId && params.instanceId.trim().length > 0) {
+      conditions.push(`ci.id ILIKE $${idx++}`);
+      values.push(`%${params.instanceId.trim()}%`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countQuery = `SELECT count(*)::integer AS total FROM competition_instances ci ${whereClause}`;
+    const countRes = await pool.query(countQuery, values);
+    const total = Number(countRes.rows[0]?.total ?? 0);
+
+    const listQuery = `
+      SELECT
+        ci.id,
+        ci.template_id,
+        COALESCE(ct.title, 'Unknown Template') AS template_title,
+        ci.game_id,
+        ci.format,
+        ci.status,
+        ci.current_participants,
+        ci.participant_capacity,
+        ci.entry_fee_minor,
+        ci.currency,
+        ci.match_id,
+        ci.winner_user_id,
+        ci.created_at,
+        ci.locked_at,
+        ci.started_at,
+        ci.settled_at,
+        COALESCE(
+          (SELECT SUM(amount_minor) FROM competition_instance_prizes cip WHERE cip.instance_id = ci.id),
+          0
+        )::integer AS total_prize_minor
+      FROM competition_instances ci
+      LEFT JOIN competition_templates ct ON ci.template_id = ct.id
+      ${whereClause}
+      ORDER BY ci.created_at DESC
+      LIMIT $${idx++} OFFSET $${idx++}
+    `;
+
+    const listRes = await pool.query(listQuery, [...values, limit, offset]);
+
+    return {
+      instances: listRes.rows.map((r: any) => ({
+        id: r.id,
+        templateId: r.template_id,
+        templateTitle: r.template_title,
+        gameId: r.game_id,
+        format: r.format,
+        status: r.status as CompetitionStatus,
+        currentParticipants: Number(r.current_participants),
+        participantCapacity: Number(r.participant_capacity),
+        entryFeeMinor: Number(r.entry_fee_minor),
+        currency: r.currency,
+        matchId: r.match_id,
+        winnerUserId: r.winner_user_id,
+        createdAt: r.created_at,
+        lockedAt: r.locked_at,
+        startedAt: r.started_at,
+        settledAt: r.settled_at,
+        totalPrizeMinor: Number(r.total_prize_minor),
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Administrative detailed inspection of a single competition instance.
+   * Contrasts current template terms vs instance snapshotted terms,
+   * inspects participants with username, and computes reconciliation.
+   */
+  async getInstanceAdminDetail(id: string): Promise<Record<string, any> | null> {
+    const inst = await this.getInstance(id);
+    if (!inst) return null;
+
+    // Current template terms
+    const currentTemplate = await templateService.getTemplate(inst.templateId);
+
+    // Participants with username
+    const partRows = await pool.query(
+      `SELECT
+         cp.id,
+         cp.user_id,
+         u.username,
+         cp.seat_index,
+         cp.status,
+         cp.score,
+         cp.rank,
+         cp.prize_won_minor,
+         cp.registered_at,
+         cp.entry_fee_minor
+       FROM competition_participants cp
+       LEFT JOIN users u ON cp.user_id = u.id
+       WHERE cp.instance_id = $1
+       ORDER BY cp.seat_index ASC`,
+      [id],
+    );
+
+    // Reconciliation check
+    const { sandboxAccountingAdapter } = await import("../accounting/sandboxAdapter");
+    const reconciliation = await sandboxAccountingAdapter.reconcileCompetitionInstance(id);
+
+    return {
+      instance: {
+        id: inst.id,
+        templateId: inst.templateId,
+        gameId: inst.gameId,
+        format: inst.format,
+        status: inst.status,
+        currentParticipants: inst.currentParticipants,
+        participantCapacity: inst.participantCapacity,
+        entryFeeMinor: inst.entryFeeMinor,
+        currency: inst.currency,
+        rulesVersion: inst.rulesVersion,
+        skillAssessmentVersion: inst.skillAssessmentVersion,
+        jurisdiction: inst.jurisdiction,
+        matchId: inst.matchId,
+        winnerUserId: inst.winnerUserId,
+        createdAt: inst.createdAt,
+        lockedAt: inst.lockedAt,
+        startedAt: inst.startedAt,
+        settledAt: inst.settledAt,
+        prizes: inst.prizes?.map((p) => ({
+          id: p.id,
+          placement: p.placement,
+          amountMinor: p.amountMinor,
+          currency: p.currency,
+          awardedUserId: p.awardedUserId,
+        })),
+      },
+      currentTemplate: currentTemplate
+        ? {
+            id: currentTemplate.id,
+            title: currentTemplate.title,
+            gameId: currentTemplate.gameId,
+            format: currentTemplate.format,
+            participantCapacity: currentTemplate.participantCapacity,
+            entryFeeMinor: currentTemplate.entryFeeMinor,
+            currency: currentTemplate.currency,
+            rulesVersion: currentTemplate.rulesVersion,
+            jurisdiction: currentTemplate.jurisdiction,
+            enabled: currentTemplate.enabled,
+            prizes: currentTemplate.prizes,
+          }
+        : null,
+      participants: partRows.rows.map((p: any) => ({
+        id: p.id,
+        userId: p.user_id,
+        username: p.username ?? `User ${String(p.user_id).slice(0, 8)}`,
+        seatIndex: Number(p.seat_index),
+        status: p.status,
+        score: p.score !== null ? Number(p.score) : null,
+        rank: p.rank !== null ? Number(p.rank) : null,
+        prizeWonMinor: Number(p.prize_won_minor ?? 0),
+        registeredAt: p.registered_at,
+        entryFeeMinor: Number(p.entry_fee_minor),
+      })),
+      reconciliation,
+    };
+  }
 }
 
 export const instanceService = new CompetitionInstanceService();

@@ -10,6 +10,13 @@ import type {
   AuditItem,
   UserDetail,
   MatchDetail,
+  CompetitionOverviewMetrics,
+  CompetitionTemplateAdmin,
+  CompetitionInstanceAdmin,
+  CompetitionInstanceAdminDetail,
+  SandboxAccountingSummary,
+  SandboxLedgerEntryAdmin,
+  GameEligibilityAdminItem,
 } from './adminTypes'
 import {
   ActionConfirmModal,
@@ -18,6 +25,22 @@ import {
   MatchDetailModal,
   type ConfirmModalConfig,
 } from './AdminModals'
+import {
+  CreateTemplateModal,
+  EditTemplateModal,
+  InstanceDetailModal,
+  CancelCompetitionModal,
+  VoidCompetitionModal,
+  GrantSandboxFundsModal,
+} from './CompetitionAdminModals'
+import {
+  CompetitionOverviewView,
+  CompetitionTemplatesView,
+  CompetitionInstancesView,
+  CompetitionAccountingView,
+  CompetitionEligibilityView,
+  formatGEL,
+} from './CompetitionAdminViews'
 import type { AdminPermission } from '@fugluck/shared'
 
 const GAME_OPTIONS = [
@@ -31,8 +54,6 @@ const GAME_OPTIONS = [
 ]
 
 export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: () => void }) {
-
-
   // Admin Session State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
@@ -43,10 +64,35 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   // Navigation & General UI
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard')
+  const [activeTab, setActiveTab] = useState<Tab>('competitions_overview')
   const [isLoading, setIsLoading] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Competition States
+  const [compMetrics, setCompMetrics] = useState<CompetitionOverviewMetrics | null>(null)
+  const [compTemplates, setCompTemplates] = useState<CompetitionTemplateAdmin[]>([])
+  const [createTemplateModalOpen, setCreateTemplateModalOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<CompetitionTemplateAdmin | null>(null)
+
+  const [compInstances, setCompInstances] = useState<CompetitionInstanceAdmin[]>([])
+  const [compInstancePage, setCompInstancePage] = useState(1)
+  const [compInstanceTotal, setCompInstanceTotal] = useState(0)
+  const [compStatusFilter, setCompStatusFilter] = useState('')
+  const [compGameFilter, setCompGameFilter] = useState('')
+  const [selectedCompInstanceDetail, setSelectedCompInstanceDetail] = useState<CompetitionInstanceAdminDetail | null>(null)
+  const [cancelCompInstanceId, setCancelCompInstanceId] = useState<string | null>(null)
+  const [voidCompInstanceId, setVoidCompInstanceId] = useState<string | null>(null)
+
+  const [sandboxSummary, setSandboxSummary] = useState<SandboxAccountingSummary | null>(null)
+  const [sandboxLedger, setSandboxLedger] = useState<SandboxLedgerEntryAdmin[]>([])
+  const [sandboxLedgerPage, setSandboxLedgerPage] = useState(1)
+  const [sandboxLedgerTotal, setSandboxLedgerTotal] = useState(0)
+  const [sandboxLedgerAccountFilter, setSandboxLedgerAccountFilter] = useState('')
+  const [sandboxLedgerEventFilter, setSandboxLedgerEventFilter] = useState('')
+  const [grantSandboxFundsOpen, setGrantSandboxFundsOpen] = useState(false)
+
+  const [gameEligibility, setGameEligibility] = useState<GameEligibilityAdminItem[]>([])
 
   // Tab 1: Dashboard
   const [metrics, setMetrics] = useState<Metrics | null>(null)
@@ -283,11 +329,201 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     }
   }, [auditActionFilter, auditTargetTypeFilter, auditTargetIdQuery, auditAdminIdQuery, auditPage])
 
+  // ---------------------------------------------------------------------------
+  // Competition Data Fetching Handlers
+  // ---------------------------------------------------------------------------
+  const fetchCompMetrics = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await apiFetch<{ metrics: CompetitionOverviewMetrics }>('/api/admin/competitions/overview')
+      setCompMetrics(res.metrics)
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load competition overview.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchCompTemplates = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await apiFetch<{ templates: CompetitionTemplateAdmin[] }>('/api/admin/competitions/templates')
+      setCompTemplates(res.templates || [])
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load competition templates.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchCompInstances = useCallback(async (page = compInstancePage) => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const params = new URLSearchParams()
+      if (compStatusFilter) params.append('status', compStatusFilter)
+      if (compGameFilter) params.append('gameId', compGameFilter)
+      params.append('page', String(page))
+      params.append('limit', '20')
+
+      const res = await apiFetch<{ instances: CompetitionInstanceAdmin[]; pagination: { page: number; total: number } }>(
+        `/api/admin/competitions/instances?${params.toString()}`
+      )
+      setCompInstances(res.instances || [])
+      setCompInstanceTotal(res.pagination?.total ?? 0)
+      setCompInstancePage(page)
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load competition instances.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [compStatusFilter, compGameFilter, compInstancePage])
+
+  const inspectCompInstance = useCallback(async (instanceId: string) => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await apiFetch<CompetitionInstanceAdminDetail>(`/api/admin/competitions/instances/${instanceId}`)
+      setSelectedCompInstanceDetail(res)
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load competition instance details.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchSandboxSummary = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await apiFetch<{ summary: SandboxAccountingSummary }>('/api/admin/competitions/accounting/summary')
+      setSandboxSummary(res.summary)
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load sandbox accounting summary.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchSandboxLedger = useCallback(async (page = sandboxLedgerPage) => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const params = new URLSearchParams()
+      if (sandboxLedgerAccountFilter) params.append('account', sandboxLedgerAccountFilter)
+      if (sandboxLedgerEventFilter) params.append('eventType', sandboxLedgerEventFilter)
+      params.append('page', String(page))
+      params.append('limit', '25')
+
+      const res = await apiFetch<{ ledger: SandboxLedgerEntryAdmin[]; pagination: { page: number; total: number } }>(
+        `/api/admin/competitions/accounting/ledger?${params.toString()}`
+      )
+      setSandboxLedger(res.ledger || [])
+      setSandboxLedgerTotal(res.pagination?.total ?? 0)
+      setSandboxLedgerPage(page)
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load sandbox ledger records.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [sandboxLedgerAccountFilter, sandboxLedgerEventFilter, sandboxLedgerPage])
+
+  const fetchGameEligibility = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const res = await apiFetch<{ games: GameEligibilityAdminItem[] }>('/api/admin/competitions/eligibility')
+      setGameEligibility(res.games || [])
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load game eligibility.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Competition Action Handlers
+  const handleCreateTemplate = async (params: any) => {
+    await apiFetch('/api/admin/competitions/templates', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+    setStatusMessage('Competition template created successfully.')
+    fetchCompTemplates()
+  }
+
+  const handleEditTemplate = async (templateId: string, params: any) => {
+    await apiFetch(`/api/admin/competitions/templates/${templateId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(params),
+    })
+    setStatusMessage('Competition template updated successfully (future instances only).')
+    fetchCompTemplates()
+  }
+
+  const handleToggleTemplate = async (template: CompetitionTemplateAdmin) => {
+    try {
+      await apiFetch(`/api/admin/competitions/templates/${template.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ enabled: !template.enabled }),
+      })
+      setStatusMessage(`Template "${template.title}" ${!template.enabled ? 'enabled' : 'disabled'}.`)
+      fetchCompTemplates()
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to update template status.')
+    }
+  }
+
+  const handleCancelCompetition = async (instanceId: string, reason: string) => {
+    await apiFetch(`/api/admin/competitions/instances/${instanceId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+    setStatusMessage(`Competition instance ${instanceId} cancelled and reservations released.`)
+    fetchCompInstances()
+    if (selectedCompInstanceDetail?.instance.id === instanceId) {
+      inspectCompInstance(instanceId)
+    }
+  }
+
+  const handleVoidCompetition = async (instanceId: string, reason: string) => {
+    await apiFetch(`/api/admin/competitions/instances/${instanceId}/void`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+    setStatusMessage(`Competition instance ${instanceId} voided and captured entries refunded.`)
+    fetchCompInstances()
+    if (selectedCompInstanceDetail?.instance.id === instanceId) {
+      inspectCompInstance(instanceId)
+    }
+  }
+
+  const handleGrantSandboxFunds = async (params: { targetUserId: string; amountMinor: number; reason: string }) => {
+    await apiFetch('/api/admin/competitions/accounting/grant', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+    setStatusMessage(`Granted ${formatGEL(params.amountMinor)} sandbox test funds to user ${params.targetUserId}.`)
+    if (activeTab === 'competitions_accounting') {
+      fetchSandboxSummary()
+      fetchSandboxLedger()
+    }
+  }
+
   // Switch tabs & trigger data loads
   useEffect(() => {
     if (!isAdminAuthenticated) return
     setStatusMessage(null)
     setErrorMessage(null)
+    if (activeTab === 'competitions_overview') fetchCompMetrics()
+    if (activeTab === 'competitions_templates') fetchCompTemplates()
+    if (activeTab === 'competitions_instances') fetchCompInstances(1)
+    if (activeTab === 'competitions_accounting') {
+      fetchSandboxSummary()
+      fetchSandboxLedger(1)
+    }
+    if (activeTab === 'competitions_eligibility') fetchGameEligibility()
     if (activeTab === 'dashboard') fetchDashboard()
     if (activeTab === 'users') fetchUsers(1)
     if (activeTab === 'matches') fetchMatches(1)
@@ -559,6 +795,43 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   // ---------------------------------------------------------------------------
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#e2e8f0', fontFamily: 'sans-serif' }}>
+      {/* Competition Modals */}
+      <CreateTemplateModal
+        isOpen={createTemplateModalOpen}
+        onClose={() => setCreateTemplateModalOpen(false)}
+        onSubmit={handleCreateTemplate}
+      />
+      <EditTemplateModal
+        isOpen={editingTemplate !== null}
+        template={editingTemplate}
+        onClose={() => setEditingTemplate(null)}
+        onSubmit={handleEditTemplate}
+      />
+      <InstanceDetailModal
+        isOpen={selectedCompInstanceDetail !== null}
+        detail={selectedCompInstanceDetail}
+        onClose={() => setSelectedCompInstanceDetail(null)}
+        onCancelCompetition={(id) => setCancelCompInstanceId(id)}
+        onVoidCompetition={(id) => setVoidCompInstanceId(id)}
+      />
+      <CancelCompetitionModal
+        isOpen={cancelCompInstanceId !== null}
+        instanceId={cancelCompInstanceId}
+        onClose={() => setCancelCompInstanceId(null)}
+        onConfirm={handleCancelCompetition}
+      />
+      <VoidCompetitionModal
+        isOpen={voidCompInstanceId !== null}
+        instanceId={voidCompInstanceId}
+        onClose={() => setVoidCompInstanceId(null)}
+        onConfirm={handleVoidCompetition}
+      />
+      <GrantSandboxFundsModal
+        isOpen={grantSandboxFundsOpen}
+        onClose={() => setGrantSandboxFundsOpen(false)}
+        onSubmit={handleGrantSandboxFunds}
+      />
+
       {/* Modals */}
       {confirmModalConfig && <ActionConfirmModal config={confirmModalConfig} />}
       {grantModalUser && (
@@ -621,6 +894,14 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
           <button
             type="button"
             onClick={() => {
+              if (activeTab === 'competitions_overview') fetchCompMetrics()
+              if (activeTab === 'competitions_templates') fetchCompTemplates()
+              if (activeTab === 'competitions_instances') fetchCompInstances()
+              if (activeTab === 'competitions_accounting') {
+                fetchSandboxSummary()
+                fetchSandboxLedger()
+              }
+              if (activeTab === 'competitions_eligibility') fetchGameEligibility()
               if (activeTab === 'dashboard') fetchDashboard()
               if (activeTab === 'users') fetchUsers()
               if (activeTab === 'matches') fetchMatches()
@@ -656,12 +937,17 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       )}
 
       {/* Navigation Tabs */}
-      <nav style={{ display: 'flex', gap: '4px', padding: '10px 24px', background: '#0f1017', borderBottom: '1px solid #1e2030' }}>
+      <nav style={{ display: 'flex', gap: '4px', padding: '10px 24px', background: '#0f1017', borderBottom: '1px solid #1e2030', overflowX: 'auto' }}>
         {[
-          { id: 'dashboard', label: '📊 Dashboard Overview' },
+          { id: 'competitions_overview', label: '🏆 Overview' },
+          { id: 'competitions_templates', label: '📋 Templates' },
+          { id: 'competitions_instances', label: '⚔️ Live Instances' },
+          { id: 'competitions_accounting', label: '💰 Sandbox Accounting' },
+          { id: 'competitions_eligibility', label: '🎮 Game Eligibility' },
+          { id: 'dashboard', label: '📊 Platform Telemetry' },
           { id: 'users', label: '👥 User Management' },
-          { id: 'matches', label: '⚔️ Match Operations' },
-          { id: 'ledger', label: '💰 Wallet & Ledger' },
+          { id: 'matches', label: '🕹️ Legacy Matches' },
+          { id: 'ledger', label: '📒 Legacy Ledger' },
           { id: 'audit', label: '📜 Audit Log Explorer' },
         ].map((t) => (
           <button
@@ -677,6 +963,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: activeTab === t.id ? 700 : 500,
+              whiteSpace: 'nowrap',
             }}
           >
             {t.label}
@@ -686,6 +973,62 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
       {/* Main Body */}
       <main style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+        {/* COMPETITION TABS */}
+        {activeTab === 'competitions_overview' && (
+          <CompetitionOverviewView
+            metrics={compMetrics}
+            onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        )}
+
+        {activeTab === 'competitions_templates' && (
+          <CompetitionTemplatesView
+            templates={compTemplates}
+            onCreateClick={() => setCreateTemplateModalOpen(true)}
+            onEditClick={(t) => setEditingTemplate(t)}
+            onToggleClick={handleToggleTemplate}
+            hasManagePerm={hasPerm('COMPETITIONS_MANAGE')}
+          />
+        )}
+
+        {activeTab === 'competitions_instances' && (
+          <CompetitionInstancesView
+            instances={compInstances}
+            total={compInstanceTotal}
+            page={compInstancePage}
+            statusFilter={compStatusFilter}
+            gameFilter={compGameFilter}
+            onStatusFilterChange={(s) => setCompStatusFilter(s)}
+            onGameFilterChange={(g) => setCompGameFilter(g)}
+            onSearch={(page) => fetchCompInstances(page)}
+            onInspect={inspectCompInstance}
+            onCancel={(id) => setCancelCompInstanceId(id)}
+            onVoid={(id) => setVoidCompInstanceId(id)}
+            hasCancelPerm={hasPerm('COMPETITIONS_CANCEL')}
+            hasVoidPerm={hasPerm('COMPETITIONS_VOID')}
+          />
+        )}
+
+        {activeTab === 'competitions_accounting' && (
+          <CompetitionAccountingView
+            summary={sandboxSummary}
+            ledger={sandboxLedger}
+            ledgerTotal={sandboxLedgerTotal}
+            ledgerPage={sandboxLedgerPage}
+            accountFilter={sandboxLedgerAccountFilter}
+            eventFilter={sandboxLedgerEventFilter}
+            onAccountFilterChange={(a) => setSandboxLedgerAccountFilter(a)}
+            onEventFilterChange={(e) => setSandboxLedgerEventFilter(e)}
+            onFilterLedger={(page) => fetchSandboxLedger(page)}
+            onGrantClick={() => setGrantSandboxFundsOpen(true)}
+            hasGrantPerm={hasPerm('WALLET_GRANT_SANDBOX')}
+          />
+        )}
+
+        {activeTab === 'competitions_eligibility' && (
+          <CompetitionEligibilityView games={gameEligibility} />
+        )}
+
         {/* TAB 1: DASHBOARD */}
         {activeTab === 'dashboard' && metrics && (
           <div>
@@ -731,9 +1074,9 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
               </div>
 
               <div style={kpiCardStyle}>
-                <div style={kpiLabelStyle}>CIRCULATING DIAMONDS</div>
+                <div style={kpiLabelStyle}>CIRCULATING DIAMONDS (LEGACY / RETIRED)</div>
                 <div style={{ fontSize: '22px', fontWeight: 800, color: '#fbbf24' }}>{metrics.diamondsCirculation.toLocaleString()}</div>
-                <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '4px' }}>Rake: {metrics.platformRakeDiamonds} 💎</div>
+                <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '4px' }}>Historical Platform Rake: {metrics.platformRakeDiamonds} 💎</div>
               </div>
             </div>
 

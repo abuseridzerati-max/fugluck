@@ -107,15 +107,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     // Fund test users with sandbox GEL balances (except broke user)
     for (const u of testUsers) {
       if (u.id.includes("broke")) continue;
-      const refId = `dep_${u.id}`;
-      await pool.query(
-        `INSERT INTO sandbox_ledger_entries (
-          id, accounting_reference_id, user_id, account_id, event_type, currency, amount_minor, balance_type, description
-        ) VALUES (
-          $1, $2, $3, $4, 'DEPOSIT', 'GEL', 5000, 'AVAILABLE', 'Initial test grant'
-        ) ON CONFLICT DO NOTHING`,
-        [`led_${randomUUID()}`, refId, u.id, `user:${u.id}:available`],
-      );
+      await adapter.grantSandboxTestFunds(u.id, 5000);
     }
 
     console.log("--- 1-6: Template Service & Eligibility Enforcement ---");

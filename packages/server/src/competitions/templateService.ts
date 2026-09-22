@@ -208,6 +208,55 @@ export class CompetitionTemplateService {
   }
 
   /**
+   * Lists all competition templates (both enabled and disabled) for administration.
+   */
+  async listTemplates(): Promise<CompetitionTemplate[]> {
+    const rows = await db
+      .select()
+      .from(competitionTemplates)
+      .orderBy(asc(competitionTemplates.createdAt));
+
+    if (rows.length === 0) return [];
+
+    const templateIds = rows.map((r) => r.id);
+    const prizeRows = await db
+      .select()
+      .from(competitionTemplatePrizes)
+      .where(sql`${competitionTemplatePrizes.templateId} in ${templateIds}`)
+      .orderBy(asc(competitionTemplatePrizes.placement));
+
+    const prizesByTemplate = new Map<string, CompetitionTemplatePrize[]>();
+    for (const p of prizeRows) {
+      const list = prizesByTemplate.get(p.templateId) ?? [];
+      list.push({
+        id: p.id,
+        templateId: p.templateId,
+        placement: p.placement,
+        amountMinor: p.amountMinor,
+        currency: p.currency as ISO4217Currency,
+      });
+      prizesByTemplate.set(p.templateId, list);
+    }
+
+    return rows.map((t) => ({
+      id: t.id,
+      gameId: t.gameId,
+      title: t.title,
+      format: t.format as CompetitionFormat,
+      participantCapacity: t.participantCapacity,
+      currency: t.currency as ISO4217Currency,
+      entryFeeMinor: t.entryFeeMinor,
+      rulesVersion: t.rulesVersion,
+      skillAssessmentVersion: t.skillAssessmentVersion,
+      enabled: t.enabled,
+      jurisdiction: t.jurisdiction,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+      prizes: prizesByTemplate.get(t.id) ?? [],
+    }));
+  }
+
+  /**
    * Creates a new CompetitionTemplate. Validates eligibility and terms.
    */
   async createTemplate(params: CreateTemplateParams): Promise<CompetitionTemplate> {

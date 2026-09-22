@@ -3,6 +3,78 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 71 (2026-09-22): Competition Economy Phase 5 — Sandbox Admin & Operations Console
+
+### Baseline & Scope
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Phase 4 Acceptance & Merge:
+  - Factual test-count review: Phase 4 automated check reported 37 assertions across 35 requirements (requirement 19 asserts 19a, 19b, 19c).
+  - Fast-forward merged `feat/competition-economy-phase-4` (`6d948c6`) into `main` (`6d948c6`), pushed to `origin/main`, deleted local and remote Phase 4 branches.
+  - Manual browser acceptance honestly preserved as `PENDING` due to Playwright driver CDN 404.
+- Phase 5 Branch: `feat/competition-economy-phase-5` (created from synchronized `main` at `6d948c6`).
+- Objective: Build the SANDBOX ADMIN & OPERATIONS CONSOLE for the new Competition domain, integrated into `/admin`.
+- Invariants: All operations remain strictly SANDBOX ONLY; zero real payment rails, deposit gateways, or withdrawals; Coins isolated; Diamonds absent and labeled `(LEGACY / RETIRED)` where historical; append-only accounting ledger is immutable.
+
+### Admin & Operations Architecture
+1. **Integrated `/admin` Console Views (`packages/client/src/admin/CompetitionAdminViews.tsx`)**:
+   - Extended the existing Fugluck `/admin` interface with 5 dedicated competition tabs:
+     - **Overview (`comp-overview`)**: Real-time operational metrics (enabled templates, active/waiting/locked/verifying instances, settlements today, cancelled/voided today, sandbox entry reservations, captured escrow, prizes awarded, promotional subsidies, platform margin, system ledger sum, and double-entry reconciliation status).
+     - **Templates (`comp-templates`)**: Authoring and management UI for competition templates, showing game, format, capacity, currency (`GEL`), entry fee, prize distribution, rules version, jurisdiction, and enabled/disabled status.
+     - **Live Instances (`comp-instances`)**: Searchable, filterable instance table (`PENDING_ENTRANTS`, `LOCKED`, `ACTIVE`, `VERIFYING`, `SETTLED`, `CANCELLED`, `VOIDED`) with detail drawer and operational cancel/void controls.
+     - **Sandbox Accounting (`comp-accounting`)**: Financial inspection dashboard, double-entry reconciliation status (discrepancy = TEST ₾0.00), read-only paginated ledger viewer, and controlled QA test funding grant modal.
+     - **Game Eligibility (`comp-eligibility`)**: Authoritative legal/technical status display showing 4 candidate games (`PAID_COMPETITIVE_CANDIDATE`), 2 coin games (`COIN_COMPETITIVE`), and strictly 0 games as `PAID_COMPETITIVE_APPROVED`.
+2. **Template Authoring, Validation & Economics**:
+   - Server-authoritative validation (`packages/server/src/routes/adminCompetitions.ts`): Rejects negative entry fees, duplicate prize placements, negative prizes, invalid game IDs, coin-only games (`speed-trivia`, `tf-sprint`), capacity < 2, and non-GEL currencies.
+   - Entry & Prize Independence: Admin UI visually decouples entry fee from prize pool, allowing promotional overlays (e.g. 2×₾5 entry vs ₾20 prize) and freerolls (₾0 entry vs ₾1,000 prize). Shows calculated operational economics (expected capacity entries, prize sum, promotional subsidy / platform margin) strictly as informational estimates without automatic mutation.
+   - Snapshot Immutability Warning: Admin UI clearly emphasizes that template edits affect only future instances; existing instances preserve their binding snapshotted terms.
+   - Enable/Disable Toggle: Disabling prevents new queue joins without cancelling or mutating existing active/locked instances.
+3. **Instance Monitoring, Detail & Operational Safeguards**:
+   - Instance Detail Modal: Displays both current template parameters and immutable instance snapshots side-by-side.
+   - Participant Inspection: Safe participant view (account identifier, username, seat number, registration timestamp, status, verified score, rank, prize awarded, entry reservation/capture state) with zero exposure of tokens or sensitive credentials.
+   - Safe Cancel (`PENDING_ENTRANTS`): Operational cancellation releases reserved entry funds exactly once back to participants, records audit log, and operates idempotently.
+   - Safe Void (`LOCKED`, `ACTIVE`, `VERIFYING`): Refunds 100% of captured entries from platform escrow back to participants, leaves platform fees at 0, records audit log, and operates idempotently.
+   - Terminal Protection: `SETTLED`, `CANCELLED`, and `VOIDED` competitions reject operational cancel or void attempts.
+4. **Accounting & Reconciliation Engine**:
+   - Double-Entry Telemetry: Aggregates total funding grants, available test funds, reserved entry funds, captured escrow, prize awards, refunds, platform margin, and promotional subsidies.
+   - Reconciliation: Whole-system algebraic sum check (`discrepancyMinor === 0`); unbalances immediately trigger high-visibility operational alerts.
+   - Read-Only Ledger: Append-only query with filters by instance ID, user ID, event type, and account ID; strictly no arbitrary mutation or deletion endpoints.
+   - Controlled Sandbox Funding: Admin modal allows targeted test funding grants (`platform:treasury:GEL` -> `user:<id>:GEL`) with mandatory operational reason, audit logging, and `TEST / SANDBOX GEL — NO REAL MONEY` notices.
+5. **RBAC & Security Boundaries**:
+   - Normal player session (`ac_session`) rejected with HTTP 401 on all admin routes.
+   - Admin cookie (`ac_admin_session`) and `requireOwnerAdmin` middleware enforced.
+   - Mapped granular competition permissions (`COMPETITIONS_VIEW`, `COMPETITIONS_MANAGE`, `COMPETITIONS_CANCEL`, `COMPETITIONS_VOID`) via `PERMISSION_ALIAS_MAP` while preserving all 16 core admin permissions for backwards compatibility with `admin-console-check.ts`.
+   - Comprehensive audit logging: Every administrative mutation (template create, template update, template toggle, competition cancel, competition void, test funding grant) creates an immutable `admin_audit_logs` record.
+   - Diamonds strictly absent from competition tools; historical Diamond data in legacy views clearly labeled `(LEGACY / RETIRED)`.
+   - Casual Coins remain isolated with zero conversion to sandbox GEL.
+
+### Verification & Automated Testing
+- `npm run typecheck`: **PASS** (Zero TypeScript diagnostics across monorepo).
+- `npm run build`: **PASS** (Client production bundle clean).
+- `npm run build:server`: **PASS** (Server compilation clean).
+- `npm run test:database-safety`: **18/18 PASS**.
+- `npm run test:migration-parity`: **279/279 PASS**.
+- `npm run test:competition-domain`: **40/40 PASS**.
+- `npm run test:competition-accounting`: **51/51 PASS**.
+- `npm run test:competition-lifecycle`: **43/43 PASS**.
+- `npm run test:competition-player-ui`: **37/37 assertions across 35 requirements PASS**.
+- `npm run test:competition-admin`: **41/41 assertions across 40 requirements PASS** (`scripts/competition-phase5-admin-check.ts`).
+- `npm test`: **34/34 test suites PASS 100%**.
+- Manual Browser Acceptance: **PENDING** (Headless Playwright driver installation failed due to external Azure CDN 404; full operational surface verified through comprehensive automated test suite).
+
+### Roadmap Alignment
+1. **Phase 1 — Competition Domain Core & Invariants**: COMPLETED (`main`).
+2. **Phase 2 — Double-Entry Ledger & Financial Engine**: COMPLETED (`main`).
+3. **Phase 3 — Server-Side Lifecycle Engine & Matchmaking Integration**: COMPLETED (`main`).
+4. **Phase 4 — Player-Facing Sandbox Competition Experience**: COMPLETED (`main`).
+5. **Phase 5 — Sandbox Admin & Operations Console**: COMPLETED (`feat/competition-economy-phase-5`).
+6. **Phase 6 — Revenue Service Technical Dossier + Submission Readiness**: Comprehensive legal/technical audit documentation, replay proof packages, ledger reconciliations, and regulatory filing readiness. (Strictly NO real payments).
+7. **REGULATORY REVIEW / CLASSIFICATION GATE**: Formal submission and review by the Revenue Service / regulatory authorities. No payment rails or live funds before explicit clearance.
+8. **Future Phase — Payment Provider Integration**: Licensed PSP/banking rails (only after regulatory classification).
+9. **Future Phase — Production Monetary Activation**: Gated live rollout.
+
+---
+
 ## Session 70 (2026-09-22): Competition Economy Phase 4 — Player-Facing Sandbox Competition Experience
 
 ### Baseline & Scope

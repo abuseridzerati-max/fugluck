@@ -1,7 +1,17 @@
 export type { AdminRole, AdminPermission } from '@fugluck/shared'
 import type { AdminRole } from '@fugluck/shared'
 
-export type Tab = 'dashboard' | 'users' | 'matches' | 'ledger' | 'audit'
+export type Tab =
+  | 'dashboard'
+  | 'users'
+  | 'matches'
+  | 'ledger'
+  | 'audit'
+  | 'competitions_overview'
+  | 'competitions_templates'
+  | 'competitions_instances'
+  | 'competitions_accounting'
+  | 'competitions_eligibility'
 
 export type AdminUser = {
   id: string
@@ -97,4 +107,208 @@ export type UserDetail = {
   recentMatches: MatchItem[]
   recentLedger: LedgerItem[]
   userAuditLogs: AuditItem[]
+}
+
+export type CompetitionOverviewMetrics = {
+  totalTemplatesCount: number
+  enabledTemplatesCount: number
+  waitingInstancesCount: number
+  lockedInstancesCount: number
+  activeInstancesCount: number
+  verifyingInstancesCount: number
+  settledTodayCount: number
+  cancelledTodayCount: number
+  voidedTodayCount: number
+  totalInstancesCount: number
+  entriesReservedMinor: number
+  entriesCapturedMinor: number
+  prizesAwardedMinor: number
+  platformMarginMinor: number
+  promotionalSubsidiesMinor: number
+  systemLedgerSumMinor: number
+  reconciliationDiscrepancyMinor: number
+}
+
+export type SandboxAccountingSummary = {
+  totalFundingGrantsMinor: number
+  availableUserTestFundsMinor: number
+  reservedEntryFundsMinor: number
+  capturedEntryFundsMinor: number
+  prizeAwardsMinor: number
+  refundsMinor: number
+  platformFeesMinor: number
+  promotionalSubsidiesMinor: number
+  systemLedgerSumMinor: number
+  discrepancyMinor: number
+}
+
+export type CompetitionDashboardMetrics = {
+  templates: {
+    total: number
+    enabled: number
+  }
+  instances: {
+    waiting: number
+    locked: number
+    active: number
+    verifying: number
+    settledToday: number
+    cancelledToday: number
+    voidedToday: number
+    total: number
+  }
+  accounting: {
+    totalGrantsMinor: number
+    availableUserFundsMinor: number
+    reservedEntryFundsMinor: number
+    capturedEscrowFundsMinor: number
+    totalPrizeAwardsMinor: number
+    totalRefundsMinor: number
+    platformFeesRetainedMinor: number
+    promotionalSubsidiesMinor: number
+    totalLedgerSum: number
+    systemReconciled: boolean
+  }
+  currency: string
+  isSandbox: boolean
+}
+
+export type CompetitionTemplateAdmin = {
+  id: string
+  gameId: string
+  title: string
+  format: string
+  participantCapacity: number
+  currency: string
+  entryFeeMinor: number
+  rulesVersion: string
+  skillAssessmentVersion: string
+  enabled: boolean
+  jurisdiction: string
+  createdAt: string
+  updatedAt: string
+  prizes: Array<{
+    id?: string
+    placement: number
+    amountMinor: number
+    currency: string
+  }>
+  economics: {
+    expectedEntriesMinor: number
+    predeterminedPrizesMinor: number
+    expectedPlatformMarginMinor: number
+    expectedPromotionalSubsidyMinor: number
+  }
+}
+
+export type CompetitionInstanceAdmin = {
+  id: string
+  templateId: string
+  templateTitle: string
+  gameId: string
+  format: string
+  status: string
+  currentParticipants: number
+  participantCapacity: number
+  entryFeeMinor: number
+  currency: string
+  matchId: string | null
+  winnerUserId: string | null
+  createdAt: string
+  lockedAt: string | null
+  startedAt: string | null
+  settledAt: string | null
+  totalPrizeMinor: number
+}
+
+export type CompetitionParticipantAdmin = {
+  id: string
+  userId: string
+  username: string
+  seatIndex: number
+  status: string
+  score: number | null
+  rank: number | null
+  prizeWonMinor: number
+  registeredAt: string
+  entryFeeMinor: number
+}
+
+export type CompetitionInstanceAdminDetail = {
+  instance: {
+    id: string
+    templateId: string
+    gameId: string
+    format: string
+    status: string
+    currentParticipants: number
+    participantCapacity: number
+    entryFeeMinor: number
+    currency: string
+    rulesVersion: string
+    skillAssessmentVersion: string
+    jurisdiction: string
+    matchId: string | null
+    winnerUserId: string | null
+    createdAt: string
+    lockedAt: string | null
+    startedAt: string | null
+    settledAt: string | null
+    prizes: Array<{
+      id: string
+      placement: number
+      amountMinor: number
+      currency: string
+      awardedUserId?: string | null
+    }>
+  }
+  currentTemplate: {
+    id: string
+    title: string
+    gameId: string
+    format: string
+    participantCapacity: number
+    entryFeeMinor: number
+    currency: string
+    rulesVersion: string
+    jurisdiction: string
+    enabled: boolean
+    prizes: Array<{
+      placement: number
+      amountMinor: number
+      currency: string
+    }>
+  } | null
+  participants: CompetitionParticipantAdmin[]
+  reconciliation: {
+    reconciled: boolean
+    totalCapturedMinor: number
+    totalPrizesMinor: number
+    platformMarginMinor: number
+    promotionalSubsidyMinor: number
+    discrepancyMinor: number
+  }
+}
+
+export type SandboxLedgerEntryAdmin = {
+  id: string
+  accountingReferenceId: string
+  idempotencyKey: string
+  userId: string | null
+  accountId: string
+  competitionInstanceId: string | null
+  eventType: string
+  currency: string
+  amountMinor: number
+  balanceType: string
+  description: string | null
+  createdAt: string
+}
+
+export type GameEligibilityAdminItem = {
+  gameId: string
+  status: string
+  isCandidate: boolean
+  isCoinOnly: boolean
+  technicalNotes: string
 }

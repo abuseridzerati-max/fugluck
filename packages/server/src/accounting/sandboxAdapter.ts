@@ -5,7 +5,7 @@
 
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
-import { db } from "../db/client";
+import { db, pool } from "../db/client";
 import type { MoneyAmount } from "@fugluck/shared";
 import { createMoney } from "@fugluck/shared";
 import type {
@@ -927,6 +927,183 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
     });
 
     return await this.getUserBalance(userId);
+  }
+
+  /**
+   * Calculates platform-wide aggregated Sandbox accounting metrics and reconciliation.
+   */
+  async getSandboxAccountingSummary(): Promise<{
+    totalGrantsMinor: number;
+    totalFundingGrantsMinor: number;
+    availableUserFundsMinor: number;
+    availableUserTestFundsMinor: number;
+    reservedEntryFundsMinor: number;
+    capturedEscrowFundsMinor: number;
+    capturedEntryFundsMinor: number;
+    totalPrizeAwardsMinor: number;
+    prizeAwardsMinor: number;
+    totalRefundsMinor: number;
+    refundsMinor: number;
+    platformFeesRetainedMinor: number;
+    platformFeesMinor: number;
+    promotionalSubsidiesMinor: number;
+    totalLedgerSum: number;
+    systemLedgerSumMinor: number;
+    discrepancyMinor: number;
+    systemReconciled: boolean;
+  }> {
+    const summaryRes = await pool.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN event_type = 'DEPOSIT' AND balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS total_grants,
+         COALESCE(SUM(CASE WHEN balance_type = 'AVAILABLE' AND account_id LIKE 'user:%' THEN amount_minor ELSE 0 END), 0)::integer AS available_funds,
+         COALESCE(SUM(CASE WHEN balance_type = 'RESERVED' AND account_id LIKE 'user:%' THEN amount_minor ELSE 0 END), 0)::integer AS reserved_funds,
+         COALESCE(SUM(CASE WHEN event_type = 'ENTRY_CAPTURE' AND account_id LIKE 'platform:escrow:%' THEN amount_minor ELSE 0 END), 0)::integer AS escrow_funds,
+         COALESCE(SUM(CASE WHEN event_type = 'PRIZE_PAYOUT' AND user_id IS NOT NULL THEN amount_minor ELSE 0 END), 0)::integer AS prizes_awarded,
+         COALESCE(SUM(CASE WHEN event_type = 'REFUND' AND user_id IS NOT NULL THEN amount_minor ELSE 0 END), 0)::integer AS refunds,
+         COALESCE(SUM(CASE WHEN event_type = 'PLATFORM_FEE_RETAINED' THEN amount_minor ELSE 0 END), 0)::integer AS platform_fees,
+         COALESCE(SUM(CASE WHEN event_type = 'PROMOTIONAL_SUBSIDY' THEN ABS(amount_minor) ELSE 0 END), 0)::integer AS subsidies,
+         COALESCE(SUM(amount_minor), 0)::integer AS ledger_sum
+       FROM sandbox_ledger_entries`,
+    );
+
+    const row = summaryRes.rows[0] as any;
+    const ledgerSum = Number(row?.ledger_sum ?? 0);
+
+    const totalGrants = Number(row?.total_grants ?? 0);
+    const availableFunds = Number(row?.available_funds ?? 0);
+    const reservedFunds = Number(row?.reserved_funds ?? 0);
+    const escrowFunds = Number(row?.escrow_funds ?? 0);
+    const prizesAwarded = Number(row?.prizes_awarded ?? 0);
+    const refunds = Number(row?.refunds ?? 0);
+    const platformFees = Number(row?.platform_fees ?? 0);
+    const subsidies = Number(row?.subsidies ?? 0);
+
+    return {
+      totalGrantsMinor: totalGrants,
+      totalFundingGrantsMinor: totalGrants,
+      availableUserFundsMinor: availableFunds,
+      availableUserTestFundsMinor: availableFunds,
+      reservedEntryFundsMinor: reservedFunds,
+      capturedEscrowFundsMinor: escrowFunds,
+      capturedEntryFundsMinor: escrowFunds,
+      totalPrizeAwardsMinor: prizesAwarded,
+      prizeAwardsMinor: prizesAwarded,
+      totalRefundsMinor: refunds,
+      refundsMinor: refunds,
+      platformFeesRetainedMinor: platformFees,
+      platformFeesMinor: platformFees,
+      promotionalSubsidiesMinor: subsidies,
+      totalLedgerSum: ledgerSum,
+      systemLedgerSumMinor: ledgerSum,
+      discrepancyMinor: ledgerSum,
+      systemReconciled: ledgerSum === 0,
+    };
+  }
+
+  /**
+   * Read-only pagination and filtering of sandbox ledger entries for audit.
+   */
+  async listSandboxLedgerEntries(params: {
+    competitionInstanceId?: string;
+    userId?: string;
+    eventType?: string;
+    accountId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    entries: Array<{
+      id: string;
+      accountingReferenceId: string;
+      idempotencyKey: string;
+      userId: string | null;
+      accountId: string;
+      competitionInstanceId: string | null;
+      eventType: string;
+      currency: string;
+      amountMinor: number;
+      balanceType: string;
+      description: string | null;
+      createdAt: Date;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+    const offset = (page - 1) * limit;
+
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (params.competitionInstanceId && params.competitionInstanceId.trim().length > 0) {
+      conditions.push(`competition_instance_id = $${idx++}`);
+      values.push(params.competitionInstanceId.trim());
+    }
+
+    if (params.userId && params.userId.trim().length > 0) {
+      conditions.push(`user_id = $${idx++}`);
+      values.push(params.userId.trim());
+    }
+
+    if (params.eventType && params.eventType.trim().length > 0) {
+      conditions.push(`event_type = $${idx++}`);
+      values.push(params.eventType.trim());
+    }
+
+    if (params.accountId && params.accountId.trim().length > 0) {
+      conditions.push(`account_id ILIKE $${idx++}`);
+      values.push(`%${params.accountId.trim()}%`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countQuery = `SELECT count(*)::integer AS total FROM sandbox_ledger_entries ${whereClause}`;
+    const countRes = await pool.query(countQuery, values);
+    const total = Number(countRes.rows[0]?.total ?? 0);
+
+    const listQuery = `
+      SELECT
+        id,
+        accounting_reference_id,
+        idempotency_key,
+        user_id,
+        account_id,
+        competition_instance_id,
+        event_type,
+        currency,
+        amount_minor,
+        balance_type,
+        description,
+        created_at
+      FROM sandbox_ledger_entries
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${idx++} OFFSET $${idx++}
+    `;
+
+    const listRes = await pool.query(listQuery, [...values, limit, offset]);
+
+    return {
+      entries: listRes.rows.map((r: any) => ({
+        id: r.id,
+        accountingReferenceId: r.accounting_reference_id,
+        idempotencyKey: r.idempotency_key,
+        userId: r.user_id,
+        accountId: r.account_id,
+        competitionInstanceId: r.competition_instance_id,
+        eventType: r.event_type,
+        currency: r.currency,
+        amountMinor: Number(r.amount_minor),
+        balanceType: r.balance_type,
+        description: r.description,
+        createdAt: r.created_at,
+      })),
+      total,
+      page,
+      limit,
+    };
   }
 
   private assertValidMoney(money: MoneyAmount): void {

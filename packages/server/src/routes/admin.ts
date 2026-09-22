@@ -11,6 +11,7 @@ import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users 
 import { ensureMatchSettlementsTable, getBalances } from "../wallet/ledger";
 import { getActiveMatchesSummary } from "../matchmaking/matches";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+import { competitionAdminRouter } from "./adminCompetitions";
 
 const adminLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -87,6 +88,8 @@ adminRouter.post("/logout", (_req, res) => {
 
 // Guard all operational admin routes with server-side requireOwnerAdmin
 adminRouter.use(requireOwnerAdmin);
+
+adminRouter.use("/competitions", competitionAdminRouter);
 
 adminRouter.get("/me", async (req, res) => {
   const user = await db.query.users.findFirst({ where: eq(users.id, req.userId!) });
