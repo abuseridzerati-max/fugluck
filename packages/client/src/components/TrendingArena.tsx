@@ -8,6 +8,7 @@ type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   onLaunchGuestInvite?: (id: string, title: string) => void
+  onOpenCompetitions?: (id: string, title: string) => void
   loadingGameId: string | null
   selectedCategory?: string
   searchQuery?: string
@@ -18,6 +19,7 @@ export default function TrendingArena({
   onPlayGame,
   onFindOpponent,
   onLaunchGuestInvite,
+  onOpenCompetitions,
   loadingGameId,
   selectedCategory = 'all',
   searchQuery = '',
@@ -108,6 +110,7 @@ export default function TrendingArena({
           {filteredGames.map((game) => (
             <GameCard
               key={game.id}
+              gameId={game.id}
               title={game.title}
               engine={game.engine}
               tagline={game.tagline}
@@ -122,6 +125,9 @@ export default function TrendingArena({
                 game.id in gameFactories
                   ? () => onLaunchGuestInvite?.(game.id, game.title)
                   : undefined
+              }
+              onOpenCompetitions={
+                onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
               }
             />
           ))}

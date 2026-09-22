@@ -3,6 +3,77 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 70 (2026-09-22): Competition Economy Phase 4 — Player-Facing Sandbox Competition Experience
+
+### Baseline & Scope
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Phase 3 Merge: Merged `feat/competition-economy-phase-3` (`6f22088`) into `main`, pushed to `origin/main` (`6f22088`), and cleaned local and remote Phase 3 branch.
+- Phase 4 Branch: `feat/competition-economy-phase-4` (created from synchronized `main` at `6f22088`).
+- Objective: Build the player-facing Sandbox Competition Experience while keeping all monetary functionality strictly TEST / SANDBOX ONLY.
+- Invariant: Absolutely ZERO real payments, deposits, cards, crypto, or withdrawals.
+
+### Player Experience Architecture
+1. **Two Distinct Modes**:
+   - **Free / Casual**: Practice mode (solo), Guest play, Friend challenges, and COINS matchmaking.
+   - **Sandbox Skill Competitions**: Platform-defined competitions with fixed TEST GEL entry fees, predetermined TEST GEL prizes, fixed capacity (2 players for Head-to-Head), and fixed rules. No player-selected stakes or player-created monetary lobbies.
+2. **Persistent Sandbox Visual Identity**:
+   - Every GEL-related interface clearly displays `TEST / SANDBOX GEL` with prominent notices: "TEST / SANDBOX MODE — NO REAL MONEY. No real money is deposited, withdrawn, or awarded."
+   - Never formatted as real withdrawable money. No hidden disclaimers.
+3. **Game Launch Experience (`LaunchModal.tsx`)**:
+   - Eligible games (`space-blaster`, `pixel-ninja-dash`, `cyber-hopper`, `neon-runner`): Expose Practice, Casual (Coins), and Sandbox Competitions (`[VIEW COMPETITIONS]`).
+   - Coin-only games (`speed-trivia`, `tf-sprint`): Strictly omit sandbox competition controls based on `GAME_COMPETITION_ELIGIBILITY_REGISTRY`.
+   - "Play with Diamonds" and Diamond stake selectors completely excised.
+4. **Player-Facing Competition Catalog & Confirmation (`CompetitionCatalog.tsx`, `CompetitionConfirmationModal.tsx`, `CompetitionsPage.tsx`)**:
+   - Dedicated `/competitions` destination and modal overlays for eligible games.
+   - Displays server-authoritative templates: Standard Duel (TEST ₾5.00 / TEST ₾9.00), Promo Duel (TEST ₾5.00 / TEST ₾20.00 promotional prize), and Freeroll (FREE / TEST ₾10.00).
+   - Client never calculates prizes from entry fees; all financial parameters originate from the server.
+   - Confirmation modal summarizes game, format, entry fee, prize, player capacity, and sandbox notice before joining.
+   - Client emits strictly `{ templateId }` over `competition:join` with zero financial overrides.
+5. **Sandbox Test Balance & Developer Faucet**:
+   - Navigation bar displays Coins (`🪙`) and `TEST / SANDBOX GEL: TEST ₾...` with explanatory tooltip.
+   - Wallet and confirmation modal expose `[ ADD TEST FUNDS ]` button invoking `/api/competitions/sandbox-faucet`, which safely credits TEST GEL via balanced double-entry ledger (`platform:treasury:GEL` -> `user:<id>:GEL`).
+6. **Dedicated Waiting Room & Match Transitions (`MatchLoader.tsx`)**:
+   - 1/2 Waiting Room displays participant count, "Your entry amount is reserved while you wait", and `[ CANCEL ENTRY ]` button.
+   - Cancellation safely releases the entry reservation back to available test balance.
+   - Transition to 2/2 locked state automatically removes cancel button and presents match-ready screen ("OPPONENT FOUND", predetermined prize) before launching the existing deterministic game engine.
+7. **Authoritative Results, Draw Refund & Rematch UX (`MatchLoader.tsx`)**:
+   - Replay results verified by server engine: Winner displays `VICTORY`, verified score, and `Competition Prize TEST ₾...`. Loser displays `DEFEAT`, verified score, and `Prize: —`.
+   - Exact tie displays `DRAW`, verified scores equal, and `Entry Refunded TEST ₾...` with no competition fee charged.
+   - Replay rejection displays neutral `RESULT INVALID: The submitted game result could not be verified` without exposing anti-cheat heuristics.
+   - Rematch button explicitly warns: "REMATCH — This creates a new competition entry. A new entry amount will be reserved." Insufficient test balance prompts with faucet shortcut.
+8. **COINS Preservation & DIAMONDS Retirement**:
+   - Free COINS matchmaking continues to function independently with virtual points (`🪙`), never formatted with `₾`.
+   - DIAMONDS completely removed from all active player-facing flows (Navbar, Wallet, Profile, GameCard, LaunchModal, Diamond Shop).
+   - Historical Diamond ledger transactions and match records preserved and labeled `(RETIRED)`.
+9. **Accessibility & Responsive Design**:
+   - Modal surfaces include `role="dialog"`, `aria-modal="true"`, semantic labels, and `Escape` key listeners.
+   - Responsive layouts optimized for desktop, tablet, and mobile (375px+).
+
+### Verification & Automated Testing
+- `npm run typecheck`: **PASS** (Zero TypeScript diagnostics across monorepo).
+- `npm run build`: **PASS** (Client production bundle clean).
+- `npm run build:server`: **PASS** (Server compilation clean).
+- `npm run test:database-safety`: **18/18 PASS**.
+- `npm run test:migration-parity`: **279/279 PASS**.
+- `npm run test:competition-domain`: **40/40 PASS**.
+- `npm run test:competition-accounting`: **51/51 PASS**.
+- `npm run test:competition-lifecycle`: **43/43 PASS**.
+- `npm run test:competition-player-ui`: **37/35 PASS** (`scripts/competition-phase4-ui-check.ts`).
+- `npm test`: **33/33 test suites PASS 100%**.
+
+### Revised Regulatory-Gated Roadmap
+Per Section 22 regulatory alignment, real payment infrastructure must NOT begin immediately after UI/Admin phases:
+1. **Phase 1 — Competition Domain Core & Invariants**: COMPLETED (`main`).
+2. **Phase 2 — Double-Entry Ledger & Financial Engine**: COMPLETED (`main`).
+3. **Phase 3 — Server-Side Lifecycle Engine & Matchmaking Integration**: COMPLETED (`main`).
+4. **Phase 4 — Player-Facing Sandbox Competition Experience**: COMPLETED (`feat/competition-economy-phase-4`).
+5. **Phase 5 — Sandbox Admin & Operations Console**: Template authoring, instance monitoring, manual voids, accounting reconciliation UI, operational controls.
+6. **Phase 6 — Revenue Service Technical Dossier + Submission Readiness**: Comprehensive legal/technical audit documentation, replay proof packages, ledger reconciliations, and regulatory filing readiness.
+7. **REGULATORY REVIEW / CLASSIFICATION GATE**: Formal submission and review by the Revenue Service / regulatory authorities. No payment rails or live funds before explicit clearance.
+8. **Future Phase — Payment Provider Integration**: Licensed PSP/banking rails (only after regulatory classification).
+9. **Future Phase — Production Monetary Activation**: Gated live rollout.
+
 ## Session 69 (2026-09-22): Competition Economy Phase 3 — Server-Side Competition Lifecycle Engine & Matchmaking Integration
 
 ### Baseline & Scope

@@ -10,6 +10,7 @@ import type {
 import { useAuth } from '../auth/AuthContext'
 import { canNativeShare, copyTextToClipboard } from '../lib/clipboard'
 import { useMatchSocket, type MatchSocketMode, type RematchState } from '../matchmaking/useMatchSocket'
+import { apiFetch } from '../lib/api'
 
 type MatchLoaderProps = {
   createModule: GameModuleFactory
@@ -68,6 +69,8 @@ export default function MatchLoader({
     waitingLabel,
     guestLinkCode,
     rematchState,
+    competitionWaiting,
+    cancelCompetition,
     submitScore,
     reportVisibilityHidden,
     requestRematch,
@@ -291,7 +294,83 @@ export default function MatchLoader({
         {phase.kind === 'queued' && (
           <Overlay>
             <div className="ac-panel" style={{ textAlign: 'center', minWidth: 320, maxWidth: 440, padding: 'var(--space-6)' }}>
-              {matchMode.kind === 'createGuest' ? (
+              {matchMode.kind === 'competition' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-2)' }}>
+                    <span
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid #10b981',
+                        color: '#10b981',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      TEST / SANDBOX COMPETITION
+                    </span>
+                  </div>
+
+                  <h2 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-xl)' }}>
+                    {gameTitle} — {matchMode.template?.title ?? 'Standard Duel'}
+                  </h2>
+
+                  <div
+                    style={{
+                      background: 'var(--color-surface-raised)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: 'var(--space-3)',
+                      margin: 'var(--space-4) 0',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 'var(--space-2)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Entry Fee</div>
+                      <div style={{ fontWeight: 'bold' }}>
+                        {matchMode.template?.entryFeeMinor === 0
+                          ? 'FREE'
+                          : `TEST ₾${((matchMode.template?.entryFeeMinor ?? 500) / 100).toFixed(2)}`}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Prize</div>
+                      <div style={{ fontWeight: 'bold', color: '#10b981' }}>
+                        TEST ₾{(((matchMode.template?.prizes?.[0]?.amountMinor ?? 900)) / 100).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ margin: 'var(--space-4) 0', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'bold', marginBottom: 'var(--space-1)' }}>
+                      Players: {competitionWaiting ? `${competitionWaiting.currentParticipants} / ${competitionWaiting.participantCapacity}` : '1 / 2'}
+                    </div>
+                    <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-xs)' }}>
+                      {waitingLabel ?? 'Waiting for competitor…'}
+                    </p>
+                    <p style={{ margin: 'var(--space-2) 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                      Your entry amount is reserved while you wait.
+                    </p>
+                  </div>
+
+                  {(!competitionWaiting || !competitionWaiting.isLocked) && (
+                    <button
+                      type="button"
+                      className="ac-btn ac-btn--ghost"
+                      onClick={() => {
+                        cancelCompetition()
+                        handleLeave()
+                      }}
+                    >
+                      CANCEL ENTRY
+                    </button>
+                  )}
+                </>
+              ) : matchMode.kind === 'createGuest' ? (
                 <>
                   <h2 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-xl)' }}>Instant Guest Match</h2>
                   <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
@@ -366,9 +445,43 @@ export default function MatchLoader({
         {phase.kind === 'countdown' && (
           <Overlay>
             <div className="ac-panel" style={{ textAlign: 'center', minWidth: 280 }}>
-              <p className="ac-text-muted" style={{ margin: '0 0 var(--space-2)' }}>
-                Opponent found: {phase.match.opponentUsername}
-              </p>
+              {matchMode.kind === 'competition' ? (
+                <>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      background: '#10b981',
+                      color: '#000',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      letterSpacing: '1px',
+                      marginBottom: 'var(--space-2)',
+                    }}
+                  >
+                    OPPONENT FOUND
+                  </div>
+                  <h2 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-lg)' }}>
+                    {gameTitle} — {matchMode.template?.title ?? 'Standard Duel'}
+                  </h2>
+                  <div style={{ fontSize: 'var(--font-size-sm)', color: '#10b981', fontWeight: 'bold', marginBottom: 'var(--space-2)' }}>
+                    Prize: TEST ₾{(((matchMode.template?.prizes?.[0]?.amountMinor ?? 900)) / 100).toFixed(2)}
+                  </div>
+                  <p className="ac-text-muted" style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-xs)' }}>
+                    Opponent: {phase.match.opponentUsername}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="ac-text-muted" style={{ margin: '0 0 var(--space-2)' }}>
+                    Opponent found: {phase.match.opponentUsername}
+                  </p>
+                  <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
+                    Match starting in:
+                  </p>
+                </>
+              )}
               <div style={{ fontSize: 'var(--font-size-4xl)', fontWeight: 'var(--font-weight-bold)' }}>
                 {phase.count > 0 ? phase.count : 'GO!'}
               </div>
@@ -391,6 +504,8 @@ export default function MatchLoader({
           <ResolvedPanel
             resolution={phase.resolution}
             rematchState={rematchState}
+            matchMode={matchMode}
+            gameTitle={gameTitle}
             onRematch={requestRematch}
             onDeclineRematch={declineRematch}
             onFindNewOpponent={onFindNewOpponent}
@@ -512,6 +627,8 @@ function Overlay({ children }: { children: ReactNode }) {
 function ResolvedPanel({
   resolution,
   rematchState,
+  matchMode,
+  gameTitle,
   onRematch,
   onDeclineRematch,
   onFindNewOpponent,
@@ -520,6 +637,8 @@ function ResolvedPanel({
 }: {
   resolution: MatchResolvedPayload
   rematchState: RematchState
+  matchMode?: MatchSocketMode
+  gameTitle?: string
   onRematch: () => void
   onDeclineRematch: () => void
   onFindNewOpponent?: () => void
@@ -527,33 +646,84 @@ function ResolvedPanel({
   onLeave: () => void
 }) {
   const { you, opponent, outcome } = resolution
-  // The server decides win/loss/draw/void (see packages/server/src/
-  // validation/matchOutcome.ts) — this only picks display copy, it no
-  // longer compares scores itself. `you.status === 'opponent_disconnected'`
-  // (won because the opponent left mid-run, before this side ever
-  // submitted) deliberately falls through to the outcome-based branches
-  // below rather than getting its own message check — outcome is already
-  // 'win' in that case, so "You win!" is correct without special-casing it
-  // here; ScoreColumn is what shows the "opponent disconnected" detail.
-  const message = you.status === 'forfeited'
-    ? 'You forfeited — no result submitted in time.'
-    : opponent.status === 'forfeited'
-      ? `${opponent.username} forfeited — no result submitted in time.`
-      : outcome === 'void'
-        ? 'Result voided — a submitted score could not be verified.'
-        : outcome === 'win'
-          ? '🏆 You Won the Match!'
-          : outcome === 'loss'
-            ? `${opponent.username} took the victory.`
-            : "It's a tie!"
+  const { user, refreshUser } = useAuth()
+  const [showRematchConfirm, setShowRematchConfirm] = useState(false)
+  const [faucetLoading, setFaucetLoading] = useState(false)
 
-  const outcomeBadge = outcome === 'win'
-    ? { label: 'VICTORY', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' }
-    : outcome === 'loss'
-      ? { label: 'DEFEAT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444' }
-      : outcome === 'draw'
-        ? { label: 'DRAW', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b' }
-        : { label: 'VOID', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: '#94a3b8' }
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (showRematchConfirm) {
+          setShowRematchConfirm(false)
+        } else {
+          onLeave()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showRematchConfirm, onLeave])
+
+  const isCompetition = matchMode?.kind === 'competition'
+  const template = isCompetition ? matchMode.template : undefined
+  const entryFeeMinor = template?.entryFeeMinor ?? 500
+  const prizeMinor = template?.prizes?.[0]?.amountMinor ?? 900
+  const isFree = entryFeeMinor === 0
+
+  let message = ''
+  let outcomeBadge = { label: 'RESULT', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: '#94a3b8' }
+
+  if (isCompetition) {
+    if (outcome === 'win') {
+      outcomeBadge = { label: 'VICTORY', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' }
+      message = 'Result verified by Fugluck server replay.'
+    } else if (outcome === 'loss') {
+      outcomeBadge = { label: 'DEFEAT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444' }
+      message = 'Result verified by Fugluck server replay.'
+    } else if (outcome === 'draw') {
+      outcomeBadge = { label: 'DRAW', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b' }
+      message = 'Both verified scores were equal.'
+    } else {
+      outcomeBadge = { label: 'RESULT INVALID', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: '#94a3b8' }
+      message = 'The submitted game result could not be verified.'
+    }
+
+    if (you.status === 'forfeited') {
+      outcomeBadge = { label: 'MATCH FORFEITED', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444' }
+      message = 'You forfeited — no result submitted in time.'
+    } else if (opponent.status === 'forfeited') {
+      outcomeBadge = { label: 'OPPONENT FORFEITED', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' }
+      message = `${opponent.username} forfeited the match.`
+    }
+  } else {
+    message = you.status === 'forfeited'
+      ? 'You forfeited — no result submitted in time.'
+      : opponent.status === 'forfeited'
+        ? `${opponent.username} forfeited — no result submitted in time.`
+        : outcome === 'void'
+          ? 'Result voided — a submitted score could not be verified.'
+          : outcome === 'win'
+            ? '🏆 You Won the Match!'
+            : outcome === 'loss'
+              ? `${opponent.username} took the victory.`
+              : "It's a tie!"
+
+    outcomeBadge = outcome === 'win'
+      ? { label: 'VICTORY', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' }
+      : outcome === 'loss'
+        ? { label: 'DEFEAT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444' }
+        : outcome === 'draw'
+          ? { label: 'DRAW', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b' }
+          : { label: 'VOID', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: '#94a3b8' }
+  }
+
+  const handleRematchClick = () => {
+    if (isCompetition) {
+      setShowRematchConfirm(true)
+    } else {
+      onRematch()
+    }
+  }
 
   return (
     <Overlay>
@@ -587,10 +757,64 @@ function ResolvedPanel({
           {outcomeBadge.label}
         </div>
 
-        <h2 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-2xl)' }}>Match Complete</h2>
-        <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
+        {gameTitle && (
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            {gameTitle}
+          </div>
+        )}
+
+        <h2 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-2xl)' }}>
+          {isCompetition ? outcomeBadge.label : 'Match Complete'}
+        </h2>
+        <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
           {message}
         </p>
+
+        {isCompetition && (
+          <div
+            style={{
+              background: 'var(--color-surface-raised)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: 'var(--space-3)',
+              marginBottom: 'var(--space-4)',
+            }}
+          >
+            {outcome === 'win' && (
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                  Competition Prize
+                </div>
+                <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'bold', color: '#10b981' }}>
+                  TEST ₾{(prizeMinor / 100).toFixed(2)}
+                </div>
+              </div>
+            )}
+            {outcome === 'loss' && (
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                  Prize
+                </div>
+                <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'bold', color: 'var(--color-text-muted)' }}>
+                  —
+                </div>
+              </div>
+            )}
+            {outcome === 'draw' && (
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                  Entry Refunded
+                </div>
+                <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'bold', color: '#fbbf24' }}>
+                  {isFree ? 'FREE' : `TEST ₾${(entryFeeMinor / 100).toFixed(2)}`}
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  No competition fee charged.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div
           style={{
@@ -611,20 +835,145 @@ function ResolvedPanel({
         <RematchControls
           canRematch={resolution.canRematch}
           rematchState={rematchState}
-          onRematch={onRematch}
+          onRematch={handleRematchClick}
           onDeclineRematch={onDeclineRematch}
           onFindNewOpponent={onFindNewOpponent}
           onPlayPractice={onPlayPractice}
         />
 
         <div style={{ marginTop: 'var(--space-4)' }}>
-          <button type="button" className="ac-btn ac-btn--ghost" onClick={onLeave} style={{ width: '100%', fontSize: 'var(--font-size-sm)' }}>
-            Back to Home
+          <button
+            type="button"
+            className="ac-btn ac-btn--ghost"
+            onClick={onLeave}
+            style={{ width: '100%', fontSize: 'var(--font-size-sm)' }}
+          >
+            {isCompetition ? 'Back to Competitions' : 'Back to Home'}
             <span style={{ opacity: 0.5, fontSize: 'var(--font-size-xs)', marginLeft: 'var(--space-1)' }}>
               [Esc]
             </span>
           </button>
         </div>
+
+        {/* Rematch Confirmation Modal */}
+        {showRematchConfirm && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rematch Confirmation"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+            }}
+            onClick={() => setShowRematchConfirm(false)}
+          >
+            <div
+              className="ac-panel"
+              style={{
+                maxWidth: 400,
+                width: '90%',
+                padding: 'var(--space-6)',
+                textAlign: 'center',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg, 12px)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-xl)' }}>
+                REMATCH
+              </h3>
+              <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
+                This creates a new competition entry.
+              </p>
+
+              <div
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: 'var(--space-3)',
+                  margin: 'var(--space-3) 0',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 'var(--space-2)',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Entry Fee</div>
+                  <div style={{ fontWeight: 'bold' }}>
+                    {isFree ? 'FREE' : `TEST ₾${(entryFeeMinor / 100).toFixed(2)}`}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Prize</div>
+                  <div style={{ fontWeight: 'bold', color: '#10b981' }}>
+                    TEST ₾{(prizeMinor / 100).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 'var(--space-3) 0' }}>
+                A new entry amount will be reserved.
+              </p>
+
+              {user && (user.balances.sandboxGelMinor ?? 0) < entryFeeMinor && !isFree && (
+                <div style={{ margin: 'var(--space-3) 0' }}>
+                  <p style={{ color: '#f87171', fontSize: '11px', margin: '0 0 var(--space-2)' }}>
+                    You do not have enough Sandbox Test GEL to enter another competition.
+                  </p>
+                  <button
+                    type="button"
+                    className="ac-btn ac-btn--secondary"
+                    disabled={faucetLoading}
+                    onClick={async () => {
+                      setFaucetLoading(true)
+                      try {
+                        await apiFetch('/api/competitions/sandbox-faucet', {
+                          method: 'POST',
+                          body: JSON.stringify({ amountMinor: 10000 }),
+                        })
+                        await refreshUser()
+                      } finally {
+                        setFaucetLoading(false)
+                      }
+                    }}
+                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                  >
+                    {faucetLoading ? 'Adding…' : '[ ADD TEST FUNDS ]'}
+                  </button>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+                <button
+                  type="button"
+                  className="ac-btn ac-btn--ghost"
+                  onClick={() => setShowRematchConfirm(false)}
+                  style={{ flex: 1 }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  className="ac-btn ac-btn--primary"
+                  disabled={!isFree && ((user?.balances.sandboxGelMinor ?? 0) < entryFeeMinor)}
+                  onClick={() => {
+                    setShowRematchConfirm(false)
+                    onRematch()
+                  }}
+                  style={{ flex: 2, fontWeight: 'bold' }}
+                >
+                  ENTER REMATCH
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Overlay>
   )

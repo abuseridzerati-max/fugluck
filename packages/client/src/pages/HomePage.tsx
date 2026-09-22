@@ -10,10 +10,12 @@ type HomePageProps = {
   onPlayGame: (id: string, title: string) => void
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   onLaunchGuestInvite?: (id: string, title: string) => void
+  onOpenCompetitions?: (id: string, title: string) => void
   loadingGameId: string | null
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet?: () => void
+  onNavigateCompetitions?: () => void
   onNavigatePolicy?: (path: string) => void
   initialAuthModalMode?: 'login' | 'signup'
 }
@@ -22,10 +24,12 @@ export default function HomePage({
   onPlayGame,
   onFindOpponent,
   onLaunchGuestInvite,
+  onOpenCompetitions,
   loadingGameId,
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
+  onNavigateCompetitions,
   onNavigatePolicy,
   initialAuthModalMode,
 }: HomePageProps) {
@@ -48,6 +52,7 @@ export default function HomePage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
+        onNavigateCompetitions={onNavigateCompetitions}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
         searchQuery={searchQuery}
@@ -59,6 +64,7 @@ export default function HomePage({
           onPlayGame={onPlayGame}
           onFindOpponent={onFindOpponent}
           onLaunchGuestInvite={onLaunchGuestInvite}
+          onOpenCompetitions={onOpenCompetitions}
           loadingGameId={loadingGameId}
           selectedCategory={selectedCategory}
           searchQuery={searchQuery}

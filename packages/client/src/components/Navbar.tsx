@@ -12,6 +12,7 @@ type NavbarProps = {
   onNavigateProfile: () => void
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
+  onNavigateCompetitions?: () => void
   selectedCategory?: string
   onSelectCategory?: (category: string) => void
   searchQuery?: string
@@ -23,6 +24,7 @@ export default function Navbar({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
+  onNavigateCompetitions,
   selectedCategory = 'all',
   onSelectCategory,
   searchQuery = '',
@@ -59,6 +61,28 @@ export default function Navbar({
       >
         Fugluck
       </button>
+
+      {onNavigateCompetitions && (
+        <button
+          type="button"
+          onClick={onNavigateCompetitions}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: 'var(--radius-full, 9999px)',
+            color: '#10b981',
+            padding: '4px 12px',
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
+        >
+          🏆 Competitions
+        </button>
+      )}
 
       {onSearchChange && (
         <label className="ac-search" style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
@@ -120,6 +144,7 @@ export default function Navbar({
           <div
             style={{
               display: 'flex',
+              alignItems: 'center',
               gap: 'var(--space-3)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-muted)',
@@ -129,12 +154,26 @@ export default function Navbar({
             title={t('navigation.coinsTooltip')}
           >
             <span>
-              <span style={{ color: 'var(--color-secondary, #fbbf24)' }}>{user.balances.coins}</span>{' '}
+              <span style={{ color: 'var(--color-secondary, #fbbf24)', fontWeight: 'bold' }}>{user.balances.coins.toLocaleString()}</span>{' '}
               {t('common.coins').toLowerCase()}
             </span>
-            <span>
-              <span style={{ color: 'var(--color-primary)' }}>{user.balances.diamonds}</span>{' '}
-              {t('common.diamonds').toLowerCase()}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-full, 9999px)',
+                color: '#10b981',
+                fontWeight: 'bold',
+                fontSize: '11px',
+              }}
+              title="TEST / SANDBOX GEL — Simulated test funds, no real money used"
+            >
+              <span style={{ opacity: 0.85, marginRight: '4px' }}>TEST / SANDBOX GEL:</span>
+              TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
             </span>
           </div>
         )}
@@ -170,10 +209,19 @@ export default function Navbar({
                 />
                 {onNavigateWallet && (
                   <MenuItem
-                    label={t('navigation.wallet', { defaultValue: 'Wallet' })}
+                    label={t('navigation.wallet', { defaultValue: 'Wallet & Sandbox' })}
                     onClick={() => {
                       setMenuOpen(false)
                       onNavigateWallet()
+                    }}
+                  />
+                )}
+                {onNavigateCompetitions && (
+                  <MenuItem
+                    label="Competitions"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onNavigateCompetitions()
                     }}
                   />
                 )}

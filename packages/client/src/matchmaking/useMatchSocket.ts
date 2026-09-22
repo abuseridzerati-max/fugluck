@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   ClientToServerEvents,
+  CompetitionTemplate,
   MatchedPayload,
   MatchResolvedPayload,
   RematchOfferedPayload,
@@ -14,8 +15,18 @@ import { getOrCreateGuestId } from '../lib/guestId'
 
 export type MatchmakingConnectionState = 'connecting' | 'queued' | 'matched' | 'reconnecting' | 'closed'
 
+export type CompetitionWaitingState = {
+  instanceId: string
+  templateId: string
+  seatIndex: number
+  currentParticipants: number
+  participantCapacity: number
+  isLocked: boolean
+}
+
 export type MatchSocketMode =
   | { kind: 'queue'; stake?: number; currency?: 'COINS' | 'DIAMONDS' }
+  | { kind: 'competition'; templateId: string; template?: CompetitionTemplate }
   | { kind: 'sendInvite'; friendUserId: string }
   | { kind: 'acceptInvite'; inviteId: string }
   | { kind: 'createGuest' }
@@ -36,6 +47,8 @@ export type UseMatchSocketResult = {
   waitingLabel: string | null
   guestLinkCode: string | null
   rematchState: RematchState
+  competitionWaiting: CompetitionWaitingState | null
+  cancelCompetition: () => void
   submitScore: (payload: SubmitScorePayload) => void
   // Evidence-only, fire-and-forget — see PROGRESS.md's freeze-frame Known
   // Gaps entry. No-ops if there's no active match yet (nothing to report
@@ -61,6 +74,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
   const [waitingLabel, setWaitingLabel] = useState<string | null>(null)
   const [guestLinkCode, setGuestLinkCode] = useState<string | null>(null)
   const [rematchState, setRematchState] = useState<RematchState>({ kind: 'idle' })
+  const [competitionWaiting, setCompetitionWaiting] = useState<CompetitionWaitingState | null>(null)
 
   useEffect(() => {
     const token = getStoredAuthToken()
@@ -83,6 +97,9 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       if (mode.kind === 'queue') {
         setWaitingLabel('Looking for an opponent…')
         socket.emit('joinQueue', { gameId, currency: mode.currency, stake: mode.stake })
+      } else if (mode.kind === 'competition') {
+        setWaitingLabel('Registering competition entry…')
+        socket.emit('competition:join', { templateId: mode.templateId })
       } else if (mode.kind === 'sendInvite') {
         setWaitingLabel('Sending invite…')
         socket.emit('inviteFriend', { friendUserId: mode.friendUserId, gameId })
@@ -112,6 +129,59 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       }
       setConnectionState('queued')
       emitModeAction()
+    })
+
+    socket.on('competition:joined', (payload) => {
+      setCompetitionWaiting({
+        instanceId: payload.instanceId,
+        templateId: payload.templateId,
+        seatIndex: payload.seatIndex,
+        currentParticipants: payload.currentParticipants,
+        participantCapacity: payload.participantCapacity,
+        isLocked: payload.currentParticipants >= payload.participantCapacity,
+      })
+      if (payload.currentParticipants < payload.participantCapacity) {
+        setWaitingLabel('Waiting for competitor…')
+      } else {
+        setWaitingLabel('Competition full! Starting match…')
+      }
+    })
+
+    socket.on('competition:matched', (payload) => {
+      hasMatchRef.current = true
+      setConnectionState('matched')
+      setWaitingLabel(null)
+      setRematchState({ kind: 'idle' })
+      setResolution(null)
+      resolutionMatchIdRef.current = null
+      setMatch({
+        matchId: payload.matchId,
+        gameId: payload.gameId,
+        seed: payload.seed,
+        opponentUsername: payload.opponentUsername,
+      })
+    })
+
+    socket.on('competition:cancelled', () => {
+      setWaitingLabel('Competition entry cancelled. Your reserved test funds have been returned.')
+      setConnectionState('closed')
+    })
+
+    socket.on('competition:error', (payload) => {
+      let friendlyMsg = payload.message || 'Competition error.'
+      if (payload.code === 'INSUFFICIENT_FUNDS') {
+        friendlyMsg = 'Insufficient Sandbox Test GEL. Please add test funds to enter.'
+      } else if (payload.code === 'GUEST_NOT_ALLOWED') {
+        friendlyMsg = 'Guest users cannot enter paid sandbox competitions. Please log in.'
+      } else if (payload.code === 'TEMPLATE_DISABLED') {
+        friendlyMsg = 'This competition is currently unavailable.'
+      } else if (payload.code === 'ALREADY_REGISTERED') {
+        friendlyMsg = 'You are already registered in this competition.'
+      } else if (payload.code === 'GAME_NOT_ELIGIBLE') {
+        friendlyMsg = 'This game is not eligible for paid sandbox competitions.'
+      }
+      setError(friendlyMsg)
+      setConnectionState('closed')
     })
 
     socket.on('guestLinkCreated', (payload) => {
@@ -238,6 +308,12 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     setRematchState({ kind: 'unavailable', reason: 'Rematch declined.' })
   }, [])
 
+  const cancelCompetition = useCallback(() => {
+    if (competitionWaiting?.instanceId) {
+      socketRef.current?.emit('competition:cancel', { instanceId: competitionWaiting.instanceId })
+    }
+  }, [competitionWaiting?.instanceId])
+
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
     const socket = socketRef.current
@@ -245,12 +321,15 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     if (mode.kind === 'createGuest') {
       socket.emit('cancelGuestLink')
     }
+    if (competitionWaiting?.instanceId && !competitionWaiting.isLocked) {
+      socket.emit('competition:cancel', { instanceId: competitionWaiting.instanceId })
+    }
     const matchId = resolutionMatchIdRef.current
     if (matchId) {
       socket.emit('declineRematch', { matchId })
     }
     socket.disconnect()
-  }, [mode.kind])
+  }, [mode.kind, competitionWaiting?.instanceId, competitionWaiting?.isLocked])
 
   return {
     connectionState,
@@ -260,6 +339,8 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     waitingLabel,
     guestLinkCode,
     rematchState,
+    competitionWaiting,
+    cancelCompetition,
     submitScore,
     reportVisibilityHidden,
     requestRematch,

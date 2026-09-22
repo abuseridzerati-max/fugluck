@@ -5,16 +5,28 @@ import { engineLabel } from '../lib/format'
 import LaunchModal from './LaunchModal'
 
 type GameCardProps = {
+  gameId: string
   title: string
   engine: GameEngine
   tagline?: string
   onPlay?: () => void
   onFindOpponent?: (stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
   onLaunchGuestInvite?: () => void
+  onOpenCompetitions?: () => void
   loading?: boolean
 }
 
-export default function GameCard({ title, engine, tagline, onPlay, onFindOpponent, onLaunchGuestInvite, loading }: GameCardProps) {
+export default function GameCard({
+  gameId,
+  title,
+  engine,
+  tagline,
+  onPlay,
+  onFindOpponent,
+  onLaunchGuestInvite,
+  onOpenCompetitions,
+  loading,
+}: GameCardProps) {
   const [showModal, setShowModal] = useState(false)
   const tagColor = categoryColors[engine]
 
@@ -83,6 +95,7 @@ export default function GameCard({ title, engine, tagline, onPlay, onFindOpponen
 
       {showModal && (
         <LaunchModal
+          gameId={gameId}
           gameTitle={title}
           onClose={() => setShowModal(false)}
           onLaunchPractice={() => {
@@ -94,9 +107,7 @@ export default function GameCard({ title, engine, tagline, onPlay, onFindOpponen
           onLaunchCoinsMatch={(stake) => {
             onFindOpponent?.(stake, 'COINS')
           }}
-          onLaunchDiamondsMatch={(stake) => {
-            onFindOpponent?.(stake, 'DIAMONDS')
-          }}
+          onOpenCompetitions={onOpenCompetitions}
         />
       )}
     </>

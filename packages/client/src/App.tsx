@@ -10,6 +10,8 @@ import { InviteProvider } from './invites/InviteProvider'
 import InviteLanding from './invites/InviteLanding'
 import type { MatchSocketMode } from './matchmaking/useMatchSocket'
 import AdminConsolePage from './admin/AdminConsolePage'
+import type { CompetitionTemplate } from '@fugluck/shared'
+import CompetitionsPage from './pages/CompetitionsPage'
 import FriendsPage from './pages/FriendsPage'
 import HelpCenterPage from './pages/HelpCenterPage'
 import HomePage from './pages/HomePage'
@@ -51,6 +53,7 @@ type PolicySlug = (typeof POLICY_SLUGS)[number]
 
 type View =
   | 'home'
+  | 'competitions'
   | 'profile'
   | 'friends'
   | 'wallet'
@@ -106,6 +109,7 @@ function parseInviteCode(pathname: string): string | null {
 function getViewFromPath(pathname: string): View {
   const cleanPath = pathname.replace(/\/$/, '') || '/'
   if (cleanPath === '/' || cleanPath === '/home') return 'home'
+  if (cleanPath === '/competitions') return 'competitions'
   if (cleanPath === '/profile') return 'profile'
   if (cleanPath === '/friends') return 'friends'
   if (cleanPath === '/wallet') return 'wallet'
@@ -130,6 +134,8 @@ function getPathForView(view: View): string {
     return `/${view.slice(7)}`
   }
   switch (view) {
+    case 'competitions':
+      return '/competitions'
     case 'profile':
       return '/profile'
     case 'friends':
@@ -221,6 +227,8 @@ function AppShell() {
       return `Fugluck — ${formattedSlug}`
     }
     switch (targetView) {
+      case 'competitions':
+        return 'Competitions | Fugluck'
       case 'profile':
         return t('meta.titleProfile')
       case 'friends':
@@ -352,6 +360,16 @@ function AppShell() {
     return loadGame(gameId, gameTitle, 'match', { kind: 'sendInvite', friendUserId })
   }
 
+  function handleLaunchCompetition(gameId: string, template: CompetitionTemplate) {
+    const title = getGameTitle(gameId)
+    storeActiveMatch({ id: gameId, title: `${template.title} — ${title}` })
+    return loadGame(gameId, `${template.title} — ${title}`, 'match', {
+      kind: 'competition',
+      templateId: template.id,
+      template,
+    })
+  }
+
   function handleAcceptInvite(invite: InviteReceivedPayload) {
     const title = getGameTitle(invite.gameId)
     storeActiveMatch({ id: invite.gameId, title })
@@ -385,6 +403,17 @@ function AppShell() {
           matchMode={activeGame.matchMode}
           onMatchResolved={clearActiveMatch}
           onFindNewOpponent={() => {
+            if (activeGame.matchMode?.kind === 'competition') {
+              const tmpl = activeGame.matchMode.template
+              clearActiveMatch()
+              setActiveGame(null)
+              if (tmpl) {
+                setTimeout(() => {
+                  void handleLaunchCompetition(activeGame.id, tmpl)
+                }, 50)
+              }
+              return
+            }
             const stake = activeGame.matchMode && 'stake' in activeGame.matchMode ? activeGame.matchMode.stake : undefined
             const currency = activeGame.matchMode && 'currency' in activeGame.matchMode ? activeGame.matchMode.currency : undefined
             clearActiveMatch()
@@ -406,17 +435,28 @@ function AppShell() {
             if (view === 'invite') navigateTo('home')
           }}
         />
+      ) : view === 'competitions' ? (
+        <CompetitionsPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateProfile={() => navigateTo('profile')}
+          onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
+          onLaunchCompetition={handleLaunchCompetition}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
+        />
       ) : view === 'profile' ? (
         <ProfilePage
           onNavigateHome={() => navigateTo('home')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateCompetitions={() => navigateTo('competitions')}
         />
       ) : view === 'wallet' ? (
         <WalletPage
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
+          onNavigateCompetitions={() => navigateTo('competitions')}
         />
       ) : view === 'admin' ? (
         <AdminConsolePage onNavigateHome={() => navigateTo('home')} />
@@ -425,6 +465,7 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateCompetitions={() => navigateTo('competitions')}
           onInviteFriend={handleInviteFriend}
         />
       ) : view === 'verify-email' ? (
@@ -466,6 +507,7 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
+          onNavigateCompetitions={() => navigateTo('competitions')}
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
         />
@@ -474,10 +516,12 @@ function AppShell() {
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
           onLaunchGuestInvite={handleLaunchGuestInvite}
+          onOpenCompetitions={() => navigateTo('competitions')}
           loadingGameId={loadingGameId}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateCompetitions={() => navigateTo('competitions')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
         />

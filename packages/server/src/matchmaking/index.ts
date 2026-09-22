@@ -185,6 +185,43 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
     socket.on("competition:join", handleJoinCompetition);
     socket.on("joinCompetition", handleJoinCompetition);
 
+    const handleCancelCompetition = async (payload: { instanceId: string }) => {
+      if (!payload?.instanceId) {
+        socket.emit("competition:error", {
+          code: "INVALID_PAYLOAD",
+          message: "A valid instanceId must be provided to cancel entry.",
+        });
+        return;
+      }
+
+      try {
+        const cancelResult = await lifecycleEngine.cancelUnfilledInstance(
+          payload.instanceId,
+          new SandboxAccountingAdapter(),
+          "User cancelled entry before match lock",
+        );
+
+        if (cancelResult.cancelled) {
+          socket.emit("competition:cancelled", {
+            instanceId: payload.instanceId,
+            reason: "User cancelled entry before match lock",
+          });
+        } else {
+          socket.emit("competition:error", {
+            code: "CANCEL_REJECTED",
+            message: "Cannot cancel entry. The competition may already be locked or started.",
+          });
+        }
+      } catch (err: any) {
+        socket.emit("competition:error", {
+          code: err.code || "COMPETITION_CANCEL_FAILED",
+          message: err.message || "Failed to cancel competition entry.",
+        });
+      }
+    };
+
+    socket.on("competition:cancel", handleCancelCompetition);
+
     socket.on("challengeFriend" as any, () => {
       socket.emit("inviteError", { message: "Paid private friend challenges are prohibited." });
     });

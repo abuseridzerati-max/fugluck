@@ -8,6 +8,7 @@ import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
 import { ensureSignupGrant } from "../wallet/ledger";
+import { sandboxAccountingAdapter } from "../accounting";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/emailService";
 
@@ -19,6 +20,15 @@ function hashToken(rawToken: string): string {
 
 async function toPublicUser(user: User): Promise<PublicUser> {
   const balances = await ensureSignupGrant(user.id);
+  let sandboxGelMinor = 0;
+  let sandboxGelReservedMinor = 0;
+  try {
+    const sb = await sandboxAccountingAdapter.getUserBalance(user.id);
+    sandboxGelMinor = sb.availableMinor;
+    sandboxGelReservedMinor = sb.reservedMinor;
+  } catch (err) {
+    console.error("[auth] Failed to retrieve sandbox balance:", err);
+  }
   return {
     id: user.id,
     username: user.username,
@@ -28,7 +38,11 @@ async function toPublicUser(user: User): Promise<PublicUser> {
     gamesWon: user.gamesWon,
     isEmailVerified: user.isEmailVerified ?? false,
     createdAt: user.createdAt.toISOString(),
-    balances,
+    balances: {
+      ...balances,
+      sandboxGelMinor,
+      sandboxGelReservedMinor,
+    },
   };
 }
 

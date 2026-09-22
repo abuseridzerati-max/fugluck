@@ -860,6 +860,75 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
     };
   }
 
+  /**
+   * Retrieves the current available and reserved sandbox GEL balance for a user.
+   */
+  async getUserBalance(userId: string): Promise<{ availableMinor: number; reservedMinor: number }> {
+    const balanceRes = await db.execute(
+      sql`SELECT
+            COALESCE(SUM(CASE WHEN balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS available,
+            COALESCE(SUM(CASE WHEN balance_type = 'RESERVED' THEN amount_minor ELSE 0 END), 0)::integer AS reserved
+          FROM sandbox_ledger_entries
+          WHERE user_id = ${userId} AND currency = 'GEL'`,
+    );
+    const row = balanceRes.rows[0] as any;
+    return {
+      availableMinor: Number(row?.available ?? 0),
+      reservedMinor: Number(row?.reserved ?? 0),
+    };
+  }
+
+  /**
+   * Grants simulated sandbox test funds to a user from the platform treasury.
+   * Exclusively for sandbox test mode and QA demonstration.
+   */
+  async grantSandboxTestFunds(
+    userId: string,
+    amountMinor: number = 5000,
+  ): Promise<{ availableMinor: number; reservedMinor: number }> {
+    if (!Number.isInteger(amountMinor) || amountMinor <= 0) {
+      throw new Error(`Invalid grant amount: ${amountMinor}`);
+    }
+
+    const accountingReferenceId = `sar_faucet_${crypto.randomUUID()}`;
+    const idempotencyKey = `faucet_${userId}_${Date.now()}_${crypto.randomUUID()}`;
+
+    await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(${ADVISORY_LOCK_USER_NAMESPACE}, hashtext(${userId}))`,
+      );
+
+      await tx.insert(sandboxLedgerEntries).values([
+        {
+          id: `sle_${crypto.randomUUID()}`,
+          accountingReferenceId,
+          idempotencyKey: `${idempotencyKey}:treasury_debit`,
+          userId,
+          accountId: "platform:treasury:GEL",
+          eventType: "DEPOSIT",
+          currency: "GEL",
+          amountMinor: -amountMinor,
+          balanceType: "SETTLED",
+          description: `Platform treasury debit for sandbox faucet grant to user ${userId}`,
+        },
+        {
+          id: `sle_${crypto.randomUUID()}`,
+          accountingReferenceId,
+          idempotencyKey: `${idempotencyKey}:user_credit`,
+          userId,
+          accountId: `user:${userId}:GEL`,
+          eventType: "DEPOSIT",
+          currency: "GEL",
+          amountMinor,
+          balanceType: "AVAILABLE",
+          description: "Simulated sandbox test funding grant",
+        },
+      ]);
+    });
+
+    return await this.getUserBalance(userId);
+  }
+
   private assertValidMoney(money: MoneyAmount): void {
     if (!money || typeof money !== "object") {
       throw new Error("Invalid MoneyAmount payload");
@@ -872,3 +941,5 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
     }
   }
 }
+
+export const sandboxAccountingAdapter = new SandboxAccountingAdapter();

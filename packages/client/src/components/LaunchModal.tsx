@@ -1,42 +1,59 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState, useEffect } from 'react'
+import { GAME_COMPETITION_ELIGIBILITY_REGISTRY } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 
 type LaunchModalProps = {
+  gameId: string
   gameTitle: string
   onClose: () => void
   onLaunchPractice: () => void
   onLaunchInviteLink: () => void
   onLaunchCoinsMatch?: (stake: number) => void
-  onLaunchDiamondsMatch?: (stake: number) => void
+  onOpenCompetitions?: () => void
 }
 
-const COIN_STAKE_OPTIONS = [25, 50, 100, 250, 500]
-const DIAMOND_STAKE_OPTIONS = [5, 10, 25, 50, 100]
+const COIN_STAKE_OPTIONS = [0, 25, 50, 100, 250, 500]
 
 export default function LaunchModal({
+  gameId,
   gameTitle,
   onClose,
   onLaunchPractice,
   onLaunchInviteLink,
   onLaunchCoinsMatch,
-  onLaunchDiamondsMatch,
+  onOpenCompetitions,
 }: LaunchModalProps) {
-  const { t } = useTranslation()
   const { user } = useAuth()
-  const [stakeCurrency, setStakeCurrency] = useState<'COINS' | 'DIAMONDS' | null>(null)
-  const [selectedStake, setSelectedStake] = useState<number>(100)
+  const [showCoinsLobby, setShowCoinsLobby] = useState(false)
+  const [selectedCoinStake, setSelectedCoinStake] = useState<number>(100)
   const [customInput, setCustomInput] = useState<string>('')
 
-  const currentBalance = stakeCurrency === 'COINS' ? (user?.balances.coins ?? 0) : (user?.balances.diamonds ?? 0)
-  const stakeOptions = stakeCurrency === 'COINS' ? COIN_STAKE_OPTIONS : DIAMOND_STAKE_OPTIONS
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // Authoritative eligibility check from @fugluck/shared
+  const eligibility = GAME_COMPETITION_ELIGIBILITY_REGISTRY[gameId] ?? 'COIN_COMPETITIVE'
+  const isEligibleForSandboxCompetitions =
+    eligibility === 'PAID_COMPETITIVE_CANDIDATE' || eligibility === 'PAID_COMPETITIVE_APPROVED'
+
+  const currentCoinBalance = user?.balances.coins ?? 0
 
   const parsedCustom = customInput ? parseInt(customInput, 10) : NaN
-  const isCustomExceeding = !isNaN(parsedCustom) && parsedCustom > currentBalance
-  const canSubmit = selectedStake > 0 && selectedStake <= currentBalance && !isCustomExceeding
+  const isCustomExceeding = !isNaN(parsedCustom) && parsedCustom > currentCoinBalance
+  const canSubmit = selectedCoinStake >= 0 && selectedCoinStake <= currentCoinBalance && !isCustomExceeding
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${gameTitle} Launch Options`}
       style={{
         position: 'fixed',
         inset: 0,
@@ -53,7 +70,7 @@ export default function LaunchModal({
         className="ac-panel"
         style={{
           width: '90%',
-          maxWidth: 440,
+          maxWidth: 480,
           padding: 'var(--space-6)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg, 12px)',
@@ -63,25 +80,26 @@ export default function LaunchModal({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-            {stakeCurrency
-              ? t('game.selectStake', { currency: stakeCurrency })
-              : t('game.launchTitle', { title: gameTitle })}
+            {showCoinsLobby
+              ? `Casual Coins — ${gameTitle}`
+              : gameTitle}
           </h2>
           <button
             type="button"
             className="ac-btn ac-btn--ghost"
             onClick={onClose}
             style={{ padding: 'var(--space-1) var(--space-2)' }}
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {stakeCurrency ? (
-          /* Stake Selection Step */
+        {showCoinsLobby ? (
+          /* Casual Coins Matchmaking Step */
           <div>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
-              {t('game.choosePresetOrCustom', { title: gameTitle })}
+              Play casual multiplayer matches with virtual COINS.
             </p>
 
             <div
@@ -96,17 +114,17 @@ export default function LaunchModal({
               }}
             >
               <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                {t('game.availableBalance')}
+                Available COINS Balance:
               </span>
-              <strong style={{ color: stakeCurrency === 'COINS' ? '#fbbf24' : '#a855f7' }}>
-                {currentBalance} {stakeCurrency}
+              <strong style={{ color: '#fbbf24' }}>
+                🪙 {currentCoinBalance.toLocaleString()}
               </strong>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-              {stakeOptions.map((amount) => {
-                const canAfford = currentBalance >= amount
-                const isSelected = selectedStake === amount && !customInput
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+              {COIN_STAKE_OPTIONS.map((amount) => {
+                const canAfford = currentCoinBalance >= amount
+                const isSelected = selectedCoinStake === amount && !customInput
 
                 return (
                   <button
@@ -115,7 +133,7 @@ export default function LaunchModal({
                     disabled={!canAfford}
                     onClick={() => {
                       setCustomInput('')
-                      setSelectedStake(amount)
+                      setSelectedCoinStake(amount)
                     }}
                     className={`ac-btn ${isSelected ? 'ac-btn--primary' : 'ac-btn--ghost'}`}
                     style={{
@@ -123,16 +141,14 @@ export default function LaunchModal({
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      padding: 'var(--space-3)',
+                      padding: 'var(--space-2)',
                       border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                       opacity: canAfford ? 1 : 0.4,
                       cursor: canAfford ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    <span>
-                      {amount} {stakeCurrency === 'COINS' ? '🪙' : '💎'}
-                    </span>
-                    {!canAfford && <span style={{ fontSize: '9px', color: '#f87171' }}>{t('game.tooLow')}</span>}
+                    <span>{amount === 0 ? 'Free (0)' : `${amount} 🪙`}</span>
+                    {!canAfford && <span style={{ fontSize: '9px', color: '#f87171' }}>Too low</span>}
                   </button>
                 )
               })}
@@ -141,20 +157,20 @@ export default function LaunchModal({
             {/* Custom Amount Input Field */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <label style={{ fontSize: 'var(--font-size-xs)', display: 'block', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                {t('game.customWager', { currency: stakeCurrency })}
+                Custom COINS Amount:
               </label>
               <input
                 type="number"
-                min={1}
-                max={currentBalance}
-                placeholder={t('game.customPlaceholder')}
+                min={0}
+                max={currentCoinBalance}
+                placeholder="Enter custom coins amount"
                 value={customInput}
                 onChange={(e) => {
                   const val = e.target.value
                   setCustomInput(val)
                   const num = parseInt(val, 10)
-                  if (!isNaN(num) && num > 0) {
-                    setSelectedStake(num)
+                  if (!isNaN(num) && num >= 0) {
+                    setSelectedCoinStake(num)
                   }
                 }}
                 style={{
@@ -170,7 +186,7 @@ export default function LaunchModal({
               />
               {isCustomExceeding && (
                 <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginTop: 4 }}>
-                  {t('game.customExceedsBalance', { balance: currentBalance, currency: stakeCurrency })}
+                  Amount exceeds your current balance of {currentCoinBalance} COINS.
                 </span>
               )}
             </div>
@@ -180,12 +196,12 @@ export default function LaunchModal({
                 type="button"
                 className="ac-btn ac-btn--ghost"
                 onClick={() => {
-                  setStakeCurrency(null)
+                  setShowCoinsLobby(false)
                   setCustomInput('')
                 }}
                 style={{ flex: 1 }}
               >
-                ← {t('common.back')}
+                ← Back
               </button>
               <button
                 type="button"
@@ -193,27 +209,38 @@ export default function LaunchModal({
                 disabled={!canSubmit}
                 onClick={() => {
                   if (!canSubmit) return
-                  if (stakeCurrency === 'COINS') onLaunchCoinsMatch?.(selectedStake)
-                  else onLaunchDiamondsMatch?.(selectedStake)
+                  onLaunchCoinsMatch?.(selectedCoinStake)
                   onClose()
                 }}
                 style={{ flex: 2, fontWeight: 'bold', opacity: canSubmit ? 1 : 0.4 }}
               >
-                {t('game.enterQueue', { stake: selectedStake, currency: stakeCurrency })}
+                {selectedCoinStake === 0 ? 'Enter Free Queue' : `Queue for ${selectedCoinStake} Coins`}
               </button>
             </div>
           </div>
         ) : (
-          /* Mode Selection Step */
-          <>
-            <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
-              {user
-                ? t('game.matchmaking')
-                : t('game.guestWagerNotice')}
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              {/* Mode 1: Solo Rush */}
+          /* Redesigned 3-Mode Selection Step per Section 3 */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {/* Mode A: PRACTICE */}
+            <div
+              style={{
+                background: 'var(--color-surface-raised)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-4)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <strong style={{ fontSize: 'var(--font-size-base)', display: 'block' }}>
+                  🕹️ PRACTICE
+                </strong>
+                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>
+                  Play solo rush. No opponent or test funds needed.
+                </span>
+              </div>
               <button
                 type="button"
                 className="ac-btn ac-btn--secondary"
@@ -221,12 +248,44 @@ export default function LaunchModal({
                   onLaunchPractice()
                   onClose()
                 }}
-                style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
+                style={{ minWidth: 90, justifyContent: 'center' }}
               >
-                🕹️ <strong style={{ marginLeft: 8 }}>{t('game.soloRush')}</strong> — {t('game.practiceMode')}
+                PLAY
               </button>
+            </div>
 
-              {/* Mode 2: Instant Invite Link */}
+            {/* Mode B: CASUAL / COINS */}
+            <div
+              style={{
+                background: 'var(--color-surface-raised)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-4)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <strong style={{ fontSize: 'var(--font-size-base)', display: 'block' }}>
+                  🪙 CASUAL
+                </strong>
+                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>
+                  Play with free virtual COINS or invite a friend.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="ac-btn ac-btn--secondary"
+                onClick={() => setShowCoinsLobby(true)}
+                style={{ minWidth: 120, justifyContent: 'center' }}
+              >
+                PLAY CASUAL
+              </button>
+            </div>
+
+            {/* Friend Invite Shortcut */}
+            <div style={{ textAlign: 'center' }}>
               <button
                 type="button"
                 className="ac-btn ac-btn--ghost"
@@ -234,80 +293,71 @@ export default function LaunchModal({
                   onLaunchInviteLink()
                   onClose()
                 }}
+                style={{ fontSize: 'var(--font-size-xs)', width: '100%', border: '1px dashed var(--color-border)' }}
+              >
+                🔗 Create Instant Friend Challenge Link
+              </button>
+            </div>
+
+            {/* Mode C: SANDBOX COMPETITIONS (Candidate Games Only) */}
+            {isEligibleForSandboxCompetitions && (
+              <div
                 style={{
-                  width: '100%',
-                  justifyContent: 'flex-start',
-                  padding: 'var(--space-3)',
-                  border: '1px dashed var(--color-border)',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 'var(--space-4)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
                 }}
               >
-                🔗 <strong style={{ marginLeft: 8 }}>{t('game.instantInviteLink')}</strong> — {t('game.shareFreePlay')}
-              </button>
-
-              {/* Mode 3 & 4: Only for Authenticated Users */}
-              {user ? (
-                <>
-                  <button
-                    type="button"
-                    className="ac-btn ac-btn--secondary"
-                    onClick={() => {
-                      onLaunchCoinsMatch?.(0)
-                      onClose()
-                    }}
-                    style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
-                  >
-                    ⚡ <strong style={{ marginLeft: 8 }}>Free Match</strong> — Public Queue (0 stake)
-                  </button>
-
-                  <button
-                    type="button"
-                    className="ac-btn ac-btn--primary"
-                    onClick={() => {
-                      setStakeCurrency('COINS')
-                      setSelectedStake(100)
-                      setCustomInput('')
-                    }}
-                    style={{ width: '100%', justifyContent: 'flex-start', padding: 'var(--space-3)' }}
-                  >
-                    🪙 <strong style={{ marginLeft: 8 }}>{t('game.playWithCoins')}</strong> — {t('game.funMatchRake')}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="ac-btn"
-                    onClick={() => {
-                      setStakeCurrency('DIAMONDS')
-                      setSelectedStake(10)
-                      setCustomInput('')
-                    }}
-                    style={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      padding: 'var(--space-3)',
-                      background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                      color: '#fff',
-                      border: 'none',
-                    }}
-                  >
-                    💎 <strong style={{ marginLeft: 8 }}>{t('game.playWithDiamonds')}</strong> — {t('game.competitiveRake')}
-                  </button>
-                </>
-              ) : (
-                <div
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <span
+                      style={{
+                        background: '#10b981',
+                        color: '#000',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        padding: '1px 5px',
+                        borderRadius: '3px',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      TEST GEL
+                    </span>
+                    <strong style={{ fontSize: 'var(--font-size-base)' }}>
+                      SANDBOX COMPETITIONS
+                    </strong>
+                  </div>
+                  <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block' }}>
+                    Fixed entry fees & predetermined prizes. No real money.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="ac-btn ac-btn--primary"
+                  onClick={() => {
+                    onOpenCompetitions?.()
+                    onClose()
+                  }}
                   style={{
-                    marginTop: 'var(--space-2)',
-                    padding: 'var(--space-3)',
-                    background: 'var(--color-surface-raised, #1e293b)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 'var(--font-size-xs)',
-                    color: 'var(--color-text-muted)',
+                    background: '#10b981',
+                    borderColor: '#10b981',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    minWidth: 160,
+                    justifyContent: 'center',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  🔒 {t('game.guestWagerNotice')}
-                </div>
-              )}
-            </div>
-          </>
+                  VIEW COMPETITIONS
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

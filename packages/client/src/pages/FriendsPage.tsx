@@ -10,10 +10,17 @@ type FriendsPageProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateWallet?: () => void
+  onNavigateCompetitions?: () => void
   onInviteFriend: (friendUserId: string, gameId: string, gameTitle: string) => void
 }
 
-export default function FriendsPage({ onNavigateHome, onNavigateProfile, onNavigateWallet, onInviteFriend }: FriendsPageProps) {
+export default function FriendsPage({
+  onNavigateHome,
+  onNavigateProfile,
+  onNavigateWallet,
+  onNavigateCompetitions,
+  onInviteFriend,
+}: FriendsPageProps) {
   const { t } = useTranslation()
   const [friends, setFriends] = useState<FriendEntry[]>([])
   const [username, setUsername] = useState('')
@@ -103,6 +110,7 @@ export default function FriendsPage({ onNavigateHome, onNavigateProfile, onNavig
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateWallet={onNavigateWallet}
+        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateFriends={() => {}}
       />
       <main style={{ flex: 1, maxWidth: 720, width: '100%', margin: '0 auto', padding: 'var(--space-8) var(--space-5)', boxSizing: 'border-box' }}>

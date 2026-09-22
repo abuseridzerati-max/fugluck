@@ -8,6 +8,8 @@ export type Currency = "COINS" | "DIAMONDS";
 export type WalletBalances = {
   coins: number;
   diamonds: number;
+  sandboxGelMinor?: number;
+  sandboxGelReservedMinor?: number;
 };
 
 export type DiamondPack = {

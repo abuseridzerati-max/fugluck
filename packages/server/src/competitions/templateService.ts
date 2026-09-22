@@ -359,6 +359,83 @@ export class CompetitionTemplateService {
   async disableTemplate(id: string): Promise<CompetitionTemplate> {
     return this.updateTemplate(id, { enabled: false });
   }
+
+  /**
+   * Seeds default sandbox competition templates for all eligible candidate games.
+   * Idempotent: no-ops if enabled templates already exist.
+   */
+  async ensureDefaultTemplates(): Promise<void> {
+    const existing = await this.listEnabledTemplates();
+
+    const defaults = [
+      {
+        gameId: "space-blaster",
+        title: "Space Blaster — Standard Duel",
+        entryFeeMinor: 500,
+        prizes: [{ placement: 1, amountMinor: 900 }],
+        rulesVersion: "sb-1.0",
+        skillAssessmentVersion: "v1",
+      },
+      {
+        gameId: "space-blaster",
+        title: "Space Blaster — Promo Duel",
+        entryFeeMinor: 500,
+        prizes: [{ placement: 1, amountMinor: 2000 }],
+        rulesVersion: "sb-1.0",
+        skillAssessmentVersion: "v1",
+      },
+      {
+        gameId: "space-blaster",
+        title: "Space Blaster — Freeroll",
+        entryFeeMinor: 0,
+        prizes: [{ placement: 1, amountMinor: 1000 }],
+        rulesVersion: "sb-1.0",
+        skillAssessmentVersion: "v1",
+      },
+      {
+        gameId: "neon-runner",
+        title: "Neon Runner — Standard Duel",
+        entryFeeMinor: 300,
+        prizes: [{ placement: 1, amountMinor: 550 }],
+        rulesVersion: "nr-1.0",
+        skillAssessmentVersion: "v1",
+      },
+      {
+        gameId: "pixel-ninja-dash",
+        title: "Pixel Ninja Dash — Standard Duel",
+        entryFeeMinor: 500,
+        prizes: [{ placement: 1, amountMinor: 900 }],
+        rulesVersion: "pnd-1.0",
+        skillAssessmentVersion: "v1",
+      },
+      {
+        gameId: "cyber-hopper",
+        title: "Cyber Hopper — Standard Duel",
+        entryFeeMinor: 400,
+        prizes: [{ placement: 1, amountMinor: 720 }],
+        rulesVersion: "ch-1.0",
+        skillAssessmentVersion: "v1",
+      },
+    ];
+
+    for (const d of defaults) {
+      const alreadyExists = existing.some((e) => e.gameId === d.gameId && e.title === d.title);
+      if (alreadyExists) continue;
+
+      try {
+        await this.createTemplate({
+          ...d,
+          format: "HEAD_TO_HEAD",
+          participantCapacity: 2,
+          currency: "GEL",
+          isSandbox: true,
+          enabled: true,
+        });
+      } catch (err) {
+        console.error(`[templates] Failed to seed default template "${d.title}":`, err);
+      }
+    }
+  }
 }
 
 export const templateService = new CompetitionTemplateService();

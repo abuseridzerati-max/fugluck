@@ -6,6 +6,8 @@ import { Router } from "express";
 import { attachSession, requireAuth, requireOwnerAdmin } from "../auth/middleware";
 import { instanceService } from "../competitions/instanceService";
 import { templateService } from "../competitions/templateService";
+import { lifecycleEngine } from "../competitions/lifecycleEngine";
+import { SandboxAccountingAdapter } from "../accounting/sandboxAdapter";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 
 const competitionsLimiter = createRateLimiterMiddleware({
@@ -27,10 +29,83 @@ competitionsRouter.use(competitionsLimiter);
  */
 competitionsRouter.get("/templates", async (_req, res) => {
   try {
-    const templates = await templateService.listEnabledTemplates();
+    let templates = await templateService.listEnabledTemplates();
+    if (templates.length === 0) {
+      await templateService.ensureDefaultTemplates();
+      templates = await templateService.listEnabledTemplates();
+    }
     res.json({ templates });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to list templates." });
+  }
+});
+
+/**
+ * GET /api/competitions/balance
+ * Returns the authenticated user's current sandbox GEL balance.
+ */
+competitionsRouter.get("/balance", attachSession, requireAuth, async (req, res) => {
+  try {
+    const adapter = new SandboxAccountingAdapter();
+    const balance = await adapter.getUserBalance(req.userId!);
+    res.json({
+      availableMinor: balance.availableMinor,
+      reservedMinor: balance.reservedMinor,
+      currency: "GEL",
+      isSandbox: true,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to fetch sandbox balance." });
+  }
+});
+
+/**
+ * POST /api/competitions/sandbox-faucet
+ * Grants simulated sandbox test GEL to the authenticated user.
+ * Explicitly for QA, automated tests, and demo verification.
+ */
+competitionsRouter.post("/sandbox-faucet", attachSession, requireAuth, async (req, res) => {
+  try {
+    const { amountMinor } = req.body ?? {};
+    const grantAmount = typeof amountMinor === "number" && amountMinor > 0 ? Math.min(amountMinor, 50_000) : 5_000;
+    const adapter = new SandboxAccountingAdapter();
+    const balance = await adapter.grantSandboxTestFunds(req.userId!, grantAmount);
+    res.json({
+      success: true,
+      grantedMinor: grantAmount,
+      availableMinor: balance.availableMinor,
+      reservedMinor: balance.reservedMinor,
+      currency: "GEL",
+      isSandbox: true,
+      message: "Simulated sandbox test funds granted. No real money is charged or withdrawable.",
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to grant sandbox test funds." });
+  }
+});
+
+/**
+ * POST /api/competitions/instances/:id/cancel
+ * Allows a waiting participant to cancel their unfilled PENDING_ENTRANTS entry before match lock.
+ */
+competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, async (req, res) => {
+  try {
+    const instanceId = String(req.params.id);
+    const adapter = new SandboxAccountingAdapter();
+    const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED");
+    if (!cancelRes.cancelled) {
+      res.status(400).json({ error: "Competition cannot be cancelled; it may already be locked or started." });
+      return;
+    }
+    const balance = await adapter.getUserBalance(req.userId!);
+    res.json({
+      success: true,
+      instanceId,
+      status: "CANCELLED",
+      availableMinor: balance.availableMinor,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to cancel competition entry." });
   }
 });
 

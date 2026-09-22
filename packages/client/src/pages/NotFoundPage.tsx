@@ -7,6 +7,7 @@ type NotFoundPageProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateFriends: () => void
+  onNavigateCompetitions?: () => void
   onPlayGame?: (id: string, title: string) => void
   onFindOpponent?: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
 }
@@ -15,6 +16,7 @@ export default function NotFoundPage({
   onNavigateHome,
   onNavigateProfile,
   onNavigateFriends,
+  onNavigateCompetitions,
   onPlayGame,
   onFindOpponent,
 }: NotFoundPageProps) {
@@ -35,6 +37,7 @@ export default function NotFoundPage({
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
+        onNavigateCompetitions={onNavigateCompetitions}
       />
 
       <main
@@ -225,6 +228,7 @@ export default function NotFoundPage({
 
       {selectedGame && (
         <LaunchModal
+          gameId={selectedGame.id}
           gameTitle={selectedGame.title}
           onClose={() => setSelectedGame(null)}
           onLaunchPractice={() => {
@@ -242,10 +246,9 @@ export default function NotFoundPage({
             setSelectedGame(null)
             onFindOpponent?.(game.id, game.title, stake, 'COINS')
           }}
-          onLaunchDiamondsMatch={(stake: number) => {
-            const game = selectedGame
+          onOpenCompetitions={() => {
             setSelectedGame(null)
-            onFindOpponent?.(game.id, game.title, stake, 'DIAMONDS')
+            onNavigateCompetitions?.()
           }}
         />
       )}

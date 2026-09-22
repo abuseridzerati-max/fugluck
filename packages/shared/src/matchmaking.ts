@@ -208,6 +208,7 @@ export interface ClientToServerEvents {
   declineRematch: (payload: { matchId: string }) => void;
   "competition:join"?: (payload: JoinCompetitionPayload) => void;
   joinCompetition?: (payload: JoinCompetitionPayload) => void;
+  "competition:cancel"?: (payload: { instanceId: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -229,5 +230,6 @@ export interface ServerToClientEvents {
   "competition:joined"?: (payload: CompetitionJoinedPayload) => void;
   "competition:matched"?: (payload: CompetitionMatchedPayload) => void;
   "competition:error"?: (payload: CompetitionErrorPayload) => void;
+  "competition:cancelled"?: (payload: { instanceId: string; reason: string }) => void;
 }
 

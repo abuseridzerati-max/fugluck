@@ -26,9 +26,15 @@ type ProfilePageProps = {
   onNavigateHome: () => void
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
+  onNavigateCompetitions?: () => void
 }
 
-export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavigateWallet }: ProfilePageProps) {
+export default function ProfilePage({
+  onNavigateHome,
+  onNavigateFriends,
+  onNavigateWallet,
+  onNavigateCompetitions,
+}: ProfilePageProps) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const [matches, setMatches] = useState<MatchHistoryItem[]>([])
@@ -65,6 +71,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
           onNavigateProfile={() => {}}
           onNavigateFriends={onNavigateFriends}
           onNavigateWallet={onNavigateWallet}
+          onNavigateCompetitions={onNavigateCompetitions}
         />
         <main style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
           <p className="ac-text-muted">{t('auth.notLoggedIn')}</p>
@@ -82,6 +89,7 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
         onNavigateProfile={() => {}}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
+        onNavigateCompetitions={onNavigateCompetitions}
       />
       <main style={{ maxWidth: 680, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-8)' }}>
@@ -105,13 +113,19 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-secondary, #fbbf24)' }}>
               {user.balances.coins.toLocaleString(currentLang)}
             </div>
+            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+              Casual virtual tokens
+            </div>
           </div>
           <div>
             <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-2)' }}>
-              {t('wallet.diamondsLabel')}
+              SANDBOX TEST GEL
             </div>
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)' }}>
-              {user.balances.diamonds.toLocaleString(currentLang)}
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: '#10b981' }}>
+              TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+              Simulated skill test funds
             </div>
           </div>
           <div>
@@ -133,12 +147,17 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
           {onNavigateWallet && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateWallet} style={{ flex: '1 1 180px' }}>
-              💳 {t('wallet.openWallet', { defaultValue: 'View Wallet & Ledger' })}
+              💳 View Wallet & Sandbox
+            </button>
+          )}
+          {onNavigateCompetitions && (
+            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateCompetitions} style={{ flex: '1 1 180px' }}>
+              🏆 Competitions
             </button>
           )}
           {onNavigateFriends && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateFriends} style={{ flex: '1 1 180px' }}>
-              👥 {t('friends.openFriendsList', { defaultValue: 'Friends & Invites' })}
+              👥 {t('navigation.friends')}
             </button>
           )}
           <button
@@ -151,10 +170,11 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
           </button>
         </div>
 
-        {/* Match History Section */}
-        <section style={{ marginBottom: 'var(--space-8)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>{t('game.matchHistoryTitle')}</h2>
+        <section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+            <h2 style={{ fontSize: 'var(--font-size-xl)', margin: 0 }}>
+              {t('game.matchHistory', { defaultValue: 'Match History' })}
+            </h2>
             <button
               type="button"
               className="ac-btn ac-btn--ghost"
@@ -169,14 +189,14 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
           {loadingMatches ? (
             <p className="ac-text-muted">{t('game.loadingHistory')}</p>
           ) : matchError ? (
-            <div className="ac-panel" style={{ padding: 'var(--space-4)', borderColor: 'var(--color-danger, #f87171)' }}>
-              <p style={{ color: 'var(--color-danger, #f87171)', margin: '0 0 var(--space-3)' }}>{matchError}</p>
+            <div style={{ color: 'var(--color-danger)' }}>
+              <p>{matchError}</p>
               <button type="button" className="ac-btn ac-btn--primary" onClick={loadMatches}>
-                🔄 {t('common.retry', { defaultValue: 'Retry' })}
+                {t('common.retry', { defaultValue: 'Retry' })}
               </button>
             </div>
           ) : matches.length === 0 ? (
-            <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-6) 0', textAlign: 'center' }}>
               {t('game.noMatchesRecorded')}
             </p>
           ) : (
@@ -186,7 +206,14 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
                 const isWin = m.outcome === 'win'
                 const isLoss = m.outcome === 'loss'
                 const outcomeColor = isWin ? '#22c55e' : isLoss ? '#f87171' : '#fbbf24'
-                const stakeDisplay = m.stake > 0 ? `${m.stake} ${m.currency}` : 'Free Play'
+
+                const stakeDisplay = m.currency === 'DIAMONDS'
+                  ? `${m.stake} DIAMONDS (RETIRED)`
+                  : m.currency === 'GEL'
+                  ? `TEST ₾${(m.stake / 100).toFixed(2)} (SANDBOX)`
+                  : m.stake > 0
+                  ? `${m.stake} COINS`
+                  : 'Free Play'
 
                 return (
                   <div
@@ -219,8 +246,17 @@ export default function ProfilePage({ onNavigateHome, onNavigateFriends, onNavig
                       <span
                         className="ac-tag"
                         style={{
-                          background: m.stake > 0 ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)' : 'var(--color-surface)',
-                          borderColor: m.stake > 0 ? 'var(--color-primary)' : 'var(--color-border)',
+                          background: m.currency === 'GEL'
+                            ? 'rgba(16, 185, 129, 0.15)'
+                            : m.stake > 0
+                            ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
+                            : 'var(--color-surface)',
+                          borderColor: m.currency === 'GEL'
+                            ? '#10b981'
+                            : m.stake > 0
+                            ? 'var(--color-primary)'
+                            : 'var(--color-border)',
+                          color: m.currency === 'GEL' ? '#10b981' : undefined,
                         }}
                       >
                         {stakeDisplay}

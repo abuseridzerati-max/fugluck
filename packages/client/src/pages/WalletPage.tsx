@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DIAMOND_PACKS, type DiamondPack } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../auth/AuthContext'
@@ -19,6 +18,7 @@ type WalletPageProps = {
   onNavigateHome: () => void
   onNavigateProfile?: () => void
   onNavigateFriends?: () => void
+  onNavigateCompetitions?: () => void
   onNavigatePolicy?: (path: string) => void
 }
 
@@ -26,6 +26,7 @@ export default function WalletPage({
   onNavigateHome,
   onNavigateProfile,
   onNavigateFriends,
+  onNavigateCompetitions,
   onNavigatePolicy,
 }: WalletPageProps) {
   const { t, i18n } = useTranslation()
@@ -33,9 +34,9 @@ export default function WalletPage({
   const [history, setHistory] = useState<LedgerHistoryItem[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
   const [historyError, setHistoryError] = useState<string | null>(null)
-  const [shopError, setShopError] = useState<string | null>(null)
-  const [shopSuccess, setShopSuccess] = useState<string | null>(null)
-  const [buyingId, setBuyingId] = useState<string | null>(null)
+  const [faucetLoading, setFaucetLoading] = useState(false)
+  const [faucetMessage, setFaucetMessage] = useState<string | null>(null)
+  const [faucetError, setFaucetError] = useState<string | null>(null)
 
   const currentLang = i18n.language || 'en'
 
@@ -59,22 +60,21 @@ export default function WalletPage({
     loadHistory()
   }, [user])
 
-  async function buyPack(packId: string) {
-    setBuyingId(packId)
-    setShopError(null)
-    setShopSuccess(null)
+  async function handleAddTestFunds() {
+    setFaucetLoading(true)
+    setFaucetError(null)
+    setFaucetMessage(null)
     try {
-      await apiFetch('/api/wallet/diamonds/stub-buy', {
+      await apiFetch('/api/competitions/sandbox-faucet', {
         method: 'POST',
-        body: JSON.stringify({ packId }),
+        body: JSON.stringify({ amountMinor: 10000 }), // +TEST ₾100.00
       })
       await refreshUser()
-      loadHistory()
-      setShopSuccess(t('wallet.purchaseSuccess', { defaultValue: 'Diamonds granted successfully!' }))
+      setFaucetMessage('Added +TEST ₾100.00 sandbox test funds successfully.')
     } catch (e) {
-      setShopError(e instanceof ApiError ? e.message : t('wallet.purchaseFailed', { defaultValue: 'Purchase failed' }))
+      setFaucetError(e instanceof ApiError ? e.message : 'Failed to grant test funds.')
     } finally {
-      setBuyingId(null)
+      setFaucetLoading(false)
     }
   }
 
@@ -89,49 +89,112 @@ export default function WalletPage({
     }
   }
 
+  const userBalanceMinor = user?.balances.sandboxGelMinor ?? 0
+  const userReservedMinor = user?.balances.sandboxGelReservedMinor ?? 0
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile ?? onNavigateHome}
         onNavigateFriends={onNavigateFriends}
+        onNavigateCompetitions={onNavigateCompetitions}
       />
       <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
         <h1 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
-          {t('wallet.title', { defaultValue: 'Wallet & Ledger' })}
+          Wallet & Balances
         </h1>
 
         {/* Live Balance Summary Cards */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 'var(--space-4)',
             marginBottom: 'var(--space-6)',
           }}
         >
+          {/* Virtual COINS Card */}
           <div className="ac-card" style={{ padding: 'var(--space-5)' }}>
             <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
               {t('wallet.coinsLabel', { defaultValue: 'COINS Balance' })}
             </div>
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--color-accent, #2de2ff)' }}>
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--color-secondary, #fbbf24)' }}>
               🪙 {user?.balances.coins.toLocaleString() ?? '0'}
             </div>
             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-              {t('wallet.coinsDesc', { defaultValue: 'Free-play virtual currency (0% rake fee)' })}
+              Free virtual tokens for casual play and social friend matches.
             </div>
           </div>
 
-          <div className="ac-card" style={{ padding: 'var(--space-5)' }}>
-            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
-              {t('wallet.diamondsLabel', { defaultValue: 'DIAMONDS Balance' })}
+          {/* SANDBOX TEST GEL Card */}
+          <div
+            className="ac-card"
+            style={{
+              padding: 'var(--space-5)',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, var(--color-surface) 100%)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                SANDBOX TEST BALANCE
+              </div>
+              <span
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  border: '1px solid #10b981',
+                  borderRadius: '4px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  padding: '2px 6px',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                TEST ONLY
+              </span>
             </div>
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: '#38bdf8' }}>
-              💎 {user?.balances.diamonds.toLocaleString() ?? '0'}
+
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: '#10b981' }}>
+              TEST ₾{(userBalanceMinor / 100).toFixed(2)}
             </div>
-            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-              {t('wallet.diamondsDesc', { defaultValue: 'Competitive staking currency (5% rake fee)' })}
+
+            {userReservedMinor > 0 && (
+              <div style={{ fontSize: 'var(--font-size-xs)', color: '#fbbf24', marginTop: 4 }}>
+                (TEST ₾{(userReservedMinor / 100).toFixed(2)} reserved in active queue)
+              </div>
+            )}
+
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)', lineHeight: 1.4 }}>
+              Simulated sandbox funds for competitive skill contests. No real money is used, deposited, or withdrawn.
             </div>
+
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <button
+                type="button"
+                className="ac-btn ac-btn--secondary"
+                disabled={faucetLoading}
+                onClick={handleAddTestFunds}
+                style={{ fontSize: '11px', padding: '4px 12px', whiteSpace: 'nowrap' }}
+              >
+                {faucetLoading ? 'Adding…' : '[ ADD TEST FUNDS ]'}
+              </button>
+              <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                Adds simulated sandbox funds. No real money is charged.
+              </span>
+            </div>
+
+            {faucetMessage && (
+              <div style={{ marginTop: 'var(--space-2)', fontSize: '11px', color: '#10b981' }}>
+                {faucetMessage}
+              </div>
+            )}
+            {faucetError && (
+              <div style={{ marginTop: 'var(--space-2)', fontSize: '11px', color: '#f87171' }}>
+                {faucetError}
+              </div>
+            )}
           </div>
         </div>
 
@@ -192,7 +255,15 @@ export default function WalletPage({
                           {sign}{tx.amount.toLocaleString()}
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-2)' }}>
-                          {tx.currency === 'COINS' ? '🪙 COINS' : '💎 DIAMONDS'}
+                          {tx.currency === 'COINS' ? (
+                            '🪙 COINS'
+                          ) : tx.currency === 'DIAMONDS' ? (
+                            <span style={{ color: 'var(--color-text-muted)' }}>
+                              💎 DIAMONDS <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.06)', padding: '1px 4px', borderRadius: '3px' }}>(RETIRED)</span>
+                            </span>
+                          ) : (
+                            <span style={{ color: '#10b981' }}>TEST ₾ (SANDBOX)</span>
+                          )}
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-2)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
                           {formatTimestamp(tx.createdAt)}
@@ -204,48 +275,6 @@ export default function WalletPage({
               </table>
             </div>
           )}
-        </section>
-
-        {/* Diamond Shop Section (Development Sandbox) */}
-        <section className="ac-card" style={{ padding: 'var(--space-6)' }}>
-          <h2 style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-2)' }}>
-            {t('wallet.diamondShopTitle', { defaultValue: 'Diamond Shop' })}
-          </h2>
-
-          <div
-            className="ac-card"
-            style={{
-              padding: 'var(--space-3) var(--space-4)',
-              background: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
-              borderColor: 'var(--color-primary)',
-              marginBottom: 'var(--space-4)',
-              fontSize: 'var(--font-size-xs)',
-            }}
-          >
-            ⚠️ <strong>{t('wallet.devNoticeTitle', { defaultValue: 'Development Sandbox' })}:</strong>{' '}
-            {t('wallet.devNoticeDesc', {
-              defaultValue: 'No real payments are integrated. Clicking grant issues test diamonds for platform verification.',
-            })}
-          </div>
-
-          {shopError && <p style={{ color: 'var(--color-danger, #f87171)', marginBottom: 'var(--space-3)' }}>{shopError}</p>}
-          {shopSuccess && <p style={{ color: '#22c55e', marginBottom: 'var(--space-3)' }}>{shopSuccess}</p>}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {DIAMOND_PACKS.map((pack: DiamondPack) => (
-              <button
-                key={pack.id}
-                type="button"
-                className="ac-btn ac-btn--ghost"
-                disabled={buyingId === pack.id}
-                onClick={() => buyPack(pack.id)}
-                style={{ justifyContent: 'space-between', display: 'flex' }}
-              >
-                <span>{pack.label}</span>
-                <span>{buyingId === pack.id ? t('wallet.granting', { defaultValue: 'Granting…' }) : t('wallet.packGrant', { count: pack.diamonds, defaultValue: `Grant +${pack.diamonds} 💎` })}</span>
-              </button>
-            ))}
-          </div>
         </section>
       </main>
       <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
