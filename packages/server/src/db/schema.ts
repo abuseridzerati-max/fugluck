@@ -355,3 +355,101 @@ export type NewCompetitionInstancePrizeRecord = typeof competitionInstancePrizes
 export type CompetitionParticipantRecord = typeof competitionParticipants.$inferSelect;
 export type NewCompetitionParticipantRecord = typeof competitionParticipants.$inferInsert;
 
+// ===========================================================================
+// Sandbox Accounting Domain Tables (Phase 2)
+// Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT
+// Provides isolated, auditable, balanced accounting for sandbox competition
+// entry reservations, captures, releases, prize awards, and refunds.
+// ===========================================================================
+
+export const sandboxEntryReservations = pgTable(
+  "sandbox_entry_reservations",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    competitionInstanceId: text("competition_instance_id")
+      .notNull()
+      .references(() => competitionInstances.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    amountMinor: integer("amount_minor").notNull(),
+    status: varchar("status", { length: 24 }).notNull().default("RESERVED"),
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
+    accountingReferenceId: varchar("accounting_reference_id", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    instanceUserUnique: uniqueIndex("idx_sandbox_res_instance_user").on(t.competitionInstanceId, t.userId),
+    idempotencyUnique: uniqueIndex("idx_sandbox_res_idempotency").on(t.idempotencyKey),
+    userStatusIdx: index("idx_sandbox_res_user_status").on(t.userId, t.status),
+    amountCheck: check("sandbox_res_amount_check", sql`${t.amountMinor} >= 0`),
+    statusCheck: check(
+      "sandbox_res_status_check",
+      sql`${t.status} in ('RESERVED', 'CAPTURED', 'RELEASED', 'REFUNDED')`,
+    ),
+  }),
+);
+
+export const sandboxLedgerEntries = pgTable(
+  "sandbox_ledger_entries",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    accountingReferenceId: varchar("accounting_reference_id", { length: 64 }).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 128 }),
+    competitionInstanceId: text("competition_instance_id").references(() => competitionInstances.id),
+    userId: text("user_id").references(() => users.id),
+    accountId: varchar("account_id", { length: 64 }).notNull(),
+    eventType: varchar("event_type", { length: 32 }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    amountMinor: integer("amount_minor").notNull(),
+    balanceType: varchar("balance_type", { length: 16 }).notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    accountBalanceIdx: index("idx_sandbox_ledger_account").on(t.accountId, t.balanceType),
+    refIdx: index("idx_sandbox_ledger_ref").on(t.accountingReferenceId),
+    instanceIdx: index("idx_sandbox_ledger_inst").on(t.competitionInstanceId),
+    userIdx: index("idx_sandbox_ledger_user").on(t.userId),
+    idempotencyUnique: uniqueIndex("idx_sandbox_ledger_idempotency").on(t.idempotencyKey),
+    balanceTypeCheck: check(
+      "sandbox_ledger_balance_type_check",
+      sql`${t.balanceType} in ('AVAILABLE', 'RESERVED', 'CAPTURED', 'SETTLED')`,
+    ),
+  }),
+);
+
+export const sandboxSettlements = pgTable(
+  "sandbox_settlements",
+  {
+    competitionInstanceId: text("competition_instance_id")
+      .primaryKey()
+      .references(() => competitionInstances.id),
+    status: varchar("status", { length: 16 }).notNull(),
+    totalEntriesCapturedMinor: integer("total_entries_captured_minor").notNull(),
+    totalPrizesAwardedMinor: integer("total_prizes_awarded_minor").notNull(),
+    platformMarginMinor: integer("platform_margin_minor").notNull().default(0),
+    promotionalSubsidyMinor: integer("promotional_subsidy_minor").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    accountingReferenceId: varchar("accounting_reference_id", { length: 64 }).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
+    settledAt: timestamp("settled_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    idempotencyUnique: uniqueIndex("idx_sandbox_settlements_idempotency").on(t.idempotencyKey),
+    statusCheck: check("sandbox_settlements_status_check", sql`${t.status} in ('SETTLED', 'REFUNDED', 'VOIDED')`),
+    entriesCheck: check("sandbox_settlements_entries_check", sql`${t.totalEntriesCapturedMinor} >= 0`),
+    prizesCheck: check("sandbox_settlements_prizes_check", sql`${t.totalPrizesAwardedMinor} >= 0`),
+    marginCheck: check("sandbox_settlements_margin_check", sql`${t.platformMarginMinor} >= 0`),
+    subsidyCheck: check("sandbox_settlements_subsidy_check", sql`${t.promotionalSubsidyMinor} >= 0`),
+  }),
+);
+
+export type SandboxEntryReservationRecord = typeof sandboxEntryReservations.$inferSelect;
+export type NewSandboxEntryReservationRecord = typeof sandboxEntryReservations.$inferInsert;
+export type SandboxLedgerEntryRecord = typeof sandboxLedgerEntries.$inferSelect;
+export type NewSandboxLedgerEntryRecord = typeof sandboxLedgerEntries.$inferInsert;
+export type SandboxSettlementRecord = typeof sandboxSettlements.$inferSelect;
+export type NewSandboxSettlementRecord = typeof sandboxSettlements.$inferInsert;

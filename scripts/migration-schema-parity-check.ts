@@ -33,9 +33,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0006_password_reset_tokens.sql",
     "0007_policy_acceptances.sql",
     "0008_competition_economy.sql",
+    "0009_sandbox_accounting.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0008) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0009) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -74,7 +75,7 @@ async function applyMigrations(pool: Pool): Promise<void> {
 async function verifySchema(pool: Pool): Promise<void> {
   console.log("\nPhase 2: Introspecting PostgreSQL Catalogs & Asserting Schema Parity...\n");
 
-  // 1. Verify all 16 expected tables exist
+  // 1. Verify all 19 expected tables exist
   const expectedTables = [
     "users",
     "email_verification_tokens",
@@ -92,6 +93,9 @@ async function verifySchema(pool: Pool): Promise<void> {
     "competition_instances",
     "competition_instance_prizes",
     "competition_participants",
+    "sandbox_entry_reservations",
+    "sandbox_ledger_entries",
+    "sandbox_settlements",
   ];
 
   const tableRes = await pool.query(
@@ -255,6 +259,53 @@ async function verifySchema(pool: Pool): Promise<void> {
   const matchColSet = new Set(matchCols.rows.map((r: any) => r.column_name));
   check("matches_history has competition_instance_id column", matchColSet.has("competition_instance_id"));
 
+  const sandboxResCols = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = 'sandbox_entry_reservations'`,
+  );
+  const sandboxResColSet = new Set(sandboxResCols.rows.map((r: any) => r.column_name));
+  check("sandbox_entry_reservations has id", sandboxResColSet.has("id"));
+  check("sandbox_entry_reservations has competition_instance_id", sandboxResColSet.has("competition_instance_id"));
+  check("sandbox_entry_reservations has user_id", sandboxResColSet.has("user_id"));
+  check("sandbox_entry_reservations has currency", sandboxResColSet.has("currency"));
+  check("sandbox_entry_reservations has amount_minor", sandboxResColSet.has("amount_minor"));
+  check("sandbox_entry_reservations has status", sandboxResColSet.has("status"));
+  check("sandbox_entry_reservations has idempotency_key", sandboxResColSet.has("idempotency_key"));
+  check("sandbox_entry_reservations has accounting_reference_id", sandboxResColSet.has("accounting_reference_id"));
+  check("sandbox_entry_reservations has created_at", sandboxResColSet.has("created_at"));
+  check("sandbox_entry_reservations has updated_at", sandboxResColSet.has("updated_at"));
+
+  const sandboxLedgerCols = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = 'sandbox_ledger_entries'`,
+  );
+  const sandboxLedgerColSet = new Set(sandboxLedgerCols.rows.map((r: any) => r.column_name));
+  check("sandbox_ledger_entries has id", sandboxLedgerColSet.has("id"));
+  check("sandbox_ledger_entries has accounting_reference_id", sandboxLedgerColSet.has("accounting_reference_id"));
+  check("sandbox_ledger_entries has idempotency_key", sandboxLedgerColSet.has("idempotency_key"));
+  check("sandbox_ledger_entries has competition_instance_id", sandboxLedgerColSet.has("competition_instance_id"));
+  check("sandbox_ledger_entries has user_id", sandboxLedgerColSet.has("user_id"));
+  check("sandbox_ledger_entries has account_id", sandboxLedgerColSet.has("account_id"));
+  check("sandbox_ledger_entries has event_type", sandboxLedgerColSet.has("event_type"));
+  check("sandbox_ledger_entries has currency", sandboxLedgerColSet.has("currency"));
+  check("sandbox_ledger_entries has amount_minor", sandboxLedgerColSet.has("amount_minor"));
+  check("sandbox_ledger_entries has balance_type", sandboxLedgerColSet.has("balance_type"));
+  check("sandbox_ledger_entries has description", sandboxLedgerColSet.has("description"));
+  check("sandbox_ledger_entries has created_at", sandboxLedgerColSet.has("created_at"));
+
+  const sandboxSettlementCols = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = 'sandbox_settlements'`,
+  );
+  const sandboxSettlementColSet = new Set(sandboxSettlementCols.rows.map((r: any) => r.column_name));
+  check("sandbox_settlements has competition_instance_id", sandboxSettlementColSet.has("competition_instance_id"));
+  check("sandbox_settlements has status", sandboxSettlementColSet.has("status"));
+  check("sandbox_settlements has total_entries_captured_minor", sandboxSettlementColSet.has("total_entries_captured_minor"));
+  check("sandbox_settlements has total_prizes_awarded_minor", sandboxSettlementColSet.has("total_prizes_awarded_minor"));
+  check("sandbox_settlements has platform_margin_minor", sandboxSettlementColSet.has("platform_margin_minor"));
+  check("sandbox_settlements has promotional_subsidy_minor", sandboxSettlementColSet.has("promotional_subsidy_minor"));
+  check("sandbox_settlements has currency", sandboxSettlementColSet.has("currency"));
+  check("sandbox_settlements has accounting_reference_id", sandboxSettlementColSet.has("accounting_reference_id"));
+  check("sandbox_settlements has idempotency_key", sandboxSettlementColSet.has("idempotency_key"));
+  check("sandbox_settlements has settled_at", sandboxSettlementColSet.has("settled_at"));
+
   // 3. Verify Foreign Keys
   const fkRes = await pool.query(`
     SELECT conname, conrelid::regclass AS table_name, confrelid::regclass AS foreign_table_name
@@ -277,6 +328,11 @@ async function verifySchema(pool: Pool): Promise<void> {
   check("competition_participants FK to competition_instances", fks.has("competition_participants->competition_instances"));
   check("competition_participants FK to users", fks.has("competition_participants->users"));
   check("matches_history FK to competition_instances", fks.has("matches_history->competition_instances"));
+  check("sandbox_entry_reservations FK to competition_instances", fks.has("sandbox_entry_reservations->competition_instances"));
+  check("sandbox_entry_reservations FK to users", fks.has("sandbox_entry_reservations->users"));
+  check("sandbox_ledger_entries FK to competition_instances", fks.has("sandbox_ledger_entries->competition_instances"));
+  check("sandbox_ledger_entries FK to users", fks.has("sandbox_ledger_entries->users"));
+  check("sandbox_settlements FK to competition_instances", fks.has("sandbox_settlements->competition_instances"));
 
   // 4. Verify Constraint Validation Status (All CHECK and FK constraints MUST be convalidated = true)
   const validationRes = await pool.query(`
@@ -290,7 +346,10 @@ async function verifySchema(pool: Pool): Promise<void> {
       'competition_template_prizes',
       'competition_instances',
       'competition_instance_prizes',
-      'competition_participants'
+      'competition_participants',
+      'sandbox_entry_reservations',
+      'sandbox_ledger_entries',
+      'sandbox_settlements'
     )
       AND contype IN ('c', 'f')
   `);
@@ -322,6 +381,12 @@ async function verifySchema(pool: Pool): Promise<void> {
   check("Check 'comp_part_prize_check' exists", checkNames.has("competition_participants.comp_part_prize_check"));
   check("Check 'matches_history_currency_check' exists", checkNames.has("matches_history.matches_history_currency_check"));
   check("Check 'match_settlements_currency_check' exists", checkNames.has("match_settlements.match_settlements_currency_check"));
+  check("Check 'sandbox_res_amount_check' exists", checkNames.has("sandbox_entry_reservations.sandbox_res_amount_check"));
+  check("Check 'sandbox_res_status_check' exists", checkNames.has("sandbox_entry_reservations.sandbox_res_status_check"));
+  check("Check 'sandbox_ledger_balance_type_check' exists", checkNames.has("sandbox_ledger_entries.sandbox_ledger_balance_type_check"));
+  check("Check 'sandbox_settlements_status_check' exists", checkNames.has("sandbox_settlements.sandbox_settlements_status_check"));
+  check("Check 'sandbox_settlements_entries_check' exists", checkNames.has("sandbox_settlements.sandbox_settlements_entries_check"));
+  check("Check 'sandbox_settlements_prizes_check' exists", checkNames.has("sandbox_settlements.sandbox_settlements_prizes_check"));
 
   // 5. Verify Indexes
   const idxRes = await pool.query(`
@@ -347,20 +412,33 @@ async function verifySchema(pool: Pool): Promise<void> {
   check("Unique index 'idx_comp_part_instance_user' exists on competition_participants", indexes.has("competition_participants.idx_comp_part_instance_user"));
   check("Unique index 'idx_comp_part_instance_seat' exists on competition_participants", indexes.has("competition_participants.idx_comp_part_instance_seat"));
   check("Index 'idx_matches_competition_instance' exists on matches_history", indexes.has("matches_history.idx_matches_competition_instance"));
+  check("Unique index 'idx_sandbox_res_instance_user' exists on sandbox_entry_reservations", indexes.has("sandbox_entry_reservations.idx_sandbox_res_instance_user"));
+  check("Unique index 'idx_sandbox_res_idempotency' exists on sandbox_entry_reservations", indexes.has("sandbox_entry_reservations.idx_sandbox_res_idempotency"));
+  check("Index 'idx_sandbox_res_user_status' exists on sandbox_entry_reservations", indexes.has("sandbox_entry_reservations.idx_sandbox_res_user_status"));
+  check("Index 'idx_sandbox_ledger_account' exists on sandbox_ledger_entries", indexes.has("sandbox_ledger_entries.idx_sandbox_ledger_account"));
+  check("Index 'idx_sandbox_ledger_ref' exists on sandbox_ledger_entries", indexes.has("sandbox_ledger_entries.idx_sandbox_ledger_ref"));
+  check("Index 'idx_sandbox_ledger_inst' exists on sandbox_ledger_entries", indexes.has("sandbox_ledger_entries.idx_sandbox_ledger_inst"));
+  check("Index 'idx_sandbox_ledger_user' exists on sandbox_ledger_entries", indexes.has("sandbox_ledger_entries.idx_sandbox_ledger_user"));
+  check("Unique index 'idx_sandbox_ledger_idempotency' exists on sandbox_ledger_entries", indexes.has("sandbox_ledger_entries.idx_sandbox_ledger_idempotency"));
+  check("Unique index 'idx_sandbox_settlements_idempotency' exists on sandbox_settlements", indexes.has("sandbox_settlements.idx_sandbox_settlements_idempotency"));
 
   // 6. Verify Trigger & Function
   const triggerRes = await pool.query(`
     SELECT tgname, relname
     FROM pg_trigger t
     JOIN pg_class c ON t.tgrelid = c.oid
-    WHERE tgname = 'ledger_non_negative_guard'
+    WHERE tgname IN ('ledger_non_negative_guard', 'sandbox_balance_non_negative_guard')
   `);
-  check("Trigger 'ledger_non_negative_guard' is attached to ledger_entries", triggerRes.rows.length > 0);
+  const triggers = new Set(triggerRes.rows.map((r: any) => `${r.relname}.${r.tgname}`));
+  check("Trigger 'ledger_non_negative_guard' is attached to ledger_entries", triggers.has("ledger_entries.ledger_non_negative_guard"));
+  check("Trigger 'sandbox_balance_non_negative_guard' is attached to sandbox_ledger_entries", triggers.has("sandbox_ledger_entries.sandbox_balance_non_negative_guard"));
 
   const procRes = await pool.query(`
-    SELECT proname FROM pg_proc WHERE proname = 'enforce_non_negative_ledger_balance'
+    SELECT proname FROM pg_proc WHERE proname IN ('enforce_non_negative_ledger_balance', 'enforce_non_negative_sandbox_balance')
   `);
-  check("Trigger function 'enforce_non_negative_ledger_balance' exists", procRes.rows.length > 0);
+  const procs = new Set(procRes.rows.map((r: any) => r.proname));
+  check("Trigger function 'enforce_non_negative_ledger_balance' exists", procs.has("enforce_non_negative_ledger_balance"));
+  check("Trigger function 'enforce_non_negative_sandbox_balance' exists", procs.has("enforce_non_negative_sandbox_balance"));
 
   // 7. Verify Platform Rake Account
   const rakeRes = await pool.query(`
@@ -686,7 +764,72 @@ async function verifySchema(pool: Pool): Promise<void> {
   }
   check("Currency check: invalid currency rejected on matches_history", invalidCurrRejected);
 
+  // 11. Sandbox Accounting DML Smoke Test and Overdraft Guard Verification
+  const sbResId = `sb_res_${ts}`;
+  const sbRefId = `sb_ref_${ts}`;
+  const sbIdemKey = `sb_idem_${ts}`;
+
+  // 11a. Test funding grant (balanced double-entry: platform treasury debit + user available credit)
+  await pool.query(
+    `INSERT INTO sandbox_ledger_entries (id, accounting_reference_id, idempotency_key, user_id, account_id, event_type, currency, amount_minor, balance_type, description)
+     VALUES 
+      ($1, $2, $3, NULL, $4, $5, $6, $7, $8, $9),
+      ($10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+    [
+      `sb_le_tr_grant_${ts}`, sbRefId, `${sbIdemKey}_tr_grant`, "platform:treasury:GEL", "FUNDING_GRANT", "GEL", -1000, "AVAILABLE", "Test funding grant treasury debit",
+      `sb_le_grant_${ts}`, sbRefId, `${sbIdemKey}_grant`, testUserId, `user:${testUserId}:available`, "FUNDING_GRANT", "GEL", 1000, "AVAILABLE", "Test funding grant user credit",
+    ],
+  );
+  check("DML smoke: sandbox_ledger_entries funding grant recorded", true);
+
+  // 11b. Test entry reservation
+  await pool.query(
+    `INSERT INTO sandbox_entry_reservations (id, competition_instance_id, user_id, currency, amount_minor, status, idempotency_key, accounting_reference_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [sbResId, instId, testUserId, "GEL", 500, "RESERVED", `${sbIdemKey}_res`, sbRefId],
+  );
+  check("DML smoke: sandbox_entry_reservations row inserted", true);
+
+  // 11c. Move 500 from AVAILABLE to RESERVED
+  await pool.query(
+    `INSERT INTO sandbox_ledger_entries (id, accounting_reference_id, idempotency_key, competition_instance_id, user_id, account_id, event_type, currency, amount_minor, balance_type, description)
+     VALUES 
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11),
+      ($12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+    [
+      `sb_le_res_deb_${ts}`, sbRefId, `${sbIdemKey}_res_deb`, instId, testUserId, `user:${testUserId}:available`, "ENTRY_RESERVATION", "GEL", -500, "AVAILABLE", "Reserve entry fee",
+      `sb_le_res_crd_${ts}`, sbRefId, `${sbIdemKey}_res_crd`, instId, testUserId, `user:${testUserId}:reserved`, "ENTRY_RESERVATION", "GEL", 500, "RESERVED", "Reserve entry fee",
+    ],
+  );
+  check("DML smoke: sandbox reservation ledger entries recorded", true);
+
+  // 11d. Overdraft guard test: Attempting to debit more than available must trigger error
+  let overdraftRejected = false;
+  try {
+    await pool.query(
+      `INSERT INTO sandbox_ledger_entries (id, accounting_reference_id, idempotency_key, user_id, account_id, event_type, currency, amount_minor, balance_type, description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [`sb_le_od_${ts}`, `ref_od_${ts}`, `idem_od_${ts}`, testUserId, `user:${testUserId}:available`, "ENTRY_RESERVATION", "GEL", -10000, "AVAILABLE", "Illegal overdraft attempt"],
+    );
+  } catch (err: any) {
+    if (err.message && (err.message.includes("Sandbox balance overdraft") || err.message.toLowerCase().includes("overdraft"))) {
+      overdraftRejected = true;
+    }
+  }
+  check("Trigger guard: sandbox balance overdraft attempt rejected by trigger", overdraftRejected);
+
+  // 11e. Settlement record test
+  await pool.query(
+    `INSERT INTO sandbox_settlements (competition_instance_id, status, total_entries_captured_minor, total_prizes_awarded_minor, platform_margin_minor, promotional_subsidy_minor, currency, accounting_reference_id, idempotency_key)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [instId, "SETTLED", 1000, 900, 100, 0, "GEL", `sb_settle_ref_${ts}`, `${sbIdemKey}_settle`],
+  );
+  check("DML smoke: sandbox_settlements row inserted", true);
+
   // Clean up smoke rows in proper foreign key order
+  await pool.query(`DELETE FROM sandbox_settlements WHERE competition_instance_id = $1`, [instId]);
+  await pool.query(`DELETE FROM sandbox_ledger_entries WHERE accounting_reference_id = $1 OR user_id IN ($2, $3)`, [sbRefId, testUserId, testOpponentId]);
+  await pool.query(`DELETE FROM sandbox_entry_reservations WHERE competition_instance_id = $1`, [instId]);
   await pool.query(`DELETE FROM match_settlements WHERE match_id IN ($1, $2, $3)`, [matchDiamondsId, matchCoinsId, matchGelId]);
   await pool.query(`DELETE FROM matches_history WHERE id IN ($1, $2, $3)`, [matchDiamondsId, matchCoinsId, matchGelId]);
   await pool.query(`DELETE FROM competition_participants WHERE instance_id = $1`, [instId]);

@@ -3,6 +3,75 @@
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
+## Session 68 (2026-09-22): Competition Economy Phase 2 — Accounting Port & Sandbox Accounting Adapter
+
+### Baseline & Scope
+- Workspace: `C:\Users\abuse\Fugluck`
+- Authoritative remote: `origin` (`https://github.com/abuseridzerati-max/fugluck.git`)
+- Phase 1 Merge: Fast-forward merged `feat/competition-economy-phase-1` (`d558eaf`) into `main`, pushed to `origin/main` (`d558eaf`), and cleanly deleted `feat/competition-economy-phase-1`.
+- Phase 2 Branch: `feat/competition-economy-phase-2` (created from `d558eaf`)
+- Objective: Implement provider-independent financial abstraction (`CompetitionAccountingPort`) and balanced double-entry sandbox adapter (`SandboxAccountingAdapter`) without real payment rails or persistent production cash wallet assumptions.
+
+### Architecture & Work Accomplished
+1. **Competition Accounting Port (`packages/server/src/accounting/port.ts`)**:
+   - Provider-independent contract decoupled from Stripe, bank APIs, PSPs, or specific wallet engines.
+   - Core operations: `reserveEntry`, `releaseEntry`, `captureEntry`, `settleCompetition`, `refundCompetition`.
+   - Explicit result types: `accountingReferenceId`, `competitionInstanceId`, `MoneyAmount`, error codes (`INSUFFICIENT_FUNDS`, `DUPLICATE_ENTRY`, `RESERVATION_NOT_FOUND`, `COMPETITION_ALREADY_SETTLED`, etc.).
+   - Zero exposure of internal ledger details to Competition domain callers.
+
+2. **Sandbox Double-Entry Accounting Model & Ledger Accounts**:
+   - Accounts model:
+     - `platform:treasury:GEL`: Sandbox platform funding source.
+     - `platform:escrow:GEL`: Captured entry fee escrow pool for locked/active competitions.
+     - `platform:promotions:GEL`: Promotional and sponsored prize subsidy funding source.
+     - `platform:fees:GEL`: Retained platform margin when captured entries exceed prizes.
+     - `user:<userId>:GEL`: User sandbox balance container.
+   - Balance separation: `AVAILABLE` vs `RESERVED` vs `CAPTURED` vs `SETTLED`.
+   - Strict algebraic balancing: For every financial transaction, `SUM(amount_minor) = 0`. Global double-entry reconciliation always totals exactly 0.
+
+3. **Database Schema & Additive Migration 0009 (`packages/server/drizzle/0009_sandbox_accounting.sql`)**:
+   - Added 3 normalized tables:
+     - `sandbox_entry_reservations`: Tracks entry reservation lifecycle (`id`, `competition_instance_id`, `user_id`, `currency`, `amount_minor`, `status`, `idempotency_key`, `accounting_reference_id`, `created_at`, `updated_at`).
+     - `sandbox_ledger_entries`: Append-only, double-entry financial journal (`id`, `accounting_reference_id`, `idempotency_key`, `competition_instance_id`, `user_id`, `account_id`, `event_type`, `currency`, `amount_minor`, `balance_type`, `description`, `created_at`).
+     - `sandbox_settlements`: Audit record of competition settlement execution (`competition_instance_id`, `status`, `total_entries_captured_minor`, `total_prizes_awarded_minor`, `platform_margin_minor`, `promotional_subsidy_minor`, `currency`, `accounting_reference_id`, `idempotency_key`, `settled_at`).
+   - Non-negative overdraft guard trigger: `sandbox_balance_non_negative_guard` executes `enforce_non_negative_sandbox_balance()`, strictly preventing negative `AVAILABLE` or `RESERVED` balances at the database engine layer.
+   - Preserves all historical tables, foreign keys, and indexes without deletion or mutation.
+
+4. **Lifecycle & Prize Model Independence**:
+   - **Case A (Standard Duel)**: 2 × 500 entry -> 1,000 captured; 900 prize to winner, 100 retained platform margin. Net = 0.
+   - **Case B (Promotional Overlay)**: 2 × 500 entry -> 1,000 captured; 2,000 prize to winner, 1,000 promotional subsidy injected. Net = 0.
+   - **Case C (Freeroll / Sponsored Prize)**: 0 entry -> 0 captured; 100,000 prize (₾1,000.00) to winner, 100,000 promotional subsidy injected. Net = 0.
+   - **Case D (Multi-Placement Prizes)**: 2 × 500 entry -> 1,000 captured; 1st gets 600, 2nd gets 300, platform retains 100. Net = 0.
+   - **Refund / Void**: Reverses captured entries from escrow to user available balances, or releases pending reservations back to available funds. Net = 0.
+
+5. **Concurrency & Idempotency**:
+   - Advisory transaction locking: PostgreSQL advisory locks on user namespace (`2094927180`) and competition instance namespace (`2094927181`).
+   - Prevents double-spend: Simultaneous concurrent reservations against the same available balance are serialized; exactly 1 succeeds and remainder fail with `INSUFFICIENT_FUNDS`.
+   - Unique idempotency keys on reservations, ledger postings, and settlements ensure repeat executions never double-debit or double-credit.
+
+6. **Currency & Domain Isolation**:
+   - **Zero Real Payment Rails**: Sandbox GEL has 0 real-world value, cannot be purchased, withdrawn, or transferred.
+   - **COINS Isolation**: Virtual COINS cannot be passed as MoneyAmount, cannot fund Sandbox GEL, and cannot be generated from Sandbox GEL. Existing non-monetary COINS matchmaking remains untouched.
+   - **Historical DIAMONDS Preservation**: DIAMONDS records in `matches_history`, `match_settlements`, and `ledger_entries` remain 100% untouched and readable.
+
+### Verification & Automated Testing
+- `npm run typecheck`: **PASS** (Clean build across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, `@fugluck/client`).
+- `npm run build`: **PASS** (Client production build clean).
+- `npm run build:server`: **PASS** (Server TypeScript compile clean).
+- `npm run test:database-safety`: **18/18 PASS**.
+- `npm run test:migration-parity`: **279/279 PASS** (19 tables, columns, foreign keys, 19 check constraints, indexes, 2 triggers, 2 stored functions, and full DML smoke tests).
+- `npm run test:competition-domain`: **40/40 PASS**.
+- `npm run test:competition-accounting`: **51/51 PASS** (`scripts/competition-phase2-accounting-check.ts` covering all 24 required test scenarios).
+- `npm test`: **31/31 test suites PASS 100%** (30 baseline suites + dedicated Phase 2 accounting suite).
+
+### Production Invariant Confirmations
+- **Runtime Product Behavior**: 100% unchanged. No player can join a GEL competition, see GEL balances, or interact with real money.
+- **No Cash Wallet Leakage**: Competition domain interacts exclusively via `CompetitionAccountingPort`.
+- **Exact Integer Minor Units**: All GEL values use integer tetri (e.g. 500 = ₾5.00 GEL); zero floats.
+
+### Next Phase
+- **Phase 3**: Competition Lifecycle Engine & Matchmaking Integration (Template CRUD, instance generation, registration state machine, candidate game session launch with snapshotted instance references).
+
 ## Session 67 (2026-09-22): Competition Economy Phase 1 — Shared Domain Types, Database Schema & Migration 0008
 
 ### Baseline & Scope
