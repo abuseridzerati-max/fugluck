@@ -55,3 +55,5 @@ export type {
   CompetitionParticipant,
 } from "./competitions";
 export { GAME_COMPETITION_ELIGIBILITY_REGISTRY } from "./competitions";
+
+export * from './authority';

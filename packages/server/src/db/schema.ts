@@ -453,3 +453,43 @@ export type SandboxLedgerEntryRecord = typeof sandboxLedgerEntries.$inferSelect;
 export type NewSandboxLedgerEntryRecord = typeof sandboxLedgerEntries.$inferInsert;
 export type SandboxSettlementRecord = typeof sandboxSettlements.$inferSelect;
 export type NewSandboxSettlementRecord = typeof sandboxSettlements.$inferInsert;
+
+export const competitionAuthorityRuns = pgTable('competition_authority_runs', {
+  id: text('id').primaryKey(), instanceId: text('instance_id').notNull().unique().references(() => competitionInstances.id),
+  matchId: text('match_id').notNull().unique().references(() => matchesHistory.id),
+  gameId: text('game_id').notNull(), version: text('version').notNull(), seed: integer('seed').notNull(),
+  capTicks: integer('cap_ticks').notNull().default(10800),
+  ownerId: text('owner_id').notNull(), fence: integer('fence').notNull().default(1),
+  leaseUntil: timestamp('lease_until', { withTimezone: true }).notNull(), status: text('status').notNull().default('CREATED'),
+  startAt: timestamp('start_at', { withTimezone: true }), deadline: timestamp('deadline', { withTimezone: true }),
+  terminalAt: timestamp('terminal_at', { withTimezone: true }), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => ({
+  statusCheck: check('competition_authority_runs_status_check', sql`${t.status} in ('CREATED','READY','ACTIVE','COMPLETED','VOIDED')`),
+  capCheck: check('competition_authority_runs_cap_ticks_check', sql`${t.capTicks} > 0`),
+}));
+export const competitionAuthoritySessions = pgTable('competition_authority_sessions', {
+  id: text('id').primaryKey(), runId: text('run_id').notNull().references(() => competitionAuthorityRuns.id),
+  userId: text('user_id').notNull().references(() => users.id), controllerId: text('controller_id'),
+  epoch: integer('epoch').notNull().default(0), nonceHash: text('nonce_hash'), status: text('status').notNull().default('CREATED'),
+  terminalAt: timestamp('terminal_at', { withTimezone: true }),
+}, t => ({
+  runUser: uniqueIndex('competition_authority_sessions_run_id_user_id_key').on(t.runId, t.userId),
+  statusCheck: check('competition_authority_sessions_status_check', sql`${t.status} in ('CREATED','READY','ACTIVE','COMPLETED','FORFEITED','VOIDED','EXPIRED')`),
+}));
+export const competitionAuthorityResults = pgTable('competition_authority_results', {
+  id: text('id').primaryKey(), sessionId: text('session_id').notNull().unique().references(() => competitionAuthoritySessions.id),
+  score: integer('score').notNull(), ticks: integer('ticks').notNull(), reason: text('reason').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => ({
+  scoreCheck: check('competition_authority_results_score_check', sql`${t.score} >= 0`),
+  ticksCheck: check('competition_authority_results_ticks_check', sql`${t.ticks} >= 0`),
+}));
+export const competitionAuthorityDecisions = pgTable('competition_authority_decisions', {
+  runId: text('run_id').primaryKey().references(() => competitionAuthorityRuns.id), kind: text('kind').notNull(),
+  winnerUserId: text('winner_user_id').references(() => users.id), reason: text('reason').notNull(),
+  resultIds: jsonb('result_ids').notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(), appliedAt: timestamp('applied_at', { withTimezone: true }),
+}, t => ({
+  kindCheck: check('competition_authority_decisions_kind_check', sql`${t.kind} in ('WIN','DRAW','VOID','FORFEIT')`),
+  winnerCheck: check('competition_authority_decisions_check', sql`(${t.kind} in ('WIN','FORFEIT') and ${t.winnerUserId} is not null) or (${t.kind} in ('VOID','DRAW') and ${t.winnerUserId} is null)`),
+}));

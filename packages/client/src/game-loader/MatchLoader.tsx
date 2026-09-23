@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthContext'
 import { canNativeShare, copyTextToClipboard } from '../lib/clipboard'
 import { useMatchSocket, type MatchSocketMode, type RematchState } from '../matchmaking/useMatchSocket'
 import { apiFetch } from '../lib/api'
+import { AuthorityCompetition } from './AuthorityCompetition'
 
 type MatchLoaderProps = {
   createModule: GameModuleFactory
@@ -51,7 +52,14 @@ function isTerminal(phase: Phase): boolean {
   return phase.kind === 'resolved' || phase.kind === 'connection-error'
 }
 
-export default function MatchLoader({
+export default function MatchLoader(props: MatchLoaderProps) {
+  if (props.matchMode?.kind === 'competition' && props.gameId === 'space-blaster') {
+    return <AuthorityCompetition templateId={props.matchMode.templateId} onExit={props.onExit} />
+  }
+  return <LegacyMatchLoader {...props} />
+}
+
+function LegacyMatchLoader({
   createModule,
   gameTitle,
   gameId,

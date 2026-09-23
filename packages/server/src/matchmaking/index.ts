@@ -1,3 +1,6 @@
+import { AuthorityRuntime, type AuthorityOptions } from '../competitions/authorityRuntime';
+import { templateService } from '../competitions/templateService';
+import { AUTHORITY_VERSION } from '@fugluck/shared';
 import type { Server as HttpServer } from "node:http";
 import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { Server, type DefaultEventsMap } from "socket.io";
@@ -34,16 +37,18 @@ export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvent
 // Sole entry point for this module: builds the Socket.IO server, wires
 // session auth and the queue/match event handlers, and returns it. Nothing
 // outside this file reaches into queue.ts/matches.ts directly.
-export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string }): MatchmakingServer {
+export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string; authorityOptions?: AuthorityOptions }): MatchmakingServer {
   // Trigger crash recovery for any uncompleted active matches from a prior server run
-  void recoverOrphanMatches();
-  void lifecycleEngine.recoverOrphanCompetitions();
+  const startup = recoverOrphanMatches().then(() => lifecycleEngine.recoverOrphanCompetitions());
 
   const io: MatchmakingServer = new Server(httpServer, {
     cors: socketIoCorsOptions,
     maxHttpBufferSize: 1 * 1024 * 1024, // 1MB payload buffer limit protection
   });
 
+  const authority = new AuthorityRuntime(undefined, _opts?.authorityOptions);
+  io.engine.on('close', () => authority.close());
+  httpServer.once('close', () => authority.close());
   io.use(socketAuthMiddleware);
 
   setOnQueueChange(() => {
@@ -52,6 +57,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
 
   io.on("connection", (socket: MatchmakingSocket) => {
     registerPresence(socket);
+    authority.register(socket);
     handleReconnect(socket.data.userId, socket);
     socket.emit("queueStateUpdate", { entries: getPublicQueueState() });
 
@@ -118,6 +124,11 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       const templateId = payload.templateId;
 
       try {
+        await startup;
+        const template = await templateService.getTemplate(templateId);
+        if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || template?.gameId !== 'space-blaster' || template.rulesVersion !== AUTHORITY_VERSION || template.format !== 'HEAD_TO_HEAD' || template.participantCapacity !== 2) {
+          throw new Error('Competition gameplay is blocked pending live authority acceptance.');
+        }
         const joinResult = await instanceService.joinCompetitionQueue(
           templateId,
           socket.data.userId,
@@ -135,44 +146,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
 
         // If instance is locked (2/2 for head to head), activate match
         if (joinResult.isLocked) {
-          const matchResult = await lifecycleEngine.activateLockedCompetition(
-            joinResult.instanceId,
-            new SandboxAccountingAdapter(),
-          );
-
-          const p1Socket = getOnlineSocket(matchResult.player1Id);
-          const p2Socket = getOnlineSocket(matchResult.player2Id);
-
-          if (p1Socket) {
-            p1Socket.emit("competition:matched", {
-              matchId: matchResult.matchId,
-              instanceId: joinResult.instanceId,
-              gameId: matchResult.gameId,
-              seed: matchResult.seed,
-              opponentUsername: p2Socket?.data?.username ?? "Opponent",
-            });
-            p1Socket.emit("matched", {
-              matchId: matchResult.matchId,
-              gameId: matchResult.gameId,
-              seed: matchResult.seed,
-              opponentUsername: p2Socket?.data?.username ?? "Opponent",
-            });
-          }
-          if (p2Socket) {
-            p2Socket.emit("competition:matched", {
-              matchId: matchResult.matchId,
-              instanceId: joinResult.instanceId,
-              gameId: matchResult.gameId,
-              seed: matchResult.seed,
-              opponentUsername: p1Socket?.data?.username ?? "Opponent",
-            });
-            p2Socket.emit("matched", {
-              matchId: matchResult.matchId,
-              gameId: matchResult.gameId,
-              seed: matchResult.seed,
-              opponentUsername: p1Socket?.data?.username ?? "Opponent",
-            });
-          }
+          await authority.create(joinResult.instanceId);
         }
       } catch (err: any) {
         socket.emit("competition:error", {
@@ -195,6 +169,8 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       }
 
       try {
+        const owned = await instanceService.getInstance(payload.instanceId);
+        if (socket.data.isGuest || !owned?.participants.some(p => p.userId === socket.data.userId)) throw new Error('Participant ownership required.');
         const cancelResult = await lifecycleEngine.cancelUnfilledInstance(
           payload.instanceId,
           new SandboxAccountingAdapter(),

@@ -95,6 +95,11 @@ competitionsRouter.post("/sandbox-faucet", attachSession, requireAuth, async (re
 competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, async (req, res) => {
   try {
     const instanceId = String(req.params.id);
+    const instance = await instanceService.getInstance(instanceId);
+    if (!instance?.participants.some(p => p.userId === req.userId)) {
+      res.status(403).json({ error: 'Participant ownership required.' });
+      return;
+    }
     const adapter = new SandboxAccountingAdapter();
     const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED");
     if (!cancelRes.cancelled) {

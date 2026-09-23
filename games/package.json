@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./registry.ts",
   "exports": {
+    "./space-blaster/engine": "./space-blaster/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"

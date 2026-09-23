@@ -210,6 +210,7 @@ export class CompetitionLifecycleEngine {
     resolved: boolean;
   }> {
     const { instanceId, userId, score, durationMs, inputLog, viewport } = params;
+    if ((await pool.query('SELECT 1 FROM competition_authority_runs WHERE instance_id=$1', [instanceId])).rowCount) throw new CompetitionLifecycleError('LIVE_AUTHORITY_REQUIRED', 'Client scores cannot complete an authority competition.');
 
     const instanceData = await instanceService.getInstance(instanceId);
     if (!instanceData) {
@@ -290,6 +291,13 @@ export class CompetitionLifecycleEngine {
     winnerUserId?: string | null;
   }> {
     return await lifecycleMutex.runExclusive(`settle:${instanceId}`, async () => {
+      const authorityRun = (await pool.query('SELECT id FROM competition_authority_runs WHERE instance_id=$1', [instanceId])).rows[0];
+      if (authorityRun) {
+        if (!options.systemVoid) throw new CompetitionLifecycleError('LIVE_AUTHORITY_REQUIRED', 'Authority decisions own settlement and recovery.');
+        const { AuthorityStore } = await import('./authorityStore');
+        const result = await new AuthorityStore(undefined, accountingPort).decide(authorityRun.id, options.voidReason ?? 'ADMINISTRATIVE_VOID', undefined, true, false, true);
+        return { status: result.status, outcome: result.reason, winnerUserId: result.winnerUserId };
+      }
       // 1. Fetch instance
       const instRows = await pool.query(
         `SELECT id, game_id, currency, entry_fee_minor, status, match_id, winner_user_id
@@ -557,6 +565,7 @@ export class CompetitionLifecycleEngine {
     let recoveredActive = 0;
 
     for (const inst of nonTerminalRows) {
+      if ((await pool.query('SELECT 1 FROM competition_authority_runs WHERE instance_id=$1', [inst.id])).rowCount) continue;
       try {
         if (inst.status === "PENDING_ENTRANTS") {
           await this.cancelUnfilledInstance(inst.id, accountingPort, "CRASH_RECOVERY");

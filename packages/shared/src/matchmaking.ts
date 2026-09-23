@@ -1,3 +1,4 @@
+import type { AuthorityBinding, AuthorityControls, AuthoritySnapshot, AuthorityOutcome } from './authority';
 // Wire protocol for the matchmaking queue, shared between client and server so
 // both sides agree on event names/payload shapes at compile time. Scope: for-fun
 // matches only — async-independent rounds (each player plays their own instance
@@ -192,6 +193,10 @@ export type CompetitionErrorPayload = {
 };
 
 export interface ClientToServerEvents {
+  'authority:ready': (payload: AuthorityBinding) => void;
+  'authority:controls': (payload: AuthorityControls) => void;
+  'authority:resume': (payload: { instanceId: string }) => void;
+  'authority:forfeit': (payload: AuthorityBinding) => void;
   joinQueue: (payload: JoinQueuePayload) => void;
   submitScore: (payload: SubmitScorePayload) => void;
   visibilityHidden: (payload: VisibilityHiddenPayload) => void;
@@ -212,6 +217,11 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
+  'authority:probe': (ack: () => void) => void;
+  'authority:session': (payload: AuthorityBinding) => void;
+  'authority:snapshot': (payload: AuthoritySnapshot) => void;
+  'authority:outcome': (payload: AuthorityOutcome) => void;
+  'authority:error': (payload: { code: string }) => void;
   matched: (payload: MatchedPayload) => void;
   matchResolved: (payload: MatchResolvedPayload) => void;
   queueError: (payload: QueueErrorPayload) => void;
@@ -232,4 +242,3 @@ export interface ServerToClientEvents {
   "competition:error"?: (payload: CompetitionErrorPayload) => void;
   "competition:cancelled"?: (payload: { instanceId: string; reason: string }) => void;
 }
-

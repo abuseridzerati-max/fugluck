@@ -34,9 +34,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0007_policy_acceptances.sql",
     "0008_competition_economy.sql",
     "0009_sandbox_accounting.sql",
+    "0010_competition_authority.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0009) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0010) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -96,6 +97,7 @@ async function verifySchema(pool: Pool): Promise<void> {
     "sandbox_entry_reservations",
     "sandbox_ledger_entries",
     "sandbox_settlements",
+    'competition_authority_runs', 'competition_authority_sessions', 'competition_authority_results', 'competition_authority_decisions',
   ];
 
   const tableRes = await pool.query(
@@ -106,6 +108,20 @@ async function verifySchema(pool: Pool): Promise<void> {
   for (const tableName of expectedTables) {
     check(`Table '${tableName}' exists in public schema`, existingTables.has(tableName));
   }
+
+  const authorityColumns: Record<string, string[]> = {
+    competition_authority_runs: ['id','instance_id','match_id','game_id','version','seed','cap_ticks','owner_id','fence','lease_until','status','start_at','deadline','terminal_at','created_at'],
+    competition_authority_sessions: ['id','run_id','user_id','controller_id','epoch','nonce_hash','status','terminal_at'],
+    competition_authority_results: ['id','session_id','score','ticks','reason','created_at'],
+    competition_authority_decisions: ['run_id','kind','winner_user_id','reason','result_ids','created_at','applied_at'],
+  };
+  const authoritySchema = await pool.query(`SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name LIKE 'competition_authority_%'`);
+  for (const [table, columns] of Object.entries(authorityColumns)) for (const column of columns) {
+    check(`${table}.${column} exists`, authoritySchema.rows.some(r=>r.table_name===table&&r.column_name===column));
+  }
+  const authorityTriggers = await pool.query(`SELECT tgname FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('authority_result_immutable','authority_decision_immutable')`);
+  check('Authority result immutability trigger exists', authorityTriggers.rows.some(r=>r.tgname==='authority_result_immutable'));
+  check('Authority terminal decision immutability trigger exists', authorityTriggers.rows.some(r=>r.tgname==='authority_decision_immutable'));
 
   // 2. Verify all columns for newly migrated tables
   const emailTokenCols = await pool.query(

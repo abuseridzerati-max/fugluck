@@ -607,6 +607,7 @@ export async function recoverOrphanMatches(): Promise<number> {
 
   let recoveredCount = 0;
   for (const m of activeMatches) {
+    if (m.competitionInstanceId) continue; // Competition accounting has its own recovery owner.
     try {
       const now = new Date();
       await db.transaction(async (tx) => {
