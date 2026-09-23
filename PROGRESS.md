@@ -1,5 +1,29 @@
 # Fugluck — Progress Log
 
+## Session 72 (2026-09-23): Phase 5 Main Integration & Staging Deployment Attempt
+
+### Git & Phase 5 Review
+- **Verified by `git fetch`, branch/status/log inspection:** Starting state matched the handoff: local/remote `main` at `55f9f8e`, Phase 5 branch at `7174dcc`, clean worktree, and main unchanged since the handoff. Phase 5 was one commit ahead.
+- **Verified by reviewing the full diff and relevant server/client source:** Phase 5 changed 14 intended files (admin console/API, competition template/instance and sandbox accounting support, admin tests, lifecycle assertions, package script, and progress documentation). No migrations, generated outputs, secrets, or unrelated code appeared in the Phase 5 diff. `git diff --check` passed.
+- **Verified by reading `0008_competition_economy.sql`, `0009_sandbox_accounting.sql`, schema, and journal:** Phase 5 adds no migration. The prerequisite competition schema is `0008` and sandbox double-entry ledger is `0009`. `0008` keeps `COINS` and `DIAMONDS` in match currency checks while adding `GEL`; `0009` adds sandbox tables and its balance guard. These files are additive and do not rewrite old wallet/ledger history. The deployment guide's stale `0000`–`0007` claim was corrected to `0000`–`0009` in `DEPLOYMENT.md` (commit `a83cef6`).
+
+### Validation (Verified by command exit status and emitted PASS summaries)
+- `npm run typecheck`: PASS; TypeScript checks and the included client build completed. Vite emitted the existing large-chunk advisory (>500 kB).
+- `npm run build`: PASS (client production bundle).
+- `npm run build:server`: PASS.
+- `npm run test:database-safety`: 18/18 PASS.
+- `npm run test:migration-parity`: 279/279 PASS on the approved disposable database `arcadeclash_atomic_test`; migrations `0000`–`0009` and DML parity were verified there, not on staging.
+- Competition checks: domain 40/40; accounting 51/51; lifecycle 43/43; player UI 37/37 assertions across 35 requirements; admin 41/41 assertions across 40 requirements.
+- Full `npm test`: exit 0, 34/34 scripts passed. Per-script emitted PASS-line counts: migration-schema-parity 279; auth-account-lifecycle 41; legal-policy-help 53; i18n 65; wallet-friends 48; financial-reconnection 19; matchmaking 65; determinism 31; score-validation 42; canvas-render 28; rate-limit 11; sql-injection 19; input-validation 16; xss-audit 17; password-security 13; admin-security 8; admin-console 49; admin-reset-recovery 11; seed-admin 7; cors-audit 20; registration-verification 9; owner-admin-lockout 10; request-logging-audit 12; password-policy 18; file-upload-audit 4; wallet-settlement-concurrency 16; wallet-settlement-integrity 23; match-lifecycle-durability 26; staging-readiness 34; competition-phase1-domain 40; competition-phase2-accounting 51; competition-phase3-lifecycle 43; competition-phase4-ui 37; competition-phase5-admin 41. (`canvas-render-check` additionally reported ALL PASS.)
+- **Verified every script in `scripts/`:** The two checks outside `npm test` were also run: `npm run test:database-safety` 18/18 and `npm run test:atomic-wager` 37/37. Across all 36 `*-check.ts` scripts, no failures were reported.
+
+### Merge, Push & Staging State
+- **Verified by Git:** Fast-forwarded `main` from `55f9f8e` to Phase 5 commit `7174dcc` and pushed `origin/main`. Added and pushed deployment-doc correction commit `a83cef6`. Local `main` and `origin/main` now both resolve to `a83cef6`, ahead/behind is 0/0, and the Phase 5 branch was retained.
+- **Verified by live HTTP requests on 2026-09-23:** Frontend `https://staging.fugluck.com/` and `/admin` return 200. Vercel served a fresh bundle (`/assets/index-ao8B7neb.js`, HTTP 200) containing Phase 5 admin strings, so the player/admin client changes are present on the staging hostname. Exact provider-reported commit is unavailable because the Vercel dashboard requires login.
+- **Verified by live HTTP requests:** Render API `https://api-staging.fugluck.com/health` and `/api/health` return 200; the latter reports `database: connected`. Unauthenticated `/api/auth/me` returns expected 401, and `/api/admin/dashboard` returns expected 401. However, `GET /api/competitions/templates` still returns 404, so the backend is not serving the competition routes after the main push. Exact Render revision is unverified.
+- **Database migration not applied to staging:** This checkout's configured `DATABASE_URL` resolves to a Neon host/database named `neondb`; it is not verified as the Render staging database. `TEST_DATABASE_URL` is the separate disposable `arcadeclash_atomic_test` database used by the guarded checks. The Render dashboard redirected to sign-in and no Render/Vercel API token is configured, so the actual Render `DATABASE_URL`, migration history, and manual deployment controls could not be inspected. No migration was run against `neondb` or staging. Required staging migrations are `0008` and `0009` only if absent after checking the Render staging migration history.
+- **Current status:** Phase 5 is reviewed, validated, merged, and pushed. Staging frontend is updated; Render backend deployment and verification of its actual database migrations remain **BLOCKED on access to the existing Render account/service**. Manual visual acceptance remains **PENDING** for the user's own inspection. Phase 6 was **NOT STARTED**.
+
 Self-contained handoff doc. Read this first at the start of every session —
 conversations don't carry over, and work may resume from a different tool.
 
