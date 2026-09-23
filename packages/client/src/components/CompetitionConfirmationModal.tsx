@@ -66,7 +66,7 @@ export default function CompetitionConfirmationModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${gameTitle} — ${template.title} Confirmation`}
+      aria-label={`${template.title} Confirmation`}
       style={{
         position: 'fixed',
         inset: 0,
@@ -84,7 +84,9 @@ export default function CompetitionConfirmationModal({
         style={{
           width: '90%',
           maxWidth: 460,
-          padding: 'var(--space-6)',
+          maxHeight: 'calc(100dvh - 32px)',
+          overflowY: 'auto',
+          padding: 'clamp(16px, 4vw, 32px)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg, 12px)',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -122,10 +124,10 @@ export default function CompetitionConfirmationModal({
         </div>
 
         <h2 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-xl)' }}>
-          {gameTitle} — {template.title}
+          {template.title}
         </h2>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-xs)' }}>
-          Format: {template.format.replace(/_/g, ' ')} • Capacity: {template.participantCapacity} players • Rules: {template.rulesVersion}
+          {gameTitle} • Format: {template.format.replace(/_/g, ' ')} • Capacity: {template.participantCapacity} players • Rules: {template.rulesVersion}
         </p>
 
         {/* Financial Terms Summary (from server) */}
