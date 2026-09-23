@@ -93,7 +93,7 @@ This guide provides the complete, step-by-step procedure to deploy Fugluck to a 
 
 ### STEP 3 — Run Database Migrations on Staging
 
-Before using the application, apply the official database migration chain (`0000` through `0007`) to your staging database:
+Before using the application, apply the official database migration chain (`0000` through `0009`) to your isolated staging database:
 
 1. In the Render Web Service dashboard, navigate to the **Shell** tab (or run locally pointed to your staging `DATABASE_URL`):
 2. Run the migration command:
@@ -101,6 +101,8 @@ Before using the application, apply the official database migration chain (`0000
    npm run db:migrate
    ```
 3. Verify that all tables, triggers, indexes, and initial platform records are created without errors.
+
+Migrations `0008_competition_economy.sql` and `0009_sandbox_accounting.sql` add the competition domain and its TEST / SANDBOX GEL accounting tables. Migration `0008` extends the match currency constraints to accept GEL while retaining COINS and historical DIAMONDS records. These migrations do not convert currencies or remove existing ledger/history rows. Confirm the backend's `DATABASE_URL` identifies the dedicated staging database before running `npm run db:migrate`.
 
 ---
 
