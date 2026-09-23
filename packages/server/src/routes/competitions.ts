@@ -27,16 +27,20 @@ competitionsRouter.use(competitionsLimiter);
  * GET /api/competitions/templates
  * Lists all enabled competition templates and their prize schedules.
  */
-competitionsRouter.get("/templates", async (_req, res) => {
+competitionsRouter.get("/templates", async (req, res) => {
   try {
-    let templates = await templateService.listEnabledTemplates();
+    // Include disabled templates so an intentionally closed catalog stays empty.
+    let templates = await templateService.listTemplates();
     if (templates.length === 0) {
-      await templateService.ensureDefaultTemplates();
-      templates = await templateService.listEnabledTemplates();
+      await templateService.ensureDefaultTemplates(templates);
+      templates = await templateService.listTemplates();
     }
-    res.json({ templates });
+    templates = templates.filter((template) => template.enabled);
+    const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
+    res.json({ templates: gameId ? templates.filter((template) => template.gameId === gameId) : templates });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to list templates." });
+    console.error("[competitions] Failed to load public competition templates:", err);
+    res.status(500).json({ error: "Competition catalog is temporarily unavailable. Please retry." });
   }
 });
 

@@ -39,9 +39,10 @@ export default function Navbar({
     <nav
       style={{
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
         gap: 'var(--space-4)',
-        padding: 'var(--space-4) var(--space-6)',
+        padding: 'var(--space-4) clamp(var(--space-4), 2vw, var(--space-6))',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-bg)',
       }}
@@ -137,7 +138,7 @@ export default function Navbar({
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-3)', marginLeft: 'auto', maxWidth: '100%' }}>
         <LanguageSwitcher />
 
         {user && (

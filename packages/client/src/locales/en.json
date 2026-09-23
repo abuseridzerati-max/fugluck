@@ -26,7 +26,7 @@
     "admin": "Admin Console",
     "accountMenu": "Account menu",
     "notifications": "Notifications",
-    "coinsTooltip": "Coins are free play money. Diamonds are premium.",
+    "coinsTooltip": "Coins are free play money. Test GEL is simulated sandbox currency with no cash value.",
     "selectLanguage": "Select language"
   },
   "auth": {
@@ -163,7 +163,7 @@
       "privacy": "Privacy Policy",
       "cookies": "Cookie Policy",
       "rules": "Competition Rules",
-      "diamonds": "Diamond & Wallet Terms",
+      "diamonds": "Historical Diamond & Wallet Policy",
       "withdrawals": "Withdrawal Policy",
       "refunds": "Refund Policy",
       "responsiblePlay": "Responsible Play",

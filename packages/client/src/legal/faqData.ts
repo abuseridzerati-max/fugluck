@@ -30,7 +30,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
   },
   {
     id: 'diamonds-and-wallet',
-    title: 'Diamonds & Wallet',
+    title: 'Historical Diamonds & Wallet',
     description: 'Understanding COINS vs DIAMONDS, ledger balances, and transactions.',
     icon: '💎',
   },
@@ -103,10 +103,10 @@ export const FAQ_ITEMS: FAQItem[] = [
     categoryId: 'getting-started',
     question: 'What is the difference between Coins and Diamonds?',
     answer:
-      'COINS are 100% free virtual play money (0% rake, topped off monthly, no cash value). DIAMONDS are our premium competitive currency intended for real-value staking skill matches with a 5% platform rake.',
+      'COINS are free virtual play money with no cash value. Diamonds are retired; historical balances and records remain preserved. Current competitions use simulated Test GEL only, with no real money.',
     tags: ['coins', 'diamonds', 'currencies', 'difference'],
     relatedPolicySlug: 'diamonds',
-    relatedPolicyLabel: 'Diamond & Wallet Terms',
+    relatedPolicyLabel: 'Historical Diamond & Wallet Policy',
   },
 
   // Playing Matches
@@ -165,19 +165,19 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'how-do-diamonds-work',
     categoryId: 'diamonds-and-wallet',
-    question: 'How do Diamonds work?',
+    question: 'What happened to Diamonds?',
     answer:
-      'Diamonds are used to enter competitive matches. When you win a Diamond match, you receive the full pot minus a 5% platform rake fee. Your balance is tracked securely in an append-only database ledger.',
+      'Diamonds are retired from active play. Diamond purchases and staking are unavailable. Historical Diamond transactions remain preserved in the append-only ledger and under the historical wallet policy.',
     tags: ['diamonds', 'wallet', 'rake', 'balance'],
     relatedPolicySlug: 'diamonds',
-    relatedPolicyLabel: 'Diamond & Wallet Terms',
+    relatedPolicyLabel: 'Historical Diamond & Wallet Policy',
   },
   {
     id: 'can-diamonds-be-withdrawn',
     categoryId: 'diamonds-and-wallet',
     question: 'Can Diamonds be cashed out for real money?',
     answer:
-      'Cash-out functionality is in active development and regulatory review. When real-money payment processors are integrated, eligible Diamond winnings will be redeemable for real-money payouts subject to identity verification and platform terms.',
+      'No. Diamond cash-outs are retired and no real-money withdrawal service is available. Current competitions use simulated Test GEL with no cash value.',
     tags: ['cash out', 'withdrawal', 'real money', 'payout'],
     relatedPolicySlug: 'withdrawals',
     relatedPolicyLabel: 'Withdrawal Policy',

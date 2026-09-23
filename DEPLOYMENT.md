@@ -30,6 +30,12 @@ This guide provides the complete, step-by-step procedure to deploy Fugluck to a 
 
 ## Step-by-Step Staging Deployment
 
+### Updating the Existing Staging Environment
+
+Use the existing Vercel project `arcadeclash-client` and the existing Render service serving `fugluck-api-staging.onrender.com`; do not create replacement services. Live DNS on 2026-09-23 confirmed `api-staging.fugluck.com` points to `fugluck-api-staging.onrender.com`. The `fugluck-server-staging` name below and in `render.yaml` is a provisioning example, not evidence that the live service uses that name.
+
+After pushing the approved revision to `main`, verify the Vercel deployment's Git SHA and its `staging.fugluck.com` alias. In the existing Render service, inspect the connected repository, branch, build/start commands, deploy logs, and deployed Git SHA. Deploy the approved `main` revision there if auto-deployment did not run. Confirm its configured database is the isolated staging database and inspect migration history before applying missing migrations. Check `/api/competitions/templates` on both the custom hostname and the service hostname; `/health` alone does not prove competition routes are deployed.
+
 ### STEP 1 — Create an Isolated Staging PostgreSQL Database
 
 1. Log in to your PostgreSQL cloud provider (e.g. [Neon](https://neon.tech), [Supabase](https://supabase.com), or Render PostgreSQL).
@@ -137,7 +143,7 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 | Record Type | Host / Name | Target / Points To | Notes |
 |---|---|---|---|
 | **CNAME** | `staging` | `cname.vercel-dns.com` | Frontend (Vercel) |
-| **CNAME** | `api-staging` | `fugluck-server-staging.onrender.com` | Backend (Render) |
+| **CNAME** | `api-staging` | `fugluck-api-staging.onrender.com` | Existing backend (Render; verified 2026-09-23) |
 
 1. In Vercel Project Settings -> **Domains**, add `staging.fugluck.com`.
 2. In Render Web Service Settings -> **Custom Domains**, add `api-staging.fugluck.com`.
@@ -168,6 +174,12 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 ---
 
 ## Staging Verification & Smoke-Test Checklist
+
+### Competition Catalog Fixtures (Staging Only)
+
+The first public request to `GET /api/competitions/templates` seeds the built-in simulated TEST GEL templates only when there are no templates at all. This idempotent demo fixture set includes standard duels, a promotional prize, and a freeroll; disable fixtures through **Admin → Competitions → Templates** to remove them from the player catalog. Disabled defaults remain disabled. Stable database primary keys prevent concurrent initialization from duplicating defaults, and templates/prizes are inserted atomically. Do not invoke this workflow against a production database. Creating the fixtures does not grant user balances, create entries, or run a competition.
+
+After the API deployment and staging migrations are confirmed, open `/competitions` as a guest and confirm the catalog includes the examples. Use an already-provisioned staging test account to inspect signed-in balance messaging. Do not join entries as part of catalog acceptance.
 
 After completing the deployment steps above, conduct the following live browser verification:
 
@@ -208,8 +220,8 @@ After completing the deployment steps above, conduct the following live browser 
 ### 6. Wallet & Financial Safety
 - [ ] Open `https://staging.fugluck.com/wallet`.
 - [ ] Verify COINS balance reflects game outcomes and grants.
-- [ ] Verify the Diamond Shop displays the **Development Sandbox** warning notice.
-- [ ] Confirm that clicking diamond pack grants returns disabled error if `ENABLE_DEV_DIAMOND_STUB=false`.
+- [ ] Verify there is no active Diamond shop, stake picker, or competition mode; historical Diamond information is marked retired/legacy.
+- [ ] Confirm competition balances and entry/prize values use **TEST / SANDBOX GEL / NO REAL MONEY** messaging; simulated funding is labeled **ADD TEST FUNDS**, not Deposit.
 - [ ] Verify there are NO fields requesting real credit cards, bank accounts, or withdrawal methods.
 
 ### 7. Security & Cookie Headers

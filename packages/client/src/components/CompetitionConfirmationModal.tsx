@@ -240,7 +240,7 @@ export default function CompetitionConfirmationModal({
               color: '#f87171',
             }}
           >
-            🔒 Guest users must create an account to participate in paid competitions. Please log in or sign up.
+            🔒 Free entry costs no Test GEL, but an account is required to enter any competition. Sign in or create an account to enter; paid sandbox competitions also require enough Test GEL.
           </div>
         )}
 

@@ -411,13 +411,16 @@ export class CompetitionTemplateService {
 
   /**
    * Seeds default sandbox competition templates for all eligible candidate games.
-   * Idempotent: no-ops if enabled templates already exist.
+   * Creates the missing defaults and prizes in one atomic batch. Stable primary
+   * keys protect simultaneous requests across processes; disabled/edited defaults
+   * and older defaults with random IDs are preserved.
    */
-  async ensureDefaultTemplates(): Promise<void> {
-    const existing = await this.listEnabledTemplates();
+  async ensureDefaultTemplates(existingTemplates?: CompetitionTemplate[]): Promise<void> {
+    const existing = existingTemplates ?? await this.listTemplates();
 
     const defaults = [
       {
+        id: "tmpl_default_space_blaster_standard",
         gameId: "space-blaster",
         title: "Space Blaster — Standard Duel",
         entryFeeMinor: 500,
@@ -426,6 +429,7 @@ export class CompetitionTemplateService {
         skillAssessmentVersion: "v1",
       },
       {
+        id: "tmpl_default_space_blaster_promo",
         gameId: "space-blaster",
         title: "Space Blaster — Promo Duel",
         entryFeeMinor: 500,
@@ -434,6 +438,7 @@ export class CompetitionTemplateService {
         skillAssessmentVersion: "v1",
       },
       {
+        id: "tmpl_default_space_blaster_freeroll",
         gameId: "space-blaster",
         title: "Space Blaster — Freeroll",
         entryFeeMinor: 0,
@@ -442,6 +447,7 @@ export class CompetitionTemplateService {
         skillAssessmentVersion: "v1",
       },
       {
+        id: "tmpl_default_neon_runner_standard",
         gameId: "neon-runner",
         title: "Neon Runner — Standard Duel",
         entryFeeMinor: 300,
@@ -450,6 +456,7 @@ export class CompetitionTemplateService {
         skillAssessmentVersion: "v1",
       },
       {
+        id: "tmpl_default_pixel_ninja_dash_standard",
         gameId: "pixel-ninja-dash",
         title: "Pixel Ninja Dash — Standard Duel",
         entryFeeMinor: 500,
@@ -458,6 +465,7 @@ export class CompetitionTemplateService {
         skillAssessmentVersion: "v1",
       },
       {
+        id: "tmpl_default_cyber_hopper_standard",
         gameId: "cyber-hopper",
         title: "Cyber Hopper — Standard Duel",
         entryFeeMinor: 400,
@@ -467,22 +475,35 @@ export class CompetitionTemplateService {
       },
     ];
 
-    for (const d of defaults) {
-      const alreadyExists = existing.some((e) => e.gameId === d.gameId && e.title === d.title);
-      if (alreadyExists) continue;
+    const missing = defaults.filter((d) => !existing.some((e) =>
+      e.id === d.id || (e.gameId === d.gameId && e.title === d.title),
+    ));
+    if (missing.length === 0) return;
+    for (const d of missing) assertGameEligibleForCompetition(d.gameId, { isSandbox: true });
 
-      try {
-        await this.createTemplate({
+    try {
+      await db.transaction(async (tx) => {
+        const inserted = await tx.insert(competitionTemplates).values(missing.map(({ prizes, ...d }) => ({
           ...d,
           format: "HEAD_TO_HEAD",
           participantCapacity: 2,
           currency: "GEL",
-          isSandbox: true,
+          jurisdiction: "GE",
           enabled: true,
-        });
-      } catch (err) {
-        console.error(`[templates] Failed to seed default template "${d.title}":`, err);
-      }
+        }))).onConflictDoNothing({ target: competitionTemplates.id }).returning({ id: competitionTemplates.id });
+
+        const insertedIds = new Set(inserted.map((t) => t.id));
+        const prizes = missing.filter((d) => insertedIds.has(d.id)).flatMap((d) => d.prizes.map((p) => ({
+          id: `${d.id}_prize_${p.placement}`,
+          templateId: d.id,
+          ...p,
+          currency: "GEL",
+        })));
+        if (prizes.length > 0) await tx.insert(competitionTemplatePrizes).values(prizes);
+      });
+    } catch (err) {
+      console.error("[templates] Failed to seed default competition templates:", err);
+      throw new Error("Failed to seed default competition templates.");
     }
   }
 }

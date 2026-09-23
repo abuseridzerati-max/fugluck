@@ -264,16 +264,17 @@ export const POLICIES: Record<string, PolicyDocument> = {
   diamonds: {
     type: 'DIAMONDS',
     slug: 'diamonds',
-    title: 'Diamond & Wallet Terms',
-    subtitle: 'Economic principles, currency distinctions, and wallet rules for Fugluck.',
+    title: 'Historical Diamond & Wallet Policy',
+    subtitle: 'Legacy policy information retained for historical Diamond and wallet records.',
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.DIAMONDS,
     summary:
-      'Learn how the Fugluck dual-currency model works. Understand the distinction between free COINS and competitive DIAMONDS, our append-only ledger, and future cash-out mechanics.',
+      'This historical policy is retained for legacy Diamond and wallet records. Diamond purchases, staking, and cash-outs are retired; current competitions use simulated Test GEL under separate sandbox rules.',
     sections: [
       {
         id: 'dual-currency',
         heading: '1. Dual Currency Model: COINS vs DIAMONDS',
+        note: 'Historical policy text: Diamond purchases, staking, and cash-outs are retired. Current competitions use simulated Test GEL under the separate Competition Rules. This page remains available for legacy records.',
         content: [
           'Fugluck maintains strict architectural separation between our two currencies:',
           '• COINS: 100% free-play currency. Granted upon registration (1,000 COINS), refilled monthly, with 0% platform rake. COINS have no cash value, cannot be sold, and cannot be redeemed for real money.',

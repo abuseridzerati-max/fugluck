@@ -27,10 +27,17 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers)
+  // GET requests do not need a JSON Content-Type. Keeping it off simple
+  // cross-origin reads avoids an otherwise unnecessary CORS preflight.
+  if (options.body !== undefined && options.body !== null && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
   })
 
   if (!res.ok) {

@@ -180,7 +180,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         }}
       >
         <p style={{ margin: 0, maxWidth: 800, lineHeight: 1.5 }}>
-          Fugluck is a skill-based competitive gaming platform. COINS are virtual play currency with zero monetary value. Diamond staking and future cash-out redemption are subject to eligibility and platform terms.
+          Fugluck is a skill-based gaming platform. COINS have no monetary value. Current competitions use simulated Test GEL only; historical Diamond records remain available under legacy policy information.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-4)' }}>
           <span>© 2026 Fugluck. All rights reserved.</span>

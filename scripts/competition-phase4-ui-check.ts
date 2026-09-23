@@ -1,5 +1,5 @@
 // Phase 4 Player-Facing Sandbox Competition Experience & UI Integrity Check for Fugluck
-// Verifies all 35 requirements specified in Phase 4 specification.
+// Verifies Phase 4 requirements plus catalog loading and initialization regressions.
 
 import "./require-disposable-test-database.ts";
 import fs from "node:fs";
@@ -58,6 +58,9 @@ async function runPhase4UIChecks(): Promise<void> {
   const clientSrcDir = path.resolve(process.cwd(), "packages/client/src");
   const launchModalSrc = fs.readFileSync(path.join(clientSrcDir, "components/LaunchModal.tsx"), "utf-8");
   const catalogSrc = fs.readFileSync(path.join(clientSrcDir, "components/CompetitionCatalog.tsx"), "utf-8");
+  const apiSrc = fs.readFileSync(path.join(clientSrcDir, "lib/api.ts"), "utf-8");
+  const competitionRouteSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/routes/competitions.ts"), "utf-8");
+  const templateServiceSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/competitions/templateService.ts"), "utf-8");
   const confirmModalSrc = fs.readFileSync(path.join(clientSrcDir, "components/CompetitionConfirmationModal.tsx"), "utf-8");
   const navbarSrc = fs.readFileSync(path.join(clientSrcDir, "components/Navbar.tsx"), "utf-8");
   const walletPageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/WalletPage.tsx"), "utf-8");
@@ -95,7 +98,30 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 3: Competition templates load from server
     // ----------------------------------------------------
     console.log("\n--- Section 2: Competition Catalog & Templates ---");
+    const beforeSeed = await templateService.listTemplates();
+    await Promise.all(Array.from({ length: 4 }, () => templateService.ensureDefaultTemplates(beforeSeed)));
+    const firstSeed = await templateService.listTemplates();
     await templateService.ensureDefaultTemplates();
+    const secondSeed = await templateService.listTemplates();
+    const defaults = secondSeed.filter((t) => t.id.startsWith("tmpl_default_"));
+    check("3a. Concurrent and repeated initialization preserves one copy of all six default templates and prizes",
+      defaults.length === 6 && defaults.every((t) => t.prizes.length === 1) &&
+      firstSeed.length === secondSeed.length &&
+      defaults.every((d) => secondSeed.filter((t) => t.gameId === d.gameId && t.title === d.title).length === 1));
+
+    const defaultFreeroll = defaults.find((t) => t.entryFeeMinor === 0)!;
+    try {
+      await templateService.disableTemplate(defaultFreeroll.id);
+      await templateService.ensureDefaultTemplates();
+      // A stale simultaneous request must also respect the existing primary key.
+      await templateService.ensureDefaultTemplates([]);
+      const afterDisabledSeed = await templateService.listTemplates();
+      check("3b. Normal and stale initialization do not recreate or re-enable a disabled default",
+        afterDisabledSeed.length === secondSeed.length &&
+        afterDisabledSeed.find((t) => t.id === defaultFreeroll.id)?.enabled === false);
+    } finally {
+      await templateService.enableTemplate(defaultFreeroll.id);
+    }
     const allEnabledTemplates = await templateService.listEnabledTemplates();
     const spaceBlasterTemplates = allEnabledTemplates.filter((t) => t.gameId === "space-blaster");
     check(
@@ -169,6 +195,25 @@ async function runPhase4UIChecks(): Promise<void> {
       freerollTemplate?.entryFeeMinor === 0 && (freerollTemplate?.prizes[0]?.amountMinor ?? 0) === 1000;
     const freerollUIRendersFree = catalogSrc.includes("FREEROLL") && confirmModalSrc.includes("'FREE'");
     check("8. Freeroll renders with 'FREE' entry and server-authoritative prize", freerollValid && freerollUIRendersFree);
+
+    check(
+      "8a. Catalog request has a 6-second deadline and a retry path",
+      catalogSrc.includes("CATALOG_REQUEST_TIMEOUT_MS = 6_000") &&
+        catalogSrc.includes("took too long to respond") &&
+        catalogSrc.includes("onClick={loadTemplates}") &&
+        catalogSrc.includes("Retry"),
+    );
+    check(
+      "8b. Catalog GET avoids JSON preflight and maps API outage to a recoverable message",
+      apiSrc.includes("options.body !== undefined && options.body !== null") &&
+        catalogSrc.includes("temporarily unavailable. Please retry"),
+    );
+    check(
+      "8c. Server applies selected game filter and reports failed fixture seeding as an API error",
+      competitionRouteSrc.includes("templates.filter((template) => template.gameId === gameId)") &&
+        competitionRouteSrc.includes("Competition catalog is temporarily unavailable. Please retry") &&
+        templateServiceSrc.includes("Failed to seed default competition templates"),
+    );
 
     // ----------------------------------------------------
     // Test 9: Sandbox warning visible on all monetary interfaces
@@ -388,9 +433,10 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     console.log("\n--- Section 7: Access Control, Historical Audit & Responsive UX ---");
     const guestBlockedFromPaid =
-      catalogSrc.includes("Guest users can only enter Free competitions. Please sign in or create an account for paid competitions.") &&
-      confirmModalSrc.includes("Guest users must create an account to participate in paid competitions.");
-    check("30. Guests restricted to Free competitions and prompted to sign in for paid entries", guestBlockedFromPaid);
+      catalogSrc.includes("Free competitions have no entry cost. An account is required to enter any competition") &&
+      confirmModalSrc.includes("Free entry costs no Test GEL, but an account is required to enter any competition") &&
+      confirmModalSrc.includes("paid sandbox competitions also require enough Test GEL");
+    check("30. Guest copy explains free entry cost, account requirement, and paid Test GEL requirement", guestBlockedFromPaid);
 
     // ----------------------------------------------------
     // Test 31: Casual Coin matchmaking remains fully operational
@@ -414,10 +460,20 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 33: Responsive / mobile competition card behavior
     // ----------------------------------------------------
     const catalogResponsive =
-      catalogSrc.includes("gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))'") &&
+      catalogSrc.includes("gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))'") &&
+      navbarSrc.includes("maxWidth: '100%'") &&
       competitionsPageSrc.includes("display: 'flex'") &&
       competitionsPageSrc.includes("flexWrap: 'wrap'");
     check("33. Competition catalog and templates feature mobile/tablet responsive layout", catalogResponsive);
+    check(
+      "33a. Catalog cards distinguish format, capacity, availability, entry cost, and predetermined prize",
+      catalogSrc.includes("OPEN FOR ENTRIES") &&
+        catalogSrc.includes("🎮 {gameName}") &&
+        catalogSrc.includes("Up to {tmpl.participantCapacity} players") &&
+        catalogSrc.includes("ENTRY COST") &&
+        catalogSrc.includes("PREDETERMINED PRIZE") &&
+        catalogSrc.includes("JOIN FREE COMPETITION"),
+    );
 
     // ----------------------------------------------------
     // Test 34: Keyboard / dialog accessibility
@@ -473,7 +529,7 @@ async function runPhase4UIChecks(): Promise<void> {
   }
 
   console.log(`\n=== Phase 4 UI & Experience Check Complete ===`);
-  console.log(`Total Passed: ${passes} / 37 assertions across 35 requirements`);
+  console.log(`Total Passed: ${passes} / 43 assertions across 39 requirements`);
   console.log(`Total Failed: ${failures}`);
 
   if (failures > 0) {

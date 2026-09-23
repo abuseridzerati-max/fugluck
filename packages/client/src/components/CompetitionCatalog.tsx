@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getGameTitle, type CompetitionTemplate } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
@@ -10,6 +10,8 @@ type CompetitionCatalogProps = {
   onJoinCompetition: (template: CompetitionTemplate) => void
   onClose?: () => void
 }
+
+const CATALOG_REQUEST_TIMEOUT_MS = 6_000
 
 export default function CompetitionCatalog({
   gameId,
@@ -23,27 +25,50 @@ export default function CompetitionCatalog({
   const [error, setError] = useState<string | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<CompetitionTemplate | null>(null)
   const [faucetLoading, setFaucetLoading] = useState(false)
+  const activeCatalogRequest = useRef<AbortController | null>(null)
 
   function loadTemplates() {
+    activeCatalogRequest.current?.abort()
+    const controller = new AbortController()
+    activeCatalogRequest.current = controller
+    const timeoutId = window.setTimeout(() => controller.abort(), CATALOG_REQUEST_TIMEOUT_MS)
     setLoading(true)
     setError(null)
     const url = gameId
       ? `/api/competitions/templates?gameId=${encodeURIComponent(gameId)}`
       : '/api/competitions/templates'
 
-    apiFetch<{ templates: CompetitionTemplate[] }>(url)
+    apiFetch<{ templates: CompetitionTemplate[] }>(url, { signal: controller.signal })
       .then((res) => {
+        if (activeCatalogRequest.current !== controller) return
         // Only enabled templates shown per Section 4
         setTemplates((res.templates || []).filter((t) => t.enabled))
       })
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : 'Failed to load competitions.')
+        if (activeCatalogRequest.current !== controller) return
+        if (controller.signal.aborted) {
+          setError('The competition catalog took too long to respond. Check your connection and retry.')
+        } else if (err instanceof ApiError && (err.status === 404 || err.status >= 500)) {
+          setError('The competition catalog is temporarily unavailable. Please retry in a moment.')
+        } else {
+          setError(err instanceof ApiError ? err.message : 'Failed to load competitions. Please retry.')
+        }
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        window.clearTimeout(timeoutId)
+        if (activeCatalogRequest.current === controller) {
+          activeCatalogRequest.current = null
+          setLoading(false)
+        }
+      })
   }
 
   useEffect(() => {
     loadTemplates()
+    return () => {
+      activeCatalogRequest.current?.abort()
+      activeCatalogRequest.current = null
+    }
   }, [gameId])
 
   async function handleAddTestFunds() {
@@ -135,7 +160,7 @@ export default function CompetitionCatalog({
               color: '#fca5a5',
             }}
           >
-            Guest users can only enter Free competitions. Please sign in or create an account for paid competitions.
+            Free competitions have no entry cost. An account is required to enter any competition; paid sandbox competitions also require enough Test GEL.
           </div>
         )}
       </div>
@@ -187,7 +212,7 @@ export default function CompetitionCatalog({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
             gap: 'var(--space-4)',
           }}
         >
@@ -202,6 +227,7 @@ export default function CompetitionCatalog({
               : '—'
             const isPromo = tmpl.title.toLowerCase().includes('promo')
             const gameName = getGameTitle(tmpl.gameId)
+            const formatLabel = tmpl.format.replace(/_/g, ' ')
 
             return (
               <div
@@ -222,7 +248,7 @@ export default function CompetitionCatalog({
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-2)' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: 'var(--space-2)' }}>
                     <span
                       style={{
                         fontSize: '10px',
@@ -241,19 +267,20 @@ export default function CompetitionCatalog({
                     >
                       {isPromo ? 'PROMOTIONAL' : isFree ? 'FREEROLL' : 'STANDARD'}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                      👥 {tmpl.participantCapacity} Players
+                    <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700, letterSpacing: '0.04em' }}>
+                      OPEN FOR ENTRIES
                     </span>
                   </div>
 
                   <h4 style={{ margin: '0 0 4px', fontSize: 'var(--font-size-base)' }}>
                     {tmpl.title}
                   </h4>
-                  {!gameTitle && (
-                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
-                      🎮 {gameName}
-                    </div>
-                  )}
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                    {formatLabel} · Up to {tmpl.participantCapacity} players
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+                    🎮 {gameName}
+                  </div>
 
                   {/* Financial Terms */}
                   <div
@@ -263,19 +290,19 @@ export default function CompetitionCatalog({
                       borderRadius: 'var(--radius-sm)',
                       margin: 'var(--space-3) 0',
                       display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                       gap: 'var(--space-2)',
                       textAlign: 'center',
                     }}
                   >
-                    <div>
-                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Entry Fee</div>
-                      <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-sm)' }}>
+                    <div style={{ padding: '8px 4px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(148, 163, 184, 0.22)' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>ENTRY COST</div>
+                      <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-sm)', color: isFree ? '#38bdf8' : 'var(--color-text)' }}>
                         {entryText}
                       </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Prize</div>
+                    <div style={{ padding: '8px 4px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.35)', background: 'rgba(16, 185, 129, 0.07)' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>PREDETERMINED PRIZE</div>
                       <div style={{ fontWeight: 'bold', fontSize: 'var(--font-size-sm)', color: '#10b981' }}>
                         {prizeText}
                       </div>
@@ -300,7 +327,7 @@ export default function CompetitionCatalog({
                     marginTop: 'var(--space-2)',
                   }}
                 >
-                  {isFree ? 'JOIN FREE' : 'JOIN COMPETITION'}
+                  {isFree ? 'JOIN FREE COMPETITION' : 'JOIN COMPETITION'}
                 </button>
               </div>
             )
