@@ -434,8 +434,8 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     setIsLoading(true)
     setErrorMessage(null)
     try {
-      const res = await apiFetch<{ games: GameEligibilityAdminItem[] }>('/api/admin/competitions/eligibility')
-      setGameEligibility(res.games || [])
+      const res = await apiFetch<{ registry: GameEligibilityAdminItem[] }>('/api/admin/competitions/eligibility')
+      setGameEligibility(res.registry || [])
     } catch (e: any) {
       setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load game eligibility.')
     } finally {

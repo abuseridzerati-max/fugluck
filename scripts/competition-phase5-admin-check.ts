@@ -684,6 +684,12 @@ async function runPhase5AdminChecks(): Promise<void> {
 
     // Req 37: Historical Diamonds remain readable
     const adminConsoleSrc = fs.readFileSync("packages/client/src/admin/AdminConsolePage.tsx", "utf-8");
+    check(
+      "34a. Admin eligibility client consumes the API registry response field",
+      /res\.json\(\{\s*registry,/.test(adminRoutesSrc) &&
+        adminConsoleSrc.includes("apiFetch<{ registry: GameEligibilityAdminItem[] }>") &&
+        adminConsoleSrc.includes("setGameEligibility(res.registry || [])"),
+    );
     const hasHistoricalDiamondNotice =
       adminConsoleSrc.includes("CIRCULATING DIAMONDS (LEGACY / RETIRED)") ||
       adminConsoleSrc.includes("Historical Platform Rake");
@@ -718,7 +724,7 @@ async function runPhase5AdminChecks(): Promise<void> {
   }
 
   console.log("\n==================================================");
-  console.log(`Phase 5 Verification Result: ${passes} PASS / ${failures} FAIL (Total assertions: 40)`);
+  console.log(`Phase 5 Verification Result: ${passes} PASS / ${failures} FAIL (Total assertions: ${passes + failures})`);
   console.log("==================================================");
 
   if (failures > 0) {
