@@ -1,0 +1,28 @@
+TRIAL_INSTANCE inst_e6e5bd4c-46c2-4772-9e42-f3fca04ec781
+PASS invalid authority session
+ERROR_CODE invalid authority session SESSION_OWNERSHIP
+PASS wrong instance
+ERROR_CODE wrong instance SESSION_OWNERSHIP
+PASS wrong authenticated user
+ERROR_CODE wrong authenticated user SESSION_OWNERSHIP
+PASS malformed socket message
+ERROR_CODE malformed socket message MESSAGE_SHAPE
+PASS duplicate controller rotates nonce and epoch
+PASS old controller fenced
+ERROR_CODE old controller fenced SESSION_OWNERSHIP
+PASS actual staging simulation advances
+PASS duplicate input
+ERROR_CODE duplicate input INPUT_SEQUENCE
+PASS stale input
+ERROR_CODE stale input INPUT_STALE
+PASS client fake score rejected
+ERROR_CODE client fake score rejected INPUT_SHAPE
+PASS excessive input rate handled
+PASS legacy fake completion cannot end authority
+PASS active reconnect fenced safely
+RECONNECT_MS 349.6069000000007
+PASS server result reaches terminal state
+NATURAL_RESULT {"instanceId":"inst_e6e5bd4c-46c2-4772-9e42-f3fca04ec781","status":"SETTLED","reason":"SERVER_RESULTS","score":48,"metrics":{"transport":"websocket","missing":0,"maxPayloadBytes":1888,"interArrivalMs":{"count":384,"p50":49.67159999999785,"p95":54.49319999999898,"p99":60.386600000001636,"max":92.76330000000235},"generationGapMs":{"count":384,"p50":49,"p95":53,"p99":54,"max":54},"emitGapMs":{"count":384,"p50":49,"p95":53,"p99":54,"max":54},"snapshots":385,"observedActiveMs":19195.3458,"snapshotHz":20.00484930050075,"achievedTickHz":60.014547901502254,"meanGapMs":49.9878796875,"maxGapMs":92.76330000000235,"inputToChangedSnapshotMs":[114.97819999999956]}}
+PASS duplicate terminal request rejected
+ERROR_CODE duplicate terminal request rejected SESSION_OWNERSHIP
+STAGING_SOCKET_RESULTS 15 passed 0 failed

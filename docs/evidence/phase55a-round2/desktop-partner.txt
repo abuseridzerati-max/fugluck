@@ -1,0 +1,3 @@
+OPPONENT_QUEUED inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746
+OPPONENT_ERROR NOT_ACTIVE
+BROWSER_PARTNER_RESULT {"instanceId":"inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746","status":"SETTLED","reason":"SERVER_RESULTS","score":20,"metrics":{"transport":"websocket","missing":0,"maxPayloadBytes":1582,"interArrivalMs":{"count":101,"p50":49.75089999999909,"p95":53.80950000000121,"p99":55.40220000000045,"max":59.9429999999993},"generationGapMs":{"count":101,"p50":50,"p95":53,"p99":53,"max":54},"emitGapMs":{"count":101,"p50":50,"p95":53,"p99":53,"max":54},"snapshots":102,"observedActiveMs":5043.4589,"snapshotHz":20.02593894440183,"achievedTickHz":60.07781683320549,"meanGapMs":49.935236633663365,"maxGapMs":59.9429999999993,"inputToChangedSnapshotMs":[]}}

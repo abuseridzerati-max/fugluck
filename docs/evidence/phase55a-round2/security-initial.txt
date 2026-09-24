@@ -1,0 +1,14 @@
+TRIAL_INSTANCE inst_94580dac-1ebe-458e-927e-695b61b1c1a1
+PASS invalid authority session
+ERROR_CODE invalid authority session SESSION_OWNERSHIP
+PASS wrong instance
+ERROR_CODE wrong instance SESSION_OWNERSHIP
+PASS wrong authenticated user
+ERROR_CODE wrong authenticated user SESSION_OWNERSHIP
+PASS malformed socket message
+ERROR_CODE malformed socket message MESSAGE_SHAPE
+PASS duplicate controller rotates nonce and epoch
+PASS old controller fenced
+ERROR_CODE old controller fenced SESSION_OWNERSHIP
+ADMISSION_BLOCKED {"instanceId":"inst_94580dac-1ebe-458e-927e-695b61b1c1a1","status":"VOIDED","reason":"LATENCY_ADMISSION_FAILED"}
+FAIL staging admits healthy gameplay

@@ -1,0 +1,4 @@
+OPPONENT_QUEUED inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441
+OPPONENT_ERROR NOT_ACTIVE
+OPPONENT_ERROR NOT_ACTIVE
+BROWSER_PARTNER_RESULT {"instanceId":"inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441","status":"SETTLED","reason":"SERVER_RESULTS","score":26,"metrics":{"transport":"websocket","missing":0,"maxPayloadBytes":1582,"interArrivalMs":{"count":162,"p50":49.589599999999336,"p95":56.18339999999989,"p99":133.88869999999952,"max":160.89619999999923},"generationGapMs":{"count":162,"p50":50,"p95":53,"p99":54,"max":54},"emitGapMs":{"count":162,"p50":50,"p95":53,"p99":54,"max":54},"snapshots":163,"observedActiveMs":7996.216199999999,"snapshotHz":20.25958227592696,"achievedTickHz":60.77874682778088,"meanGapMs":49.35935925925925,"maxGapMs":160.89619999999923,"inputToChangedSnapshotMs":[]}}

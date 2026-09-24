@@ -1,0 +1,3 @@
+OPPONENT_QUEUED inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2
+OPPONENT_ERROR NOT_ACTIVE
+BROWSER_PARTNER_RESULT {"instanceId":"inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2","status":"SETTLED","reason":"SERVER_RESULTS","score":5,"metrics":{"transport":"websocket","missing":0,"maxPayloadBytes":1149,"interArrivalMs":{"count":54,"p50":49.687700000000405,"p95":55.06160000000091,"p99":58.034200000000055,"max":58.034200000000055},"generationGapMs":{"count":54,"p50":50,"p95":53,"p99":54,"max":54},"emitGapMs":{"count":54,"p50":50,"p95":53,"p99":54,"max":54},"snapshots":55,"observedActiveMs":2701.6651999999995,"snapshotHz":19.987672787879124,"achievedTickHz":59.963018363637374,"meanGapMs":50.030837037037024,"maxGapMs":58.034200000000055,"inputToChangedSnapshotMs":[]}}
