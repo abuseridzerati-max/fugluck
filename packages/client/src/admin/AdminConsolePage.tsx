@@ -978,7 +978,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
           </div>
           <div className="admin-nav-group"><span>GAMES</span><NavButton id="competitions_eligibility" active={activeTab} setActive={setActiveTab} label="Eligibility" /></div>
           <div className="admin-nav-group"><span>SANDBOX ECONOMY</span>
-            <NavButton id="users" active={activeTab} setActive={setActiveTab} label="User Balances" />
+            <NavButton id="users" active={activeTab} setActive={setActiveTab} label="User Balances" activeWhen={false} />
             <NavButton id="test_funding" active={activeTab} setActive={setActiveTab} label="Test Funding" />
             <NavButton id="ledger" active={activeTab} setActive={setActiveTab} label="Ledger" />
             <NavButton id="competitions_accounting" active={activeTab} setActive={setActiveTab} label="Reconciliation" />
@@ -1637,8 +1637,9 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 // ---------------------------------------------------------------------------
 // Subcomponents & Helpers
 // ---------------------------------------------------------------------------
-function NavButton({ id, active, setActive, label }: { id: Tab; active: Tab; setActive: (id: Tab) => void; label: string }) {
-  return <button type="button" aria-current={active === id ? 'page' : undefined} className={`admin-nav-item${active === id ? ' is-active' : ''}`} onClick={() => setActive(id)}>{label}</button>
+function NavButton({ id, active, setActive, label, activeWhen }: { id: Tab; active: Tab; setActive: (id: Tab) => void; label: string; activeWhen?: boolean }) {
+  const isActive = activeWhen ?? active === id
+  return <button type="button" aria-current={isActive ? 'page' : undefined} className={`admin-nav-item${isActive ? ' is-active' : ''}`} onClick={() => setActive(id)}>{label}</button>
 }
 
 function AuditTable({ logs, onViewDetails }: { logs: AuditItem[]; onViewDetails?: (log: AuditItem) => void }) {
