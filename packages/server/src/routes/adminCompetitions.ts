@@ -551,6 +551,40 @@ competitionAdminRouter.get("/accounting/ledger", requirePermission("COMPETITIONS
   }
 });
 
+competitionAdminRouter.get("/accounting/grants", requirePermission("WALLET_VIEW"), async (req, res) => {
+  try {
+    const page = Math.max(1, Number(req.query.page ?? 1) || 1);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? 25) || 25));
+    const offset = (page - 1) * limit;
+    const query = typeof req.query.query === "string" ? req.query.query.trim() : "";
+    const values: unknown[] = ["ADMIN_COMPETITION_GRANT_TEST_FUNDS"];
+    let filter = "a.action = $1";
+    if (query) {
+      values.push(`%${query}%`);
+      filter += ` AND (target.username ILIKE $${values.length} OR target.email ILIKE $${values.length} OR a.target_id = $${values.length})`;
+    }
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::integer AS total FROM admin_audit_logs a LEFT JOIN users target ON target.id = a.target_id WHERE ${filter}`,
+      values,
+    );
+    const rows = await pool.query(
+      `SELECT a.id, a.admin_user_id AS "adminUserId", admin.username AS "adminUsername",
+        a.target_id AS "targetUserId", target.username AS "targetUsername", a.amount AS "amountMinor",
+        a.currency, a.reason, a.details, a.created_at AS "createdAt"
+       FROM admin_audit_logs a
+       LEFT JOIN users target ON target.id = a.target_id
+       LEFT JOIN users admin ON admin.id = a.admin_user_id
+       WHERE ${filter}
+       ORDER BY a.created_at DESC
+       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+      [...values, limit, offset],
+    );
+    res.json({ grants: rows.rows, page, limit, total: Number(countResult.rows[0]?.total ?? 0) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to load test funding history." });
+  }
+});
+
 const handleGrantTestFunds = async (req: any, res: any) => {
   try {
     const adminUserId = req.userId!;
@@ -582,20 +616,10 @@ const handleGrantTestFunds = async (req: any, res: any) => {
       return;
     }
 
-    const balance = await sandboxAccountingAdapter.grantSandboxTestFunds(targetUserId.trim(), amountMinor);
-
-    // Audit log
-    const auditLogId = `audit_${randomUUID()}`;
-    await db.insert(adminAuditLogs).values({
-      id: auditLogId,
+    const balance = await sandboxAccountingAdapter.grantSandboxTestFunds(targetUserId.trim(), amountMinor, {
       adminUserId,
-      action: "ADMIN_COMPETITION_GRANT_TEST_FUNDS",
-      targetType: "user",
-      targetId: targetUserId.trim(),
-      amount: amountMinor,
-      currency: "GEL",
+      targetUsername: userTarget.username,
       reason: reason.trim(),
-      details: { targetUsername: userTarget.username, newBalanceMinor: balance.availableMinor },
     });
 
     res.json({
@@ -603,7 +627,9 @@ const handleGrantTestFunds = async (req: any, res: any) => {
       targetUserId: targetUserId.trim(),
       amountMinor,
       availableMinor: balance.availableMinor,
-      auditLogId,
+      reservedMinor: balance.reservedMinor,
+      accountingReferenceId: balance.accountingReferenceId,
+      auditLogId: balance.auditLogId,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to grant test funds." });

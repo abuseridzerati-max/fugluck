@@ -16,12 +16,14 @@ import type {
   CompetitionInstanceAdminDetail,
   SandboxAccountingSummary,
   SandboxLedgerEntryAdmin,
+  SandboxFundingGrantAdmin,
   GameEligibilityAdminItem,
 } from './adminTypes'
+import { GrantTestFundsModal, TestFundingHistoryView, UserDetailDrawer } from './AdminFirstIncrementViews'
+import './adminConsole.css'
 import {
   ActionConfirmModal,
   GrantCurrencyModal,
-  UserDetailModal,
   MatchDetailModal,
   type ConfirmModalConfig,
 } from './AdminModals'
@@ -31,7 +33,6 @@ import {
   InstanceDetailModal,
   CancelCompetitionModal,
   VoidCompetitionModal,
-  GrantSandboxFundsModal,
 } from './CompetitionAdminModals'
 import {
   CompetitionOverviewView,
@@ -64,7 +65,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   // Navigation & General UI
-  const [activeTab, setActiveTab] = useState<Tab>('competitions_overview')
+  const [activeTab, setActiveTab] = useState<Tab>('users')
   const [isLoading, setIsLoading] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -91,6 +92,11 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   const [sandboxLedgerAccountFilter, setSandboxLedgerAccountFilter] = useState('')
   const [sandboxLedgerEventFilter, setSandboxLedgerEventFilter] = useState('')
   const [grantSandboxFundsOpen, setGrantSandboxFundsOpen] = useState(false)
+  const [grantTestFundsOpen, setGrantTestFundsOpen] = useState(false)
+  const [grantTestFundsUser, setGrantTestFundsUser] = useState<UserItem | null>(null)
+  const [fundingGrants, setFundingGrants] = useState<SandboxFundingGrantAdmin[]>([])
+  const [fundingQuery, setFundingQuery] = useState('')
+  const [globalSearch, setGlobalSearch] = useState('')
 
   const [gameEligibility, setGameEligibility] = useState<GameEligibilityAdminItem[]>([])
 
@@ -143,6 +149,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     (perm: AdminPermission): boolean => {
       if (!adminUser) return false
       if (adminUser.role === 'OWNER' || adminUser.role === 'SUPER_ADMIN') return true
+      if (perm === 'WALLET_GRANT_SANDBOX') return permissions.includes('WALLET_GRANT_SANDBOX') || permissions.includes('WALLET_GRANT_COINS')
       return permissions.includes(perm)
     },
     [adminUser, permissions]
@@ -232,12 +239,13 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     }
   }, [])
 
-  const fetchUsers = useCallback(async (page = userPage) => {
+  const fetchUsers = useCallback(async (page = userPage, queryOverride?: string) => {
     setIsLoading(true)
     setErrorMessage(null)
     try {
       const params = new URLSearchParams()
-      if (userQuery.trim()) params.append('query', userQuery.trim())
+      const search = queryOverride ?? userQuery
+      if (search.trim()) params.append('query', search.trim())
       if (userStatusFilter) params.append('status', userStatusFilter)
       if (userRoleFilter) params.append('role', userRoleFilter)
       params.append('page', String(page))
@@ -255,6 +263,21 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       setIsLoading(false)
     }
   }, [userQuery, userStatusFilter, userRoleFilter, userPage])
+
+  const fetchFundingGrants = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const params = new URLSearchParams({ page: '1', limit: '50' })
+      if (fundingQuery.trim()) params.set('query', fundingQuery.trim())
+      const result = await apiFetch<{ grants: SandboxFundingGrantAdmin[] }>(`/api/admin/competitions/accounting/grants?${params}`)
+      setFundingGrants(result.grants || [])
+    } catch (e) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load test funding history.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [fundingQuery])
 
   const fetchMatches = useCallback(async (page = matchPage) => {
     setIsLoading(true)
@@ -499,15 +522,24 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   }
 
   const handleGrantSandboxFunds = async (params: { targetUserId: string; amountMinor: number; reason: string }) => {
-    await apiFetch('/api/admin/competitions/accounting/grant', {
+    const result = await apiFetch<{ availableMinor: number; accountingReferenceId: string }>('/api/admin/competitions/accounting/grant', {
       method: 'POST',
       body: JSON.stringify(params),
     })
-    setStatusMessage(`Granted ${formatGEL(params.amountMinor)} sandbox test funds to user ${params.targetUserId}.`)
+    setStatusMessage(`Granted ${formatGEL(params.amountMinor)} TEST GEL. New available balance: ${formatGEL(result.availableMinor)}. Reference: ${result.accountingReferenceId}.`)
+    fetchUsers(1)
+    if (selectedUserDetail?.user.id === params.targetUserId) inspectUser(params.targetUserId)
+    if (activeTab === 'test_funding') fetchFundingGrants()
     if (activeTab === 'competitions_accounting') {
       fetchSandboxSummary()
       fetchSandboxLedger()
     }
+  }
+
+  function startTestFunding(user: UserItem | null = null) {
+    if (!hasPerm('WALLET_GRANT_SANDBOX')) return
+    setGrantTestFundsUser(user)
+    setGrantTestFundsOpen(true)
   }
 
   // Switch tabs & trigger data loads
@@ -523,6 +555,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       fetchSandboxLedger(1)
     }
     if (activeTab === 'competitions_eligibility') fetchGameEligibility()
+    if (activeTab === 'test_funding') fetchFundingGrants()
     if (activeTab === 'dashboard') fetchDashboard()
     if (activeTab === 'users') fetchUsers(1)
     if (activeTab === 'matches') fetchMatches(1)
@@ -793,7 +826,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   // Render: Authenticated Operational Console
   // ---------------------------------------------------------------------------
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#e2e8f0', fontFamily: 'sans-serif' }}>
+      <div className="admin-shell" style={{ minHeight: '100vh', background: '#0a0a0f', color: '#e2e8f0', fontFamily: 'sans-serif' }}>
       {/* Competition Modals */}
       <CreateTemplateModal
         isOpen={createTemplateModalOpen}
@@ -825,9 +858,10 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         onClose={() => setVoidCompInstanceId(null)}
         onConfirm={handleVoidCompetition}
       />
-      <GrantSandboxFundsModal
-        isOpen={grantSandboxFundsOpen}
-        onClose={() => setGrantSandboxFundsOpen(false)}
+      <GrantTestFundsModal
+        isOpen={grantSandboxFundsOpen || grantTestFundsOpen}
+        initialUser={grantTestFundsUser}
+        onClose={() => { setGrantSandboxFundsOpen(false); setGrantTestFundsOpen(false); setGrantTestFundsUser(null) }}
         onSubmit={handleGrantSandboxFunds}
       />
 
@@ -841,9 +875,10 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         />
       )}
       {selectedUserDetail && (
-        <UserDetailModal
+        <UserDetailDrawer
           detail={selectedUserDetail}
           onClose={() => setSelectedUserDetail(null)}
+          onGrant={(user) => startTestFunding(user)}
           onOpenAction={(action, user) => {
             if (action === 'grant') {
               setGrantModalUser(user)
@@ -874,22 +909,18 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         </div>
       )}
 
-      {/* Header Bar */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#12131c', borderBottom: '1px solid #1e2030' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#fbbf24', letterSpacing: '0.05em' }}>FUGLUCK</span>
-            <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600 }}>OPERATIONAL CONSOLE</span>
-          </div>
-          <span style={{ fontSize: '11px', background: '#064e3b', color: '#6ee7b7', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-            ● SERVER AUTHORIZED
-          </span>
-          <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
-            Admin: <strong>{adminUser?.username}</strong> ({adminUser?.role})
-          </span>
-        </div>
+      {/* Global operations header */}
+      <header className="admin-header">
+        <div className="admin-brand"><span>FUGLUCK</span><small>OPERATIONS</small></div>
+        <form className="admin-global-search" onSubmit={e => { e.preventDefault(); setUserQuery(globalSearch); setActiveTab('users'); void fetchUsers(1, globalSearch) }}>
+          <input aria-label="Search users" placeholder="Search username, email, or user ID" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
+          <button type="submit">Search</button>
+        </form>
+        <div className="admin-env-badge">{location.hostname.includes('staging') ? 'STAGING' : ['localhost', '127.0.0.1'].includes(location.hostname) ? 'DEVELOPMENT' : 'PRODUCTION'}</div>
+        <div className="admin-sandbox-badge"><strong>TEST / SANDBOX</strong><span>NO REAL MONEY</span></div>
+        <div className="admin-identity"><strong>{adminUser?.username}</strong><span>{adminUser?.role}</span></div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="admin-header-actions">
           <button
             type="button"
             onClick={() => {
@@ -901,20 +932,21 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 fetchSandboxLedger()
               }
               if (activeTab === 'competitions_eligibility') fetchGameEligibility()
+              if (activeTab === 'test_funding') fetchFundingGrants()
               if (activeTab === 'dashboard') fetchDashboard()
               if (activeTab === 'users') fetchUsers()
               if (activeTab === 'matches') fetchMatches()
               if (activeTab === 'ledger') fetchLedger()
               if (activeTab === 'audit') fetchAudit()
             }}
-            style={{ background: '#1e2030', border: '1px solid #334155', color: '#cbd5e1', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+            className="admin-refresh"
           >
-            ↻ Refresh View
+            ↻ Refresh
           </button>
           <button
             type="button"
             onClick={handleAdminLogout}
-            style={{ background: '#7f1d1d', border: '1px solid #991b1b', color: '#fecaca', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+            className="admin-logout"
           >
             Logout & Exit
           </button>
@@ -935,43 +967,26 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <nav style={{ display: 'flex', gap: '4px', padding: '10px 24px', background: '#0f1017', borderBottom: '1px solid #1e2030', overflowX: 'auto' }}>
-        {[
-          { id: 'competitions_overview', label: '🏆 Overview' },
-          { id: 'competitions_templates', label: '📋 Templates' },
-          { id: 'competitions_instances', label: '⚔️ Live Instances' },
-          { id: 'competitions_accounting', label: '💰 Sandbox Accounting' },
-          { id: 'competitions_eligibility', label: '🎮 Game Eligibility' },
-          { id: 'dashboard', label: '📊 Platform Telemetry' },
-          { id: 'users', label: '👥 User Management' },
-          { id: 'matches', label: '🕹️ Legacy Matches' },
-          { id: 'ledger', label: '📒 Legacy Ledger' },
-          { id: 'audit', label: '📜 Audit Log Explorer' },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setActiveTab(t.id as Tab)}
-            style={{
-              background: activeTab === t.id ? '#1e2030' : 'transparent',
-              border: activeTab === t.id ? '1px solid #334155' : '1px solid transparent',
-              color: activeTab === t.id ? '#fbbf24' : '#94a3b8',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: activeTab === t.id ? 700 : 500,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* Main Body */}
-      <main style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="admin-layout">
+        <nav className="admin-sidebar" aria-label="Admin navigation">
+          <div className="admin-nav-group"><span>OVERVIEW</span><NavButton id="dashboard" active={activeTab} setActive={setActiveTab} label="Overview" /></div>
+          <div className="admin-nav-group"><span>PEOPLE</span><NavButton id="users" active={activeTab} setActive={setActiveTab} label="Users" /></div>
+          <div className="admin-nav-group"><span>COMPETITIONS</span>
+            <NavButton id="competitions_overview" active={activeTab} setActive={setActiveTab} label="Overview" />
+            <NavButton id="competitions_templates" active={activeTab} setActive={setActiveTab} label="Templates" />
+            <NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Live / Recent Instances" />
+          </div>
+          <div className="admin-nav-group"><span>GAMES</span><NavButton id="competitions_eligibility" active={activeTab} setActive={setActiveTab} label="Eligibility" /></div>
+          <div className="admin-nav-group"><span>SANDBOX ECONOMY</span>
+            <NavButton id="users" active={activeTab} setActive={setActiveTab} label="User Balances" />
+            <NavButton id="test_funding" active={activeTab} setActive={setActiveTab} label="Test Funding" />
+            <NavButton id="ledger" active={activeTab} setActive={setActiveTab} label="Ledger" />
+            <NavButton id="competitions_accounting" active={activeTab} setActive={setActiveTab} label="Reconciliation" />
+          </div>
+          <div className="admin-nav-group"><span>LIVE OPERATIONS</span><NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Instances" /></div>
+          <div className="admin-nav-group"><span>RECORDS</span><NavButton id="audit" active={activeTab} setActive={setActiveTab} label="Audit Log" /><NavButton id="matches" active={activeTab} setActive={setActiveTab} label="Legacy Matches" /></div>
+        </nav>
+        <main className="admin-main">
         {/* COMPETITION TABS */}
         {activeTab === 'competitions_overview' && (
           <CompetitionOverviewView
@@ -1026,6 +1041,10 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
         {activeTab === 'competitions_eligibility' && (
           <CompetitionEligibilityView games={gameEligibility} />
+        )}
+
+        {activeTab === 'test_funding' && (
+          <TestFundingHistoryView grants={fundingGrants} query={fundingQuery} setQuery={setFundingQuery} loading={isLoading} onSearch={fetchFundingGrants} onGrant={() => startTestFunding()} />
         )}
 
         {/* TAB 1: DASHBOARD */}
@@ -1091,6 +1110,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         {/* TAB 2: USERS */}
         {activeTab === 'users' && (
           <div>
+            <div style={{ marginBottom: 16 }}><h1 style={{ margin: 0, color: '#f8fafc', fontSize: 24 }}>Users</h1><p style={{ margin: '5px 0 0', color: '#94a3b8', fontSize: 13 }}>Search accounts, inspect sandbox balances, and review account history.</p></div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <input
                 type="text"
@@ -1136,14 +1156,15 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
               </button>
             </div>
 
-            <div style={{ background: '#12131c', border: '1px solid #1e2030', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ background: '#12131c', border: '1px solid #1e2030', borderRadius: '8px', overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ background: '#0f1017', borderBottom: '1px solid #1e2030', color: '#94a3b8', textAlign: 'left' }}>
+                  <tr style={{ position: 'sticky', top: 0, zIndex: 1, background: '#0f1017', borderBottom: '1px solid #1e2030', color: '#94a3b8', textAlign: 'left' }}>
                     <th style={{ padding: '12px' }}>User / ID</th>
                     <th style={{ padding: '12px' }}>Role</th>
                     <th style={{ padding: '12px' }}>Status</th>
                     <th style={{ padding: '12px' }}>Balances</th>
+                    <th style={{ padding: '12px' }}>TEST GEL · NO REAL MONEY</th>
                     <th style={{ padding: '12px' }}>Registered</th>
                     <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -1151,7 +1172,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 <tbody>
                   {usersList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
                         No users matching criteria.
                       </td>
                     </tr>
@@ -1184,7 +1205,11 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                         </td>
                         <td style={{ padding: '12px' }}>
                           <div><span style={{ color: '#34d399', fontWeight: 600 }}>{u.balances.coins.toLocaleString()}</span> Coins</div>
-                          <div><span style={{ color: '#fbbf24', fontWeight: 600 }}>{u.balances.diamonds.toLocaleString()}</span> Diamonds</div>
+                          {u.balances.diamonds !== 0 && <div style={{ color: '#64748b', fontSize: 11 }}>Historical Diamonds: {u.balances.diamonds.toLocaleString()}</div>}
+                        </td>
+                        <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                          <div><span style={{ color: '#93c5fd', fontWeight: 700 }}>{formatGEL(u.sandboxBalances.availableMinor)}</span> available</div>
+                          <div style={{ color: '#94a3b8', fontSize: 11 }}>{formatGEL(u.sandboxBalances.reservedMinor)} reserved</div>
                         </td>
                         <td style={{ padding: '12px', fontSize: '12px', color: '#94a3b8' }}>
                           {new Date(u.createdAt).toLocaleDateString()}
@@ -1198,13 +1223,13 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                             >
                               Inspect
                             </button>
-                            {hasPerm('WALLET_GRANT_COINS') && (
+                            {hasPerm('WALLET_GRANT_SANDBOX') && (
                               <button
                                 type="button"
-                                onClick={() => setGrantModalUser(u)}
+                                onClick={() => startTestFunding(u)}
                                 style={{ background: '#065f46', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                               >
-                                + Grant
+                                Grant TEST GEL
                               </button>
                             )}
                           </div>
@@ -1603,7 +1628,8 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
@@ -1611,6 +1637,10 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 // ---------------------------------------------------------------------------
 // Subcomponents & Helpers
 // ---------------------------------------------------------------------------
+function NavButton({ id, active, setActive, label }: { id: Tab; active: Tab; setActive: (id: Tab) => void; label: string }) {
+  return <button type="button" aria-current={active === id ? 'page' : undefined} className={`admin-nav-item${active === id ? ' is-active' : ''}`} onClick={() => setActive(id)}>{label}</button>
+}
+
 function AuditTable({ logs, onViewDetails }: { logs: AuditItem[]; onViewDetails?: (log: AuditItem) => void }) {
   if (logs.length === 0) {
     return <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No audit records found.</div>

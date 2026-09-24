@@ -7,6 +7,7 @@ import { verifyPassword } from "../auth/password";
 import { signSessionToken, getSessionCookieOptions, getClearCookieOptions } from "../auth/jwt";
 import { checkAdminLockout, recordFailedAdminLogin, resetAdminLockout } from "../auth/adminLockout";
 import { db } from "../db/client";
+import { sandboxAccountingAdapter } from "../accounting/sandboxAdapter";
 import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users } from "../db/schema";
 import { ensureMatchSettlementsTable, getBalances } from "../wallet/ledger";
 import { getActiveMatchesSummary } from "../matchmaking/matches";
@@ -208,6 +209,7 @@ adminRouter.get("/users", requirePermission("USERS_VIEW"), async (req, res) => {
           coins: coinsRes?.value ?? 0,
           diamonds: diamondsRes?.value ?? 0,
         },
+        sandboxBalances: await sandboxAccountingAdapter.getUserBalance(u.id),
       };
     })
   );
@@ -229,6 +231,8 @@ adminRouter.get("/users/:id", requirePermission("USERS_VIEW"), async (req, res) 
   const [coinsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, targetId), eq(ledgerEntries.currency, "COINS")));
   const [diamondsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, targetId), eq(ledgerEntries.currency, "DIAMONDS")));
 
+  const sandboxBalances = await sandboxAccountingAdapter.getUserBalance(targetId);
+
   const recentMatches = await db.query.matchesHistory.findMany({
     where: or(eq(matchesHistory.player1Id, targetId), eq(matchesHistory.player2Id, targetId)),
     limit: 10,
@@ -247,6 +251,18 @@ adminRouter.get("/users/:id", requirePermission("USERS_VIEW"), async (req, res) 
     orderBy: [desc(adminAuditLogs.createdAt)],
   });
 
+  const recentSandboxLedger = await sandboxAccountingAdapter.listSandboxLedgerEntries({ userId: targetId, page: 1, limit: 25 });
+  const recentCompetitions = (await db.execute(sql`SELECT
+      i.id AS "instanceId", i.game_id AS "gameId", t.title AS "templateTitle", i.status AS "instanceStatus",
+      p.status AS "participantStatus", p.entry_fee_minor AS "entryFeeMinor", p.score, p.rank,
+      p.prize_won_minor AS "prizeWonMinor", p.registered_at AS "registeredAt", i.settled_at AS "settledAt"
+    FROM competition_participants p
+    JOIN competition_instances i ON i.id = p.instance_id
+    LEFT JOIN competition_templates t ON t.id = i.template_id
+    WHERE p.user_id = ${targetId}
+    ORDER BY p.registered_at DESC
+    LIMIT 10`)).rows;
+
   res.json({
     user: {
       id: user.id,
@@ -262,10 +278,13 @@ adminRouter.get("/users/:id", requirePermission("USERS_VIEW"), async (req, res) 
         coins: coinsRes?.value ?? 0,
         diamonds: diamondsRes?.value ?? 0,
       },
+      sandboxBalances,
     },
     recentMatches,
     recentLedger,
     userAuditLogs,
+    recentSandboxLedger: recentSandboxLedger.entries,
+    recentCompetitions,
   });
 });
 

@@ -12,6 +12,7 @@ export type Tab =
   | 'competitions_instances'
   | 'competitions_accounting'
   | 'competitions_eligibility'
+  | 'test_funding'
 
 export type AdminUser = {
   id: string
@@ -46,6 +47,7 @@ export type UserItem = {
   gamesPlayed?: number
   gamesWon?: number
   balances: { coins: number; diamonds: number }
+  sandboxBalances: { availableMinor: number; reservedMinor: number }
   createdAt: string
 }
 
@@ -107,6 +109,35 @@ export type UserDetail = {
   recentMatches: MatchItem[]
   recentLedger: LedgerItem[]
   userAuditLogs: AuditItem[]
+  recentSandboxLedger: SandboxLedgerEntryAdmin[]
+  recentCompetitions: CompetitionHistoryAdmin[]
+}
+
+export type CompetitionHistoryAdmin = {
+  instanceId: string
+  gameId: string
+  templateTitle: string | null
+  instanceStatus: string
+  participantStatus: string
+  entryFeeMinor: number
+  score: number | null
+  rank: number | null
+  prizeWonMinor: number
+  registeredAt: string
+  settledAt: string | null
+}
+
+export type SandboxFundingGrantAdmin = {
+  id: string
+  adminUserId: string
+  adminUsername: string | null
+  targetUserId: string
+  targetUsername: string | null
+  amountMinor: number
+  currency: string
+  reason: string
+  details: { accountingReferenceId?: string } | null
+  createdAt: string
 }
 
 export type CompetitionOverviewMetrics = {

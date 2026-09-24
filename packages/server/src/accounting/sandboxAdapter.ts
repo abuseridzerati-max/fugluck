@@ -22,6 +22,7 @@ import type {
   RefundCompetitionResult,
 } from "./port";
 import {
+  adminAuditLogs,
   sandboxEntryReservations,
   sandboxLedgerEntries,
   sandboxSettlements,
@@ -891,13 +892,15 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
   async grantSandboxTestFunds(
     userId: string,
     amountMinor: number = 5000,
-  ): Promise<{ availableMinor: number; reservedMinor: number }> {
+    audit?: { adminUserId: string; targetUsername: string; reason: string },
+  ): Promise<{ availableMinor: number; reservedMinor: number; accountingReferenceId: string; auditLogId?: string }> {
     if (!Number.isInteger(amountMinor) || amountMinor <= 0) {
       throw new Error(`Invalid grant amount: ${amountMinor}`);
     }
 
-    const accountingReferenceId = `sar_faucet_${crypto.randomUUID()}`;
-    const idempotencyKey = `faucet_${userId}_${Date.now()}_${crypto.randomUUID()}`;
+    const accountingReferenceId = `sar_test_funding_${crypto.randomUUID()}`;
+    const idempotencyKey = `test_funding_${userId}_${Date.now()}_${crypto.randomUUID()}`;
+    const auditLogId = audit ? `audit_${crypto.randomUUID()}` : undefined;
 
     await db.transaction(async (tx) => {
       await tx.execute(
@@ -911,11 +914,11 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
           idempotencyKey: `${idempotencyKey}:treasury_debit`,
           userId,
           accountId: "platform:treasury:GEL",
-          eventType: "DEPOSIT",
+          eventType: audit ? "TEST_FUNDING_GRANT" : "DEPOSIT",
           currency: "GEL",
           amountMinor: -amountMinor,
           balanceType: "SETTLED",
-          description: `Platform treasury debit for sandbox faucet grant to user ${userId}`,
+          description: audit ? `Platform treasury debit for TEST / SANDBOX GEL grant to user ${userId}` : `Platform treasury debit for sandbox faucet grant to user ${userId}`,
         },
         {
           id: `sle_${crypto.randomUUID()}`,
@@ -923,16 +926,40 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
           idempotencyKey: `${idempotencyKey}:user_credit`,
           userId,
           accountId: `user:${userId}:GEL`,
-          eventType: "DEPOSIT",
+          eventType: audit ? "TEST_FUNDING_GRANT" : "DEPOSIT",
           currency: "GEL",
           amountMinor,
           balanceType: "AVAILABLE",
-          description: "Simulated sandbox test funding grant",
+          description: audit ? "Admin TEST / SANDBOX GEL funding grant — NO REAL MONEY" : "Simulated sandbox test funding grant",
         },
       ]);
+
+      if (audit && auditLogId) {
+        const balanceResult = await tx.execute(sql`SELECT
+          COALESCE(SUM(CASE WHEN balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS available,
+          COALESCE(SUM(CASE WHEN balance_type = 'RESERVED' THEN amount_minor ELSE 0 END), 0)::integer AS reserved
+          FROM sandbox_ledger_entries WHERE user_id = ${userId} AND currency = 'GEL'`);
+        const balance = balanceResult.rows[0] as { available?: number; reserved?: number } | undefined;
+        await tx.insert(adminAuditLogs).values({
+          id: auditLogId,
+          adminUserId: audit.adminUserId,
+          action: "ADMIN_COMPETITION_GRANT_TEST_FUNDS",
+          targetType: "user",
+          targetId: userId,
+          amount: amountMinor,
+          currency: "GEL",
+          reason: audit.reason.trim(),
+          details: {
+            targetUsername: audit.targetUsername,
+            accountingReferenceId,
+            newBalanceMinor: Number(balance?.available ?? 0),
+            reservedMinor: Number(balance?.reserved ?? 0),
+          },
+        });
+      }
     });
 
-    return await this.getUserBalance(userId);
+    return { ...(await this.getUserBalance(userId)), accountingReferenceId, ...(auditLogId ? { auditLogId } : {}) };
   }
 
   /**
@@ -960,7 +987,7 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
   }> {
     const summaryRes = await pool.query(
       `SELECT
-         COALESCE(SUM(CASE WHEN event_type = 'DEPOSIT' AND balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS total_grants,
+         COALESCE(SUM(CASE WHEN event_type IN ('DEPOSIT', 'TEST_FUNDING_GRANT') AND balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS total_grants,
          COALESCE(SUM(CASE WHEN balance_type = 'AVAILABLE' AND account_id LIKE 'user:%' THEN amount_minor ELSE 0 END), 0)::integer AS available_funds,
          COALESCE(SUM(CASE WHEN balance_type = 'RESERVED' AND account_id LIKE 'user:%' THEN amount_minor ELSE 0 END), 0)::integer AS reserved_funds,
          COALESCE(SUM(CASE WHEN event_type = 'ENTRY_CAPTURE' AND account_id LIKE 'platform:escrow:%' THEN amount_minor ELSE 0 END), 0)::integer AS escrow_funds,
