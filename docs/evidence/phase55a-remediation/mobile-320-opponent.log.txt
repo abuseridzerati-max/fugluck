@@ -1,0 +1,2 @@
+OPPONENT_QUEUED inst_de27280c-efe0-47a8-97ed-3e608ac2091d
+BROWSER_PARTNER_RESULT {"instanceId":"inst_de27280c-efe0-47a8-97ed-3e608ac2091d","status":"VOIDED","reason":"LATENCY_ADMISSION_FAILED","score":0,"metrics":{"snapshots":0,"observedActiveMs":0,"snapshotHz":0,"achievedTickHz":0,"meanGapMs":0,"maxGapMs":0,"inputToChangedSnapshotMs":[]}}

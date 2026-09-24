@@ -1,0 +1,17 @@
+TRIAL_INSTANCE inst_a7273f68-5761-41b5-8d5a-18249c8264c9
+PASS invalid authority session
+ERROR_CODE invalid authority session SESSION_OWNERSHIP
+PASS wrong instance
+ERROR_CODE wrong instance SESSION_OWNERSHIP
+PASS wrong authenticated user
+ERROR_CODE wrong authenticated user SESSION_OWNERSHIP
+PASS malformed socket message
+ERROR_CODE malformed socket message MESSAGE_SHAPE
+PASS duplicate controller rotates nonce and epoch
+PASS old controller fenced
+ERROR_CODE old controller fenced SESSION_OWNERSHIP
+PASS actual staging simulation advances
+PASS both active connections lost: no unjustified winner
+PASS both-disconnected uncertainty is the recorded reason
+NETWORK_FAILURE_RESULT {"instanceId":"inst_a7273f68-5761-41b5-8d5a-18249c8264c9","status":"VOIDED","reason":"BOTH_DISCONNECTED"}
+STAGING_SOCKET_RESULTS 9 passed 0 failed

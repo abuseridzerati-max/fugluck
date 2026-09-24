@@ -1,0 +1,28 @@
+TRIAL_INSTANCE inst_cb44ceb9-50ca-4264-850c-bdb4f92d73c1
+PASS invalid authority session
+ERROR_CODE invalid authority session SESSION_OWNERSHIP
+PASS wrong instance
+ERROR_CODE wrong instance SESSION_OWNERSHIP
+PASS wrong authenticated user
+ERROR_CODE wrong authenticated user SESSION_OWNERSHIP
+PASS malformed socket message
+ERROR_CODE malformed socket message MESSAGE_SHAPE
+PASS duplicate controller rotates nonce and epoch
+PASS old controller fenced
+ERROR_CODE old controller fenced SESSION_OWNERSHIP
+PASS actual staging simulation advances
+PASS duplicate input
+ERROR_CODE duplicate input INPUT_SEQUENCE
+PASS stale input
+ERROR_CODE stale input INPUT_STALE
+PASS client fake score rejected
+ERROR_CODE client fake score rejected INPUT_SHAPE
+PASS excessive input rate handled
+PASS legacy fake completion cannot end authority
+PASS active reconnect fenced safely
+RECONNECT_MS 815.8188999999984
+PASS server result reaches terminal state
+NATURAL_RESULT {"instanceId":"inst_cb44ceb9-50ca-4264-850c-bdb4f92d73c1","status":"SETTLED","reason":"SERVER_RESULTS","score":242,"metrics":{"snapshots":1620,"observedActiveMs":80951.88859999999,"snapshotHz":19.999533401868035,"achievedTickHz":59.998600205604106,"meanGapMs":50.00116652254478,"maxGapMs":289.0475000000006,"inputToChangedSnapshotMs":[121.11159999999654]}}
+PASS duplicate terminal request rejected
+ERROR_CODE duplicate terminal request rejected SESSION_OWNERSHIP
+STAGING_SOCKET_RESULTS 15 passed 0 failed

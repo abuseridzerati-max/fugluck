@@ -14,7 +14,7 @@ audit this file's wording was corrected against.
 | Neon Runner | [`games/neon-runner/`](games/neon-runner/) | runner | BUILT — practice + for-fun matchmaking |
 | Pixel Ninja Dash | [`games/pixel-ninja-dash/`](games/pixel-ninja-dash/) | reflex-timing | BUILT — practice + for-fun matchmaking |
 | Sky Dodge | [`games/sky-dodge/`](games/sky-dodge/) | falling-block | ⚠️ **REPORTED BROKEN, session 19 — see PROGRESS.md "STILL UNVERIFIED"** (undiagnosed; "BUILT" below refers to what's in code, not a current working-state guarantee) |
-| Space Blaster | [`games/space-blaster/`](games/space-blaster/) | arena-shooter | BUILT — practice/casual retained; Phase 5.5A live authority reference verified by local socket tests; staging acceptance pending |
+| Space Blaster | [`games/space-blaster/`](games/space-blaster/) | arena-shooter | BUILT — practice/casual retained; Phase 5.5A live authority verified by local tests and staging earned results; staging NOT PASS due to intermittent latency, incomplete control/smoothness verification and admin refund/state reporting; [evidence](docs/PHASE_5_5A_REMEDIATION.md) |
 | Cyber Hopper | [`games/cyber-hopper/`](games/cyber-hopper/) | reflex-timing | BUILT — active registry, deterministic replay and score validation verified |
 | Speed Trivia Clash | [`games/speed-trivia/`](games/speed-trivia/) | quiz | BUILT — active registry, deterministic replay and score validation verified |
 | True / False Sprint | [`games/tf-sprint/`](games/tf-sprint/) | quiz | BUILT — canonical module contract, deterministic replay and score validation verified during Games build-health stabilization |

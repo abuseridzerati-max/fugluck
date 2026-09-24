@@ -1,0 +1,8 @@
+Verified 2026-09-24 through authenticated staging Supabase SQL Editor.
+Read-only query, controlled remediation template only, actions since 2026-09-24 00:00 UTC.
+Account identifiers omitted.
+
+action | action_count
+ADMIN_COMPETITION_TEMPLATE_DISABLE | 2
+ADMIN_COMPETITION_TEMPLATE_EDIT | 1
+ADMIN_COMPETITION_TEMPLATE_ENABLE | 2

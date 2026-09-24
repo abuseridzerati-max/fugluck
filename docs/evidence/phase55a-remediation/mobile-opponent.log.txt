@@ -1,0 +1,2 @@
+OPPONENT_QUEUED inst_d8fa63f8-6a52-4869-bf14-12ec31bffb09
+BROWSER_PARTNER_RESULT {"instanceId":"inst_d8fa63f8-6a52-4869-bf14-12ec31bffb09","status":"SETTLED","reason":"SERVER_RESULTS","score":62,"metrics":{"snapshots":323,"observedActiveMs":16102.169399999999,"snapshotHz":19.997305456244924,"achievedTickHz":59.99191636873476,"meanGapMs":50.006737267080744,"maxGapMs":129.51209999999992,"inputToChangedSnapshotMs":[]}}

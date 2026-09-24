@@ -1,0 +1,18 @@
+TRIAL_INSTANCE inst_86ad7004-e8ef-49f0-8cc1-e1dd830b7bd9
+PASS invalid authority session
+ERROR_CODE invalid authority session SESSION_OWNERSHIP
+PASS wrong instance
+ERROR_CODE wrong instance SESSION_OWNERSHIP
+PASS wrong authenticated user
+ERROR_CODE wrong authenticated user SESSION_OWNERSHIP
+PASS malformed socket message
+ERROR_CODE malformed socket message MESSAGE_SHAPE
+PASS duplicate controller rotates nonce and epoch
+PASS old controller fenced
+ERROR_CODE old controller fenced SESSION_OWNERSHIP
+PASS fake legacy score leaves pre-start session uncompleted
+PASS expired ready session voids
+PASS expired terminal session rejected
+ERROR_CODE expired terminal session rejected SESSION_OWNERSHIP
+EXPIRY_RESULT {"instanceId":"inst_86ad7004-e8ef-49f0-8cc1-e1dd830b7bd9","status":"VOIDED","reason":"READY_EXPIRED"}
+STAGING_SOCKET_RESULTS 9 passed 0 failed

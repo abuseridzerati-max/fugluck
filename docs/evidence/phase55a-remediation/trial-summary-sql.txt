@@ -1,0 +1,2 @@
+						163 row trials wins voids applied correct_prize_credits ledger_sum
+						170 row 7 4 3 7 4 0
