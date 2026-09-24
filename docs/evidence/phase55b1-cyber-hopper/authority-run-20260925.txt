@@ -1,0 +1,32 @@
+Phase 5.5B1 — sanitized staging authority evidence
+Captured: 2026-09-25 (Render staging application logs, local dashboard time)
+Service: fugluck-api-staging / srv-da2c50c9v7es73db3dkg
+Frontend/backend source revision: edc949727ca0a4b690fe589141910c7aba2d605c
+Controlled instance: inst_529ae7ce-d8f2-45cf-8974-87d8d4e9ea52
+Template: tmpl_cyber_hopper_authority_trial
+Rules version: cyber-hopper-rv001-v1
+
+The following values are transcribed from the Render UI. Logs are retained
+without user IDs, usernames, session UUIDs, controller IDs, nonces, tokens,
+input payloads, or credentials.
+
+12:41:08 AM [authority] database transaction metrics {"stage":"authority","acquisitionMs":0.01565999910235405,"transactionMs":40.55757699999958}
+12:41:13 AM [authority] admission metrics {"instanceId":"inst_529ae7ce-d8f2-45cf-8974-87d8d4e9ea52","sampleCount":20,"p95RttMs":92.20462100021541,"medianRttMs":73.05980399996042,"jitterMs":19.14481700025499,"accepted":true}
+12:41:13 AM [authority] admission metrics {"instanceId":"inst_529ae7ce-d8f2-45cf-8974-87d8d4e9ea52","sampleCount":20,"p95RttMs":83.60325300041586,"medianRttMs":69.25016299914569,"jitterMs":14.353090001270175,"accepted":true}
+12:41:27 AM [authority] terminal reason: SERVER_RESULTS
+12:41:27 AM [authority] database transaction metrics {"stage":"terminal_decision","acquisitionMs":0.011090000160038471,"transactionMs":19.517134999856353}
+12:41:27 AM [authority] terminal persistence metrics {"terminalWriteMs":19.576505000703037}
+12:41:27 AM [authority] database transaction metrics {"stage":"terminal_application","acquisitionMs":0.01336000021547079,"transactionMs":21.48924499936402}
+12:41:27 AM [authority] accounting application metrics {"instanceId":"inst_529ae7ce-d8f2-45cf-8974-87d8d4e9ea52","decisionLookupMs":2.173844000324607,"ledgerMs":17.245558999478817,"lifecycleMs":21.56455499958247,"applicationMs":41.0185989998281}
+12:41:27 AM [authority] run metrics {"instanceId":"inst_529ae7ce-d8f2-45cf-8974-87d8d4e9ea52","reason":"SERVER_RESULTS","ticks":606,"activeMs":10102.604999374598,"settlementMs":67.69341400079429,"receiptWaitMs":4.336366999894381,"decisionAndApplyMs":62.83588899951428,"notificationEmitMs":0.120342000387609,"activeLeaseMaxMs":4.06612299941429,"waitingLeaseMaxMs":9.438660999760175,"finalizingLeaseMaxMs":0,"maxSnapshotGapMs":60.927079000510275,"controls":294,"maxTickMs":0.1838930007070303,"startMs":40.794656000100076,"snapshotMs":122.50057599786669,"maxSnapshotMs":0.9053739998489618,"snapshots":738,"bindMaxMs":4.689970999956131,"resultWriteMaxMs":5.579637000337243,"delivery":{"generated":296,"emitAttempts":296,"backpressure":0,"bytes":1169654,"maxBytes":6644,"maxCreationToEmitMs":1,"transports":{"websocket":296}}}
+
+Staging Admin instance detail, read after terminal completion:
+- Status SETTLED; 2 / 2 participants.
+- Immutable snapshot: cyber-hopper / HEAD_TO_HEAD / cyber-hopper-rv001-v1.
+- Participant seat 1: SUBMITTED, score 10, rank 2, no prize.
+- Participant seat 2: SUBMITTED, score 50, rank 1, TEST GEL 9.00 prize.
+- Accounting reconciliation: BALANCED (Zero Discrepancy).
+- Captured entries TEST GEL 10.00; prizes paid TEST GEL 9.00; platform margin TEST GEL 1.00.
+- Refunds, promotional subsidy, and discrepancy: TEST GEL 0.00 each.
+
+The template row was refreshed after disabling and showed DISABLED.
