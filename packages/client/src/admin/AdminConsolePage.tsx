@@ -455,7 +455,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
   const handleEditTemplate = async (templateId: string, params: any) => {
     await apiFetch(`/api/admin/competitions/templates/${templateId}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(params),
     })
     setStatusMessage('Competition template updated successfully (future instances only).')
@@ -464,9 +464,8 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
   const handleToggleTemplate = async (template: CompetitionTemplateAdmin) => {
     try {
-      await apiFetch(`/api/admin/competitions/templates/${template.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ enabled: !template.enabled }),
+      await apiFetch(`/api/admin/competitions/templates/${template.id}/${template.enabled ? 'disable' : 'enable'}`, {
+        method: 'POST',
       })
       setStatusMessage(`Template "${template.title}" ${!template.enabled ? 'enabled' : 'disabled'}.`)
       fetchCompTemplates()

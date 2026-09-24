@@ -5,6 +5,7 @@ import { AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, FIXED_TIMESTEP_SEC, VIRTUAL_VIE
 import type { MatchmakingSocket } from '../matchmaking/socketAuth';
 import { getOnlineSocket } from '../matchmaking/presence';
 import { AuthorityStore } from './authorityStore';
+import { measureAdmission } from './authorityAdmission';
 
 /** Constructor dependencies only; never populated from socket or HTTP messages. */
 export interface AuthorityOptions { capTicks?: number; countdownMs?: number; readyMs?: number; reconnectMs?: number; seedFactory?: () => number }
@@ -30,13 +31,13 @@ export class LiveControls {
 interface Player {
   userId:string; sessionId:string; binding?:AuthorityBinding; socket?:MatchmakingSocket;
   state:AuthorityState; engine:SpaceBlasterEngine; controls:LiveControls;
-  disconnectedAt:number|null; snapshots:Map<number,number>; pending:Promise<void>;
+  disconnectedAt:number|null; snapshots:Map<number,number>; pending:Promise<void>; readyPendingEpoch?:number;
 }
 interface Run {
   id:string; instanceId:string; matchId:string; players:Player[]; created:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
-  stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number;
-  metrics:{ activeLeaseMaxMs:number; waitingLeaseMaxMs:number; finalizingLeaseMaxMs:number; maxSnapshotGapMs:number; controls:number; maxTickMs:number; startMs:number };
+  stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
+  metrics:{ activeLeaseMaxMs:number; waitingLeaseMaxMs:number; finalizingLeaseMaxMs:number; maxSnapshotGapMs:number; controls:number; maxTickMs:number; startMs:number; snapshotMs:number; maxSnapshotMs:number; snapshots:number; bindMaxMs:number; resultWriteMaxMs:number };
   timer:ReturnType<typeof setInterval>;
 }
 export class AuthorityRuntime {
@@ -47,7 +48,6 @@ export class AuthorityRuntime {
   private renewing=false;
   private recovering=false;
   private recoveryFailed=false;
-  private admission=new Map<string,Promise<boolean>>();
   constructor(readonly store=new AuthorityStore(), readonly options:AuthorityOptions={}) {
     this.leaseTimer=setInterval(()=>{
       if(this.renewing||!this.runs.size)return;
@@ -58,7 +58,13 @@ export class AuthorityRuntime {
         this.metrics.maxLeaseRoundtripMs=Math.max(this.metrics.maxLeaseRoundtripMs,elapsed);
         runs.forEach((r,i)=>{const key=phases[i];r.metrics[key]=Math.max(r.metrics[key],elapsed);});
         for(const r of runs){if(ids.has(r.id))r.leaseConfirmed=sent;else if(!r.stopped)void this.finish(r,'LEASE_LOST',undefined,true);}
-      }).catch(()=>{for(const r of runs)void this.finish(r,'LEASE_LOST',undefined,true)}).finally(()=>{this.renewing=false});
+      }).catch(()=>{
+        const elapsed=performance.now()-sent;
+        this.metrics.maxLeaseRoundtripMs=Math.max(this.metrics.maxLeaseRoundtripMs,elapsed);
+        runs.forEach((r,i)=>{const key=phases[i];r.metrics[key]=Math.max(r.metrics[key],elapsed);});
+        console.warn('[authority] heartbeat failed',JSON.stringify({durationMs:elapsed,runCount:runs.length}));
+        for(const r of runs)void this.finish(r,'LEASE_LOST',undefined,true);
+      }).finally(()=>{this.renewing=false});
     },500);this.leaseTimer.unref();
     this.recoveryTimer=setInterval(()=>{
       if(this.recovering)return;this.recovering=true;
@@ -70,26 +76,6 @@ export class AuthorityRuntime {
     this.recoveryTimer.unref();
   }
   register(socket:MatchmakingSocket) {
-    // Server-measured RTT; a client can delay an acknowledgement but cannot make it arrive early.
-    if(!socket.data.isGuest && process.env.ENABLE_COMPETITION_AUTHORITY==='true') this.admission.set(socket.id,new Promise(resolve=>{
-      const samples:number[]=[]; let sent=0,finished=false;
-      const done=(ok:boolean)=>{if(finished)return;finished=true;clearInterval(probes);clearTimeout(timeout);resolve(ok)};
-      const probes=setInterval(()=>{
-        if(sent++>=20)return;
-        const began=performance.now();
-        socket.emit('authority:probe',()=>{
-          if(finished)return;samples.push(performance.now()-began);
-          if(samples.length===20){
-            samples.sort((a,b)=>a-b);
-            const accepted=samples[18]<=100&&samples[18]-samples[9]<=30;
-            console.info('[authority] admission metrics',JSON.stringify({p95RttMs:samples[18],medianRttMs:samples[9],jitterMs:samples[18]-samples[9],accepted}));
-            done(accepted);
-          }
-        });
-      },250);
-      const timeout=setTimeout(()=>done(false),6500);
-      socket.once('disconnect',()=>{done(false);this.admission.delete(socket.id)});
-    }));
     let windowStart=performance.now(),messages=0,lastResume=-Infinity;
     const guarded=(fn:(p:any)=>Promise<void>|void)=>(p:unknown)=>{
       if(performance.now()-windowStart>=1000){windowStart=performance.now();messages=0;}
@@ -112,9 +98,15 @@ export class AuthorityRuntime {
     }));
     socket.on('authority:ready',guarded(async p=>{
       const {r,player}=this.authenticate(socket,p);
-      if(player.state!=='CREATED') throw Error('ILLEGAL_READY');
-      if(!await this.admission.get(socket.id)) {await this.finish(r,'LATENCY_ADMISSION_FAILED',undefined,true);return;}
+      if(player.state!=='CREATED'||player.readyPendingEpoch===p.epoch) throw Error('ILLEGAL_READY');
+      player.readyPendingEpoch=p.epoch;
+      try {
+      const admission=await measureAdmission(socket);
+      console.info('[authority] admission metrics',JSON.stringify({instanceId:r.instanceId,...admission}));
+      // Reauthenticate after the asynchronous measurement so a replaced controller
+      // cannot void or ready its successor's run.
       this.authenticate(socket,p);
+      if(!admission.accepted) {await this.finish(r,'LATENCY_ADMISSION_FAILED',undefined,true);return;}
       if(player.state!=='CREATED')throw Error('ILLEGAL_READY');
       await this.store.ready(r.id,player.sessionId,socket.id,p.epoch); player.state='READY';
       if(r.players.every(a=>a.state==='READY')&&!r.starting) {
@@ -128,6 +120,7 @@ export class AuthorityRuntime {
           r.players.forEach(a=>{a.state='ACTIVE';});
         } catch { await this.finish(r,'START_FAILED',undefined,true); }
       }
+      } finally {if(player.readyPendingEpoch===p.epoch)player.readyPendingEpoch=undefined;}
     }));
     socket.on('authority:controls',guarded(p=>{
       if(this.runs.get(p.instanceId)?.stopped)return;
@@ -161,7 +154,9 @@ export class AuthorityRuntime {
     p.pending=p.pending.catch(()=>{}).then(async()=>{
       if(r.stopped)throw Error('SESSION_TERMINAL');
       const nonce=randomBytes(24).toString('hex');
+      const began=performance.now();
       const epoch=await this.store.bind(r.id,p.sessionId,socket.id,nonce);
+      r.metrics.bindMaxMs=Math.max(r.metrics.bindMaxMs,performance.now()-began);
       if(p.socket&&p.socket.id!==socket.id) p.socket.emit('authority:error',{code:'CONTROLLER_REPLACED'});
       p.socket=socket; p.disconnectedAt=null; p.controls=new LiveControls(); p.snapshots.clear();
       p.binding={sessionId:p.sessionId,instanceId:r.instanceId,matchId:r.matchId,gameId:'space-blaster',version:AUTHORITY_VERSION,nonce,epoch};
@@ -173,7 +168,7 @@ export class AuthorityRuntime {
   async create(instanceId:string) {
     const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.());
     const now=performance.now();
-    const r:Run={...record,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0},timer:null!};
+    const r:Run={...record,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     r.players.forEach(p=>p.engine.resize(VIRTUAL_VIEWPORT.width,VIRTUAL_VIEWPORT.height));
     this.runs.set(instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
@@ -181,11 +176,19 @@ export class AuthorityRuntime {
     return r;
   }
   snapshot(r:Run,p:Player,reliable=false) {
+    const began=performance.now();
     const e=p.engine, seq=++r.snapshot;
     const value:AuthoritySnapshot={seq,serverTime:Date.now(),startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver,shipX:e.shipX,shipY:e.shipY,bullets:e.bullets.filter(b=>b.active),asteroids:e.asteroids.filter(a=>a.active)};
     p.snapshots.set(seq,performance.now());
     for(const [key,time] of p.snapshots) if(performance.now()-time>500) p.snapshots.delete(key);
     if(p.socket?.connected) { (reliable?p.socket:p.socket.volatile).emit('authority:snapshot',value); this.metrics.snapshots++; this.metrics.bytes+=Buffer.byteLength(JSON.stringify(value)); }
+    const elapsed=performance.now()-began;
+    r.metrics.snapshotMs+=elapsed;r.metrics.maxSnapshotMs=Math.max(r.metrics.maxSnapshotMs,elapsed);r.metrics.snapshots++;
+  }
+  private async persistResult(r:Run,p:Player,reason:string) {
+    const began=performance.now();
+    try {await this.store.result(r.id,p.sessionId,p.engine.score,p.engine.tickCount,reason);}
+    finally {r.metrics.resultWriteMaxMs=Math.max(r.metrics.resultWriteMaxMs,performance.now()-began);}
   }
   tick(r:Run) {
     if(r.stopped)return;
@@ -202,7 +205,7 @@ export class AuthorityRuntime {
           const collision=p.engine.update(FIXED_TIMESTEP_SEC,p.controls.take(now));
           if(collision||p.engine.tickCount>=(this.options.capTicks??AUTHORITY_CAP_TICKS)) {
             p.state='COMPLETED';
-            p.pending=p.pending.then(()=>this.store.result(r.id,p.sessionId,p.engine.score,p.engine.tickCount,collision?'COLLISION':'CAP_REACHED'));
+            p.pending=p.pending.then(()=>this.persistResult(r,p,collision?'COLLISION':'CAP_REACHED'));
             void p.pending.catch(()=>this.finish(r,'RESULT_PERSISTENCE_FAILED',undefined,true));
           }
         }
@@ -219,7 +222,14 @@ export class AuthorityRuntime {
         void this.finish(r,healthy?'RECONNECT_EXPIRED':'NETWORK_UNCERTAIN',healthy?gone.userId:undefined,!healthy);return;
       }
     }
-    if(now-r.lastSnapshot>=50) {r.metrics.maxSnapshotGapMs=Math.max(r.metrics.maxSnapshotGapMs,now-r.lastSnapshot);r.lastSnapshot=now; r.players.forEach(p=>this.snapshot(r,p));}
+    if(now-r.lastSnapshot>=50) {
+      r.metrics.maxSnapshotGapMs=Math.max(r.metrics.maxSnapshotGapMs,now-(r.lastSnapshotPublished??r.created));
+      r.lastSnapshotPublished=now;
+      // Keep the 20Hz schedule anchored. Resetting to now on coarse timers
+      // accumulated drift and reduced actual publication to roughly 16Hz.
+      r.lastSnapshot+=Math.floor((now-r.lastSnapshot)/50)*50;
+      r.players.forEach(p=>this.snapshot(r,p));
+    }
   }
   async finish(r:Run,reason:string,forfeitUser?:string,systemVoid=false) {
     if(r.stopped)return;
@@ -229,7 +239,7 @@ export class AuthorityRuntime {
     try {
       if(forfeitUser&&!systemVoid) for(const p of r.players) if(p.state==='ACTIVE') {
         p.state=p.userId===forfeitUser?'FORFEITED':'COMPLETED';
-        p.pending=p.pending.then(()=>this.store.result(r.id,p.sessionId,p.engine.score,p.engine.tickCount,p.userId===forfeitUser?'FORFEIT':'OPPONENT_FORFEIT'));
+        p.pending=p.pending.then(()=>this.persistResult(r,p,p.userId===forfeitUser?'FORFEIT':'OPPONENT_FORFEIT'));
       }
       for(const p of r.players){if(systemVoid)p.state='VOIDED';this.snapshot(r,p,true);}
       await Promise.all(r.players.map(p=>p.pending));
