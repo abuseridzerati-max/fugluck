@@ -11,10 +11,12 @@ export class AuthorityStore {
   // A warm, bounded channel keeps lease heartbeats independent of accounting pool traffic.
   private leasePool=new Pool({...pool.options,max:1,connectionTimeoutMillis:5000,statement_timeout:1000});
   constructor(readonly ownerId = randomUUID(), readonly accounting: CompetitionAccountingPort = new SandboxAccountingAdapter()) {}
-  async transaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (c: PoolClient) => Promise<T>, stage = 'authority') : Promise<T> {
+    const requested=performance.now();
     const c = await pool.connect();
+    const acquired=performance.now();
     try { await c.query('BEGIN'); const v = await fn(c); await c.query('COMMIT'); return v; }
-    catch(e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
+    catch(e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); console.info('[authority] database transaction metrics',JSON.stringify({stage,acquisitionMs:acquired-requested,transactionMs:performance.now()-acquired})); }
   }
   async lock(c: PoolClient, id: string, requireLease = true) {
     const r = (await c.query(`SELECT *, lease_until > clock_timestamp() AS healthy FROM competition_authority_runs WHERE id=$1 FOR UPDATE`, [id])).rows[0];
@@ -111,33 +113,40 @@ export class AuthorityStore {
       await c.query(`INSERT INTO competition_authority_decisions(run_id,kind,winner_user_id,reason,result_ids) VALUES($1,$2,$3,$4,$5)`, [id,kind,winner,reason,JSON.stringify(s.map(p=>p.result_id).filter(Boolean))]);
       await c.query(`UPDATE competition_authority_runs SET status=$2,terminal_at=clock_timestamp(),fence=fence+1 WHERE id=$1`, [id,kind==='VOID'?'VOIDED':'COMPLETED']);
       await c.query(`UPDATE competition_authority_sessions SET status=CASE WHEN $3='READY_EXPIRED' THEN 'EXPIRED' WHEN user_id=$2 THEN 'FORFEITED' ELSE 'VOIDED' END,terminal_at=clock_timestamp() WHERE run_id=$1 AND status NOT IN ('COMPLETED','FORFEITED','VOIDED','EXPIRED')`, [id,forfeitUser??null,reason]);
-    });
+    },'terminal_decision');
     console.info('[authority] terminal persistence metrics',JSON.stringify({terminalWriteMs:performance.now()-began}));
     return this.apply(id);
   }
   async apply(id: string): Promise<AuthorityOutcome> {
+    const lookupStarted=performance.now();
     const d = (await pool.query('SELECT d.*,r.instance_id,r.match_id FROM competition_authority_decisions d JOIN competition_authority_runs r ON r.id=d.run_id WHERE run_id=$1', [id])).rows[0];
     if (!d) throw Error('DECISION_PENDING');
     const status = d.winner_user_id ? 'SETTLED':'VOIDED';
     if (!d.applied_at) {
       const began=performance.now();
-      const prizes = (await pool.query('SELECT * FROM competition_instance_prizes WHERE instance_id=$1 ORDER BY placement', [d.instance_id])).rows;
+      const decisionLookupMs=performance.now()-lookupStarted;
+      const prizes = d.winner_user_id ? (await pool.query('SELECT * FROM competition_instance_prizes WHERE instance_id=$1 ORDER BY placement', [d.instance_id])).rows : [];
       const prize = prizes.find(p=>p.placement===1);
       const amount = Number(prize?.amount_minor??0);
+      const ledgerStarted=performance.now();
       const result = d.winner_user_id
         ? await this.accounting.settleCompetition({competitionInstanceId:d.instance_id,prizes:[{placement:1,userId:d.winner_user_id,amount:createMoney(amount,(prize?.currency??'GEL') as ISO4217Currency)}],idempotencyKey:`authority_decision:${id}`})
         : await this.accounting.refundCompetition({competitionInstanceId:d.instance_id,reason:d.reason,idempotencyKey:`authority_decision:${id}`});
       if (!result.success) throw Error('ACCOUNTING_PENDING');
+      const ledgerMs=performance.now()-ledgerStarted, lifecycleStarted=performance.now();
       await this.transaction(async c => {
         await this.lock(c,id,false);
         if ((await c.query('SELECT applied_at FROM competition_authority_decisions WHERE run_id=$1',[id])).rows[0].applied_at) return;
         await c.query('UPDATE competition_instances SET status=$2,winner_user_id=$3,settled_at=now() WHERE id=$1', [d.instance_id,status,d.winner_user_id]);
-        await c.query(`UPDATE competition_participants SET rank=CASE WHEN $2::text IS NULL OR user_id=$2 THEN 1 ELSE 2 END,prize_won_minor=CASE WHEN user_id=$2 THEN $3 ELSE 0 END WHERE instance_id=$1`, [d.instance_id,d.winner_user_id,amount]);
+        await c.query(`UPDATE competition_participants SET
+          status=CASE WHEN $2::text IS NULL THEN 'VOIDED' WHEN status='FORFEITED' THEN 'FORFEITED' ELSE 'SUBMITTED' END,
+          rank=CASE WHEN $2::text IS NULL THEN NULL WHEN user_id=$2 THEN 1 ELSE 2 END,
+          prize_won_minor=CASE WHEN user_id=$2 THEN $3 ELSE 0 END WHERE instance_id=$1`, [d.instance_id,d.winner_user_id,amount]);
         if (d.winner_user_id) await c.query('UPDATE competition_instance_prizes SET awarded_user_id=$2 WHERE instance_id=$1 AND placement=1', [d.instance_id,d.winner_user_id]);
         await c.query(`UPDATE matches_history m SET status=$2,winner_id=$3,status_reason=$4,ended_at=now(),score_p1=COALESCE((SELECT score FROM competition_participants WHERE instance_id=$5 AND user_id=m.player1_id),0),score_p2=COALESCE((SELECT score FROM competition_participants WHERE instance_id=$5 AND user_id=m.player2_id),0) WHERE id=$1`, [d.match_id,d.winner_user_id?'COMPLETED':d.kind==='DRAW'?'DRAW':'VOIDED',d.winner_user_id,d.reason,d.instance_id]);
         await c.query('UPDATE competition_authority_decisions SET applied_at=COALESCE(applied_at,now()) WHERE run_id=$1', [id]);
-      });
-      console.info('[authority] accounting application metrics',JSON.stringify({instanceId:d.instance_id,applicationMs:performance.now()-began}));
+      },'terminal_application');
+      console.info('[authority] accounting application metrics',JSON.stringify({instanceId:d.instance_id,decisionLookupMs,ledgerMs,lifecycleMs:performance.now()-lifecycleStarted,applicationMs:performance.now()-began}));
     }
     return {instanceId:d.instance_id,status,reason:d.reason,winnerUserId:d.winner_user_id};
   }

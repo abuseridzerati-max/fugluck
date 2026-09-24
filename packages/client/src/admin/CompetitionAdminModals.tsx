@@ -609,7 +609,7 @@ export function InstanceDetailModal({
               {reconciliation.reconciled ? 'BALANCED (Zero Discrepancy)' : 'DISCREPANCY DETECTED'}
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', fontSize: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '12px' }}>
             <div>
               <div style={{ color: '#94a3b8' }}>Captured Entries:</div>
               <div style={{ fontWeight: 600 }}>{formatGEL(reconciliation.totalCapturedMinor)}</div>
@@ -623,7 +623,15 @@ export function InstanceDetailModal({
               <div style={{ fontWeight: 600 }}>{formatGEL(reconciliation.platformMarginMinor)}</div>
             </div>
             <div>
-              <div style={{ color: '#94a3b8' }}>Subsidy / Discrepancy:</div>
+              <div style={{ color: '#94a3b8' }}>Entry Refunds:</div>
+              <div style={{ fontWeight: 600 }}>{formatGEL(reconciliation.totalRefundedMinor ?? 0)}</div>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8' }}>Promotional Subsidy:</div>
+              <div style={{ fontWeight: 600 }}>{formatGEL(reconciliation.promotionalSubsidyMinor)}</div>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8' }}>Discrepancy:</div>
               <div style={{ fontWeight: 600, color: reconciliation.discrepancyMinor !== 0 ? '#ef4444' : '#10b981' }}>
                 {formatGEL(reconciliation.discrepancyMinor)}
               </div>

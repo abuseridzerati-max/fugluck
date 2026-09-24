@@ -284,6 +284,7 @@ export type CompetitionInstanceAdminDetail = {
     reconciled: boolean
     totalCapturedMinor: number
     totalPrizesMinor: number
+    totalRefundedMinor: number
     platformMarginMinor: number
     promotionalSubsidyMinor: number
     discrepancyMinor: number

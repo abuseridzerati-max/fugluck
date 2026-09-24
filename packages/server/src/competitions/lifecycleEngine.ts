@@ -356,6 +356,7 @@ export class CompetitionLifecycleEngine {
         await pool.query(`UPDATE competition_instances SET status = 'VOIDED', settled_at = NOW() WHERE id = $1`, [
           instanceId,
         ]);
+        await pool.query(`UPDATE competition_participants SET status='VOIDED', rank=NULL, prize_won_minor=0 WHERE instance_id=$1`, [instanceId]);
 
         if (inst.match_id) {
           await pool.query(
@@ -432,7 +433,7 @@ export class CompetitionLifecycleEngine {
         });
 
         await pool.query(
-          `UPDATE competition_participants SET rank = 1, prize_won_minor = 0 WHERE instance_id = $1`,
+          `UPDATE competition_participants SET status='VOIDED', rank = NULL, prize_won_minor = 0 WHERE instance_id = $1`,
           [instanceId],
         );
 
@@ -534,6 +535,7 @@ export class CompetitionLifecycleEngine {
       }
 
       await pool.query(`UPDATE competition_instances SET status = 'CANCELLED' WHERE id = $1`, [instanceId]);
+      await pool.query(`UPDATE competition_participants SET status='CANCELLED', rank=NULL, prize_won_minor=0 WHERE instance_id=$1`, [instanceId]);
 
       return { instanceId, cancelled: true };
     });

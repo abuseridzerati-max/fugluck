@@ -20,6 +20,8 @@ export type CompetitionParticipantStatus =
   | "PLAYING"
   | "SUBMITTED"
   | "FORFEITED"
+  | "VOIDED"
+  | "CANCELLED"
   | "DISCONNECTED";
 
 export type GameCompetitionEligibility =

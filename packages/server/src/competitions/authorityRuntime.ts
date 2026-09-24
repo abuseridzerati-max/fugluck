@@ -31,12 +31,13 @@ export class LiveControls {
 interface Player {
   userId:string; sessionId:string; binding?:AuthorityBinding; socket?:MatchmakingSocket;
   state:AuthorityState; engine:SpaceBlasterEngine; controls:LiveControls;
-  disconnectedAt:number|null; snapshots:Map<number,number>; pending:Promise<void>; readyPendingEpoch?:number;
+  disconnectedAt:number|null; snapshots:Map<number,number>; snapshotSeq:number; pending:Promise<void>; readyPendingEpoch?:number;
 }
 interface Run {
   id:string; instanceId:string; matchId:string; players:Player[]; created:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
   stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
+  delivery:{generated:number;emitAttempts:number;backpressure:number;bytes:number;maxBytes:number;maxCreationToEmitMs:number;transports:Record<string,number>};
   metrics:{ activeLeaseMaxMs:number; waitingLeaseMaxMs:number; finalizingLeaseMaxMs:number; maxSnapshotGapMs:number; controls:number; maxTickMs:number; startMs:number; snapshotMs:number; maxSnapshotMs:number; snapshots:number; bindMaxMs:number; resultWriteMaxMs:number };
   timer:ReturnType<typeof setInterval>;
 }
@@ -168,7 +169,7 @@ export class AuthorityRuntime {
   async create(instanceId:string) {
     const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.());
     const now=performance.now();
-    const r:Run={...record,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
+    const r:Run={...record,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     r.players.forEach(p=>p.engine.resize(VIRTUAL_VIEWPORT.width,VIRTUAL_VIEWPORT.height));
     this.runs.set(instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
@@ -177,10 +178,16 @@ export class AuthorityRuntime {
   }
   snapshot(r:Run,p:Player,reliable=false) {
     const began=performance.now();
-    const e=p.engine, seq=++r.snapshot;
-    const value:AuthoritySnapshot={seq,serverTime:Date.now(),startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver,shipX:e.shipX,shipY:e.shipY,bullets:e.bullets.filter(b=>b.active),asteroids:e.asteroids.filter(a=>a.active)};
+    const e=p.engine, seq=++p.snapshotSeq, createdAt=Date.now();
+    const value:AuthoritySnapshot={sessionId:p.sessionId,epoch:p.binding?.epoch??0,createdAt,emittedAt:0,seq,serverTime:createdAt,startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver,shipX:e.shipX,shipY:e.shipY,bullets:e.bullets.filter(b=>b.active),asteroids:e.asteroids.filter(a=>a.active)};
     p.snapshots.set(seq,performance.now());
     for(const [key,time] of p.snapshots) if(performance.now()-time>500) p.snapshots.delete(key);
+    value.emittedAt=Date.now();
+    if(p.state==='ACTIVE'&&r.startAt!==null&&value.serverTime>=r.startAt){
+      const bytes=Buffer.byteLength(JSON.stringify(value));r.delivery.generated++;r.delivery.bytes+=bytes;r.delivery.maxBytes=Math.max(r.delivery.maxBytes,bytes);
+      r.delivery.maxCreationToEmitMs=Math.max(r.delivery.maxCreationToEmitMs,value.emittedAt-createdAt);
+      if(p.socket?.connected){r.delivery.emitAttempts++;const transport=p.socket.conn.transport.name;r.delivery.transports[transport]=(r.delivery.transports[transport]??0)+1;if(!p.socket.conn.transport.writable)r.delivery.backpressure++;}
+    }
     if(p.socket?.connected) { (reliable?p.socket:p.socket.volatile).emit('authority:snapshot',value); this.metrics.snapshots++; this.metrics.bytes+=Buffer.byteLength(JSON.stringify(value)); }
     const elapsed=performance.now()-began;
     r.metrics.snapshotMs+=elapsed;r.metrics.maxSnapshotMs=Math.max(r.metrics.maxSnapshotMs,elapsed);r.metrics.snapshots++;
@@ -235,6 +242,7 @@ export class AuthorityRuntime {
     if(r.stopped)return;
     console.info('[authority] terminal reason:',reason);
     const finished=performance.now();
+    let receiptWaitMs=0, decisionAndApplyMs=0, notificationEmitMs=0;
     r.stopped=true; clearInterval(r.timer);
     try {
       if(forfeitUser&&!systemVoid) for(const p of r.players) if(p.state==='ACTIVE') {
@@ -242,15 +250,21 @@ export class AuthorityRuntime {
         p.pending=p.pending.then(()=>this.persistResult(r,p,p.userId===forfeitUser?'FORFEIT':'OPPONENT_FORFEIT'));
       }
       for(const p of r.players){if(systemVoid)p.state='VOIDED';this.snapshot(r,p,true);}
+      const receiptsStarted=performance.now();
       await Promise.all(r.players.map(p=>p.pending));
+      receiptWaitMs=performance.now()-receiptsStarted;
+      const decisionStarted=performance.now();
       const outcome=await this.store.decide(r.id,reason,forfeitUser,systemVoid);
+      decisionAndApplyMs=performance.now()-decisionStarted;
+      const notificationStarted=performance.now();
       r.players.forEach(p=>p.socket?.emit('authority:outcome',{...outcome,yourScore:p.engine.score}));
+      notificationEmitMs=performance.now()-notificationStarted;
     } catch {
       // No speculative winner: durable decisions retry; lost state expires to recovery/refund.
       r.players.forEach(p=>p.socket?.emit('authority:error',{code:'RESULT_PENDING_RECOVERY'}));
     } finally {
       // Bounded operational evidence; never includes controls, session nonces or account identifiers.
-      console.info('[authority] run metrics',JSON.stringify({instanceId:r.instanceId,reason,ticks:r.ticks,activeMs:r.startMono===null?0:Math.max(0,finished-r.startMono),settlementMs:performance.now()-finished,...r.metrics}));
+      console.info('[authority] run metrics',JSON.stringify({instanceId:r.instanceId,reason,ticks:r.ticks,activeMs:r.startMono===null?0:Math.max(0,finished-r.startMono),settlementMs:performance.now()-finished,receiptWaitMs,decisionAndApplyMs,notificationEmitMs,...r.metrics,delivery:r.delivery}));
       this.runs.delete(r.instanceId);
     }
   }

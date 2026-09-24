@@ -368,11 +368,11 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       params.append('page', String(page))
       params.append('limit', '20')
 
-      const res = await apiFetch<{ instances: CompetitionInstanceAdmin[]; pagination: { page: number; total: number } }>(
+      const res = await apiFetch<{ instances: CompetitionInstanceAdmin[]; page: number; total: number }>(
         `/api/admin/competitions/instances?${params.toString()}`
       )
       setCompInstances(res.instances || [])
-      setCompInstanceTotal(res.pagination?.total ?? 0)
+      setCompInstanceTotal(res.total ?? 0)
       setCompInstancePage(page)
     } catch (e: any) {
       setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load competition instances.')

@@ -1,0 +1,38 @@
+import { AuthorityPresentation, distribution } from '../packages/client/src/game-loader/authorityPresentation'
+import type { AuthoritySnapshot } from '@fugluck/shared'
+let passed=0,failed=0
+const check=(name:string,ok:unknown)=>{console.log(`${ok?'PASS':'FAIL'} ${name}`);ok?passed++:failed++}
+const sample=(seq:number,tick=seq*3):AuthoritySnapshot=>({sessionId:'session',epoch:1,seq,createdAt:seq*50,emittedAt:seq*50+1,serverTime:seq*50,startAt:0,deadline:180000,state:'ACTIVE',tickCount:tick,score:tick,gameOver:false,shipX:seq*10,shipY:620,bullets:[{id:1,x:10,y:500-seq*10,active:true}],asteroids:[]})
+const p=new AuthorityPresentation()
+check('first bound snapshot accepted',p.accept(sample(1),'session',1,100))
+check('continuous sequence accepted',p.accept(sample(2),'session',1,150))
+check('continuous sequence has no false player-to-player gaps',p.report().missing===0)
+check('duplicate snapshot rejected',!p.accept(sample(2),'session',1,151))
+check('out of order snapshot rejected',!p.accept(sample(1),'session',1,152))
+check('older server tick rejected',!p.accept(sample(3,1),'session',1,153))
+check('other session rejected',!p.accept({...sample(3),sessionId:'other'},'session',1,154))
+check('replaced controller epoch rejected',!p.accept({...sample(3),epoch:0},'session',1,155))
+check('invalid timestamp rejected',!p.accept({...sample(3),createdAt:NaN},'session',1,155))
+check('gap accepted without inventing missing state',p.accept(sample(5),'session',1,300))
+check('missing sequences counted exactly',p.report().missing===2)
+check('interarrival tail retained',p.report().interArrivalMs.max===150)
+check('creation and emit independently measured',p.report().creationToEmitMs.max===1&&p.report().serverEmitGapMs.max===150)
+p.applied(305);p.frameAt(310);p.frameAt(330)
+check('application delay recorded',p.report().applicationDelayMs.max===5)
+check('render cadence independent of receive',p.report().renderGapMs.max===20)
+check('payload byte length recorded',p.report().maxPayloadBytes>100)
+const before=JSON.stringify(p.latest),visual=p.visual(325)!
+check('minimal ship interpolation',visual.shipX===25)
+check('visual interpolation does not mutate received authoritative state',JSON.stringify(p.latest)===before&&visual.score===15)
+check('bullet interpolation uses matching entity identity',visual.bullets[0].y>p.latest!.bullets[0].y)
+check('no extrapolation across long receive silence',p.visual(500)===p.latest)
+p.accept({...sample(6),state:'COMPLETED',gameOver:true},'session',1,350)
+check('terminal state displayed immediately',p.visual(350)?.gameOver===true)
+p.accept(sample(7),'session',1,400,true)
+check('background receipt identified',p.report().hiddenReceives===1)
+const stats=distribution([1,2,3,4,100])
+check('nearest-rank percentiles and maximum',stats.p50===3&&stats.p95===100&&stats.p99===100&&stats.max===100)
+for(let i=8;i<4010;i++)p.accept(sample(i),'session',1,i*50)
+check('diagnostic memory bounded',p.report().interArrivalMs.count===3600)
+console.log(`PRESENTATION CHECK: ${passed} passed, ${failed} failed`)
+process.exitCode=failed?1:0

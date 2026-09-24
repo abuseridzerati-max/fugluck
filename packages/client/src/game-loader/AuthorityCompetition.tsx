@@ -4,6 +4,7 @@ import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents } from '@fugluck/shared'
 import { API_URL } from '../lib/api'
 import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
+import { AuthorityPresentation } from './authorityPresentation'
 
 /** Competition renderer: never calls engine.update and never submits a final score. */
 export function AuthorityCompetition({ templateId, onExit }: { templateId: string; onExit: () => void }) {
@@ -15,6 +16,11 @@ export function AuthorityCompetition({ templateId, onExit }: { templateId: strin
   const [status,setStatus] = useState('Connecting to sandbox competition…')
   const [active,setActive] = useState(false)
   const [terminal,setTerminal] = useState(false)
+  const [canCancel,setCanCancel] = useState(false)
+  const [diagnostics,setDiagnostics] = useState('')
+  const diagnosticEnabled=(import.meta.env.DEV||window.location.hostname==='staging.fugluck.com')&&new URLSearchParams(window.location.search).has('authorityDiagnostics')
+  const diagnosticRequested=useRef(false)
+  const firePulse=useRef(false)
   const { refreshUser, user } = useAuth()
   const userId = useRef(user?.id);userId.current=user?.id
   const refresh = useRef(refreshUser); refresh.current=refreshUser
@@ -22,6 +28,9 @@ export function AuthorityCompetition({ templateId, onExit }: { templateId: strin
     const renderer=new SpaceBlasterEngine(1)
     const storageKey=`authority:${templateId}`
     let instanceId:string|null=sessionStorage.getItem(storageKey), seq=0, snapshot:AuthoritySnapshot|null=null, complete=false, pendingRecovery=false
+    let presentation=new AuthorityPresentation(), animation=0, diagnosticStarted=0, lastStatus=''
+    const controlEvidence={samples:0,minX:1280,maxX:0,minY:720,maxY:0,maxScore:0,maxBullets:0,directions:[] as string[],activeMs:0,terminalState:''}
+    const say=(text:string)=>{if(text!==lastStatus){lastStatus=text;setStatus(text)}}
     waitingInstance.current=instanceId
     const socket:Socket<ServerToClientEvents,ClientToServerEvents>=io(API_URL,{withCredentials:true,auth:{token:getStoredAuthToken()},autoConnect:false})
     connection.current=socket
@@ -31,7 +40,7 @@ export function AuthorityCompetition({ templateId, onExit }: { templateId: strin
       if(instanceId) socket.emit('authority:resume',{instanceId})
       else socket.emit('competition:join',{templateId})
     })
-    socket.on('competition:joined',p=>{instanceId=p.instanceId;waitingInstance.current=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);setStatus('Waiting for the other player…')})
+    socket.on('competition:joined',p=>{instanceId=p.instanceId;waitingInstance.current=p.instanceId;setCanCancel(true);sessionStorage.setItem(storageKey,p.instanceId);say('Waiting for the other player…')})
     socket.on('competition:cancelled',()=>{sessionStorage.removeItem(storageKey);setTerminal(true);setStatus('Entry cancelled. Sandbox reservation released.');void refresh.current()})
     socket.on('competition:error',p=>setStatus(p.message))
     socket.on('authority:error',p=>{
@@ -41,38 +50,64 @@ export function AuthorityCompetition({ templateId, onExit }: { templateId: strin
       setStatus(`Competition paused: ${p.code.replaceAll('_',' ').toLowerCase()}.`)
       if(p.code==='CONTROLLER_REPLACED') {socket.disconnect();setActive(false)}
     })
-    socket.on('authority:session',p=>{binding.current=p;waitingInstance.current=null;instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;socket.emit('authority:ready',p)})
+    socket.on('authority:session',p=>{binding.current=p;waitingInstance.current=null;setCanCancel(false);instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;presentation=new AuthorityPresentation();socket.emit('authority:ready',p)})
     socket.on('authority:snapshot',p=>{
+      if(complete)return
+      const received=performance.now()
+      if(!binding.current||!presentation.accept(p,binding.current.sessionId,binding.current.epoch,received,document.hidden))return
       snapshot=p
-      Object.assign(renderer,{tickCount:p.tickCount,score:p.score,gameOver:p.gameOver,shipX:p.shipX,shipY:p.shipY,bullets:p.bullets,asteroids:p.asteroids})
-      const ctx=canvas.current?.getContext('2d');if(ctx)renderer.render(ctx)
+      presentation.applied(performance.now())
       const playing=p.state==='ACTIVE'&&p.startAt!==null&&p.serverTime>=p.startAt
       setActive(playing)
-      setStatus(p.state==='COMPLETED'?'Your run is complete. Waiting for the other result…':playing?'Use arrow keys or WASD to move. Press Space to fire.':p.startAt?`Starting in ${Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000))}…`:'Waiting for both players to be ready…')
+      if(playing){controlEvidence.samples++;controlEvidence.minX=Math.min(controlEvidence.minX,p.shipX);controlEvidence.maxX=Math.max(controlEvidence.maxX,p.shipX);controlEvidence.minY=Math.min(controlEvidence.minY,p.shipY);controlEvidence.maxY=Math.max(controlEvidence.maxY,p.shipY);controlEvidence.maxScore=Math.max(controlEvidence.maxScore,p.score);controlEvidence.maxBullets=Math.max(controlEvidence.maxBullets,p.bullets.length)}
+      else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
+      say(p.state==='COMPLETED'?'Your run is complete. Waiting for the other result…':playing?'Use arrow keys or WASD to move. Hold Space or Fire to shoot.':p.state==='VOIDED'?'Competition stopped. Confirming the sandbox refund…':p.startAt?`Starting in ${Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000))}…`:'Waiting for both players to be ready…')
     })
     socket.on('authority:outcome',p=>{
-      complete=true;sessionStorage.removeItem(storageKey);setTerminal(true);setActive(false)
+      complete=true;sessionStorage.removeItem(storageKey);setTerminal(true);setActive(false);setCanCancel(false);neutral()
       if(p.yourScore!==undefined){renderer.score=p.yourScore;const ctx=canvas.current?.getContext('2d');if(ctx)renderer.render(ctx)}
       setStatus(p.status==='VOIDED'?'Competition voided — sandbox entry refunded.':p.winnerUserId===userId.current?'You won — the predetermined sandbox prize has been awarded.':'Competition finished — your opponent won.');void refresh.current()
     })
-    socket.on('disconnect',()=>{if(!complete)setStatus('Connection interrupted. Reconnecting…')})
+    socket.on('disconnect',()=>{neutral();setActive(false);if(!complete)say('Connection interrupted. Reconnecting…')})
     socket.on('connect_error',()=>setStatus('Unable to connect. Retrying…'))
     const send=setInterval(()=>{
       if(complete||!socket.connected||!binding.current||!snapshot||snapshot.state!=='ACTIVE')return
-      socket.volatile.emit('authority:controls',{...binding.current,...controls.current,seq:++seq,snapshot:snapshot.seq})
-      controls.current.fire=false
+      if(diagnosticEnabled&&diagnosticRequested.current&&snapshot.startAt!==null&&snapshot.serverTime>=snapshot.startAt){
+        if(!diagnosticStarted)diagnosticStarted=performance.now()
+        const elapsed=performance.now()-diagnosticStarted
+        controlEvidence.activeMs=elapsed
+        if(elapsed<24000){
+          const direction=Math.floor(elapsed/2000)%2===0?'left':'right'
+          controls.current={left:direction==='left',right:direction==='right',up:false,down:false,fire:true}
+          if(controlEvidence.directions.at(-1)!==direction)controlEvidence.directions.push(direction)
+        }else{diagnosticRequested.current=false;neutral()}
+      }
+      socket.volatile.emit('authority:controls',{...binding.current,...controls.current,fire:controls.current.fire||firePulse.current,seq:++seq,snapshot:snapshot.seq})
+      firePulse.current=false
     },50)
     const retry=setInterval(()=>{if(pendingRecovery&&!complete&&socket.connected&&instanceId)socket.emit('authority:resume',{instanceId})},3000)
-    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false}}
+    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};firePulse.current=false}
+    const visibility=()=>{if(document.hidden){neutral();diagnosticRequested.current=false}}
     const key=(event:KeyboardEvent,down:boolean)=>{
       const map:Record<string,'left'|'right'|'up'|'down'|'fire'>={ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',' ':'fire'}
       const control=map[event.key];if(!control)return;event.preventDefault()
-      if(control==='fire') {if(down&&!event.repeat)controls.current.fire=true} else controls.current[control]=down
+      controls.current[control]=down
+      if(control==='fire'&&down&&!event.repeat)firePulse.current=true
     }
     const keydown=(e:KeyboardEvent)=>key(e,true),keyup=(e:KeyboardEvent)=>key(e,false)
-    window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);window.addEventListener('blur',neutral)
+    window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);window.addEventListener('blur',neutral);document.addEventListener('visibilitychange',visibility)
+    const draw=()=>{
+      const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
+      if(state&&ctx){Object.assign(renderer,{tickCount:state.tickCount,score:state.score,gameOver:state.gameOver,shipX:state.shipX,shipY:state.shipY,bullets:state.bullets,asteroids:state.asteroids});renderer.render(ctx);presentation.frameAt(performance.now())}
+      if(!complete&&socket.connected&&state?.state==='ACTIVE'&&performance.now()-presentation.receivedAt>250)say('Connection delayed. Waiting for a fresh server update…')
+      animation=requestAnimationFrame(draw)
+    }
+    animation=requestAnimationFrame(draw)
+    const diagnosticTimer=diagnosticEnabled?setInterval(()=>setDiagnostics(JSON.stringify({transport:socket.io.engine?.transport.name,visibility:document.visibilityState,controls:controls.current,controlEvidence,...presentation.report()},null,2)),500):undefined
+    const observer=diagnosticEnabled&&typeof PerformanceObserver!=='undefined'?new PerformanceObserver(entries=>{for(const entry of entries.getEntries())presentation.longTask(entry.duration)}):undefined
+    if(observer&&PerformanceObserver.supportedEntryTypes?.includes('longtask'))observer.observe({entryTypes:['longtask']})
     socket.connect()
-    return()=>{clearInterval(send);clearInterval(retry);socket.disconnect();binding.current=null;window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral)}
+    return()=>{clearInterval(send);clearInterval(retry);clearInterval(diagnosticTimer);observer?.disconnect();cancelAnimationFrame(animation);neutral();socket.disconnect();binding.current=null;window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral);document.removeEventListener('visibilitychange',visibility)}
   },[templateId])
   return <section style={{maxWidth:1100,margin:'auto',padding:16}}>
     <h2>Space Blaster — Sandbox Competition</h2>
@@ -81,12 +116,19 @@ export function AuthorityCompetition({ templateId, onExit }: { templateId: strin
     <canvas ref={canvas} width={1280} height={720} aria-label="Live Space Blaster competition" style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:'#080d19'}} />
     <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'12px 0'}}>
       {(['left','up','down','right','fire'] as const).map(control=><button key={control} disabled={!active} style={{minWidth:60,minHeight:48,touchAction:'none'}}
-        onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);controls.current[control]=true}}
-        onPointerUp={()=>{if(control!=='fire')controls.current[control]=false}}
+        onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);controls.current[control]=true;if(control==='fire')firePulse.current=true}}
+        onPointerUp={()=>{controls.current[control]=false}}
+        onLostPointerCapture={()=>{controls.current[control]=false}}
         onPointerCancel={()=>{controls.current[control]=false}}>{control==='fire'?'Fire':control}</button>)}
     </div>
     {active&&<button onClick={()=>{if(binding.current)connection.current?.emit('authority:forfeit',binding.current)}}>Forfeit competition</button>}
-    {!active&&!terminal&&<button onClick={()=>{if(waitingInstance.current)connection.current?.emit('competition:cancel',{instanceId:waitingInstance.current})}}>Cancel waiting entry</button>}
+    {canCancel&&!terminal&&<button onClick={()=>{if(waitingInstance.current)connection.current?.emit('competition:cancel',{instanceId:waitingInstance.current})}}>Cancel waiting entry</button>}
     <button onClick={onExit}>{terminal?'Return to competitions':'Leave (active runs may forfeit)'}</button>
+    {diagnosticEnabled&&<details><summary>Staging connection diagnostics</summary>
+      <p>Optional 24-second automated control check: alternating steering and held firing through the normal socket controls. Results remain server-owned.</p>
+      <button disabled={terminal} onClick={()=>{diagnosticRequested.current=true}}>Run sustained control check</button>
+      <button disabled={!active} onClick={()=>{connection.current?.disconnect();setTimeout(()=>connection.current?.connect(),500)}}>Check reconnect</button>
+      <pre data-testid="authority-diagnostics" style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',fontSize:11}}>{diagnostics}</pre>
+    </details>}
   </section>
 }

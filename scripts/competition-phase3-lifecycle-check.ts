@@ -616,6 +616,8 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const tmoJoin = await instanceService.joinCompetitionQueue(timeoutTmpl.id, testUsers[6].id, adapter);
     const cancelRes = await lifecycleEngine.cancelUnfilledInstance(tmoJoin.instanceId, adapter, "TIMEOUT");
     const tmoInst = await instanceService.getInstance(tmoJoin.instanceId);
+    check('cancelled participants have terminal status',Boolean(tmoInst?.participants.every(p=>p.status==='CANCELLED'&&p.rank===null)));
+    check('legacy system void participants have terminal status',Boolean(voidInst?.participants.every(p=>p.status==='VOIDED'&&p.rank===null)));
     const tmoResCheck = await pool.query(
       `SELECT status FROM sandbox_entry_reservations WHERE competition_instance_id = $1`,
       [tmoJoin.instanceId],

@@ -11,6 +11,7 @@ export interface AuthorityControls extends AuthorityBinding {
   left: boolean; right: boolean; up: boolean; down: boolean; fire: boolean;
 }
 export interface AuthoritySnapshot {
+  sessionId: string; epoch: number; createdAt: number; emittedAt: number;
   seq: number; serverTime: number; startAt: number | null; deadline: number | null;
   state: AuthorityState; tickCount: number; score: number; gameOver: boolean;
   shipX: number; shipY: number;

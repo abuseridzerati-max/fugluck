@@ -573,6 +573,9 @@ async function runPhase2AccountingChecks(): Promise<void> {
       idempotencyKey: `refund_inst_${ts}`,
     });
     check("19. Competition refund succeeds", refundRes1.success && refundRes1.totalRefunded.amountMinor === 1000);
+    const refundReport=await adapter.reconcileCompetitionInstance(instRefund);
+    check('captured refund report counts both participant credits once',refundReport.totalCapturedMinor===1000&&refundReport.totalRefundedMinor===1000);
+    check('reserve capture refund report has zero discrepancy',refundReport.reconciled&&refundReport.discrepancyMinor===0);
 
     const balAAfterRef1 = await adapter.getSandboxBalance(userA);
     check(
@@ -618,6 +621,8 @@ async function runPhase2AccountingChecks(): Promise<void> {
       idempotencyKey: `void_inst_${ts}`,
     });
     check("20. Void before capture releases reservations and refunds", voidRes.success);
+    const releaseReport=await adapter.reconcileCompetitionInstance(instVoid);
+    check('reservation release report has no fictitious captured refunds',releaseReport.totalCapturedMinor===0&&releaseReport.totalRefundedMinor===0&&releaseReport.discrepancyMinor===0);
 
     const balAVoid = await adapter.getSandboxBalance(userA);
     check("20b. UserA reserved funds returned to available upon void", balAVoid.reserved.amountMinor === 0);

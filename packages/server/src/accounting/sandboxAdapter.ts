@@ -816,6 +816,7 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
     reconciled: boolean;
     totalCapturedMinor: number;
     totalPrizesMinor: number;
+    totalRefundedMinor: number;
     platformMarginMinor: number;
     promotionalSubsidyMinor: number;
     discrepancyMinor: number;
@@ -824,6 +825,7 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
       sql`SELECT
             COALESCE(SUM(CASE WHEN event_type = 'ENTRY_CAPTURE' AND amount_minor > 0 THEN amount_minor ELSE 0 END), 0)::integer AS captured,
             COALESCE(SUM(CASE WHEN event_type = 'PRIZE_PAYOUT' AND user_id IS NOT NULL THEN amount_minor ELSE 0 END), 0)::integer AS prizes,
+            COALESCE(SUM(CASE WHEN event_type = 'ENTRY_REFUND' AND user_id IS NOT NULL AND balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::integer AS refunds,
             COALESCE(SUM(CASE WHEN event_type = 'PLATFORM_FEE_RETAINED' THEN amount_minor ELSE 0 END), 0)::integer AS margin,
             COALESCE(SUM(CASE WHEN event_type = 'PROMOTIONAL_SUBSIDY' THEN ABS(amount_minor) ELSE 0 END), 0)::integer AS subsidy
           FROM sandbox_ledger_entries
@@ -832,13 +834,17 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
 
     const row = (res.rows[0] as any) ?? { captured: 0, prizes: 0, margin: 0, subsidy: 0 };
     const totalInflows = Number(row.captured) + Number(row.subsidy);
-    const totalOutflows = Number(row.prizes) + Number(row.margin);
+    // Refunds have two signed legs. Count only the participant credit, once.
+    // Reservation/release transfers stay within participant accounts and never
+    // enter escrow, so neither belongs in captured inflows or refund outflows.
+    const totalOutflows = Number(row.prizes) + Number(row.margin) + Number(row.refunds ?? 0);
     const discrepancyMinor = totalInflows - totalOutflows;
 
     return {
       reconciled: discrepancyMinor === 0,
       totalCapturedMinor: Number(row.captured),
       totalPrizesMinor: Number(row.prizes),
+      totalRefundedMinor: Number(row.refunds ?? 0),
       platformMarginMinor: Number(row.margin),
       promotionalSubsidyMinor: Number(row.subsidy),
       discrepancyMinor,

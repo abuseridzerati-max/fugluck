@@ -78,6 +78,13 @@
       "when": 1790100000000,
       "tag": "0010_competition_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790200000000,
+      "tag": "0011_terminal_participant_status",
+      "breakpoints": true
     }
   ]
 }
