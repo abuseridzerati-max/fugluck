@@ -1,5 +1,26 @@
 # Fugluck — Progress Log
 
+## Session 83 (2026-09-24): Phase 5.5A Final Manual Gameplay Acceptance — PASS
+
+- **Verified by human physical manual gameplay confirmation and independent final database inspection:** Phase 5.5A Level 3 Live Server-Authoritative State & Scoring for Space Blaster reference implementation is formally closed as **PASS**.
+- **Physical manual interaction gates confirmed:**
+  - Desktop physical keyboard controls: Good (input response, key-repeat, lateral movement).
+  - Desktop sustained steering: Good (unbroken lateral navigation without desync or stutter).
+  - Desktop simultaneous move + fire: Good (continuous fire and lateral navigation operate concurrently).
+  - Desktop visible smoothness: Good (clean interpolation from ~20 Hz snapshots to 60 Hz canvas).
+  - Mobile physical touch controls: Good (touch/pointer tracking and responsiveness).
+  - Mobile sustained steering: Good (continuous pointer drag across viewport).
+  - Mobile move + fire: Good (drag steering and held firing concurrent).
+  - Mobile visible smoothness: Good (smooth rendering cadence).
+  - Mobile reconnect usability: Good (intentional disconnect and socket resumption operates safely without corrupting authority state).
+- **Staging runtime & infrastructure baseline:**
+  - Frontend: Vercel preview `dpl_GJ4BaWyVA1RqA9pw95g42W3xjUDa` at `0a38802a8f1047b320687f139d40578c32571090` (serving `staging.fugluck.com`).
+  - Backend: Render Frankfurt `fugluck-api-staging` (`srv-da2c50c9v7es73db3dkg`), deployment `dep-daqg4nad0e5s73af8iq0` at `0a38802a8f1047b320687f139d40578c32571090`.
+  - Database: Frankfurt Supabase PostgreSQL (`fugluck-staging-frankfurt`, project `gzfcucvxfzzjzjtgkwpd`).
+- **Trial template status:** Controlled trial template `tmpl_af4e8de1-f347-4cdf-84b5-87ad48eefa47` was immediately disabled in the database at `2026-09-24T15:59:04.202Z` (`audit_mufpvr9u_9aozjn`).
+- **Accounting & reconciliation state:** Exactly-once settlements, terminal participant projections (`SUBMITTED`/`VOIDED`), global ledger sum zero, platform escrow zero, reserved funds zero, open instances zero, and unapplied decisions zero.
+- **Git status and strict phase boundary:** Work is isolated on `codex/phase-5-5a-remediation`. No main merge of Phase 5.5A occurred. Replay retirement, Diamond retirement, migration of other games (Pixel Ninja Dash, Cyber Hopper, Neon Runner), Admin 2, Phase 6, and Phase 7 were not started.
+
 ## Session 82 (2026-09-24): Phase 5.5A Remediation Round 2 — NOT PASS
 
 - **Final deployment independently verified in both provider UIs:** frontend and backend run `0a38802a8f1047b320687f139d40578c32571090`; Vercel Preview `dpl_GJ4BaWyVA1RqA9pw95g42W3xjUDa`, Render `dep-daqg4nad0e5s73af8iq0`. Frankfurt target proven by new API-created QA rows in that database. Public Data API was found enabled after creation, then disabled and saved state verified; backend direct database access remains healthy. Old Tokyo database/backup retained; private connection files remain ignored, QA session-token file removed.

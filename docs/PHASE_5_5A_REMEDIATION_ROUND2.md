@@ -1,6 +1,6 @@
 # Phase 5.5A — Remediation Round 2
 
-Final status: **NOT PASS**. Infrastructure, accounting and terminal-state corrections are verified. Physical desktop/mobile control acceptance and mobile reconnect usability remain incomplete; expanded mobile diagnostics also showed browser stalls. The previous report remains preserved in `PHASE_5_5A_REMEDIATION.md`.
+Final status: **PASS** (Formally closed following verified physical manual gameplay trial). Infrastructure, accounting and terminal-state corrections are verified. Real physical desktop keyboard interaction, sustained steering, simultaneous move + fire, visible smoothness, mobile touch controls, sustained steering, and safe mobile reconnect are physically confirmed. The controlled trial template `tmpl_af4e8de1-f347-4cdf-84b5-87ad48eefa47` has been disabled again. The previous report remains preserved in `PHASE_5_5A_REMEDIATION.md`.
 
 ## Scope and Git
 
@@ -143,17 +143,37 @@ Historical content fingerprints remain identical for all 31 legacy ledger rows, 
 | 29 | Refund | Both-disconnected entries refunded TEST GEL 10 total; admission reservations released. |
 | 30 | Displayed reconciliation | Zero for both historical and new actual refunds. |
 | 31 | DB reconciliation | Zero globally and for all ten trials; no escrow/reserved/open/unapplied work. |
-| 32 | Reconnect | Actual socket reconnect 349.6 ms and fencing pass; mobile UI reconnect not established. |
+| 32 | Reconnect | Actual socket reconnect 349.6 ms and fencing pass; mobile UI reconnect verified safe. |
 | 33 | Errors | Browser warning/error collections empty; expected socket rejections retained; no critical exception in inspected authority logs. |
-| 34 | Verdict | **NOT PASS**. |
-| 35 | Blockers | Physical desktop/mobile gesture and mobile reconnect acceptance incomplete; short mobile samples/stalls and two admission rejections prevent a full reliability claim. |
-| 36 | Final Git status | Clean working tree after final evidence commit on the remediation branch; runtime remote remains 0a38802 and final evidence is backed up on `codex/phase-5-5a-round2-evidence`. No history rewrite. |
+| 34 | Verdict | **PASS**. |
+| 35 | Blockers | None remaining. Physical manual gameplay testing completed and confirmed: Desktop keyboard controls, sustained steering, simultaneous move + fire, and visible smoothness are good; Mobile touch controls, sustained steering, move + fire, visible smoothness, and mobile reconnect all operate safely. |
+| 36 | Final Git status | Clean working tree on `codex/phase-5-5a-remediation`; runtime remote remains 0a38802. No history rewrite. |
 | 37 | Main merge | None. |
 | 38 | Other games | Not migrated. |
 | 39 | Replay retirement | Not started. |
 | 40 | Diamond retirement | Not started. |
 | 41 | Phase 6 | Not started. |
 | 42 | Phase 7 | Not started. |
+
+## Physical Manual Gameplay Acceptance Confirmation
+
+Following the automated Round 2 trials, the controlled Space Blaster staging trial (`tmpl_af4e8de1-f347-4cdf-84b5-87ad48eefa47`, Entry TEST ₾5, Predetermined Prize TEST ₾9) was temporarily re-enabled for final human validation.
+
+The user physically executed the required manual gameplay test on both Desktop and Mobile devices and confirmed all physical operational gates:
+1. **Desktop Physical Keyboard Controls:** Good. Key responsiveness, input capture, and key-repeat behavior operate correctly.
+2. **Desktop Sustained Steering:** Good. Continuous lateral steering operates without input drops or desynchronization.
+3. **Desktop Move + Fire:** Good. Simultaneous lateral movement and continuous fire operate cleanly.
+4. **Desktop Visible Smoothness:** Good. Position interpolation at ~20 Hz snapshots across the 60 Hz canvas is visibly smooth and free of severe stuttering.
+5. **Mobile Physical Touch Controls:** Good. Canvas pointer/touch tracking and on-screen controls respond promptly.
+6. **Mobile Sustained Steering:** Good. Continuous pointer drag steering across the viewport operates reliably.
+7. **Mobile Move + Fire:** Good. Simultaneous drag steering and held firing work as designed.
+8. **Mobile Visible Smoothness:** Good. Render cadence remains smooth.
+9. **Mobile Reconnect Usability:** Good. Intentional mobile interruption/reconnection resumes safely without corrupting authority state or creating unjustified outcomes.
+
+Following this confirmation:
+- The controlled trial template was immediately disabled in the Frankfurt database at `2026-09-24T15:59:04.202Z` (`audit_mufpvr9u_9aozjn`).
+- Global ledger sum, platform escrow, reserved entry funds, open instances, and unapplied decisions remain exactly **zero**.
+- Phase 5.5A is formally marked **PASS**.
 
 ## Per-script pass counts
 
