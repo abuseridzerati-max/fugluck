@@ -1,0 +1,128 @@
+{
+  "transport": "websocket",
+  "visibility": "visible",
+  "controls": {
+    "left": false,
+    "right": false,
+    "up": false,
+    "down": false,
+    "fire": false
+  },
+  "controlEvidence": {
+    "samples": 84,
+    "minX": 30,
+    "maxX": 996.6666666666684,
+    "minY": 620,
+    "maxY": 620,
+    "maxScore": 48,
+    "maxBullets": 5,
+    "directions": [
+      "left",
+      "right",
+      "left"
+    ],
+    "activeMs": 4098.699999988079,
+    "terminalState": "COMPLETED"
+  },
+  "received": 702,
+  "rendered": 3494,
+  "missing": 0,
+  "rejected": 0,
+  "hiddenReceives": 0,
+  "maxPayloadBytes": 1172,
+  "receiveTimestamp": 151138.69999998808,
+  "applicationTimestamp": 151138.79999998212,
+  "renderTimestamp": 174627.29999998212,
+  "sessionId": "4a3ca86c-a78d-40a0-929a-bf2f23c3441b",
+  "tick": 252,
+  "sequence": 703,
+  "serverCreatedAt": 1790248114256,
+  "serverEmittedAt": 1790248114257,
+  "interArrivalMs": {
+    "count": 701,
+    "p50": 49.80000001192093,
+    "p95": 55.900000005960464,
+    "p99": 62.900000005960464,
+    "max": 157.80000001192093
+  },
+  "serverGenerationGapMs": {
+    "count": 701,
+    "p50": 49,
+    "p95": 53,
+    "p99": 54,
+    "max": 57
+  },
+  "serverEmitGapMs": {
+    "count": 701,
+    "p50": 49,
+    "p95": 53,
+    "p99": 54,
+    "max": 57
+  },
+  "creationToEmitMs": {
+    "count": 702,
+    "p50": 0,
+    "p95": 0,
+    "p99": 1,
+    "max": 1
+  },
+  "applicationDelayMs": {
+    "count": 702,
+    "p50": 0.09999999403953552,
+    "p95": 0.30000001192092896,
+    "p99": 0.5,
+    "max": 57.30000001192093
+  },
+  "renderGapMs": {
+    "count": 3493,
+    "p50": 16.69999998807907,
+    "p95": 17.19999998807907,
+    "p99": 18.599999994039536,
+    "max": 118.5
+  },
+  "longTaskMs": {
+    "count": 1,
+    "p50": 57,
+    "p95": 57,
+    "p99": 57,
+    "max": 57
+  },
+  "active": {
+    "received": 84,
+    "rendered": 242,
+    "durationMs": 4053.5999999940395,
+    "tickHz": 61.4268798106291,
+    "receiveHz": 20.475626603543034,
+    "renderHz": 59.02439024390244,
+    "serverGenerationHz": 20,
+    "serverEmitHz": 20,
+    "interArrivalMs": {
+      "count": 83,
+      "p50": 49.79999998211861,
+      "p95": 62.80000001192093,
+      "p99": 152.2000000178814,
+      "max": 152.2000000178814
+    },
+    "renderGapMs": {
+      "count": 242,
+      "p50": 16.69999998807907,
+      "p95": 17.19999998807907,
+      "p99": 19.5,
+      "max": 90.39999997615814
+    },
+    "serverGenerationGapMs": {
+      "count": 83,
+      "p50": 50,
+      "p95": 53,
+      "p99": 57,
+      "max": 57
+    },
+    "serverEmitGapMs": {
+      "count": 83,
+      "p50": 50,
+      "p95": 53,
+      "p99": 57,
+      "max": 57
+    }
+  }
+}

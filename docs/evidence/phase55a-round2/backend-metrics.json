@@ -1,0 +1,776 @@
+[
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.04105100000742823,
+    "transactionMs": 19.71931199997198
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_e6e5bd4c-46c2-4772-9e42-f3fca04ec781",
+    "decisionLookupMs": 2.186084999993909,
+    "ledgerMs": 16.26027799997246,
+    "lifecycleMs": 19.854114999994636,
+    "applicationMs": 38.47619000001578
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_e6e5bd4c-46c2-4772-9e42-f3fca04ec781",
+    "reason": "SERVER_RESULTS",
+    "ticks": 1155,
+    "activeMs": 19252.586681859393,
+    "settlementMs": 62.16370499995537,
+    "receiptWaitMs": 4.05445499997586,
+    "decisionAndApplyMs": 57.65833499998553,
+    "notificationEmitMs": 0.1976029999786988,
+    "activeLeaseMaxMs": 6.301808999996865,
+    "waitingLeaseMaxMs": 4.198295999987749,
+    "finalizingLeaseMaxMs": 2.315896999964025,
+    "maxSnapshotGapMs": 53.78939299998456,
+    "controls": 414,
+    "maxTickMs": 0.4640179999987595,
+    "startMs": 39.375193999992916,
+    "snapshotMs": 188.78196899962495,
+    "maxSnapshotMs": 1.4407120000105351,
+    "snapshots": 1130,
+    "bindMaxMs": 3.623607000015909,
+    "resultWriteMaxMs": 6.443851999996696,
+    "delivery": {
+      "generated": 484,
+      "emitAttempts": 479,
+      "backpressure": 1,
+      "bytes": 576443,
+      "maxBytes": 1888,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 479
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.04356100002769381,
+    "transactionMs": 46.547317999997176
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746",
+    "sampleCount": 20,
+    "p95RttMs": 65.2759350000415,
+    "medianRttMs": 61.59851700003492,
+    "jitterMs": 3.6774180000065826,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746",
+    "sampleCount": 20,
+    "p95RttMs": 71.4303919999511,
+    "medianRttMs": 68.47956500004511,
+    "jitterMs": 2.950826999905985,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.02515000000130385,
+    "transactionMs": 31.48776899999939
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 31.584840999974404
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.018619999988004565,
+    "transactionMs": 40.02866400004132
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746",
+    "decisionLookupMs": 4.199996999988798,
+    "ledgerMs": 29.861374000029173,
+    "lifecycleMs": 40.19668699998874,
+    "applicationMs": 74.33356900000945
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_cb798e4e-f2bb-48ff-8cf6-a8c639a3b746",
+    "reason": "SERVER_RESULTS",
+    "ticks": 588,
+    "activeMs": 9801.98753074999,
+    "settlementMs": 117.08063600002788,
+    "receiptWaitMs": 6.3587810000171885,
+    "decisionAndApplyMs": 110.19766700000037,
+    "notificationEmitMs": 0.20555299997795373,
+    "activeLeaseMaxMs": 5.237192999979015,
+    "waitingLeaseMaxMs": 7.483619000006001,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 54.955661999993026,
+    "controls": 285,
+    "maxTickMs": 0.11158099997555837,
+    "startMs": 125.62146200001007,
+    "snapshotMs": 122.27665099943988,
+    "maxSnapshotMs": 0.4605779999983497,
+    "snapshots": 732,
+    "bindMaxMs": 14.032482000009622,
+    "resultWriteMaxMs": 9.340818000026047,
+    "delivery": {
+      "generated": 299,
+      "emitAttempts": 299,
+      "backpressure": 0,
+      "bytes": 293027,
+      "maxBytes": 1582,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 299
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.0225499999942258,
+    "transactionMs": 22.9997849999927
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2",
+    "sampleCount": 20,
+    "p95RttMs": 80.27767300000414,
+    "medianRttMs": 64.3131600000197,
+    "jitterMs": 15.964512999984436,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2",
+    "sampleCount": 20,
+    "p95RttMs": 88.90224900003523,
+    "medianRttMs": 66.67181700002402,
+    "jitterMs": 22.230432000011206,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.030810999975074083,
+    "transactionMs": 19.50185900001088
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 19.69512200000463
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.025701000005938113,
+    "transactionMs": 32.98676299996441
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2",
+    "decisionLookupMs": 2.2873559999861754,
+    "ledgerMs": 17.41427599999588,
+    "lifecycleMs": 33.11047499999404,
+    "applicationMs": 52.867888000037055
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_4eded7f7-25b5-4b1c-9aeb-21deb01574c2",
+    "reason": "SERVER_RESULTS",
+    "ticks": 475,
+    "activeMs": 7919.324134718743,
+    "settlementMs": 84.72794399998384,
+    "receiptWaitMs": 9.057453000044916,
+    "decisionAndApplyMs": 74.97036899998784,
+    "notificationEmitMs": 0.2282429999904707,
+    "activeLeaseMaxMs": 6.4845729999942705,
+    "waitingLeaseMaxMs": 8.340602000011131,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 55.86452599999029,
+    "controls": 176,
+    "maxTickMs": 5.758021000016015,
+    "startMs": 56.167099999962375,
+    "snapshotMs": 116.4530780002242,
+    "maxSnapshotMs": 1.3194709999952465,
+    "snapshots": 648,
+    "bindMaxMs": 3.168800999992527,
+    "resultWriteMaxMs": 17.84719200001564,
+    "delivery": {
+      "generated": 213,
+      "emitAttempts": 213,
+      "backpressure": 0,
+      "bytes": 192083,
+      "maxBytes": 1320,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 213
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.02402000001166016,
+    "transactionMs": 27.18459099996835
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_318ada74-84f2-4962-bf50-782e54f47dfd",
+    "sampleCount": 20,
+    "p95RttMs": 84.73940399999265,
+    "medianRttMs": 68.6599489999935,
+    "jitterMs": 16.079454999999143,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_318ada74-84f2-4962-bf50-782e54f47dfd",
+    "sampleCount": 20,
+    "p95RttMs": 85.35176400002092,
+    "medianRttMs": 70.62291000003461,
+    "jitterMs": 14.728853999986313,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.014531000051647425,
+    "transactionMs": 16.83484599995427
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 16.911627999972552
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.019109999993816018,
+    "transactionMs": 18.23552899993956
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_318ada74-84f2-4962-bf50-782e54f47dfd",
+    "decisionLookupMs": 2.178544000023976,
+    "ledgerMs": 15.32872300001327,
+    "lifecycleMs": 18.343070999952033,
+    "applicationMs": 35.71435599995311
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_318ada74-84f2-4962-bf50-782e54f47dfd",
+    "reason": "SERVER_RESULTS",
+    "ticks": 1612,
+    "activeMs": 26866.92145368748,
+    "settlementMs": 59.694427000009455,
+    "receiptWaitMs": 4.336007999954745,
+    "decisionAndApplyMs": 54.85370000009425,
+    "notificationEmitMs": 0.23914399999193847,
+    "activeLeaseMaxMs": 5.581509000039659,
+    "waitingLeaseMaxMs": 4.477361000026576,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 56.786840999964625,
+    "controls": 546,
+    "maxTickMs": 0.637760000070557,
+    "startMs": 43.46693899994716,
+    "snapshotMs": 255.11457200185396,
+    "maxSnapshotMs": 2.170083999983035,
+    "snapshots": 1406,
+    "bindMaxMs": 6.838338000001386,
+    "resultWriteMaxMs": 4.6244230000302196,
+    "delivery": {
+      "generated": 622,
+      "emitAttempts": 622,
+      "backpressure": 0,
+      "bytes": 785975,
+      "maxBytes": 1874,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 622
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.01613000000361353,
+    "transactionMs": 23.341589999967255
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441",
+    "sampleCount": 20,
+    "p95RttMs": 90.88282100006472,
+    "medianRttMs": 63.63466900005005,
+    "jitterMs": 27.24815200001467,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441",
+    "sampleCount": 20,
+    "p95RttMs": 80.64714799996,
+    "medianRttMs": 68.59880799998064,
+    "jitterMs": 12.048339999979362,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.01257000002078712,
+    "transactionMs": 16.494211000041105
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 16.565683000022545
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.012260000105015934,
+    "transactionMs": 20.27252099988982
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441",
+    "decisionLookupMs": 2.1758840000256896,
+    "ledgerMs": 21.953628999996,
+    "lifecycleMs": 20.390662999940105,
+    "applicationMs": 44.453854999970645
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_9b6d4e33-8456-4097-9bc6-3b7b4434f441",
+    "reason": "SERVER_RESULTS",
+    "ticks": 721,
+    "activeMs": 12018.23748223437,
+    "settlementMs": 68.04864900000393,
+    "receiptWaitMs": 4.225417000008747,
+    "decisionAndApplyMs": 63.248662999947555,
+    "notificationEmitMs": 0.22060300002340227,
+    "activeLeaseMaxMs": 10.747949999989942,
+    "waitingLeaseMaxMs": 3.892102000070736,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 53.98861599992961,
+    "controls": 382,
+    "maxTickMs": 0.4162369999103248,
+    "startMs": 35.118866999982856,
+    "snapshotMs": 138.2834610005375,
+    "maxSnapshotMs": 0.7558520000893623,
+    "snapshots": 814,
+    "bindMaxMs": 3.233581000007689,
+    "resultWriteMaxMs": 4.7721959999762475,
+    "delivery": {
+      "generated": 403,
+      "emitAttempts": 403,
+      "backpressure": 0,
+      "bytes": 407802,
+      "maxBytes": 1582,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 403
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.02258099999744445,
+    "transactionMs": 26.11574399995152
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_d4cf407f-d455-4f43-bc66-c78d8c62568d",
+    "sampleCount": 20,
+    "p95RttMs": 74.44328999996651,
+    "medianRttMs": 63.17500100005418,
+    "jitterMs": 11.268288999912329,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_d4cf407f-d455-4f43-bc66-c78d8c62568d",
+    "sampleCount": 20,
+    "p95RttMs": 73.07692799996585,
+    "medianRttMs": 64.97815999994054,
+    "jitterMs": 8.098768000025302,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.01588000007905066,
+    "transactionMs": 27.109169999952428
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 27.208921000012197
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.01383100007660687,
+    "transactionMs": 57.7210849999683
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_d4cf407f-d455-4f43-bc66-c78d8c62568d",
+    "decisionLookupMs": 3.705818999907933,
+    "ledgerMs": 26.948656999971718,
+    "lifecycleMs": 57.82822599995416,
+    "applicationMs": 88.56971399998292
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_d4cf407f-d455-4f43-bc66-c78d8c62568d",
+    "reason": "SERVER_RESULTS",
+    "ticks": 1765,
+    "activeMs": 29419.14522285934,
+    "settlementMs": 125.57485099998303,
+    "receiptWaitMs": 5.42113600007724,
+    "decisionAndApplyMs": 119.53594500001054,
+    "notificationEmitMs": 0.18899299995973706,
+    "activeLeaseMaxMs": 5.389195999945514,
+    "waitingLeaseMaxMs": 5.711851000087336,
+    "finalizingLeaseMaxMs": 3.6570979999378324,
+    "maxSnapshotGapMs": 54.29052100004628,
+    "controls": 609,
+    "maxTickMs": 0.10600199992768466,
+    "startMs": 67.3842879999429,
+    "snapshotMs": 260.57116800243966,
+    "maxSnapshotMs": 2.8792149999644607,
+    "snapshots": 1510,
+    "bindMaxMs": 3.7526289999950677,
+    "resultWriteMaxMs": 7.236544000101276,
+    "delivery": {
+      "generated": 681,
+      "emitAttempts": 681,
+      "backpressure": 0,
+      "bytes": 870231,
+      "maxBytes": 1884,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 681
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.0207900000968948,
+    "transactionMs": 17.253452999982983
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_d4cf407f-d455-4f43-bc66-c78d8c62568d",
+    "decisionLookupMs": 3.1579899999778718,
+    "ledgerMs": 40.15636599995196,
+    "lifecycleMs": 17.329585000057705,
+    "applicationMs": 60.51276899990626
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.016220999998040497,
+    "transactionMs": 37.46314400003757
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_39e02b44-3768-4939-87a1-fe013a457a54",
+    "sampleCount": 20,
+    "p95RttMs": 67.23263599991333,
+    "medianRttMs": 62.749554999987595,
+    "jitterMs": 4.483080999925733,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_39e02b44-3768-4939-87a1-fe013a457a54",
+    "sampleCount": 20,
+    "p95RttMs": 74.41688899998553,
+    "medianRttMs": 68.65409799991176,
+    "jitterMs": 5.762791000073776,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.013629999943077564,
+    "transactionMs": 27.959682999993674
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 28.063935000100173
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.01980000000912696,
+    "transactionMs": 30.28988100006245
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_39e02b44-3768-4939-87a1-fe013a457a54",
+    "decisionLookupMs": 3.2242410000180826,
+    "ledgerMs": 32.3770230000373,
+    "lifecycleMs": 30.429642000002787,
+    "applicationMs": 65.98109499993734
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_39e02b44-3768-4939-87a1-fe013a457a54",
+    "reason": "SERVER_RESULTS",
+    "ticks": 1147,
+    "activeMs": 19120.650349312462,
+    "settlementMs": 104.03791000007186,
+    "receiptWaitMs": 6.175488000037149,
+    "decisionAndApplyMs": 97.36844300001394,
+    "notificationEmitMs": 0.19394399994052947,
+    "activeLeaseMaxMs": 5.208952999906614,
+    "waitingLeaseMaxMs": 6.451782000018284,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 55.412607999984175,
+    "controls": 439,
+    "maxTickMs": 0.058071000035852194,
+    "startMs": 52.018344999989495,
+    "snapshotMs": 173.41092400311027,
+    "maxSnapshotMs": 1.8702690000645816,
+    "snapshots": 1096,
+    "bindMaxMs": 4.999359000008553,
+    "resultWriteMaxMs": 6.6361650000326335,
+    "delivery": {
+      "generated": 490,
+      "emitAttempts": 490,
+      "backpressure": 0,
+      "bytes": 583693,
+      "maxBytes": 1739,
+      "maxCreationToEmitMs": 1,
+      "transports": {
+        "websocket": 490
+      }
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.029750999994575977,
+    "transactionMs": 39.68758900009561
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_62772803-1d94-4d94-9bfc-60a105e83a01",
+    "sampleCount": 20,
+    "p95RttMs": 97.39999400009401,
+    "medianRttMs": 61.64122700004373,
+    "jitterMs": 35.758767000050284,
+    "accepted": false
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_62772803-1d94-4d94-9bfc-60a105e83a01",
+    "sampleCount": 20,
+    "p95RttMs": 114.13046899996698,
+    "medianRttMs": 69.58928299997933,
+    "jitterMs": 44.54118599998765,
+    "accepted": false
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.05018000002019107,
+    "transactionMs": 26.108464000048116
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 26.231935000047088
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.021640000049956143,
+    "transactionMs": 55.04898199997842
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_62772803-1d94-4d94-9bfc-60a105e83a01",
+    "decisionLookupMs": 3.2906320000765845,
+    "ledgerMs": 30.677936000050977,
+    "lifecycleMs": 55.18657500005793,
+    "applicationMs": 85.8704709999729
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_62772803-1d94-4d94-9bfc-60a105e83a01",
+    "reason": "LATENCY_ADMISSION_FAILED",
+    "ticks": 0,
+    "activeMs": 0,
+    "settlementMs": 116.1074910000898,
+    "receiptWaitMs": 0.0131299999775365,
+    "decisionAndApplyMs": 115.45555999991484,
+    "notificationEmitMs": 0.18318299995735288,
+    "activeLeaseMaxMs": 0,
+    "waitingLeaseMaxMs": 5.174312000046484,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 53.801292999996804,
+    "controls": 0,
+    "maxTickMs": 0,
+    "startMs": 0,
+    "snapshotMs": 29.35251899959985,
+    "maxSnapshotMs": 0.39878599997609854,
+    "snapshots": 212,
+    "bindMaxMs": 4.5139320000307634,
+    "resultWriteMaxMs": 0,
+    "delivery": {
+      "generated": 0,
+      "emitAttempts": 0,
+      "backpressure": 0,
+      "bytes": 0,
+      "maxBytes": 0,
+      "maxCreationToEmitMs": 0,
+      "transports": {}
+    }
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "authority",
+    "acquisitionMs": 0.028390999999828637,
+    "transactionMs": 42.34897099994123
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_ad765deb-4cbe-4cdf-b686-082cffd0d50e",
+    "sampleCount": 20,
+    "p95RttMs": 73.47820400004275,
+    "medianRttMs": 63.61263900005724,
+    "jitterMs": 9.865564999985509,
+    "accepted": true
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_ad765deb-4cbe-4cdf-b686-082cffd0d50e",
+    "sampleCount": 20,
+    "p95RttMs": 73.362502999953,
+    "medianRttMs": 63.304482999956235,
+    "jitterMs": 10.058019999996759,
+    "accepted": true
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_decision",
+    "acquisitionMs": 0.028230999945662916,
+    "transactionMs": 26.95470700005535
+  },
+  {
+    "type": "[authority] terminal persistence metrics",
+    "terminalWriteMs": 27.086178999976255
+  },
+  {
+    "type": "[authority] database transaction metrics",
+    "stage": "terminal_application",
+    "acquisitionMs": 0.018220999976620078,
+    "transactionMs": 30.22401899995748
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_ad765deb-4cbe-4cdf-b686-082cffd0d50e",
+    "decisionLookupMs": 3.373823000001721,
+    "ledgerMs": 32.98739200003911,
+    "lifecycleMs": 30.31901099998504,
+    "applicationMs": 63.31001399992965
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_ad765deb-4cbe-4cdf-b686-082cffd0d50e",
+    "reason": "BOTH_DISCONNECTED",
+    "ticks": 5,
+    "activeMs": 91.91745646880008,
+    "settlementMs": 94.19415299990214,
+    "receiptWaitMs": 0.017890000017359853,
+    "decisionAndApplyMs": 93.83682699990459,
+    "notificationEmitMs": 0.27512500004377216,
+    "activeLeaseMaxMs": 0,
+    "waitingLeaseMaxMs": 21.407810000004247,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 57.140666000079364,
+    "controls": 2,
+    "maxTickMs": 0.014309999998658895,
+    "startMs": 65.07117100001778,
+    "snapshotMs": 52.825332000502385,
+    "maxSnapshotMs": 1.8841099999845028,
+    "snapshots": 365,
+    "bindMaxMs": 4.925838000024669,
+    "resultWriteMaxMs": 0,
+    "delivery": {
+      "generated": 4,
+      "emitAttempts": 4,
+      "backpressure": 0,
+      "bytes": 1240,
+      "maxBytes": 310,
+      "maxCreationToEmitMs": 0,
+      "transports": {
+        "websocket": 4
+      }
+    }
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_94580dac-1ebe-458e-927e-695b61b1c1a1",
+    "sampleCount": 20,
+    "p95RttMs": 107.0785179999948,
+    "medianRttMs": 63.08481000000029,
+    "jitterMs": 43.99370799999451,
+    "accepted": false
+  },
+  {
+    "type": "[authority] admission metrics",
+    "instanceId": "inst_94580dac-1ebe-458e-927e-695b61b1c1a1",
+    "sampleCount": 20,
+    "p95RttMs": 112.48188300000038,
+    "medianRttMs": 67.95585699999356,
+    "jitterMs": 44.52602600000682,
+    "accepted": false
+  },
+  {
+    "type": "[authority] accounting application metrics",
+    "instanceId": "inst_94580dac-1ebe-458e-927e-695b61b1c1a1",
+    "decisionLookupMs": 2.579509999981383,
+    "ledgerMs": 29.699550999997882,
+    "lifecycleMs": 19.819954999984475,
+    "applicationMs": 49.52731499998481
+  },
+  {
+    "type": "[authority] run metrics",
+    "instanceId": "inst_94580dac-1ebe-458e-927e-695b61b1c1a1",
+    "reason": "LATENCY_ADMISSION_FAILED",
+    "ticks": 0,
+    "activeMs": 0,
+    "settlementMs": 80.73560000001453,
+    "receiptWaitMs": 0.06177100000786595,
+    "decisionAndApplyMs": 80.12197099998593,
+    "notificationEmitMs": 0.26181399999768473,
+    "activeLeaseMaxMs": 0,
+    "waitingLeaseMaxMs": 20.1898199999996,
+    "finalizingLeaseMaxMs": 0,
+    "maxSnapshotGapMs": 53.5922900000005,
+    "controls": 0,
+    "maxTickMs": 0,
+    "startMs": 0,
+    "snapshotMs": 36.094978999957675,
+    "maxSnapshotMs": 0.38606600000639446,
+    "snapshots": 237,
+    "bindMaxMs": 3.9771829999808688,
+    "resultWriteMaxMs": 0,
+    "delivery": {
+      "generated": 0,
+      "emitAttempts": 0,
+      "backpressure": 0,
+      "bytes": 0,
+      "maxBytes": 0,
+      "maxCreationToEmitMs": 0,
+      "transports": {}
+    }
+  }
+]
