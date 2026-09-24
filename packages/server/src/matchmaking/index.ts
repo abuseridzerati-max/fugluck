@@ -1,6 +1,6 @@
 import { AuthorityRuntime, type AuthorityOptions } from '../competitions/authorityRuntime';
 import { templateService } from '../competitions/templateService';
-import { AUTHORITY_VERSION } from '@fugluck/shared';
+import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from '@fugluck/shared';
 import type { Server as HttpServer } from "node:http";
 import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { Server, type DefaultEventsMap } from "socket.io";
@@ -126,7 +126,10 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       try {
         await startup;
         const template = await templateService.getTemplate(templateId);
-        if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || template?.gameId !== 'space-blaster' || template.rulesVersion !== AUTHORITY_VERSION || template.format !== 'HEAD_TO_HEAD' || template.participantCapacity !== 2) {
+        const isSupportedAuthorityGame =
+          (template?.gameId === 'space-blaster' && template.rulesVersion === AUTHORITY_VERSION) ||
+          (template?.gameId === 'cyber-hopper' && template.rulesVersion === CYBER_HOPPER_AUTHORITY_VERSION);
+        if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2) {
           throw new Error('Competition gameplay is blocked pending live authority acceptance.');
         }
         const joinResult = await instanceService.joinCompetitionQueue(

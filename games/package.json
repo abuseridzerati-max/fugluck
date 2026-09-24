@@ -6,6 +6,7 @@
   "main": "./registry.ts",
   "exports": {
     "./space-blaster/engine": "./space-blaster/engine.ts",
+    "./cyber-hopper/engine": "./cyber-hopper/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"

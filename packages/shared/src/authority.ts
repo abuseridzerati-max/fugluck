@@ -1,5 +1,6 @@
 /** RV-001 v1: current controls and current state only; no input history. */
 export const AUTHORITY_VERSION = 'space-blaster-rv001-v1';
+export const CYBER_HOPPER_AUTHORITY_VERSION = 'cyber-hopper-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -8,14 +9,21 @@ export interface AuthorityBinding {
 }
 export interface AuthorityControls extends AuthorityBinding {
   seq: number; snapshot: number;
-  left: boolean; right: boolean; up: boolean; down: boolean; fire: boolean;
+  left?: boolean; right?: boolean; up?: boolean; down?: boolean; fire?: boolean;
+  hopUp?: boolean; hopDown?: boolean; hopLeft?: boolean; hopRight?: boolean;
+}
+export interface CyberHopperObstacleSnapshot {
+  id: number; x: number; y: number; width: number; height: number;
+  direction: 1 | -1; color: string; active?: boolean; laneIndex?: number; speed?: number;
 }
 export interface AuthoritySnapshot {
   sessionId: string; epoch: number; createdAt: number; emittedAt: number;
   seq: number; serverTime: number; startAt: number | null; deadline: number | null;
   state: AuthorityState; tickCount: number; score: number; gameOver: boolean;
-  shipX: number; shipY: number;
-  bullets: Array<{ id: number; x: number; y: number; active: boolean }>;
-  asteroids: Array<{ id: number; x: number; y: number; vx: number; vy: number; radius: number; active: boolean }>;
+  shipX?: number; shipY?: number;
+  bullets?: Array<{ id: number; x: number; y: number; active: boolean }>;
+  asteroids?: Array<{ id: number; x: number; y: number; vx: number; vy: number; radius: number; active: boolean }>;
+  gridX?: number; gridY?: number; roundsCompleted?: number;
+  obstacles?: CyberHopperObstacleSnapshot[];
 }
 export interface AuthorityOutcome { instanceId: string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

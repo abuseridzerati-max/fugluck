@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine';
-import { AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, FIXED_TIMESTEP_SEC, VIRTUAL_VIEWPORT, type AuthorityBinding, type AuthorityControls, type AuthoritySnapshot, type AuthorityState } from '@fugluck/shared';
+import { CyberHopperEngine, type Obstacle as CyberHopperObstacle } from '@fugluck/games/cyber-hopper/engine';
+import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, FIXED_TIMESTEP_SEC, VIRTUAL_VIEWPORT, type AuthorityBinding, type AuthorityControls, type AuthoritySnapshot, type AuthorityState } from '@fugluck/shared';
 import type { MatchmakingSocket } from '../matchmaking/socketAuth';
 import { getOnlineSocket } from '../matchmaking/presence';
 import { AuthorityStore } from './authorityStore';
@@ -9,32 +10,54 @@ import { measureAdmission } from './authorityAdmission';
 
 /** Constructor dependencies only; never populated from socket or HTTP messages. */
 export interface AuthorityOptions { capTicks?: number; countdownMs?: number; readyMs?: number; reconnectMs?: number; seedFactory?: () => number }
-/** Single held state plus one fire pulse. Accepted controls are discarded after consumption. */
+/** Single held state or discrete hop pulses. Accepted controls are discarded after consumption. */
 export class LiveControls {
   seq = -1; private tokens = 12; private refill = 0; lastInput = -Infinity;
   held = { moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false };
-  accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>) {
+  hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+  accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
-    for (const k of ['left','right','up','down','fire'] as const) if (typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    this.tokens--; this.seq=p.seq; this.lastInput=now;
-    this.held={moveLeft:p.left,moveRight:p.right,moveUp:p.up,moveDown:p.down,shootPressed:this.held.shootPressed||p.fire};
+    if (gameId === 'cyber-hopper') {
+      const hopKeys = ['hopUp','hopDown','hopLeft','hopRight'] as const;
+      for (const k of hopKeys) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      this.hopPulses = {
+        hopUp: this.hopPulses.hopUp || Boolean(p.hopUp),
+        hopDown: this.hopPulses.hopDown || Boolean(p.hopDown),
+        hopLeft: this.hopPulses.hopLeft || Boolean(p.hopLeft),
+        hopRight: this.hopPulses.hopRight || Boolean(p.hopRight),
+      };
+    } else {
+      for (const k of ['left','right','up','down','fire'] as const) if (typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      this.held={moveLeft:Boolean(p.left),moveRight:Boolean(p.right),moveUp:Boolean(p.up),moveDown:Boolean(p.down),shootPressed:this.held.shootPressed||Boolean(p.fire)};
+    }
   }
-  take(now: number) {
+  take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'cyber-hopper') {
+      const hops = { ...this.hopPulses };
+      this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+      return hops;
+    }
     const input={...this.held}; this.held.shootPressed=false; return input;
   }
-  neutral() { this.held={moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false}; }
+  neutral() {
+    this.held={moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false};
+    this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+  }
 }
+type AuthorityEngine = SpaceBlasterEngine | CyberHopperEngine;
 interface Player {
   userId:string; sessionId:string; binding?:AuthorityBinding; socket?:MatchmakingSocket;
-  state:AuthorityState; engine:SpaceBlasterEngine; controls:LiveControls;
+  state:AuthorityState; engine:AuthorityEngine; controls:LiveControls;
   disconnectedAt:number|null; snapshots:Map<number,number>; snapshotSeq:number; pending:Promise<void>; readyPendingEpoch?:number;
 }
 interface Run {
-  id:string; instanceId:string; matchId:string; players:Player[]; created:number;
+  id:string; instanceId:string; matchId:string; gameId:string; version:string; players:Player[]; created:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
   stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
   delivery:{generated:number;emitAttempts:number;backpressure:number;bytes:number;maxBytes:number;maxCreationToEmitMs:number;transports:Record<string,number>};
@@ -127,8 +150,12 @@ export class AuthorityRuntime {
       if(this.runs.get(p.instanceId)?.stopped)return;
       const {r,player}=this.authenticate(socket,p);
       if(player.state!=='ACTIVE'||!r.startAt||Date.now()<r.startAt) throw Error('NOT_ACTIVE');
-      if(Object.keys(p).some(k=>!['sessionId','instanceId','matchId','gameId','version','nonce','epoch','seq','snapshot','left','right','up','down','fire'].includes(k))) throw Error('INPUT_SHAPE');
-      player.controls.accept(p,performance.now(),player.snapshots);
+      if (r.gameId === 'cyber-hopper') {
+        if(Object.keys(p).some(k=>!['sessionId','instanceId','matchId','gameId','version','nonce','epoch','seq','snapshot','hopUp','hopDown','hopLeft','hopRight'].includes(k))) throw Error('INPUT_SHAPE');
+      } else {
+        if(Object.keys(p).some(k=>!['sessionId','instanceId','matchId','gameId','version','nonce','epoch','seq','snapshot','left','right','up','down','fire'].includes(k))) throw Error('INPUT_SHAPE');
+      }
+      player.controls.accept(p,performance.now(),player.snapshots,r.gameId);
       r.metrics.controls++;
     }));
     socket.on('authority:forfeit',guarded(async p=>{
@@ -160,7 +187,7 @@ export class AuthorityRuntime {
       r.metrics.bindMaxMs=Math.max(r.metrics.bindMaxMs,performance.now()-began);
       if(p.socket&&p.socket.id!==socket.id) p.socket.emit('authority:error',{code:'CONTROLLER_REPLACED'});
       p.socket=socket; p.disconnectedAt=null; p.controls=new LiveControls(); p.snapshots.clear();
-      p.binding={sessionId:p.sessionId,instanceId:r.instanceId,matchId:r.matchId,gameId:'space-blaster',version:AUTHORITY_VERSION,nonce,epoch};
+      p.binding={sessionId:p.sessionId,instanceId:r.instanceId,matchId:r.matchId,gameId:r.gameId,version:r.version,nonce,epoch};
       socket.emit('authority:session',p.binding);
       this.snapshot(r,p);
     });
@@ -169,7 +196,7 @@ export class AuthorityRuntime {
   async create(instanceId:string) {
     const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.());
     const now=performance.now();
-    const r:Run={...record,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
+    const r:Run={...record,gameId:record.gameId,version:record.version,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:record.gameId==='cyber-hopper'?new CyberHopperEngine(record.seed):new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     r.players.forEach(p=>p.engine.resize(VIRTUAL_VIEWPORT.width,VIRTUAL_VIEWPORT.height));
     this.runs.set(instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
@@ -179,7 +206,31 @@ export class AuthorityRuntime {
   snapshot(r:Run,p:Player,reliable=false) {
     const began=performance.now();
     const e=p.engine, seq=++p.snapshotSeq, createdAt=Date.now();
-    const value:AuthoritySnapshot={sessionId:p.sessionId,epoch:p.binding?.epoch??0,createdAt,emittedAt:0,seq,serverTime:createdAt,startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver,shipX:e.shipX,shipY:e.shipY,bullets:e.bullets.filter(b=>b.active),asteroids:e.asteroids.filter(a=>a.active)};
+    const value:AuthoritySnapshot={sessionId:p.sessionId,epoch:p.binding?.epoch??0,createdAt,emittedAt:0,seq,serverTime:createdAt,startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver};
+    if (r.gameId === 'cyber-hopper') {
+      const ch = e as CyberHopperEngine;
+      value.gridX = ch.gridX;
+      value.gridY = ch.gridY;
+      value.roundsCompleted = ch.roundsCompleted;
+      value.obstacles = ch.obstacles
+        .filter((o: CyberHopperObstacle) => o.active && o.x >= -o.width && o.x <= VIRTUAL_VIEWPORT.width + o.width)
+        .map((o: CyberHopperObstacle) => ({
+          id: o.id,
+          x: Math.round(o.x),
+          y: Math.round(o.y),
+          width: o.width,
+          height: Math.round(o.height),
+          direction: o.direction,
+          color: o.color,
+          active: true,
+        }));
+    } else {
+      const sb = e as SpaceBlasterEngine;
+      value.shipX = sb.shipX;
+      value.shipY = sb.shipY;
+      value.bullets = sb.bullets.filter(b=>b.active);
+      value.asteroids = sb.asteroids.filter(a=>a.active);
+    }
     p.snapshots.set(seq,performance.now());
     for(const [key,time] of p.snapshots) if(performance.now()-time>500) p.snapshots.delete(key);
     value.emittedAt=Date.now();
@@ -209,7 +260,7 @@ export class AuthorityRuntime {
       while(r.ticks<target&&!r.stopped) {
         const began=performance.now(); r.ticks++;
         for(const p of r.players) if(p.state==='ACTIVE') {
-          const collision=p.engine.update(FIXED_TIMESTEP_SEC,p.controls.take(now));
+          const collision=p.engine.update(FIXED_TIMESTEP_SEC,p.controls.take(now,r.gameId) as any);
           if(collision||p.engine.tickCount>=(this.options.capTicks??AUTHORITY_CAP_TICKS)) {
             p.state='COMPLETED';
             p.pending=p.pending.then(()=>this.persistResult(r,p,collision?'COLLISION':'CAP_REACHED'));

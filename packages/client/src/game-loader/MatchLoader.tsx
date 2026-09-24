@@ -53,8 +53,8 @@ function isTerminal(phase: Phase): boolean {
 }
 
 export default function MatchLoader(props: MatchLoaderProps) {
-  if (props.matchMode?.kind === 'competition' && props.gameId === 'space-blaster') {
-    return <AuthorityCompetition templateId={props.matchMode.templateId} onExit={props.onExit} />
+  if (props.matchMode?.kind === 'competition' && (props.gameId === 'space-blaster' || props.gameId === 'cyber-hopper')) {
+    return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} onExit={props.onExit} />
   }
   return <LegacyMatchLoader {...props} />
 }

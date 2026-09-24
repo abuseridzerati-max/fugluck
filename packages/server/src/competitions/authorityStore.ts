@@ -1,7 +1,7 @@
 import { randomInt, randomUUID, createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { Pool, type PoolClient } from 'pg';
-import { AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, createMoney, type ISO4217Currency, type AuthorityOutcome } from '@fugluck/shared';
+import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, createMoney, type ISO4217Currency, type AuthorityOutcome } from '@fugluck/shared';
 import { pool } from '../db/client';
 import { SandboxAccountingAdapter } from '../accounting/sandboxAdapter';
 import type { CompetitionAccountingPort } from '../accounting/port';
@@ -30,13 +30,14 @@ export class AuthorityStore {
       const inst = (await c.query('SELECT * FROM competition_instances WHERE id=$1 FOR UPDATE', [instanceId])).rows[0];
       const existing = (await c.query('SELECT * FROM competition_authority_runs WHERE instance_id=$1', [instanceId])).rows[0];
       if (existing) throw Error('AUTHORITY_ALREADY_EXISTS');
-      if (!inst || inst.status !== 'LOCKED' || inst.game_id !== 'space-blaster' || inst.participant_capacity !== 2) throw Error('AUTHORITY_UNSUPPORTED');
+      if (!inst || inst.status !== 'LOCKED' || !['space-blaster', 'cyber-hopper'].includes(inst.game_id) || inst.participant_capacity !== 2) throw Error('AUTHORITY_UNSUPPORTED');
       const players = (await c.query('SELECT user_id FROM competition_participants WHERE instance_id=$1 ORDER BY seat_index', [instanceId])).rows;
       if (players.length !== 2) throw Error('AUTHORITY_CAPACITY');
       const id = randomUUID(), matchId = `comp_match_${randomUUID()}`;
+      const version = inst.game_id === 'cyber-hopper' ? CYBER_HOPPER_AUTHORITY_VERSION : AUTHORITY_VERSION;
       await c.query(`INSERT INTO matches_history(id,game_id,player1_id,player2_id,competition_instance_id,currency,stake,seed,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'ACTIVE')`, [matchId,inst.game_id,players[0].user_id,players[1].user_id,instanceId,inst.currency,inst.entry_fee_minor,seed]);
       await c.query('UPDATE competition_instances SET match_id=$2 WHERE id=$1', [instanceId,matchId]);
-      await c.query(`INSERT INTO competition_authority_runs(id,instance_id,match_id,game_id,version,seed,owner_id,lease_until,cap_ticks) VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp()+interval '2 seconds',$8)`, [id,instanceId,matchId,inst.game_id,AUTHORITY_VERSION,seed,this.ownerId,capTicks]);
+      await c.query(`INSERT INTO competition_authority_runs(id,instance_id,match_id,game_id,version,seed,owner_id,lease_until,cap_ticks) VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp()+interval '2 seconds',$8)`, [id,instanceId,matchId,inst.game_id,version,seed,this.ownerId,capTicks]);
       const sessions = [];
       for (const p of players) {
         const sessionId = randomUUID();
@@ -44,7 +45,7 @@ export class AuthorityStore {
         sessions.push({ sessionId, userId: p.user_id as string });
       }
       await c.query(`UPDATE competition_authority_runs SET lease_until=clock_timestamp()+interval '2 seconds' WHERE id=$1`, [id]);
-      return { id, instanceId, matchId, seed, sessions };
+      return { id, instanceId, matchId, gameId: inst.game_id as string, version, seed, sessions };
     });
   }
   async renew(ids: string[]) {

@@ -92,7 +92,20 @@ export class AuthorityPresentation {
     const positions=<T extends {id:number;x:number;y:number}>(old:T[],current:T[])=>current.map(v=>{
       const previous=old.find(x=>x.id===v.id);return previous?{...v,x:lerp(previous.x,v.x),y:lerp(previous.y,v.y)}:{...v}
     })
-    return {...b,shipX:lerp(a.shipX,b.shipX),shipY:lerp(a.shipY,b.shipY),
-      bullets:positions(a.bullets,b.bullets),asteroids:positions(a.asteroids,b.asteroids)}
+    const out: AuthoritySnapshot = { ...b }
+    if (a.shipX !== undefined && b.shipX !== undefined && a.shipY !== undefined && b.shipY !== undefined) {
+      out.shipX = lerp(a.shipX, b.shipX)
+      out.shipY = lerp(a.shipY, b.shipY)
+    }
+    if (a.bullets && b.bullets) {
+      out.bullets = positions(a.bullets, b.bullets)
+    }
+    if (a.asteroids && b.asteroids) {
+      out.asteroids = positions(a.asteroids, b.asteroids)
+    }
+    if (a.obstacles && b.obstacles) {
+      out.obstacles = positions(a.obstacles, b.obstacles)
+    }
+    return out
   }
 }

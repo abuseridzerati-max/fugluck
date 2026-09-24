@@ -131,7 +131,7 @@ export default function CompetitionConfirmationModal({
         </p>
 
         {/* Financial Terms Summary (from server) */}
-        {template.gameId === 'space-blaster' && <p>Maximum run: 180 seconds. Scores and collisions are calculated by the server. Equal scores void the competition and refund entry. Leaving an active run can forfeit it.</p>}
+        {(template.gameId === 'space-blaster' || template.gameId === 'cyber-hopper') && <p>Maximum run: 180 seconds. Scores and collisions are calculated by the server. Equal scores void the competition and refund entry. Leaving an active run can forfeit it.</p>}
         <div
           style={{
             background: 'var(--color-surface-raised, #1e293b)',
