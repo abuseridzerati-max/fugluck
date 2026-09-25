@@ -124,7 +124,7 @@ export default function CompetitionCatalog({
             </strong>
           </div>
           <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-text-muted)' }}>
-            All competitions use simulated Test GEL. No real money is used, deposited, withdrawn, or awarded.
+            All competitions use simulated TEST / SANDBOX GEL with zero real-world value. No real-money deposits, withdrawals, or prizes are active.
           </p>
         </div>
 

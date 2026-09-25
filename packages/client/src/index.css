@@ -13,3 +13,26 @@ body,
 body {
   margin: 0;
 }
+.site-footer {
+  margin-top: auto;
+  padding: 2.5rem clamp(1rem, 4vw, 3rem) 1.5rem;
+  border-top: 1px solid var(--color-border, rgba(255,255,255,.1));
+  background: #090b12;
+  color: #cbd5e1;
+  font-size: .875rem;
+}
+.site-footer__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 2rem;
+  max-width: 1180px;
+  margin: 0 auto 2rem;
+}
+.site-footer__brand p { max-width: 30ch; color: #94a3b8; line-height: 1.6; }
+.site-footer__logo { color: #fff; font-weight: 750; font-size: 1.15rem; letter-spacing: .04em; text-decoration: none; }
+.site-footer__columns h2 { margin: 0 0 .75rem; color: #f1f5f9; font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
+.site-footer__columns ul { list-style: none; display: grid; gap: .55rem; margin: 0; padding: 0; }
+.site-footer__columns a:not(.site-footer__logo), .site-footer__bottom a { color: #aebccd; text-decoration: none; text-underline-offset: .18em; }
+.site-footer__columns a:hover, .site-footer__bottom a:hover { color: #fff; text-decoration: underline; }
+.site-footer__bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem 1.5rem; max-width: 1180px; margin: 0 auto; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,.1); text-align: center; color: #94a3b8; font-size: .75rem; line-height: 1.6; }
+.site-footer__bottom p { flex-basis: 100%; max-width: 800px; margin: 0; }

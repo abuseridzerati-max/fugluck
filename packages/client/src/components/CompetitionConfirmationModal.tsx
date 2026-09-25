@@ -176,7 +176,7 @@ export default function CompetitionConfirmationModal({
             lineHeight: 1.4,
           }}
         >
-          <strong style={{ color: 'var(--color-text)' }}>Sandbox Skill Contest:</strong> No real money is deposited, withdrawn, or awarded. This competition is simulated using platform Test GEL for development and skill assessment.
+          <strong style={{ color: 'var(--color-text)' }}>TEST / SANDBOX GEL Competition:</strong> This competition uses simulated TEST / SANDBOX GEL with zero real-world value. No real money is deposited, withdrawn, or awarded. These values are used only for development and skill assessment.
         </div>
 
         {/* Sandbox Test Balance & Faucet */}

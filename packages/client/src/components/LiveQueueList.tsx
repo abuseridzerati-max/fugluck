@@ -56,7 +56,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
     if (!user && entry.stake > 0) {
       setError(
         t('lobby.guestWagerError', {
-          defaultValue: 'Guests cannot join wager matches. Please sign up or log in.',
+          defaultValue: 'Guests can play free. Sign in to join this match.',
         }),
       )
       return

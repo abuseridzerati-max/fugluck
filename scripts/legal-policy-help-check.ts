@@ -53,17 +53,18 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
     "CONTACT",
   ];
 
-  check("All 15 policy types exist in CURRENT_POLICY_VERSIONS", expectedPolicyTypes.every((p) => typeof CURRENT_POLICY_VERSIONS[p] === "string" && CURRENT_POLICY_VERSIONS[p].length > 0));
-  check("Terms version advances for current product terms (2026-09-25)", CURRENT_POLICY_VERSIONS.TERMS === "2026-09-25");
-  check("Privacy version advances for current data notice (2026-09-25)", CURRENT_POLICY_VERSIONS.PRIVACY === "2026-09-25");
-  check("Competition rules version matches current authority scope (2026-09-25)", CURRENT_POLICY_VERSIONS.RULES === "2026-09-25");
+  check("All legacy and current policy types retain version identifiers", expectedPolicyTypes.concat("SANDBOX_NOTICE").every((p) => typeof CURRENT_POLICY_VERSIONS[p] === "string" && CURRENT_POLICY_VERSIONS[p].length > 0));
+  check("Terms are marked draft pending legal review", CURRENT_POLICY_VERSIONS.TERMS === "draft-1.0");
+  check("Privacy is marked draft pending legal and implementation review", CURRENT_POLICY_VERSIONS.PRIVACY === "draft-1.0");
+  check("Competition rules are versioned as a product-aligned draft", CURRENT_POLICY_VERSIONS.RULES === "draft-1.0");
+  check("Sandbox notice has a current draft version", CURRENT_POLICY_VERSIONS.SANDBOX_NOTICE === "draft-1.0");
 
-  check("POLICY_NAV_ITEMS has 16 items (15 policies + Help Center)", POLICY_NAV_ITEMS.length === 16);
+  check("POLICY_NAV_ITEMS has 14 mapped product, help, and legal routes", POLICY_NAV_ITEMS.length === 14);
   const categories = new Set(POLICY_NAV_ITEMS.map((item) => item.category));
   check("POLICY_NAV_ITEMS contains FUGLUCK category", categories.has("FUGLUCK"));
+  check("POLICY_NAV_ITEMS contains HELP category", categories.has("HELP"));
   check("POLICY_NAV_ITEMS contains LEGAL category", categories.has("LEGAL"));
-  check("POLICY_NAV_ITEMS contains PLAY_AND_MONEY category", categories.has("PLAY_AND_MONEY"));
-  check("POLICY_NAV_ITEMS contains ACCOUNT_AND_SAFETY category", categories.has("ACCOUNT_AND_SAFETY"));
+  check("No obsolete navigation categories remain", !categories.has("PLAY_AND_MONEY" as never) && !categories.has("ACCOUNT_AND_SAFETY" as never));
 
   // -------------------------------------------------------------------------
   // 2. Client Legal Policy Data Completeness
@@ -76,11 +77,20 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   const policyContent = fs.readFileSync(policyDataPath, "utf-8");
   check("Current legal copy documents platform-set prizes and sandbox currency", policyContent.includes("predetermined prize") && policyContent.includes("no real-world value"));
   check("Current legal copy avoids obsolete replay-verification claims", !policyContent.includes("headlessly simulating gameplay input logs") && !policyContent.includes("real-value skill matches"));
-  check("Withdrawal page clearly marks service unavailable", policyContent.includes("Withdrawal Service — Unavailable"));
-  for (const pType of expectedPolicyTypes) {
-    const slug = pType.toLowerCase().replace(/_/g, "-");
-    check(`Policy data defines document for '${slug}'`, policyContent.includes(`slug: '${slug}'`));
-  }
+  check("Policy content preserves TEST / SANDBOX GEL zero-value notice", policyContent.includes("TEST / SANDBOX GEL") && policyContent.includes("zero real-world value"));
+  check("Terms and privacy remain visibly draft content", policyContent.includes("DRAFT_LEGAL_REVIEW") && policyContent.includes("DRAFT_IMPLEMENTATION_REVIEW"));
+  check("Public pages use neutral operator/contact publication wording", policyContent.includes("Operator and contact details will be published before commercial launch") && policyContent.includes("No contact channels are provided on this review build"));
+  check("No editor placeholders are rendered in public policy copy", !/\[(?:REQUIRES|LEGAL REVIEW|OPERATOR INPUT|POLICY DECISION)/i.test(policyContent));
+  const internalChecklistPath = path.resolve(process.cwd(), "docs/PUBLIC_CONTENT_RELEASE_CHECKLIST.md");
+  check("Internal content checklist exists outside public page data", fs.existsSync(internalChecklistPath));
+  const internalChecklist = fs.readFileSync(internalChecklistPath, "utf-8");
+  check("Internal checklist retains missing operator, legal, privacy and filing inputs", ["entity name", "registration or identification number", "support, legal/regulatory and privacy contact", "retention periods", "Revenue Service filing", "Georgian and Russian"].every((item) => internalChecklist.toLowerCase().includes(item.toLowerCase())));
+  check("Draft legal pages do not invent an effective date", policyContent.includes("do not claim an approved effective date"));
+  const requiredPolicySlugs = ["about", "how-it-works", "competition-model", "entry-fees-prizes", "games-and-skill", "coins", "test-gel", "sandbox-notice", "terms", "privacy", "rules", "fair-play", "diamonds", "contact", "legal"];
+  for (const slug of requiredPolicySlugs) check(`Policy data defines document for '${slug}'`, policyContent.includes(`slug: '${slug}'`));
+  check("Freeroll entry is explicitly labeled FREE", policyContent.includes("Entry Fee: FREE"));
+  check("Standard and promotional examples separate entry from prize", policyContent.includes("Entry Fee: TEST ₾5 each") && policyContent.includes("Predetermined Prize: TEST ₾20"));
+  check("Historical Diamond information is labeled retired / legacy", policyContent.includes("DIAMONDS — RETIRED / LEGACY"));
 
   // -------------------------------------------------------------------------
   // 3. Client Help Center FAQ Manifest
@@ -91,20 +101,22 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   check("packages/client/src/legal/faqData.ts exists", fs.existsSync(faqDataPath));
 
   const faqContent = fs.readFileSync(faqDataPath, "utf-8");
-  const expectedFaqCategories = [
-    "getting-started",
-    "playing-matches",
-    "diamonds-and-wallet",
-    "fairness-and-security",
-    "account-and-login",
-    "friends-and-social",
-    "privacy-and-data",
-    "support-and-help",
-  ];
+  const expectedFaqCategories = ["getting-started", "competitions-and-prizes", "games-and-authority", "coins-and-sandbox", "fair-play", "account-and-privacy", "support-and-help"];
 
   for (const cat of expectedFaqCategories) {
     check(`FAQ data defines category '${cat}'`, faqContent.includes(`id: '${cat}'`));
   }
+  check("FAQ answers explain sandbox value and retired Diamonds", faqContent.includes("zero real-world value") && faqContent.includes("retired from active use"));
+
+  const appRoutes = fs.readFileSync(path.resolve(process.cwd(), "packages/client/src/App.tsx"), "utf-8");
+  for (const slug of requiredPolicySlugs) check(`Application route is registered for '/${slug}'`, appRoutes.includes(`'${slug}'`));
+  check("FAQ has a dedicated route", appRoutes.includes("cleanPath === '/faq'"));
+  check("Old withdrawal route redirects to sandbox notice", appRoutes.includes("withdrawals: 'sandbox-notice'"));
+
+  const responsiveDocsPath = path.resolve(process.cwd(), "packages/client/src/pages/public-content.css");
+  check("Reading-first public content styles exist", fs.existsSync(responsiveDocsPath));
+  const responsiveDocs = fs.readFileSync(responsiveDocsPath, "utf-8");
+  check("Public content layout has a narrow-screen breakpoint", responsiveDocs.includes("@media (max-width: 760px)"));
 
   // -------------------------------------------------------------------------
   // 4. Database Policy Acceptances & Consent Records

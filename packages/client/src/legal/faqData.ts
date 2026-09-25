@@ -1,10 +1,4 @@
-export type FAQCategory = {
-  id: string
-  title: string
-  description: string
-  icon: string
-}
-
+export type FAQCategory = { id: string; title: string; description: string }
 export type FAQItem = {
   id: string
   categoryId: string
@@ -16,320 +10,56 @@ export type FAQItem = {
 }
 
 export const FAQ_CATEGORIES: FAQCategory[] = [
-  {
-    id: 'getting-started',
-    title: 'Getting Started',
-    description: 'Play modes, account needs, and simulated competitions.',
-    icon: '🚀',
-  },
-  {
-    id: 'playing-matches',
-    title: 'Playing Matches',
-    description: 'Matchmaking, rules, scoring, disconnects, and winner determination.',
-    icon: '🎮',
-  },
-  {
-    id: 'diamonds-and-wallet',
-    title: 'Historical Diamonds & Wallet',
-    description: 'Understanding COINS vs DIAMONDS, ledger balances, and transactions.',
-    icon: '💎',
-  },
-  {
-    id: 'fairness-and-security',
-    title: 'Fairness & Anti-Cheat',
-    description: 'How server verification works, anti-cheat detection, and fair play.',
-    icon: '🛡️',
-  },
-  {
-    id: 'account-and-login',
-    title: 'Account & Security',
-    description: 'Registration, email verification, passwords, and security.',
-    icon: '🔐',
-  },
-  {
-    id: 'friends-and-social',
-    title: 'Friends & Social',
-    description: 'Friend requests, inviting friends to private matches, and links.',
-    icon: '👥',
-  },
-  {
-    id: 'privacy-and-data',
-    title: 'Privacy & Data Rights',
-    description: 'Personal data protection, account closure, and data requests.',
-    icon: '📜',
-  },
-  {
-    id: 'support-and-help',
-    title: 'Support & Inquiries',
-    description: 'Disputes, reporting bugs, and getting in touch with our team.',
-    icon: '💬',
-  },
+  { id: 'getting-started', title: 'Getting Started', description: 'Accounts, play modes and finding competitions.' },
+  { id: 'competitions-and-prizes', title: 'Competitions and Prizes', description: 'Published terms, entry, prizes, formats and outcomes.' },
+  { id: 'games-and-authority', title: 'Games and Results', description: 'Current certified games and server-authoritative results.' },
+  { id: 'coins-and-sandbox', title: 'Coins and TEST GEL', description: 'Non-monetary Coins and simulated test value.' },
+  { id: 'fair-play', title: 'Fair Play', description: 'Competition integrity, disconnects and reports.' },
+  { id: 'account-and-privacy', title: 'Account and Privacy', description: 'Account access, data and privacy policy status.' },
+  { id: 'support-and-help', title: 'Help and Support', description: 'Troubleshooting and contact information.' },
 ]
 
 export const FAQ_ITEMS: FAQItem[] = [
-  // Getting Started
-  {
-    id: 'what-is-fugluck',
-    categoryId: 'getting-started',
-    question: 'What is Fugluck?',
-    answer:
-      'Fugluck is an online arcade platform with local practice, casual play, and a limited set of platform-defined TEST / SANDBOX GEL competitions.',
-    tags: ['about', 'platform', 'introduction', 'basics'],
-    relatedPolicySlug: 'about',
-    relatedPolicyLabel: 'About Fugluck',
-  },
-  {
-    id: 'is-fugluck-free',
-    categoryId: 'getting-started',
-    question: 'Is Fugluck free to play?',
-    answer:
-      'Practice and casual play are available without entering a TEST GEL competition. Account-based competitions use simulated TEST / SANDBOX GEL and may require sign-in. No real-money play is active.',
-    tags: ['free', 'cost', 'practice', 'coins'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Competition Rules',
-  },
-  {
-    id: 'what-is-practice-mode',
-    categoryId: 'getting-started',
-    question: 'What is Practice Mode?',
-    answer:
-      'Practice Mode runs a game locally without competition entry, opponent matching, or prize settlement.',
-    tags: ['practice', 'offline', 'single player', 'training'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Game Rules',
-  },
-  {
-    id: 'coins-vs-diamonds',
-    categoryId: 'getting-started',
-    question: 'What is the difference between Coins and Diamonds?',
-    answer:
-      'COINS are non-monetary casual play points. DIAMONDS are retired from new play and funding, while historical records remain. TEST / SANDBOX GEL is simulated and used only in platform-defined competitions; it has no real-world value.',
-    tags: ['coins', 'diamonds', 'currencies', 'difference'],
-    relatedPolicySlug: 'diamonds',
-    relatedPolicyLabel: 'Historical Diamond & Wallet Policy',
-  },
-
-  // Playing Matches
-  {
-    id: 'how-matchmaking-works',
-    categoryId: 'playing-matches',
-    question: 'How does matchmaking work?',
-    answer:
-      'Casual play uses its available game flow. In TEST / SANDBOX GEL competitions, the platform sets the game, fixed entry fee, participant capacity, and predetermined prize in advance. Players do not choose a money stake or bet on an outside event.',
-    tags: ['matchmaking', 'competition', 'entry fee', 'pairing'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Matchmaking Rules',
-  },
-  {
-    id: 'how-is-winner-determined',
-    categoryId: 'playing-matches',
-    question: 'How is the match winner determined?',
-    answer:
-      'Casual scores are reported by the client and do not qualify for TEST GEL prizes. For enabled certified TEST GEL competitions, the server runs the score-bearing game state and decides the result from server-owned state.',
-    tags: ['winner', 'score', 'outcome', 'payout'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Competition Rules',
-  },
-  {
-    id: 'what-happens-in-draw',
-    categoryId: 'playing-matches',
-    question: 'What happens if a match ends in a draw (tie)?',
-    answer:
-      'If a certified TEST GEL competition ends in a tied result, its lifecycle records the tie and returns simulated entry funds under the competition accounting rules. It does not issue real money.',
-    tags: ['draw', 'tie', 'refund', 'equal score'],
-    relatedPolicySlug: 'refunds',
-    relatedPolicyLabel: 'Refund Policy',
-  },
-  {
-    id: 'what-happens-on-disconnect',
-    categoryId: 'playing-matches',
-    question: 'What happens if I disconnect during a match?',
-    answer:
-      'Reconnect behavior depends on the mode and current competition state. A certified live competition has a reconnect window; if a valid result cannot be established, the system applies its terminal refund or forfeit rule. Check the instance result for its final status.',
-    tags: ['disconnect', 'connection', 'forfeit', 'grace window'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Competition Rules',
-  },
-  {
-    id: 'what-is-voided-match',
-    categoryId: 'playing-matches',
-    question: 'What is a voided match?',
-    answer:
-      'A voided TEST GEL competition is one where the authority cannot produce an eligible result or a system failure prevents a valid completion. The simulated entry amounts are returned through the accounting lifecycle; no winner is invented.',
-    tags: ['void', 'interruption', 'server restart', 'crash recovery'],
-    relatedPolicySlug: 'refunds',
-    relatedPolicyLabel: 'Refund Policy',
-  },
-
-  // Diamonds & Wallet
-  {
-    id: 'how-do-diamonds-work',
-    categoryId: 'diamonds-and-wallet',
-    question: 'What happened to Diamonds?',
-    answer:
-      'Diamonds are retired from active play and funding. Historical Diamond transactions remain preserved in the ledger and under the historical wallet policy.',
-    tags: ['diamonds', 'wallet', 'legacy balance'],
-    relatedPolicySlug: 'diamonds',
-    relatedPolicyLabel: 'Historical Diamond & Wallet Policy',
-  },
-  {
-    id: 'can-diamonds-be-withdrawn',
-    categoryId: 'diamonds-and-wallet',
-    question: 'Can Diamonds be cashed out for real money?',
-    answer:
-      'No. DIAMONDS are retired and there is no withdrawal or redemption service. TEST / SANDBOX GEL is simulated, has no real-world value, and cannot be withdrawn or redeemed.',
-    tags: ['cash out', 'withdrawal', 'real money', 'payout'],
-    relatedPolicySlug: 'withdrawals',
-    relatedPolicyLabel: 'Withdrawal Service — Unavailable',
-  },
-  {
-    id: 'where-can-i-see-wallet-history',
-    categoryId: 'diamonds-and-wallet',
-    question: 'Where can I see my transaction and wallet history?',
-    answer:
-      'Open Wallet from the navigation menu to view available balances and transaction history. Historical Diamond rows are retained for account history; current TEST GEL entries are simulated ledger records.',
-    tags: ['wallet', 'history', 'ledger', 'transactions'],
-    relatedPolicySlug: 'diamonds',
-    relatedPolicyLabel: 'Wallet Terms',
-  },
-
-  // Fairness & Anti-Cheat
-  {
-    id: 'how-are-scores-verified',
-    categoryId: 'fairness-and-security',
-    question: 'How does Fugluck verify scores?',
-    answer:
-      'For certified TEST GEL competitions, the server owns the active game simulation and result. The client sends controls and receives snapshots; it does not submit the competition score. Casual match results are client-reported and are not prize-authoritative.',
-    tags: ['anti cheat', 'score verification', 'server authority', 'security'],
-    relatedPolicySlug: 'fair-play',
-    relatedPolicyLabel: 'Fair Play Policy',
-  },
-  {
-    id: 'can-players-use-bots',
-    categoryId: 'fairness-and-security',
-    question: 'Can players use bots or automated scripts?',
-    answer:
-      'Automated play and attempts to interfere with accounts, sessions, or competition results are prohibited. The platform may review reports and available server records; it does not claim that every prohibited tool is automatically detected.',
-    tags: ['bots', 'macros', 'cheating', 'banning'],
-    relatedPolicySlug: 'fair-play',
-    relatedPolicyLabel: 'Fair Play Policy',
-  },
-  {
-    id: 'how-are-gameplay-reports-reviewed',
-    categoryId: 'fairness-and-security',
-    question: 'How are gameplay reports reviewed?',
-    answer:
-      'For a certified TEST GEL competition, support can review the stored authority result, instance lifecycle, and accounting records. The product does not promise automatic detection of every prohibited tool or reconstruct gameplay from input logs.',
-    tags: ['gameplay review', 'server records', 'fair play', 'support'],
-    relatedPolicySlug: 'fair-play',
-    relatedPolicyLabel: 'Fair Play Policy',
-  },
-
-  // Account & Security
-  {
-    id: 'how-do-i-register',
-    categoryId: 'account-and-login',
-    question: 'How do I register an account?',
-    answer:
-      'Click "Sign up" in the top navigation bar, choose a unique username (3-20 characters), create a strong password (minimum 8 characters), and provide an optional email address for password recovery and verification. Check the agreement box to accept our Terms of Service and Privacy Policy.',
-    tags: ['signup', 'register', 'account', 'create'],
-    relatedPolicySlug: 'terms',
-    relatedPolicyLabel: 'Terms of Service',
-  },
-  {
-    id: 'why-verify-email',
-    categoryId: 'account-and-login',
-    question: 'Why should I verify my email address?',
-    answer:
-      'Email verification secures your account, allows you to recover your account if you forget your password, and ensures eligibility for social features and future real-money competitions.',
-    tags: ['email', 'verification', 'security', 'recovery'],
-    relatedPolicySlug: 'privacy',
-    relatedPolicyLabel: 'Privacy Policy',
-  },
-  {
-    id: 'how-to-reset-password',
-    categoryId: 'account-and-login',
-    question: 'How do I reset a forgotten password?',
-    answer:
-      'Click "Log in", then click "Forgot password?". Enter your registered email or username to receive a secure password reset link valid for 1 hour.',
-    tags: ['password', 'reset', 'forgot password', 'recovery'],
-    relatedPolicySlug: 'security',
-    relatedPolicyLabel: 'Security Info',
-  },
-  {
-    id: 'can-i-have-multiple-accounts',
-    categoryId: 'account-and-login',
-    question: 'Can I create multiple accounts?',
-    answer:
-      'No. Operating multiple accounts by a single individual is prohibited under our Terms of Service to prevent rating manipulation and matchmaking abuse.',
-    tags: ['multiple accounts', 'puppet accounts', 'rules', 'one account'],
-    relatedPolicySlug: 'terms',
-    relatedPolicyLabel: 'Terms of Service',
-  },
-
-  // Friends & Social
-  {
-    id: 'how-friend-requests-work',
-    categoryId: 'friends-and-social',
-    question: 'How do friend requests work?',
-    answer:
-      'Visit the Friends page (/friends) and enter another player’s username to send a friend request. Once accepted, you can see their online status and send instant private match invitations.',
-    tags: ['friends', 'friend requests', 'social', 'invites'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Game Rules',
-  },
-  {
-    id: 'how-guest-invite-links-work',
-    categoryId: 'friends-and-social',
-    question: 'How do instant guest invite links work?',
-    answer:
-      'Click "Create Instant Friend Challenge Link" in the game launch modal to generate an invite link. Invited players can join free casual play without a balance amount.',
-    tags: ['guest links', 'instant invite', 'free play', 'share'],
-    relatedPolicySlug: 'rules',
-    relatedPolicyLabel: 'Game Rules',
-  },
-
-  // Privacy & Data
-  {
-    id: 'what-data-is-stored',
-    categoryId: 'privacy-and-data',
-    question: 'What information does Fugluck store?',
-    answer:
-      'We store your username, salted password hash, optional email address, match history records, and append-only ledger entries. We do not store plain-text passwords or third-party advertising tracking cookies.',
-    tags: ['privacy', 'data storage', 'information', 'cookies'],
-    relatedPolicySlug: 'privacy',
-    relatedPolicyLabel: 'Privacy Policy',
-  },
-  {
-    id: 'how-to-close-account',
-    categoryId: 'privacy-and-data',
-    question: 'How do I close my account or request data deletion?',
-    answer:
-      'Submit a request via our Contact page (/contact) or visit Data Rights & Account Closure (/data-rights). We will delete your login credentials and personal identifiers while retaining anonymized ledger records for audit integrity.',
-    tags: ['close account', 'delete data', 'account deletion', 'data rights'],
-    relatedPolicySlug: 'data-rights',
-    relatedPolicyLabel: 'Data Rights',
-  },
-
-  // Support
-  {
-    id: 'how-to-report-match-issue',
-    categoryId: 'support-and-help',
-    question: 'How do I report a suspicious match or score discrepancy?',
-    answer:
-      'Copy the competition or match reference from your history and contact support. For TEST GEL competitions, staff can review the stored authority result, lifecycle, and accounting records. The current service does not reconstruct gameplay from input-log replay.',
-    tags: ['report', 'dispute', 'cheating', 'support'],
-    relatedPolicySlug: 'disputes',
-    relatedPolicyLabel: 'Disputes Policy',
-  },
-  {
-    id: 'how-to-contact-support',
-    categoryId: 'support-and-help',
-    question: 'How do I contact Fugluck support?',
-    answer:
-      'You can reach our team directly through our Contact page at /contact or browse our Help Center categories for instant guidance.',
-    tags: ['contact', 'support', 'help desk', 'inquiries'],
-    relatedPolicySlug: 'contact',
-    relatedPolicyLabel: 'Contact Page',
-  },
+  { id: 'what-is-fugluck', categoryId: 'getting-started', question: 'What is Fugluck?', answer: 'Fugluck is a competitive skill-gaming platform. Players directly participate in short games under rules published by the platform. Fugluck supports practice, casual/social play and structured competitions. In prize-bearing competition mode, the server maintains authoritative game state and determines the result.', tags: ['platform', 'about', 'games'], relatedPolicySlug: 'about', relatedPolicyLabel: 'About Fugluck' },
+  { id: 'is-casino', categoryId: 'getting-started', question: 'Is Fugluck a casino?', answer: 'Fugluck is designed as a competitive skill-gaming platform rather than as a casino-style product. The current website describes the actual mechanics: players directly play the game, Fugluck defines the competition terms, and the server determines the result from gameplay. This is not a legal classification or a statement that a regulator has approved a classification.', tags: ['casino', 'classification', 'legal'], relatedPolicySlug: 'legal', relatedPolicyLabel: 'Legal and Policy Index' },
+  { id: 'sports-events', categoryId: 'getting-started', question: 'Do players bet on sports or outside events?', answer: 'No. The current product does not provide betting on sports, elections, external events or another person’s outside performance. Fugluck competitions involve the participants directly playing the listed game.', tags: ['sports', 'external events', 'bet'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'choose-stake', categoryId: 'competitions-and-prizes', question: 'Can players choose their own stake?', answer: 'No. In the current target competition model, players do not create arbitrary monetary terms or negotiate the amount of the Entry Fee. Fugluck publishes the competition terms before entry.', tags: ['stake', 'entry fee', 'terms'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'challenge-friend-money', categoryId: 'competitions-and-prizes', question: 'Can I challenge a friend for money?', answer: 'Not under the current target model. Friend and guest interactions may support free or Coins-based play, but private player-defined monetary challenges are not part of the current competition architecture.', tags: ['friend', 'challenge', 'money'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'who-sets-entry', categoryId: 'competitions-and-prizes', question: 'Who sets the Entry Fee?', answer: 'Fugluck sets the Entry Fee as part of the published Competition Template. A participant can choose whether to enter but cannot alter the published fee.', tags: ['entry fee', 'template'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'who-sets-prize', categoryId: 'competitions-and-prizes', question: 'Who sets the prize?', answer: 'Fugluck publishes the Predetermined Prize schedule as part of the Competition Template before participants enter.', tags: ['prize', 'template'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'predetermined-prize', categoryId: 'competitions-and-prizes', question: 'What is a Predetermined Prize?', answer: 'A Predetermined Prize is a prize amount or placement schedule defined before participants enter a competition. It is stored as a competition term rather than being created by participants after entry.', tags: ['prize', 'definition'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'prize-equals-fees', categoryId: 'competitions-and-prizes', question: 'Does the prize always equal the total Entry Fees?', answer: 'No. Entry and prize are separate competition properties. A promotional competition can have a prize larger than aggregate entries, and a freeroll can have a prize even though entry is free.', tags: ['prize', 'entry', 'promotion'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'freeroll', categoryId: 'competitions-and-prizes', question: 'What is a freeroll?', answer: 'A freeroll is a competition with FREE entry and a published Predetermined Prize. The current staging build uses TEST / SANDBOX GEL only.', tags: ['free', 'freeroll'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'promotional', categoryId: 'competitions-and-prizes', question: 'What is a promotional competition?', answer: 'A promotional competition is a format in which the published prize may be subsidized by the platform or another permitted promotional source and can exceed aggregate Entry Fees.', tags: ['promotion', 'subsidy'], relatedPolicySlug: 'entry-fees-prizes', relatedPolicyLabel: 'Entry Fees and Predetermined Prizes' },
+  { id: 'guest-testgel', categoryId: 'competitions-and-prizes', question: 'Can guests enter TEST GEL competitions?', answer: 'No. Prize-bearing sandbox competition entry requires an eligible signed-in account. Guest play remains non-monetary.', tags: ['guest', 'sign in', 'eligibility'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'own-competition', categoryId: 'competitions-and-prizes', question: 'Can I create my own monetary competition?', answer: 'No. The current target model uses platform-defined competition formats.', tags: ['player-created', 'competition'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'bet-player', categoryId: 'competitions-and-prizes', question: 'Can I bet on another player?', answer: 'No. The platform does not provide an external spectator-betting product.', tags: ['bet', 'spectator'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'bet-events', categoryId: 'competitions-and-prizes', question: 'Can I bet on external events?', answer: 'No.', tags: ['bet', 'external events'], relatedPolicySlug: 'competition-model', relatedPolicyLabel: 'Competitions' },
+  { id: 'winner', categoryId: 'games-and-authority', question: 'How is a winner determined?', answer: 'In Level 3 competition games, the live server maintains authoritative game state and score. The player’s device sends control actions, while the server applies the game’s rules and determines the result.', tags: ['winner', 'server', 'score'], relatedPolicySlug: 'fair-play', relatedPolicyLabel: 'Fair Competition and Server Authority' },
+  { id: 'browser-score', categoryId: 'games-and-authority', question: 'Does Fugluck trust the score shown by my browser?', answer: 'No. In certified competition mode, the browser is not authoritative for the final score or winner.', tags: ['browser', 'score', 'authority'], relatedPolicySlug: 'fair-play', relatedPolicyLabel: 'Fair Competition and Server Authority' },
+  { id: 'eligible-games', categoryId: 'games-and-authority', question: 'Which games currently support the Revenue Service competition demonstration?', answer: 'Space Blaster and Cyber Hopper are the two Level 3 server-authoritative demonstration games in the current Revenue Service review scope.', tags: ['Space Blaster', 'Cyber Hopper', 'Level 3'], relatedPolicySlug: 'games-and-skill', relatedPolicyLabel: 'Games and Skill' },
+  { id: 'practice-only', categoryId: 'games-and-authority', question: 'Why are some games practice or casual only?', answer: 'Competition eligibility requires additional server-authority, integrity and acceptance work. A game can remain available for practice or casual play without being certified for TEST GEL competition.', tags: ['certification', 'practice', 'casual'], relatedPolicySlug: 'games-and-skill', relatedPolicyLabel: 'Games and Skill' },
+  { id: 'random-generation', categoryId: 'games-and-authority', question: 'Does Fugluck use random generation?', answer: 'Some game engines may use deterministic server-controlled seeded generation for hazards, obstacles or other game elements. The exact effect depends on the game. The server controls the authoritative competitive state; the website does not make a blanket claim that the platform contains no randomness.', tags: ['random', 'seed', 'hazards'], relatedPolicySlug: 'games-and-skill', relatedPolicyLabel: 'Games and Skill' },
+  { id: 'protect-results', categoryId: 'games-and-authority', question: 'How does Fugluck protect competition results?', answer: 'Certified competition games use live server-authoritative state and scoring. Session binding, controller ownership, input validation, terminal decision controls and idempotent accounting are used to protect the competition flow.', tags: ['session', 'score', 'accounting'], relatedPolicySlug: 'fair-play', relatedPolicyLabel: 'Fair Competition and Server Authority' },
+  { id: 'coins', categoryId: 'coins-and-sandbox', question: 'What are Coins?', answer: 'Coins are free non-monetary virtual points used in supported casual and social contexts. They are not cash, cryptocurrency or a claim against Fugluck.', tags: ['coins', 'virtual points'], relatedPolicySlug: 'coins', relatedPolicyLabel: 'Coins' },
+  { id: 'withdraw-coins', categoryId: 'coins-and-sandbox', question: 'Can Coins be withdrawn?', answer: 'No.', tags: ['coins', 'withdrawal'], relatedPolicySlug: 'coins', relatedPolicyLabel: 'Coins' },
+  { id: 'convert-coins', categoryId: 'coins-and-sandbox', question: 'Can Coins be converted to GEL?', answer: 'No. Coins are deliberately separated from GEL-denominated competition accounting.', tags: ['coins', 'GEL', 'conversion'], relatedPolicySlug: 'coins', relatedPolicyLabel: 'Coins' },
+  { id: 'test-gel', categoryId: 'coins-and-sandbox', question: 'What is TEST GEL?', answer: 'TEST / SANDBOX GEL is simulated value used only to demonstrate the intended product and accounting flows. It has zero real-world monetary value.', tags: ['TEST GEL', 'sandbox', 'simulated'], relatedPolicySlug: 'test-gel', relatedPolicyLabel: 'TEST / Sandbox GEL' },
+  { id: 'real-money', categoryId: 'coins-and-sandbox', question: 'Is TEST GEL real money?', answer: 'No. It is simulated, has zero real-world value, cannot be purchased, withdrawn or redeemed, and is not actual GEL held on the user’s behalf.', tags: ['TEST GEL', 'real money'], relatedPolicySlug: 'sandbox-notice', relatedPolicyLabel: 'Sandbox / Test Money Notice' },
+  { id: 'deposit-real-gel', categoryId: 'coins-and-sandbox', question: 'Can I deposit real GEL?', answer: 'No. Real-money deposits are not active in the current Revenue Service review build.', tags: ['deposit', 'real GEL'], relatedPolicySlug: 'sandbox-notice', relatedPolicyLabel: 'Sandbox / Test Money Notice' },
+  { id: 'withdraw-money', categoryId: 'coins-and-sandbox', question: 'Can I withdraw money?', answer: 'No. Real-money withdrawal functionality is not active.', tags: ['withdrawal', 'money'], relatedPolicySlug: 'sandbox-notice', relatedPolicyLabel: 'Sandbox / Test Money Notice' },
+  { id: 'diamonds-retired', categoryId: 'coins-and-sandbox', question: 'What happened to Diamonds?', answer: 'Diamonds belong to an earlier product architecture and are retired from active use. Historical Diamond records may remain visible as RETIRED / LEGACY for auditability.', tags: ['diamonds', 'legacy'], relatedPolicySlug: 'diamonds', relatedPolicyLabel: 'Historical Diamond Records' },
+  { id: 'disconnect', categoryId: 'fair-play', question: 'What happens if a player disconnects?', answer: 'The authority system supports controlled reconnect behavior for a defined period. The exact outcome depends on the competition rules and whether a valid authoritative result can still be established. A player-caused forfeit can be treated differently from a platform or infrastructure failure.', tags: ['disconnect', 'reconnect'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'technical-failure', categoryId: 'fair-play', question: 'What happens if Fugluck has a technical failure?', answer: 'If the system cannot safely establish an authoritative result, the intended policy is to avoid inventing a winner. Depending on the competition state, the competition may be voided and affected sandbox entries released or refunded according to the lifecycle rules.', tags: ['failure', 'void', 'refund'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'tie', categoryId: 'fair-play', question: 'What happens in a tie?', answer: 'For the current head-to-head sandbox formats, an exact authoritative tie is handled as a void with full entry refund rather than choosing a random winner. A future format can define a different deterministic skill-based tiebreak only if its rules explicitly say so.', tags: ['tie', 'refund'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'cancel', categoryId: 'fair-play', question: 'What happens if a competition is cancelled?', answer: 'A pending competition can be cancelled under the applicable rules. Reserved TEST GEL is released when the lifecycle requires cancellation before capture.', tags: ['cancel', 'reservation'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'void', categoryId: 'fair-play', question: 'What happens when a competition is voided?', answer: 'A void is a terminal safety outcome. Where captured TEST entries must be reversed, the sandbox accounting system records the corresponding refund. A void does not create an arbitrary winner.', tags: ['void', 'refund'], relatedPolicySlug: 'rules', relatedPolicyLabel: 'General Competition Rules' },
+  { id: 'rematch', categoryId: 'fair-play', question: 'How do rematches work?', answer: 'A rematch is a new Competition Instance with a new entry decision, new authority session and new accounting lifecycle. It is not a continuation of the old competition transaction.', tags: ['rematch', 'instance'], relatedPolicySlug: 'how-it-works', relatedPolicyLabel: 'How Fugluck Works' },
+  { id: 'reset-password', categoryId: 'account-and-privacy', question: 'How do I reset a forgotten password?', answer: 'Use the account sign-in flow and choose its password reset option. Do not send a password, reset token or session credential to anyone. If the flow does not work, use the Contact / Who We Are page once verified support details are available.', tags: ['password', 'reset', 'account'], relatedPolicySlug: 'contact', relatedPolicyLabel: 'Contact / Who We Are' },
+  { id: 'multiple-accounts', categoryId: 'account-and-privacy', question: 'Can I create multiple accounts?', answer: 'The final multi-account policy requires operator approval. The current draft prohibits using multiple accounts, coordinated behavior or account sharing to manipulate competition outcomes or evade restrictions.', tags: ['multiple accounts', 'policy'], relatedPolicySlug: 'terms', relatedPolicyLabel: 'Terms of Service' },
+  { id: 'privacy-data', categoryId: 'account-and-privacy', question: 'What information does Fugluck handle?', answer: 'The Privacy Policy draft describes account, competition, gameplay, security, technical and audit information that may be processed where the enabled product actually records it. Provider details, retention criteria and rights/contact language remain pending implementation and legal review.', tags: ['privacy', 'data', 'retention'], relatedPolicySlug: 'privacy', relatedPolicyLabel: 'Privacy Policy' },
+  { id: 'close-account', categoryId: 'account-and-privacy', question: 'How do I close my account or request a data copy?', answer: 'The final rights process and privacy contact have not yet been supplied. See the Privacy Policy and Contact / Who We Are pages for the review status and required operator inputs.', tags: ['close account', 'data rights', 'privacy'], relatedPolicySlug: 'privacy', relatedPolicyLabel: 'Privacy Policy' },
+  { id: 'report-technical', categoryId: 'support-and-help', question: 'How can I report a technical problem?', answer: 'Use the support contact once verified details are published. Include the approximate time, game, device/browser and a description of what happened. Do not send passwords, session cookies or other credentials.', tags: ['technical', 'problem', 'support'], relatedPolicySlug: 'contact', relatedPolicyLabel: 'Contact / Who We Are' },
+  { id: 'report-cheating', categoryId: 'support-and-help', question: 'How can I report suspected cheating?', answer: 'Use the support or fair-play reporting channel once verified contact details are published. Reports should include relevant competition information and a factual description. Fugluck may review authority and competition records according to its policies.', tags: ['cheating', 'report', 'fair play'], relatedPolicySlug: 'fair-play', relatedPolicyLabel: 'Fair Competition and Server Authority' },
+  { id: 'contact-support', categoryId: 'support-and-help', question: 'How can I contact support?', answer: 'The Contact / Who We Are page lists the support channels required for publication. Those details are currently marked as pending verified operator input; no support email has been invented.', tags: ['contact', 'support'], relatedPolicySlug: 'contact', relatedPolicyLabel: 'Contact / Who We Are' },
 ]

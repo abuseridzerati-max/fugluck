@@ -16,24 +16,26 @@ export type PolicyType =
   | "DATA_RIGHTS"
   | "SECURITY"
   | "ABOUT"
-  | "CONTACT";
+  | "CONTACT"
+  | "SANDBOX_NOTICE";
 
 export const CURRENT_POLICY_VERSIONS: Record<PolicyType, string> = {
-  TERMS: "2026-09-25",
-  PRIVACY: "2026-09-25",
+  TERMS: "draft-1.0",
+  PRIVACY: "draft-1.0",
   COOKIES: "2026-08-18",
-  RULES: "2026-09-25",
-  DIAMONDS: "2026-08-18",
+  RULES: "draft-1.0",
+  DIAMONDS: "draft-1.0",
   WITHDRAWALS: "2026-08-18",
   REFUNDS: "2026-08-18",
   RESPONSIBLE_PLAY: "2026-08-18",
   ELIGIBILITY: "2026-08-18",
-  FAIR_PLAY: "2026-08-18",
+  FAIR_PLAY: "draft-1.0",
   DISPUTES: "2026-08-18",
   DATA_RIGHTS: "2026-08-18",
   SECURITY: "2026-08-18",
-  ABOUT: "2026-08-18",
-  CONTACT: "2026-08-18",
+  ABOUT: "draft-1.0",
+  CONTACT: "draft-1.0",
+  SANDBOX_NOTICE: "draft-1.0",
 };
 
 export type PolicyAcceptanceRecord = {
@@ -53,34 +55,30 @@ export type SignupAcceptedPolicies = {
 };
 
 export type PolicyNavItem = {
-  id: PolicyType | "HELP";
+  id: string;
   titleKey: string;
   path: string;
-  category: "FUGLUCK" | "LEGAL" | "PLAY_AND_MONEY" | "ACCOUNT_AND_SAFETY";
+  category: "FUGLUCK" | "HELP" | "LEGAL";
 };
 
 export const POLICY_NAV_ITEMS: PolicyNavItem[] = [
-  // FUGLUCK
+  // Product information
   { id: "ABOUT", titleKey: "policies.nav.about", path: "/about", category: "FUGLUCK" },
-  { id: "HELP", titleKey: "policies.nav.help", path: "/help", category: "FUGLUCK" },
-  { id: "CONTACT", titleKey: "policies.nav.contact", path: "/contact", category: "FUGLUCK" },
+  { id: "HOW_IT_WORKS", titleKey: "policies.nav.howItWorks", path: "/how-it-works", category: "FUGLUCK" },
+  { id: "GAMES_SKILL", titleKey: "policies.nav.games", path: "/games-and-skill", category: "FUGLUCK" },
+  { id: "COMPETITIONS", titleKey: "policies.nav.competitions", path: "/competition-model", category: "FUGLUCK" },
+  { id: "ENTRY_PRIZES", titleKey: "policies.nav.entryPrizes", path: "/entry-fees-prizes", category: "FUGLUCK" },
 
-  // LEGAL
+  // Help and contact
+  { id: "HELP", titleKey: "policies.nav.help", path: "/help", category: "HELP" },
+  { id: "FAQ", titleKey: "policies.nav.faq", path: "/faq", category: "HELP" },
+  { id: "CONTACT", titleKey: "policies.nav.contact", path: "/contact", category: "HELP" },
+
+  // Legal and policy documents
   { id: "TERMS", titleKey: "policies.nav.terms", path: "/terms", category: "LEGAL" },
   { id: "PRIVACY", titleKey: "policies.nav.privacy", path: "/privacy", category: "LEGAL" },
-  { id: "COOKIES", titleKey: "policies.nav.cookies", path: "/cookies", category: "LEGAL" },
-
-  // PLAY & MONEY
-  { id: "RULES", titleKey: "policies.nav.rules", path: "/rules", category: "PLAY_AND_MONEY" },
-  { id: "DIAMONDS", titleKey: "policies.nav.diamonds", path: "/diamonds", category: "PLAY_AND_MONEY" },
-  { id: "WITHDRAWALS", titleKey: "policies.nav.withdrawals", path: "/withdrawals", category: "PLAY_AND_MONEY" },
-  { id: "REFUNDS", titleKey: "policies.nav.refunds", path: "/refunds", category: "PLAY_AND_MONEY" },
-  { id: "RESPONSIBLE_PLAY", titleKey: "policies.nav.responsiblePlay", path: "/responsible-play", category: "PLAY_AND_MONEY" },
-  { id: "FAIR_PLAY", titleKey: "policies.nav.fairPlay", path: "/fair-play", category: "PLAY_AND_MONEY" },
-
-  // ACCOUNT & SAFETY
-  { id: "ELIGIBILITY", titleKey: "policies.nav.eligibility", path: "/eligibility", category: "ACCOUNT_AND_SAFETY" },
-  { id: "DISPUTES", titleKey: "policies.nav.disputes", path: "/disputes", category: "ACCOUNT_AND_SAFETY" },
-  { id: "DATA_RIGHTS", titleKey: "policies.nav.dataRights", path: "/data-rights", category: "ACCOUNT_AND_SAFETY" },
-  { id: "SECURITY", titleKey: "policies.nav.security", path: "/security", category: "ACCOUNT_AND_SAFETY" },
+  { id: "RULES", titleKey: "policies.nav.rules", path: "/rules", category: "LEGAL" },
+  { id: "SANDBOX_NOTICE", titleKey: "policies.nav.sandboxNotice", path: "/sandbox-notice", category: "LEGAL" },
+  { id: "FAIR_PLAY", titleKey: "policies.nav.fairPlay", path: "/fair-play", category: "LEGAL" },
+  { id: "LEGAL_INDEX", titleKey: "policies.nav.legalIndex", path: "/legal", category: "LEGAL" },
 ];

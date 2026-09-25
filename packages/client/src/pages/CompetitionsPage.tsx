@@ -53,6 +53,14 @@ export default function CompetitionsPage({
           <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
             Play platform-defined skill competitions with simulated Test GEL and server-run game authority.
           </p>
+          <p style={{ margin: 'var(--space-3) 0 0', maxWidth: 760, lineHeight: 1.65 }}>
+            Each available format publishes its Entry Fee and Predetermined Prize separately before entry. TEST / SANDBOX GEL has zero real-world value; no real-money deposits, withdrawals or prizes are active.
+          </p>
+          <p style={{ margin: 'var(--space-2) 0 0', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem' }}>
+            <a href="/competition-model" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/competition-model') }}>How competitions work</a>
+            <a href="/entry-fees-prizes" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/entry-fees-prizes') }}>Entry Fees and Predetermined Prizes</a>
+            <a href="/sandbox-notice" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/sandbox-notice') }}>Sandbox Notice</a>
+          </p>
         </div>
 
         {/* Game Filter Pills */}

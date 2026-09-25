@@ -34,20 +34,31 @@ type ActiveGame = {
 const POLICY_SLUGS = [
   'terms',
   'privacy',
-  'cookies',
   'rules',
   'diamonds',
-  'withdrawals',
-  'refunds',
-  'responsible-play',
-  'eligibility',
+  'sandbox-notice',
   'fair-play',
-  'disputes',
-  'data-rights',
-  'security',
   'about',
   'contact',
+  'how-it-works',
+  'competition-model',
+  'entry-fees-prizes',
+  'games-and-skill',
+  'coins',
+  'test-gel',
+  'legal',
 ] as const
+
+const POLICY_ALIASES: Record<string, string> = {
+  cookies: 'privacy',
+  withdrawals: 'sandbox-notice',
+  refunds: 'rules',
+  'responsible-play': 'fair-play',
+  eligibility: 'terms',
+  disputes: 'help',
+  'data-rights': 'privacy',
+  security: 'fair-play',
+}
 
 type PolicySlug = (typeof POLICY_SLUGS)[number]
 
@@ -64,6 +75,7 @@ type View =
   | 'reset-password'
   | 'invite'
   | 'help'
+  | 'faq'
   | `policy:${PolicySlug}`
   | 'not-found'
 
@@ -119,9 +131,13 @@ function getViewFromPath(pathname: string): View {
   if (cleanPath === '/verify-email') return 'verify-email'
   if (cleanPath === '/reset-password') return 'reset-password'
   if (cleanPath === '/help') return 'help'
+  if (cleanPath === '/faq') return 'faq'
   if (cleanPath.startsWith('/invite/') || cleanPath.startsWith('/play/invite/')) return 'invite'
 
   const stripped = cleanPath.slice(1)
+  const alias = POLICY_ALIASES[stripped]
+  if (alias === 'help') return 'help'
+  if (alias) return `policy:${alias as PolicySlug}`
   if (POLICY_SLUGS.includes(stripped as PolicySlug)) {
     return `policy:${stripped as PolicySlug}`
   }
@@ -154,6 +170,8 @@ function getPathForView(view: View): string {
       return '/reset-password'
     case 'help':
       return '/help'
+    case 'faq':
+      return '/faq'
     case 'home':
       return '/'
     case 'invite':
@@ -247,6 +265,8 @@ function AppShell() {
         return 'Fugluck — Reset Password'
       case 'help':
         return 'Fugluck — Help Center & FAQ'
+      case 'faq':
+        return 'Fugluck — Frequently Asked Questions'
       case 'not-found':
         return t('meta.titleNotFound')
       case 'home':
@@ -260,6 +280,9 @@ function AppShell() {
     const path = getPathForView(view)
     document.title = title
     updateSocialMetaTags(title, path)
+    if (path !== window.location.pathname && view.startsWith('policy:')) {
+      window.history.replaceState(null, '', path)
+    }
   }, [view, i18n.language, t])
 
   useEffect(() => {
@@ -479,7 +502,9 @@ function AppShell() {
           onNavigateLogin={() => navigateTo('login')}
         />
       ) : view === 'help' ? (
-        <HelpCenterPage onNavigate={(path) => navigateTo(getViewFromPath(path))} />
+        <HelpCenterPage mode="help" onNavigate={(path) => navigateTo(getViewFromPath(path))} />
+      ) : view === 'faq' ? (
+        <HelpCenterPage mode="faq" onNavigate={(path) => navigateTo(getViewFromPath(path))} />
       ) : view.startsWith('policy:') ? (
         <PolicyPage
           policySlug={view.slice(7)}

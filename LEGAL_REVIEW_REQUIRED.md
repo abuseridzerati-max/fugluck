@@ -1,8 +1,10 @@
-# Fugluck — Legal, Regulatory & Policy Review Register
+# Fugluck — Historical Legal, Regulatory & Policy Review Register
 
-> **Status:** ACTIVE REGISTER  
-> **Last Updated:** 2026-08-18  
+> **Status:** HISTORICAL AUDIT SNAPSHOT — superseded for current product status
+> **Snapshot date:** 2026-08-18
 > **Purpose:** Centralized internal tracking of open regulatory, licensing, financial, and jurisdictional determinations. No definitive factual or statutory claims regarding these items are to be hardcoded into user-facing copy without formal legal confirmation.
+
+> **Current-status note (2026-09-25):** The tables below preserve an earlier product and legal-review snapshot. They contain superseded references to active Diamond funding, player stakes/rake, and replay validation; do not use those rows as current product or architecture facts. Current source-verified product status is documented in [`docs/PHASE_6C_REVENUE_SERVICE_DOSSIER.md`](docs/PHASE_6C_REVENUE_SERVICE_DOSSIER.md). The missing public-content/legal inputs are tracked in [`docs/PUBLIC_CONTENT_RELEASE_CHECKLIST.md`](docs/PUBLIC_CONTENT_RELEASE_CHECKLIST.md). This note is based on reading current source and those documents; unresolved items remain unresolved.
 
 ---
 

@@ -223,9 +223,13 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     console.log("\n--- Section 3: Sandbox Visual Identity & Currency Integrity ---");
     const catalogHasSandboxWarning =
-      catalogSrc.includes("TEST / SANDBOX GEL") && catalogSrc.includes("No real money is used");
+      catalogSrc.includes("TEST / SANDBOX GEL") &&
+      catalogSrc.includes("zero real-world value") &&
+      catalogSrc.includes("No real-money deposits, withdrawals, or prizes are active.");
     const modalHasSandboxWarning =
-      confirmModalSrc.includes("TEST / SANDBOX COMPETITION") && confirmModalSrc.includes("No real money is deposited");
+      confirmModalSrc.includes("TEST / SANDBOX GEL Competition:") &&
+      confirmModalSrc.includes("zero real-world value") &&
+      confirmModalSrc.includes("No real money is deposited, withdrawn, or awarded.");
     const navbarHasSandboxBadge = navbarSrc.includes("TEST / SANDBOX GEL");
     check(
       "9. Sandbox warning persistently visible across catalog, modals, and navigation",
