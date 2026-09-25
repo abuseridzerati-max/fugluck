@@ -77,6 +77,7 @@ The Supabase dashboard identifies the current isolated project as `fugluck-stagi
 | Variable Name | Value / Description | Sensitive? |
 |---|---|---|
 | `NODE_ENV` | `production` | No |
+| `APP_ENV` | `staging` (deployment identity; independent of Node runtime mode) | No |
 | `DATABASE_URL` | *Paste your Staging PostgreSQL URI from Step 1* | **YES (Secret)** |
 | `JWT_SECRET` | *Generate a 64-character random hex string* (see below) | **YES (Secret)** |
 | `CLIENT_ORIGIN` | `https://staging.fugluck.com` | No |

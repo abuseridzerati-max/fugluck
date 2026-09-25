@@ -14,6 +14,7 @@ import { getActiveMatchesSummary } from "../matchmaking/matches";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { competitionAdminRouter } from "./adminCompetitions";
 import { getOperationsTelemetry } from "../competitions/operationsTelemetry";
+import { getAppEnvironment, getRuntimeMode } from "../config/environment";
 
 const adminLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -727,7 +728,7 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
   const telemetry = getOperationsTelemetry();
   res.json({
     checkedAt,
-    backend: { healthy: true, uptimeSeconds: Math.floor(process.uptime()), revision: process.env.RENDER_GIT_COMMIT?.slice(0, 12) ?? process.env.GIT_SHA?.slice(0, 12) ?? null },
+    backend: { healthy: true, environment: getAppEnvironment(), runtimeMode: getRuntimeMode(), uptimeSeconds: Math.floor(process.uptime()), revision: process.env.RENDER_GIT_COMMIT?.slice(0, 12) ?? process.env.GIT_SHA?.slice(0, 12) ?? null },
     database: { healthy: databaseOk, region, migrationAppliedAt: migrationRows[0]?.created_at ?? null },
     frontend: { revision: typeof _req.query.frontendRevision === 'string' && /^[a-f0-9]{7,40}$/i.test(_req.query.frontendRevision) ? _req.query.frontendRevision.slice(0, 12) : null },
     competitions: { instances: counts(instanceRows), activeCount: Number(counts(instanceRows).ACTIVE ?? 0) },

@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
 
 import { validateStartupConfig } from "../packages/server/src/config/startup";
+import { getAppEnvironment, getRuntimeMode } from "../packages/server/src/config/environment";
+import { getHealthPayload } from "../packages/server/src/config/health";
 import { getClearCookieOptions, getSessionCookieOptions } from "../packages/server/src/auth/jwt";
 
 let passes = 0;
@@ -39,10 +41,28 @@ const validProdConfig = validateStartupConfig({
   JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
   PORT: "4000",
   NODE_ENV: "production",
+  APP_ENV: "staging",
   CLIENT_ORIGIN: "https://staging.fugluck.com",
 });
-check("Accepts valid staging/production configuration", validProdConfig.valid === true);
-check("No errors on valid configuration", validProdConfig.errors.length === 0);
+check("Accepts optimized Node production mode with explicit staging application environment", validProdConfig.valid === true);
+check("No errors on valid staging configuration", validProdConfig.errors.length === 0);
+const missingAppEnv = validateStartupConfig({
+  DATABASE_URL: "postgresql://user:pass@host:5432/fugluck_staging",
+  JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+  NODE_ENV: "production",
+});
+check("Rejects production runtime when APP_ENV is missing", missingAppEnv.errors.some((e) => e.includes("APP_ENV")));
+const invalidAppEnv = validateStartupConfig({
+  DATABASE_URL: "postgresql://user:pass@host:5432/fugluck_staging",
+  JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+  NODE_ENV: "production",
+  APP_ENV: "prod",
+});
+check("Rejects an invalid APP_ENV value", invalidAppEnv.errors.some((e) => e.includes("APP_ENV")));
+check("Reports staging independently from production runtime mode", getAppEnvironment({ APP_ENV: "staging" } as NodeJS.ProcessEnv) === "staging" && getRuntimeMode({ NODE_ENV: "production" } as NodeJS.ProcessEnv) === "production");
+check("Does not mislabel a missing deployment environment", getAppEnvironment({ NODE_ENV: "production" } as NodeJS.ProcessEnv) === "unconfigured");
+const stagingHealth = getHealthPayload({ APP_ENV: "staging", NODE_ENV: "production" } as NodeJS.ProcessEnv);
+check("Health payload reports APP_ENV=staging and NODE_ENV=production separately", stagingHealth.environment === "staging" && stagingHealth.runtimeMode === "production");
 
 // 2. Cookie Options & Cross-Subdomain Security
 console.log("\nSection 2: Cookie Security & Cross-Subdomain Options");
@@ -91,6 +111,10 @@ if (fs.existsSync(renderYamlPath)) {
 console.log("\nSection 5: Documentation & Environment Templates");
 const deploymentMdPath = path.resolve(process.cwd(), "DEPLOYMENT.md");
 check("DEPLOYMENT.md exists at repository root", fs.existsSync(deploymentMdPath));
+if (fs.existsSync(deploymentMdPath)) {
+  const deploymentContent = fs.readFileSync(deploymentMdPath, "utf-8");
+  check("Deployment instructions distinguish APP_ENV=staging from NODE_ENV=production", deploymentContent.includes("`APP_ENV`") && deploymentContent.includes("`staging` (deployment identity; independent of Node runtime mode)"));
+}
 check("Root .env.example exists", fs.existsSync(path.resolve(process.cwd(), ".env.example")));
 check("Client .env.example exists", fs.existsSync(path.resolve(process.cwd(), "packages/client/.env.example")));
 check("Server .env.example exists", fs.existsSync(path.resolve(process.cwd(), "packages/server/.env.example")));

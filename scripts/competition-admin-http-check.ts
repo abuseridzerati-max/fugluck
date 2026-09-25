@@ -57,9 +57,15 @@ async function main(){
   const adminRequest=(path:string,method='GET',data?:unknown,user:string|null=owner)=>fetch(adminBase+path,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:user})}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
   check('operations status requires an admin session',(await adminRequest('/operations','GET',undefined,null)).status===401);
   check('operations status requires audit permission',(await adminRequest('/operations','GET',undefined,player)).status===403);
-  const opsResponse=await adminRequest('/operations?frontendRevision=abcdef1234567890');
-  const ops=await opsResponse.json() as any;
-  check('owner can read operations health without secrets',opsResponse.status===200&&ops.backend?.healthy===true&&ops.database?.healthy===true&&ops.frontend?.revision==='abcdef123456'&&ops.authority?.sessions&&ops.competitions?.instances&&ops.accounting?.reconciled===true&&!JSON.stringify(ops).includes('DATABASE_URL'));
+  const previousAppEnv=process.env.APP_ENV,previousNodeEnv=process.env.NODE_ENV;
+  process.env.APP_ENV='staging';process.env.NODE_ENV='production';
+  let opsResponse:Response,ops:any;
+  try{opsResponse=await adminRequest('/operations?frontendRevision=abcdef1234567890');ops=await opsResponse.json() as any;}
+  finally{if(previousAppEnv===undefined)delete process.env.APP_ENV;else process.env.APP_ENV=previousAppEnv;if(previousNodeEnv===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=previousNodeEnv;}
+  check('owner can read operations health without secrets',opsResponse!.status===200&&ops.backend?.healthy===true&&ops.database?.healthy===true&&ops.frontend?.revision==='abcdef123456'&&ops.authority?.sessions&&ops.competitions?.instances&&ops.accounting?.reconciled===true&&!JSON.stringify(ops).includes('DATABASE_URL'));
+  check('operations health separates staging environment from production Node runtime',ops.backend?.environment==='staging'&&ops.backend?.runtimeMode==='production');
+  const operationsUi=readFileSync('packages/client/src/admin/AdminOperationsView.tsx','utf8');
+  check('operations console displays deployment environment and Node runtime separately',operationsUi.includes('name="Environment"')&&operationsUi.includes('name="Node runtime mode"'));
   check('operations health clearly scopes process-local telemetry',ops.authority?.telemetryLifetime?.includes('Current server process only'));
   const userList=await adminRequest(`/users?query=${encodeURIComponent(player)}&page=1&limit=10`).then(r=>r.json()) as any;
   check('user search matches username and returns sandbox balances',userList.users?.length===1&&userList.users[0].id===player&&userList.users[0].sandboxBalances.availableMinor===0&&userList.users[0].sandboxBalances.reservedMinor===0);

@@ -350,7 +350,7 @@ export type GameEligibilityAdminItem = {
 
 export type AdminOperationsData = {
   checkedAt: string
-  backend: { healthy: boolean; uptimeSeconds: number; revision: string | null }
+  backend: { healthy: boolean; environment: string; runtimeMode: string; uptimeSeconds: number; revision: string | null }
   database: { healthy: boolean; region: string | null; migrationAppliedAt: string | null }
   frontend: { revision: string | null }
   competitions: { instances: Record<string, number>; activeCount: number }

@@ -1,4 +1,5 @@
 import { logger } from "../utils/safeLogger";
+import { getAppEnvironment } from "./environment";
 
 export type StartupValidationResult = {
   valid: boolean;
@@ -9,6 +10,13 @@ export type StartupValidationResult = {
 export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): StartupValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
+
+  const appEnvironment = getAppEnvironment(env);
+  if (env.NODE_ENV === "production" && appEnvironment !== "staging" && appEnvironment !== "production") {
+    errors.push("APP_ENV must be explicitly set to 'staging' or 'production' when NODE_ENV is 'production'.");
+  } else if (env.APP_ENV && appEnvironment === "unconfigured") {
+    errors.push("APP_ENV must be one of 'development', 'test', 'staging', or 'production'.");
+  }
 
   // 1. Database URL Validation
   const databaseUrl = env.DATABASE_URL;

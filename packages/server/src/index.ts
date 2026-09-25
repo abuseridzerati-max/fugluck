@@ -14,6 +14,7 @@ import { walletRouter } from "./routes/wallet";
 
 import { corsOptions } from "./config/cors";
 import { enforceStartupConfig } from "./config/startup";
+import { getHealthPayload } from "./config/health";
 import { ensureUserSchema, pool } from "./db/client";
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
 
@@ -48,16 +49,8 @@ app.use("/api/matches", matchesRouter);
 app.use("/api/competitions", competitionsRouter);
 app.use("/api/admin", adminRouter);
 
-const healthPayload = () => ({
-  ok: true,
-  status: "healthy",
-  timestamp: new Date().toISOString(),
-  environment: process.env.NODE_ENV || "development",
-  version: "0.0.1",
-});
-
 app.get("/health", (_req, res) => {
-  res.json(healthPayload());
+  res.json(getHealthPayload());
 });
 
 app.get("/api/health", async (_req, res) => {
@@ -70,7 +63,7 @@ app.get("/api/health", async (_req, res) => {
     dbStatus = "unavailable";
   }
   res.json({
-    ...healthPayload(),
+    ...getHealthPayload(),
     database: dbStatus,
   });
 });
