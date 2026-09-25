@@ -46,7 +46,7 @@ All 41 repository `scripts/*-check.ts` programs completed successfully in the gu
 | Script | Passed | Script | Passed |
 |---|---:|---|---:|
 | `migration-schema-parity-check.ts` | 321 | `auth-account-lifecycle-check.ts` | 41 |
-| `legal-policy-help-check.ts` | 57 | `i18n-check.ts` | 65 |
+| `legal-policy-help-check.ts` | 86 | `i18n-check.ts` | 65 |
 | `wallet-friends-check.ts` | 48 | `financial-reconnection-check.ts` | 17 |
 | `matchmaking-check.ts` | 65 | `determinism-check.ts` | 12 |
 | `score-validation-check.ts` | 12 | `canvas-render-check.ts` | 21 |
@@ -67,7 +67,7 @@ All 41 repository `scripts/*-check.ts` programs completed successfully in the gu
 | `test-database-safety-check.ts` | 18 | `atomic-wager-lifecycle-check.ts` | 38 |
 | `cyber-hopper-authority-check.ts` | 42 | | |
 
-The reported counts total **1,464 checks, 0 failures**. `npm test` completed successfully. `npm run typecheck` passed, including client production build; `npm run build:server` passed; `git diff --check` passed. Client build has a non-fatal main bundle size warning (>500 kB). Render's dependency install reported **7 dependency vulnerabilities (5 moderate, 2 high, 0 critical)**; no dependency upgrades were attempted in this release-preparation change.
+The table above was refreshed on 2026-09-25 after the public-content check grew from 57 to 86 assertions. The current total is **1,493 checks, 0 failures**: 1,395 across the 38 `npm test` scripts, plus 98 across the three standalone database-safety, atomic-wager, and Cyber Hopper authority checks. `npm test` completed successfully. `npm run typecheck` passed, including client production build; `npm run build:server` passed; `git diff --check` passed. Client build has a non-fatal main bundle size warning (>500 kB). Render's dependency install reported **7 dependency vulnerabilities (5 moderate, 2 high, 0 critical)**; no dependency upgrades were attempted in this release-preparation change.
 
 ## Manual review still required
 
@@ -78,8 +78,21 @@ The reported counts total **1,464 checks, 0 failures**. `npm test` completed suc
 - **Security review:** the 7 dependency findings need triage and an explicit upgrade decision. Automated security checks are not a third-party penetration test.
 - **Legal/regulatory review:** no legal classification, licensing conclusion, regulatory approval, or Revenue Service submission is claimed.
 
-## Final gate
+## Previous Phase 6D gate (historical; superseded by the content milestone below)
 
-**READY FOR USER REVIEW:** the candidate is deployed to the staging-specific services, frontend/backend revisions match, the eligible catalog is populated, the core automated suite/builds pass, and staging accounting reported zero discrepancy.
+At the time of the original Phase 6D review, the candidate was reported deployed to staging-specific services, frontend/backend revisions matched, the eligible catalog was populated, and staging accounting reported zero discrepancy. This historical verdict applies to revision `150c6c465a81` and does not verify or include the later public-information/legal-content commit.
 
-**NOT READY FOR SUBMISSION:** guest visual review, narrow mobile visual review, backup/restore verification, environment-label reconciliation, dependency vulnerability triage, and legal/manual acceptance remain open. No Phase 7 work was started.
+**NOT READY FOR SUBMISSION:** guest visual review, narrow mobile visual review, backup/restore verification, environment-label reconciliation, dependency vulnerability triage, and legal/manual acceptance remained open. No Phase 7 work was started.
+
+## Public information and legal content milestone (2026-09-25)
+
+**Local implementation commit:** `88900fe` (`feat(public): complete Revenue Service information and legal content`), verified with Git history. It contains the Session 88 public-information implementation and the corrections below. The commit is local and is not pushed.
+
+- **BUILT — neutral public placeholders (verified by source review and `scripts/legal-policy-help-check.ts` 86/86):** Terms, Privacy, Contact, and the Legal Index no longer expose editor-facing `[INSERT ...]` placeholders. Public copy says the relevant content is pending review/publication. The full missing-input register remains internal at [`docs/PUBLIC_CONTENT_RELEASE_CHECKLIST.md`](PUBLIC_CONTENT_RELEASE_CHECKLIST.md). No entity, address, contact, retention, jurisdiction, or approval was invented.
+- **BUILT — historical legal review note (verified by reading the current Phase 6C dossier and source):** `LEGAL_REVIEW_REQUIRED.md` is identified as a historical snapshot where it conflicts with the current product; its historical content and records were preserved.
+- Terms and Privacy remain `draft-1.0`, not final or effective. Long-form Georgian and Russian legal translations remain unreviewed. Human/legal/operator inputs in the internal checklist are unresolved.
+- **Staging deployment safety is unresolved:** read-only provider inspection showed Vercel maps `staging.fugluck.com` to the feature branch while `main` production is separate. Render identifies the service as `fugluck-api-staging` on the staging hostname and Frankfurt, but its provider environment is labeled `Production`; `/api/health` reports `environment: production` and database connected. The Render database URL is masked, so it could not be matched to the Frankfurt Supabase project. The provider UI showed the Frankfurt project `fugluck-staging-frankfurt`, but that alone does not establish Render's connection target. No `APP_ENV` was visible in the Render environment variable names. Therefore the backend staging database target and environment assignment are **not verified**.
+- No push, deployment, database mutation, production change, or main merge was performed. Avoid deploying or pushing this candidate until the Render environment and database target are proven to be the intended staging resources.
+- Local UI checks from Session 88 cover desktop About and narrow Entry Fees/FAQ, but there was no new staging visual review after this content fix. Guest and signed-in staging states, populated cards, narrow mobile layout, and clean-session screenshots remain unverified. The player-facing staging content acceptance is **NOT PASS / blocked**, not visually accepted.
+- Validation on the local source revision: all 41 `scripts/*-check.ts` programs passed, 1,493 checks total. The 38 `npm test` scripts totaled 1,395; standalone `test-database-safety` 18, `atomic-wager` 38, and `cyber-hopper-authority` 42 totaled 98. Exact per-script counts are in the table above. `npm run typecheck` (including client Vite production build), `npm run build:server`, and `git diff --check` passed. The Vite >500 kB main-chunk warning is non-fatal.
+- Current review status: **READY FOR USER REVIEW of the local source and content only; NOT READY FOR REVENUE SERVICE REVIEW on staging.** The staging visual and database-target gates remain open.
