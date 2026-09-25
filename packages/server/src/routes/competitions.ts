@@ -30,12 +30,14 @@ competitionsRouter.use(competitionsLimiter);
 competitionsRouter.get("/templates", async (req, res) => {
   try {
     // Include disabled templates so an intentionally closed catalog stays empty.
-    let templates = await templateService.listTemplates();
-    if (templates.length === 0) {
-      await templateService.ensureDefaultTemplates(templates);
-      templates = await templateService.listTemplates();
+    const allTemplates = await templateService.listTemplates();
+    if (allTemplates.length === 0) {
+      await templateService.ensureDefaultTemplates(allTemplates);
     }
-    templates = templates.filter((template) => template.enabled);
+    // Public player discovery must use the same certification, authority-version,
+    // and live-template-shape gate as registration. Admin views still use
+    // listTemplates() to inspect disabled and legacy rows.
+    const templates = await templateService.listEnabledTemplates();
     const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
     res.json({ templates: gameId ? templates.filter((template) => template.gameId === gameId) : templates });
   } catch (err: any) {

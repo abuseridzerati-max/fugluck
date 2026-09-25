@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { pool } from '../packages/server/src/db/client';
 import { adminRouter } from '../packages/server/src/routes/admin';
+import { competitionsRouter } from '../packages/server/src/routes/competitions';
 import { ADMIN_SESSION_COOKIE_NAME } from '../packages/server/src/auth/middleware';
 import { signSessionToken } from '../packages/server/src/auth/jwt';
 import { templateService } from '../packages/server/src/competitions/templateService';
@@ -20,8 +21,21 @@ async function main(){
  try {
  await pool.query("INSERT INTO users(id,username,password_hash,role,status,is_email_verified) VALUES($1::text,$1::text,'test-only','OWNER','active',true),($2::text,$2::text,'test-only','user','active',true)",[owner,player]);
  await templateService.createTemplate({id,gameId:'space-blaster',title:'HTTP contract fixture',format:'HEAD_TO_HEAD',participantCapacity:2,currency:'GEL',entryFeeMinor:500,prizes:[{placement:1,amountMinor:900}],rulesVersion:'space-blaster-rv001-v1',skillAssessmentVersion:'v1',enabled:true,isSandbox:true});
- const app=express();app.use(express.json(),cookieParser());app.use('/api/admin',adminRouter);
+ const app=express();app.use(express.json(),cookieParser());app.use('/api/admin',adminRouter);app.use('/api/competitions',competitionsRouter);
  server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server!.once('listening',r));
+ const publicBase=`http://127.0.0.1:${(server.address() as any).port}/api/competitions/templates`;
+ const uncertifiedId=`${id}_uncertified`;
+ await pool.query("INSERT INTO competition_templates(id,game_id,title,format,participant_capacity,currency,entry_fee_minor,rules_version,skill_assessment_version,enabled,jurisdiction) VALUES($1,'neon-runner','Uncertified HTTP fixture','HEAD_TO_HEAD',2,'GEL',300,'neon-runner-ch-1.0','v1',true,'GE')",[uncertifiedId]);
+ await pool.query("INSERT INTO competition_template_prizes(id,template_id,placement,amount_minor,currency) VALUES($1,$2,1,500,'GEL')",[`${uncertifiedId}_prize`,uncertifiedId]);
+ try {
+  const publicCatalog=await fetch(publicBase).then(r=>r.json()) as any;
+  const gameCatalog=await fetch(`${publicBase}?gameId=neon-runner`).then(r=>r.json()) as any;
+  check('public catalog omits enabled templates for uncertified games',!publicCatalog.templates.some((t:any)=>t.gameId==='neon-runner'));
+  check('game-specific catalog does not expose uncertified TEST GEL competitions',gameCatalog.templates.length===0);
+ } finally {
+  await pool.query('DELETE FROM competition_template_prizes WHERE template_id=$1',[uncertifiedId]);
+  await pool.query('DELETE FROM competition_templates WHERE id=$1',[uncertifiedId]);
+ }
  const base=`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/templates/${id}`;
  const request=(method:string,suffix='',data?:unknown,user:string|null=owner)=>fetch(base+suffix,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:user})}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
   check('PUT template edit succeeds',(await request('PUT','',{title:'Edited through HTTP'})).status===200);
