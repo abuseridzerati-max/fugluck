@@ -1,7 +1,7 @@
 # Phase 6D Revenue Service Readiness Manifest
 
 **Recorded:** 2026-09-25  
-**Verdict:** **READY FOR USER REVIEW — manual review pending**  
+**Current verdict:** **PHASE 6 — NOT READY FOR REVENUE SERVICE REVIEW**
 **Submission readiness:** **NOT READY**; this is not a legal opinion, regulator approval, or submission package.
 
 ## Frozen candidate
@@ -59,15 +59,15 @@ All 41 repository `scripts/*-check.ts` programs completed successfully in the gu
 | `request-logging-audit-check.ts` | 12 | `password-policy-check.ts` | 18 |
 | `file-upload-audit-check.ts` | 4 | `wallet-settlement-concurrency-check.ts` | 16 |
 | `wallet-settlement-integrity-check.ts` | 24 | `match-lifecycle-durability-check.ts` | 26 |
-| `staging-readiness-check.ts` | 34 | `competition-phase1-domain-check.ts` | 41 |
+| `staging-readiness-check.ts` | 40 | `competition-phase1-domain-check.ts` | 41 |
 | `competition-phase2-accounting-check.ts` | 54 | `competition-phase3-lifecycle-check.ts` | 45 |
 | `competition-phase4-ui-check.ts` | 44 | `competition-phase5-admin-check.ts` | 42 |
-| `competition-authority-check.ts` | 65 | `competition-admin-http-check.ts` | 38 |
+| `competition-authority-check.ts` | 65 | `competition-admin-http-check.ts` | 40 |
 | `competition-authority-latency-check.ts` | 26 | `authority-presentation-check.ts` | 24 |
 | `test-database-safety-check.ts` | 18 | `atomic-wager-lifecycle-check.ts` | 38 |
 | `cyber-hopper-authority-check.ts` | 42 | | |
 
-The table above was refreshed on 2026-09-25 after the public-content check grew from 57 to 86 assertions. The current total is **1,493 checks, 0 failures**: 1,395 across the 38 `npm test` scripts, plus 98 across the three standalone database-safety, atomic-wager, and Cyber Hopper authority checks. `npm test` completed successfully. `npm run typecheck` passed, including client production build; `npm run build:server` passed; `git diff --check` passed. Client build has a non-fatal main bundle size warning (>500 kB). Render's dependency install reported **7 dependency vulnerabilities (5 moderate, 2 high, 0 critical)**; no dependency upgrades were attempted in this release-preparation change.
+The table above is refreshed through the 2026-09-25 environment-reporting change. The current total is **1,501 checks, 0 failures**: 1,403 across the 38 `npm test` scripts, plus 98 across the three standalone database-safety, atomic-wager, and Cyber Hopper authority checks. `npm test` completed successfully. `npm run typecheck` passed, including client production build; `npm run build:server` passed; `git diff --check` passed. Client build has a non-fatal main bundle size warning (>500 kB). Render's dependency install reported **7 dependency vulnerabilities (5 moderate, 2 high, 0 critical)**; no dependency upgrades were attempted in this release-preparation change.
 
 ## Manual review still required
 
@@ -96,3 +96,15 @@ At the time of the original Phase 6D review, the candidate was reported deployed
 - Local UI checks from Session 88 cover desktop About and narrow Entry Fees/FAQ, but there was no new staging visual review after this content fix. Guest and signed-in staging states, populated cards, narrow mobile layout, and clean-session screenshots remain unverified. The player-facing staging content acceptance is **NOT PASS / blocked**, not visually accepted.
 - Validation on the local source revision: all 41 `scripts/*-check.ts` programs passed, 1,493 checks total. The 38 `npm test` scripts totaled 1,395; standalone `test-database-safety` 18, `atomic-wager` 38, and `cyber-hopper-authority` 42 totaled 98. Exact per-script counts are in the table above. `npm run typecheck` (including client Vite production build), `npm run build:server`, and `git diff --check` passed. The Vite >500 kB main-chunk warning is non-fatal.
 - Current review status: **READY FOR USER REVIEW of the local source and content only; NOT READY FOR REVENUE SERVICE REVIEW on staging.** The staging visual and database-target gates remain open.
+
+## Application environment identity and hard deployment gate (2026-09-25)
+
+- **BUILT — separate app environment from Node runtime mode (verified by source inspection, `scripts/staging-readiness-check.ts` 40/40, `scripts/competition-admin-http-check.ts` 40/40, typecheck, and server build):** local commit `343b1ed` introduces `APP_ENV` and reports it separately from `NODE_ENV` in `/health`, `/api/health`, and Admin Operations. `NODE_ENV=production` remains the optimized runtime mode. A production Node runtime now fails startup unless `APP_ENV` explicitly identifies `staging` or `production`; missing/invalid values are not guessed. The Operations screen labels both values. `DEPLOYMENT.md` and environment examples describe the distinction.
+- **Local Frankfurt URL fingerprint: NOT AVAILABLE.** The two ignored files `.env.staging-eu.local` and `.env.staging.local` were checked without displaying contents; both parsed with no environment keys, so no expected `DATABASE_URL` digest could be calculated. Render Shell displayed that Shell is not supported for the current Free service plan. Render's environment UI masks the live URL. No temporary diagnostic was added or deployed. Consequently, no expected/actual digest comparison was made.
+- **Safe DB identity comparison: NOT AVAILABLE.** Without the expected Frankfurt connection and with the live Render connection masked, read-only metadata could not be compared between the two targets. The Frankfurt Supabase project identity is visible in the provider dashboard, but this does not prove the Render service connects to it. `/api/health` only executes `SELECT 1`; it does not establish project identity. No staging database query or mutation was made for this check.
+- **Render identity (verified in provider UI):** service `fugluck-api-staging`, ID `srv-da2c50c9v7es73db3dkg`, domain `api-staging.fugluck.com`, branch `codex/phase-6-revenue-service-readiness`, region Frankfurt, last deployed revision `150c6c465a81...`. The Render project environment is labeled `Production`. Its inspected environment variable names had `NODE_ENV` but no `APP_ENV`. Thus actual backend `APP_ENV` is unset; current backend health continues to say `production` under the previously deployed code. The `343b1ed` environment-reporting code is local and is not deployed.
+- **Vercel identity (verified in provider UI):** `staging.fugluck.com` is assigned to branch `codex/phase-6-revenue-service-readiness`; production custom domains/deployments remain assigned to production/main. Pushing `f2ce3dd` automatically created Ready Preview deployment `7FZ4mMAo9MjAp9xc11SDWEA6kKMB` and Vercel attached `staging.fugluck.com` to it. This means the public-content frontend revision `f2ce3dd` is available at the staging alias, despite the expectation that pushing alone would not deploy. No Render backend deploy followed. The frontend was not opened for visual acceptance; this event is recorded as an automatic Preview side effect, not as a completed manual deployment/acceptance.
+- **Hard gate: FAIL.** The Render production-labeled environment and unverified/masked DB target fail the required environment and Frankfurt database identity checks. Do not deploy the backend or push further commits that can trigger Vercel Preview until service environment, APP_ENV, and database identity are confirmed. No alias rollback or provider setting change was made.
+- **Manual content review: NOT PERFORMED on staging.** No post-push staging page was opened. Desktop, 390px, 375px, 320px, guest, signed-in, footer/navigation, all 17 requested pages, and the content-comprehension checks remain unverified in the browser. Prior local visual checks remain local-only. Current content staging acceptance is **NOT PASS**.
+- **Validation after environment code changes (verified by command outputs on the local revision):** all 41 scripts passed, **1,501 checks / 0 failures**. `npm test`: 38 scripts, 1,403 checks. Standalone database safety 18/18, atomic wager 38/38, Cyber Hopper authority 42/42. `npm run typecheck` (including Vite client build), `npm run build:server`, and `git diff --check` passed. The Vite >500 kB chunk warning remains non-fatal.
+- **Current Git state:** pushed content/documentation HEAD is `f2ce3dd`; local environment-reporting commit is `343b1ed` and is not pushed. No further push was made because it could trigger another Preview while the safety gate is closed. `main` remains unchanged. Current overall verdict is **PHASE 6 — NOT READY FOR REVENUE SERVICE REVIEW**.
