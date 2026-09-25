@@ -1,0 +1,6 @@
+f33fec64223ed9b88f5176c3d8d1953dad7861bea7f429633b1c4ef5a17725ef  docs/PHASE_6C_REVENUE_SERVICE_DOSSIER.md
+f5181cde160eff0e0074cd248986a464ba68c4cdd1b5f1d380c6e86ef1ce5d05  docs/evidence/phase6c/cyber-hopper-authority-2026-09-25.md
+93c493869f9126fcc0d2126e3e8a071d67d935043dd5b7249fd4f07fd3be4ed2  docs/evidence/phase6c/EVIDENCE_INDEX.md
+9876cb15aee73a23bbab83c16ae74d5976a89ea98e566392363adbd4ee022797  docs/evidence/phase6c/sandbox-accounting-2026-09-25.md
+99dac45283351b2df05d54a37bbb484ed11fbb9d6c8ac71d19f6a7a747d7a754  docs/evidence/phase6c/security-operations-2026-09-25.md
+391b722ecc5fad102bfc6a12f22691f0b879b50dc349221475397b6177d83bb3  docs/evidence/phase6c/space-blaster-authority-2026-09-25.md
