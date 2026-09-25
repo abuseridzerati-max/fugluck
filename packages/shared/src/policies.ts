@@ -19,10 +19,10 @@ export type PolicyType =
   | "CONTACT";
 
 export const CURRENT_POLICY_VERSIONS: Record<PolicyType, string> = {
-  TERMS: "2026-08-18",
-  PRIVACY: "2026-08-18",
+  TERMS: "2026-09-25",
+  PRIVACY: "2026-09-25",
   COOKIES: "2026-08-18",
-  RULES: "2026-08-18",
+  RULES: "2026-09-25",
   DIAMONDS: "2026-08-18",
   WITHDRAWALS: "2026-08-18",
   REFUNDS: "2026-08-18",

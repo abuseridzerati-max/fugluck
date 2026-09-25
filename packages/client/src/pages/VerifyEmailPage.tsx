@@ -91,7 +91,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
         {status === 'success' && (
           <div>
             <p style={{ color: 'var(--color-success, #00ff88)', margin: 'var(--space-4) 0 var(--space-6)' }}>
-              Your email has been confirmed! Full matchmaking, wagering, and social features are now active.
+              Your email has been confirmed! Account, casual matchmaking, and social features are now active.
             </p>
             <button
               onClick={onNavigateHome}

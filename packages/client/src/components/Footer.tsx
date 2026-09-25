@@ -58,7 +58,7 @@ export default function Footer({ onNavigate }: FooterProps) {
             </span>
           </div>
           <p style={{ lineHeight: 1.6, margin: '0 0 var(--space-4)', fontSize: '0.8125rem' }}>
-            The competitive skill-arcade platform where true player reflex and precision decide victory. 100% server-authoritative and fair by design.
+            An online arcade with local practice, casual play, and simulated TEST / SANDBOX GEL competitions.
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {fugluckItems.map((item) => (
@@ -119,9 +119,9 @@ export default function Footer({ onNavigate }: FooterProps) {
                     item.id === 'RULES'
                       ? 'Official Rules'
                       : item.id === 'DIAMONDS'
-                      ? 'Diamonds & Coins'
+                      ? 'Historical Diamond Records'
                       : item.id === 'WITHDRAWALS'
-                      ? 'Withdrawal Policy'
+                      ? 'Withdrawal Service — Unavailable'
                       : item.id === 'REFUNDS'
                       ? 'Refund Policy'
                       : item.id === 'RESPONSIBLE_PLAY'
@@ -180,14 +180,14 @@ export default function Footer({ onNavigate }: FooterProps) {
         }}
       >
         <p style={{ margin: 0, maxWidth: 800, lineHeight: 1.5 }}>
-          Fugluck is a skill-based gaming platform. COINS have no monetary value. Current competitions use simulated Test GEL only; historical Diamond records remain available under legacy policy information.
+          TEST / SANDBOX GEL is simulated, has no real-world value, and cannot be deposited, withdrawn, or redeemed. No real-money payment rails or prizes are active. DIAMONDS are retired; historical records remain preserved.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-4)' }}>
           <span>© 2026 Fugluck. All rights reserved.</span>
           <span>•</span>
           <span>Deterministic 60 FPS Fixed Engine</span>
           <span>•</span>
-          <span>Server-Authoritative Anti-Cheat</span>
+          <span>Server-Run Certified Competition Games</span>
         </div>
       </div>
     </footer>

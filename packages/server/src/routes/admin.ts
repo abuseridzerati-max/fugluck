@@ -13,6 +13,7 @@ import { ensureMatchSettlementsTable, getBalances } from "../wallet/ledger";
 import { getActiveMatchesSummary } from "../matchmaking/matches";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { competitionAdminRouter } from "./adminCompetitions";
+import { getOperationsTelemetry } from "../competitions/operationsTelemetry";
 
 const adminLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -702,6 +703,39 @@ adminRouter.post("/wallet/grant-coins", requirePermission("WALLET_GRANT_COINS"),
 // Diamond grants are retired; keep the route as an explicit compatibility response.
 adminRouter.post("/wallet/grant-diamonds", requirePermission("WALLET_GRANT_DIAMONDS"), (_req, res) => {
   res.status(410).json({ error: "Diamond grants are retired. Historical Diamond balances and ledger entries remain preserved." });
+});
+
+adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_req, res) => {
+  const checkedAt = new Date().toISOString();
+  const results = await Promise.allSettled([
+    db.execute(sql`select 1 as healthy`),
+    db.execute(sql`select status, count(*)::int as count from competition_instances group by status`),
+    db.execute(sql`select status, count(*)::int as count from competition_authority_sessions group by status`),
+    sandboxAccountingAdapter.getSandboxAccountingSummary(),
+    db.execute(sql`select to_timestamp(created_at / 1000.0) as created_at from drizzle.__drizzle_migrations order by created_at desc limit 1`),
+  ]);
+  const value = <T,>(index: number): T | null => results[index].status === 'fulfilled' ? (results[index] as PromiseFulfilledResult<T>).value : null;
+  const databaseOk = value<any>(0) !== null;
+  const instanceRows = value<any>(1)?.rows ?? [];
+  const authorityRows = value<any>(2)?.rows ?? [];
+  const accounting = value<any>(3);
+  const migrationRows = value<any>(4)?.rows ?? [];
+  const counts = (rows: any[]) => Object.fromEntries(rows.map(row => [String(row.status), Number(row.count)]));
+  const region = typeof process.env.DATABASE_REGION === 'string' && /^[a-zA-Z0-9-]{2,32}$/.test(process.env.DATABASE_REGION)
+    ? process.env.DATABASE_REGION
+    : null;
+  const telemetry = getOperationsTelemetry();
+  res.json({
+    checkedAt,
+    backend: { healthy: true, uptimeSeconds: Math.floor(process.uptime()), revision: process.env.RENDER_GIT_COMMIT?.slice(0, 12) ?? process.env.GIT_SHA?.slice(0, 12) ?? null },
+    database: { healthy: databaseOk, region, migrationAppliedAt: migrationRows[0]?.created_at ?? null },
+    frontend: { revision: typeof _req.query.frontendRevision === 'string' && /^[a-f0-9]{7,40}$/i.test(_req.query.frontendRevision) ? _req.query.frontendRevision.slice(0, 12) : null },
+    competitions: { instances: counts(instanceRows), activeCount: Number(counts(instanceRows).ACTIVE ?? 0) },
+    authority: { sessions: counts(authorityRows), activeSessionCount: Number(counts(authorityRows).ACTIVE ?? 0), recentAdmissions: telemetry.admissions.slice(0, 12), recentReconnects: telemetry.reconnects.slice(0, 12), recentErrors: telemetry.authorityErrors.slice(0, 12), telemetryLifetime: 'Current server process only; cleared on restart.' },
+    accounting: accounting ? { discrepancyMinor: accounting.discrepancyMinor, reconciled: accounting.systemReconciled } : null,
+    databaseRegionStatus: region ? 'configured' : 'not configured',
+    sourceErrors: results.map((result, index) => result.status === 'rejected' ? ['database','competition counts','authority counts','accounting reconciliation','migration metadata'][index] : null).filter(Boolean),
+  });
 });
 // Reverse Ledger Entry (Compensating Transaction)
 adminRouter.post("/wallet/reverse", requirePermission("WALLET_REVERSE_TRANSACTION"), async (req, res) => {

@@ -41,6 +41,12 @@ async function main(){
   const source=readFileSync('packages/client/src/admin/AdminConsolePage.tsx','utf8');
   const adminBase=`http://127.0.0.1:${(server.address() as any).port}/api/admin`;
   const adminRequest=(path:string,method='GET',data?:unknown,user:string|null=owner)=>fetch(adminBase+path,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:user})}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
+  check('operations status requires an admin session',(await adminRequest('/operations','GET',undefined,null)).status===401);
+  check('operations status requires audit permission',(await adminRequest('/operations','GET',undefined,player)).status===403);
+  const opsResponse=await adminRequest('/operations?frontendRevision=abcdef1234567890');
+  const ops=await opsResponse.json() as any;
+  check('owner can read operations health without secrets',opsResponse.status===200&&ops.backend?.healthy===true&&ops.database?.healthy===true&&ops.frontend?.revision==='abcdef123456'&&ops.authority?.sessions&&ops.competitions?.instances&&ops.accounting?.reconciled===true&&!JSON.stringify(ops).includes('DATABASE_URL'));
+  check('operations health clearly scopes process-local telemetry',ops.authority?.telemetryLifetime?.includes('Current server process only'));
   const userList=await adminRequest(`/users?query=${encodeURIComponent(player)}&page=1&limit=10`).then(r=>r.json()) as any;
   check('user search matches username and returns sandbox balances',userList.users?.length===1&&userList.users[0].id===player&&userList.users[0].sandboxBalances.availableMinor===0&&userList.users[0].sandboxBalances.reservedMinor===0);
   const grantResponse=await adminRequest('/competitions/accounting/grant','POST',{targetUserId:player,amountMinor:12345,reason:'Phase 5.5A staging QA funding'});
@@ -60,7 +66,7 @@ async function main(){
   const newViews=readFileSync('packages/client/src/admin/AdminFirstIncrementViews.tsx','utf8');
   check('grant UI searches users and requires a review confirmation',newViews.includes('/api/admin/users?query=')&&newViews.includes('Review before granting')&&newViews.includes('Confirm TEST'));
   check('test funding history and user detail show TEST GEL and no real money',newViews.includes('TEST / SANDBOX GEL · NO REAL MONEY')&&newViews.includes('accountingReferenceId'));
-  check('admin shell provides sidebar, global user search, and funding navigation',source.includes('admin-sidebar')&&source.includes('admin-global-search')&&source.includes('label="Test Funding"'));
+  check('admin shell provides sidebar, global user search, funding and health navigation',source.includes('admin-sidebar')&&source.includes('admin-global-search')&&source.includes('label="Test Funding"')&&source.includes('label="Operations / Health"'));
   check('client edit follows PUT contract',/handleEditTemplate[\s\S]*?method: 'PUT'/.test(source));
   check('client toggle uses existing POST actions',source.includes("template.enabled ? 'disable' : 'enable'")&&/handleToggleTemplate[\s\S]*?method: 'POST'/.test(source));
   const accounting=new SandboxAccountingAdapter();

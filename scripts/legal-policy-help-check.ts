@@ -54,8 +54,9 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   ];
 
   check("All 15 policy types exist in CURRENT_POLICY_VERSIONS", expectedPolicyTypes.every((p) => typeof CURRENT_POLICY_VERSIONS[p] === "string" && CURRENT_POLICY_VERSIONS[p].length > 0));
-  check("Terms version is canonical (2026-08-18)", CURRENT_POLICY_VERSIONS.TERMS === "2026-08-18");
-  check("Privacy version is canonical (2026-08-18)", CURRENT_POLICY_VERSIONS.PRIVACY === "2026-08-18");
+  check("Terms version advances for current product terms (2026-09-25)", CURRENT_POLICY_VERSIONS.TERMS === "2026-09-25");
+  check("Privacy version advances for current data notice (2026-09-25)", CURRENT_POLICY_VERSIONS.PRIVACY === "2026-09-25");
+  check("Competition rules version matches current authority scope (2026-09-25)", CURRENT_POLICY_VERSIONS.RULES === "2026-09-25");
 
   check("POLICY_NAV_ITEMS has 16 items (15 policies + Help Center)", POLICY_NAV_ITEMS.length === 16);
   const categories = new Set(POLICY_NAV_ITEMS.map((item) => item.category));
@@ -73,6 +74,9 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   check("packages/client/src/legal/policyData.ts exists", fs.existsSync(policyDataPath));
 
   const policyContent = fs.readFileSync(policyDataPath, "utf-8");
+  check("Current legal copy documents platform-set prizes and sandbox currency", policyContent.includes("predetermined prize") && policyContent.includes("no real-world value"));
+  check("Current legal copy avoids obsolete replay-verification claims", !policyContent.includes("headlessly simulating gameplay input logs") && !policyContent.includes("real-value skill matches"));
+  check("Withdrawal page clearly marks service unavailable", policyContent.includes("Withdrawal Service — Unavailable"));
   for (const pType of expectedPolicyTypes) {
     const slug = pType.toLowerCase().replace(/_/g, "-");
     check(`Policy data defines document for '${slug}'`, policyContent.includes(`slug: '${slug}'`));

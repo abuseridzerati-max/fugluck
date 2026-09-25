@@ -246,6 +246,7 @@ async function runPhase4UIChecks(): Promise<void> {
       !walletPageSrc.includes("Diamond Packages") &&
       !walletPageSrc.includes("handleBuyDiamonds");
     check("11. Diamond Shop completely removed from active wallet interface", walletHasNoDiamondShop);
+    check("11a. Guests cannot load private wallet history indefinitely or request TEST GEL funds", walletPageSrc.includes("if (!user) {") && walletPageSrc.includes("Sign in to view your transaction history.") && walletPageSrc.includes("disabled={!user || faucetLoading}"));
 
     // ----------------------------------------------------
     // Test 12: No Diamond stake selector
@@ -536,7 +537,7 @@ async function runPhase4UIChecks(): Promise<void> {
   }
 
   console.log(`\n=== Phase 4 UI & Experience Check Complete ===`);
-  console.log(`Total Passed: ${passes} / 43 assertions across 39 requirements`);
+  console.log(`Total Passed: ${passes} / ${passes + failures} assertions across 39 requirements`);
   console.log(`Total Failed: ${failures}`);
 
   if (failures > 0) {

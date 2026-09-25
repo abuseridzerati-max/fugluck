@@ -41,7 +41,12 @@ export default function WalletPage({
   const currentLang = i18n.language || 'en'
 
   function loadHistory() {
-    if (!user) return
+    if (!user) {
+      setLoadingHistory(false)
+      setHistoryError(null)
+      setHistory([])
+      return
+    }
     setLoadingHistory(true)
     setHistoryError(null)
     apiFetch<{ history: LedgerHistoryItem[] }>('/api/wallet/history')
@@ -160,28 +165,29 @@ export default function WalletPage({
               TEST ₾{(userBalanceMinor / 100).toFixed(2)}
             </div>
 
-            {userReservedMinor > 0 && (
+          {userReservedMinor > 0 && (
               <div style={{ fontSize: 'var(--font-size-xs)', color: '#fbbf24', marginTop: 4 }}>
                 (TEST ₾{(userReservedMinor / 100).toFixed(2)} reserved in active queue)
               </div>
             )}
 
             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)', lineHeight: 1.4 }}>
-              Simulated sandbox funds for competitive skill contests. No real money is used, deposited, or withdrawn.
+              TEST GEL is simulated, has no real-world value, and cannot be deposited, withdrawn, or redeemed.
             </div>
 
             <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
               <button
                 type="button"
                 className="ac-btn ac-btn--secondary"
-                disabled={faucetLoading}
+                disabled={!user || faucetLoading}
                 onClick={handleAddTestFunds}
+                title={!user ? 'Sign in to access sandbox test funds.' : undefined}
                 style={{ fontSize: '11px', padding: '4px 12px', whiteSpace: 'nowrap' }}
               >
-                {faucetLoading ? 'Adding…' : '[ ADD TEST FUNDS ]'}
+                {faucetLoading ? 'Adding…' : user ? '[ ADD TEST FUNDS ]' : 'SIGN IN TO ACCESS TEST FUNDS'}
               </button>
               <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                Adds simulated sandbox funds. No real money is charged.
+                {user ? 'Adds simulated sandbox funds. No real money is charged.' : 'Sign in to view balances, history, and test-fund options.'}
               </span>
             </div>
 
@@ -215,7 +221,11 @@ export default function WalletPage({
             </button>
           </div>
 
-          {loadingHistory ? (
+          {!user ? (
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+              Sign in to view your transaction history.
+            </p>
+          ) : loadingHistory ? (
             <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
               {t('wallet.loadingHistory', { defaultValue: 'Loading transaction ledger…' })}
             </p>

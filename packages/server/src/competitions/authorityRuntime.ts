@@ -7,6 +7,7 @@ import type { MatchmakingSocket } from '../matchmaking/socketAuth';
 import { getOnlineSocket } from '../matchmaking/presence';
 import { AuthorityStore } from './authorityStore';
 import { measureAdmission } from './authorityAdmission';
+import { recordAdmission, recordAuthorityError, recordAuthorityReconnect } from './operationsTelemetry';
 
 /** Constructor dependencies only; never populated from socket or HTTP messages. */
 export interface AuthorityOptions { capTicks?: number; countdownMs?: number; readyMs?: number; reconnectMs?: number; seedFactory?: () => number }
@@ -106,7 +107,7 @@ export class AuthorityRuntime {
       if(++messages>120)return;
       if(socket.data.isGuest) { socket.emit('authority:error',{code:'AUTH_REQUIRED'}); return; }
       if (!p || typeof p!=='object' || Buffer.byteLength(JSON.stringify(p))>1024) { socket.emit('authority:error',{code:'MESSAGE_SHAPE'}); return; }
-      void Promise.resolve().then(()=>fn(p)).catch(e=>socket.emit('authority:error',{code:typeof e.message==='string'&&/^[A-Z_]+$/.test(e.message)?e.message:'AUTHORITY_UNAVAILABLE'}));
+      void Promise.resolve().then(()=>fn(p)).catch(e=>{const code=typeof e.message==='string'&&/^[A-Z_]+$/.test(e.message)?e.message:'AUTHORITY_UNAVAILABLE';recordAuthorityError(code);socket.emit('authority:error',{code});});
     };
     socket.on('authority:resume',guarded(async p=>{
       if(performance.now()-lastResume<500)throw Error('RESUME_RATE');lastResume=performance.now();
@@ -126,6 +127,7 @@ export class AuthorityRuntime {
       player.readyPendingEpoch=p.epoch;
       try {
       const admission=await measureAdmission(socket);
+      recordAdmission(r.instanceId,r.gameId,admission);
       console.info('[authority] admission metrics',JSON.stringify({instanceId:r.instanceId,...admission}));
       // Reauthenticate after the asynchronous measurement so a replaced controller
       // cannot void or ready its successor's run.
@@ -181,6 +183,7 @@ export class AuthorityRuntime {
     // Serialize simultaneous reconnects so an older database response cannot regain control.
     p.pending=p.pending.catch(()=>{}).then(async()=>{
       if(r.stopped)throw Error('SESSION_TERMINAL');
+      if(p.binding&&p.disconnectedAt!==null) recordAuthorityReconnect(r.instanceId,r.gameId);
       const nonce=randomBytes(24).toString('hex');
       const began=performance.now();
       const epoch=await this.store.bind(r.id,p.sessionId,socket.id,nonce);

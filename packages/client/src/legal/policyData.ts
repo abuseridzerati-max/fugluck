@@ -24,18 +24,18 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'TERMS',
     slug: 'terms',
     title: 'Terms of Service',
-    subtitle: 'General Terms and Conditions governing use of the Fugluck platform.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'How the current Fugluck arcade and simulated competition features work.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.TERMS,
     summary:
-      'These Terms of Service constitute a legally binding agreement between you and Fugluck. By creating an account or accessing the platform, you agree to these terms, including our server-authoritative matchmaking, anti-cheating, and currency rules.',
+      'These service terms describe the current platform features and account rules. They do not state a legal or regulatory classification for the service.',
     sections: [
       {
         id: 'acceptance',
         heading: '1. Acceptance of Terms & Account Registration',
         content: [
           'By accessing, registering for, or playing on Fugluck, you affirm that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, you must not access or use the platform.',
-          'To access certain features, including competitive matchmaking, wallet balance tracking, and social features, you must register for an account. You agree to provide accurate, current, and complete information during registration and to keep such information updated.',
+          'An account is required for account features, social features, and entry into a TEST / SANDBOX GEL competition. Practice play does not require an opponent or competition entry.',
           'You are solely responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify Fugluck immediately of any unauthorized access or security breach.',
           'Each individual is permitted to operate only one active player account. Creating multiple accounts or operating puppet accounts for the purpose of rating manipulation, matchmaking evasion, or bonus exploitation is strictly prohibited.',
         ],
@@ -44,39 +44,35 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'modes-and-gameplay',
         heading: '2. Platform Access & Game Modes',
         content: [
-          'Fugluck provides skill-based arcade video games across multiple gameplay modes:',
-          '• Practice Mode: Single-player offline or local play designed for skill acquisition. No wagers or financial transactions occur.',
-          '• Free Play (Guest Instant Matches): Unauthenticated or peer-to-peer matches conducted at zero stake (stake = 0). Open to all eligible players without financial risk.',
-          '• COIN Matches: Competitive matches played with COINS (our free virtual currency). Winner receives the prize pot with 0% platform rake. COINS have no cash value and cannot be redeemed for real money.',
-          '• DIAMOND Matches: Real-value competitive matches staked with DIAMONDS. Match outcomes are determined entirely by player skill, speed, and precision.',
+          'Fugluck provides arcade games in Practice and casual play, plus a limited set of platform-defined TEST / SANDBOX GEL competitions.',
+          'Practice play runs locally and does not create an entry or prize. Casual COINS are non-monetary play points; casual results are not used to award TEST GEL prizes.',
+          'TEST / SANDBOX GEL competitions use a fixed entry fee and a predetermined prize configured by the platform. Players do not set monetary stakes or bet on external events. Space Blaster and Cyber Hopper are the only games currently certified for this live competition flow; templates may be disabled or unavailable.',
         ],
       },
       {
         id: 'server-authority',
-        heading: '3. Server Authority, Seeding & Score Validation',
+        heading: '3. Competition Operation and Results',
         content: [
-          'All competitive matches on Fugluck are strictly server-authoritative. The Fugluck server generates and issues a cryptographically secure pseudo-random seed to both match participants simultaneously upon match start.',
-          'Physics, obstacle placement, scoring events, and difficulty scaling run deterministically from the canonical seed at a fixed 60 FPS tick rate. Client display resolution does not alter gameplay physics or scoring distance (Fixed Virtual Viewport invariant).',
-          'At match completion, clients submit an input log alongside their claimed score. The server headlessly simulates the entire match run to independently calculate and verify the authoritative score before settling match stakes.',
+          'For an enabled certified TEST GEL competition, the server binds each participant to the competition instance and authority session. The server runs the score-bearing game state and decides the terminal result. The browser sends controls and displays server snapshots.',
+          'Casual COINS match results are client-reported and are not authority-verified or eligible for TEST GEL prizes. Do not treat casual results as evidence of server-verified competition outcomes.',
+          'The active TEST GEL flow supports two-player head-to-head competitions with a single predetermined first-place prize. Other formats are not available in the live authority flow.',
         ],
       },
       {
         id: 'outcomes-and-interruptions',
-        heading: '4. Match Outcomes, Disconnects & Forfeits',
+        heading: '4. Competition Outcomes and Interruptions',
         content: [
-          '• Victory: The player with the higher verified score wins the match and receives the prize pot minus the applicable platform rake fee.',
-          '• Draws: If both players achieve identical verified scores, the match concludes as a Draw, and both players receive an exact 100% refund of their staked entry amounts.',
-          '• Disconnects & Grace Windows: If a player disconnects during an active match, a 10-second reconnection grace period is granted. If the player fails to reconnect within the grace period, the match is recorded as a forfeit in favor of the connected opponent.',
-          '• Server Interruptions: In the rare event of a server restart, crash, or unrecoverable network failure, active matches are automatically voided by the orphan recovery engine, and full stake refunds are credited to both players.',
+          'A certified TEST GEL competition result is determined from server-owned game state and the published competition rules. A tied or interrupted competition is voided/refunded according to its lifecycle outcome; an opponent is not assigned a winner when the system cannot establish a valid result.',
+          'When a participant connection drops, the active authority may allow a reconnect window. Expired reconnects, loss of authority, or server-side failures follow the competition terminal and accounting safeguards. The applicable instance record is the source for its final status.',
         ],
       },
       {
         id: 'currencies-and-wallet',
-        heading: '5. Virtual Currencies, Purchases & Cash-Outs',
+        heading: '5. Simulated Funds and Retired Features',
         content: [
-          'Fugluck operates a dual-currency ledger model: COINS (free-play virtual currency) and DIAMONDS (competitive staking currency).',
-          'COINS are granted freely upon registration (1,000 COINS) and topped up monthly. COINS carry zero monetary value and cannot be exchanged, transferred, or cashed out.',
-          'DIAMONDS represent competitive units that may be acquired via payment processors and used to enter competitive matches. Real-money Diamond purchases and cash-out/withdrawal functionality will be governed by our Diamond & Wallet Terms and Withdrawal Policy once payment gateway infrastructure is operational.',
+          'TEST / SANDBOX GEL is simulated development currency. It has no real-world value and cannot be deposited, withdrawn, redeemed, transferred to a payment service, or exchanged for money. Competition entry and prizes are simulated ledger entries only.',
+          'COINS are non-monetary casual play points. DIAMONDS are retired from new play and funding. Historical Diamond balances and records are retained for account history and audit purposes.',
+          'No payment processor, card processing, bank integration, real GEL deposit, withdrawal service, or real-value prize is active in the current product.',
         ],
       },
       {
@@ -84,7 +80,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         heading: '6. Prohibited Conduct & Anti-Cheating',
         content: [
           'You agree not to engage in any prohibited activity, including but not limited to: running bots or automated input scripts; modifying client source code; memory injection; exploiting network latency or bugs; colluding with opponents; intentionally throwing matches; or attempting to manipulate the wallet ledger.',
-          'Violation of these rules may result in immediate match disqualification, forfeiture of staked entries, account suspension, or permanent banning.',
+          'Violations may result in restriction, suspension, or closure under the applicable account and competition procedures. TEST GEL outcomes remain subject to the system decision and accounting records; staff must not manually rewrite scores, winners, or settled ledger entries.',
         ],
       },
       {
@@ -117,10 +113,10 @@ export const POLICIES: Record<string, PolicyDocument> = {
     slug: 'privacy',
     title: 'Privacy Policy',
     subtitle: 'How Fugluck collects, uses, protects, and handles your personal information.',
-    lastUpdated: 'August 18, 2026',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.PRIVACY,
     summary:
-      'Fugluck is committed to player privacy and data transparency. We process only the information necessary to operate our accounts, verify game integrity, ensure financial ledger accuracy, and prevent cheating.',
+      'This notice summarizes the account, gameplay, and simulated ledger data used by the current platform. It does not describe data collection by features that are not active.',
     sections: [
       {
         id: 'information-collected',
@@ -128,9 +124,9 @@ export const POLICIES: Record<string, PolicyDocument> = {
         content: [
           'We collect only the categories of information necessary to deliver and secure our services:',
           '• Account Information: Username, email address, password hash (salted using Argon2id / bcrypt; we never store plain-text passwords), and account creation timestamps.',
-          '• Gameplay & Anti-Cheat Data: Match histories, authoritative scores, game seeds, and frame-by-frame input logs (keystrokes and mouse click coordinates) required to deterministically verify score authenticity.',
-          '• Financial Ledger Records: Transaction timestamps, currency amounts (COINS/DIAMONDS), and balance mutation reason codes (e.g. signup grant, match escrow, victory payout).',
-          '• Technical & Security Data: IP addresses for rate limiting and admin lockout protection, session tokens, and user agent strings.',
+          '• Gameplay records: match history and results. For certified TEST GEL competition runs, the platform stores server-owned authority results. Casual scores are reported by the client and are not treated as verified TEST GEL results. The current platform does not collect frame-by-frame replay input logs for score reconstruction.',
+          '• Ledger records: timestamps, currency amounts, and event details for Coins, historical Diamonds, and simulated TEST / SANDBOX GEL accounting.',
+          '• Technical and security data: limited request and authentication information used for sessions, rate limiting, and security review. Exact retention can depend on operational and security requirements.',
         ],
       },
       {
@@ -140,8 +136,8 @@ export const POLICIES: Record<string, PolicyDocument> = {
           'Your information is used strictly for:',
           '• Authenticating your identity and maintaining your active login session.',
           '• Operating matchmaking queues and pair-matching players.',
-          '• Headlessly simulating gameplay input logs to detect bots, modified clients, and speedhacks.',
-          '• Maintaining double-entry financial ledger accuracy and balance protection.',
+          '• Running account, matchmaking, game-authority, and simulated accounting features that are currently available.',
+          '• Maintaining sandbox ledger accuracy and security controls. Historical currency records may be retained for account history and audit.',
           '• Communicating critical account notices (e.g. email verification, password reset links).',
         ],
       },
@@ -149,8 +145,8 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'data-retention',
         heading: '3. Data Retention & Ledger Integrity',
         content: [
-          '• Match logs and gameplay seeds are retained in matches_history to guarantee auditability and dispute resolution.',
-          '• Financial ledger entries (ledger_entries) are immutable and append-only to preserve mathematical conservation of currency.',
+          '• Match history and server authority result records are retained according to the current application schema. Historical input-log fields may remain in older records or database structure; the current product does not use replay reconstruction.',
+          '• Wallet and sandbox ledger records are retained as financial history; settled ledger records are not manually rewritten through player-facing controls.',
           '• Verification and password reset tokens expire automatically after 24 hours and 1 hour respectively.',
         ],
       },
@@ -216,45 +212,44 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'RULES',
     slug: 'rules',
     title: 'Competition & Game Rules',
-    subtitle: 'Official gameplay, scoring, validation, and outcome rules across all Fugluck arenas.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'Rules for casual play and currently supported TEST / SANDBOX GEL competitions.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.RULES,
     summary:
-      'Every competitive match on Fugluck is governed by deterministic rules, synchronized seeds, fixed 60 FPS physics loops, and headless score validation to guarantee 100% fair and equal competition.',
+      'Rules depend on the selected play mode. Only enabled, certified TEST / SANDBOX GEL competitions use the server-authoritative result flow described here.',
     sections: [
       {
         id: 'skill-foundation',
-        heading: '1. Skill-Based Competition Architecture',
+        heading: '1. Competition Formats',
         content: [
-          'Fugluck games are pure skill competitions. Random elements (e.g., obstacle spawns, trivia question sequences, platform arrangements) are synchronized between opponents via a single server-issued random seed.',
-          'Both players compete against identical obstacle patterns, identical physics constants, and identical scoring multipliers. No player receives an unfair positional or procedural advantage.',
+          'Practice and casual modes are separate from TEST GEL prize competitions. Casual scores may be client-reported and do not qualify for TEST GEL prizes.',
+          'TEST / SANDBOX GEL competition entries use fixed platform-defined terms: game, head-to-head format, entry fee, participant capacity, and predetermined prize. Players cannot choose a money stake or bet on outside events.',
         ],
       },
       {
         id: 'game-categories',
         heading: '2. Game Categories & Rules',
         content: [
-          '• Runner Games (e.g., Neon Runner): Side-scrolling obstacle avoidance. Scoring is determined by distance traveled and coin pickups.',
-          '• Reflex Timing Games (e.g., Pixel Ninja Dash, Cyber Hopper): Grid-based and platform-jumping reflex challenges requiring precise timing.',
-          '• Arena Shooters (e.g., Space Blaster): 2D wave defense requiring target prioritization and evasion.',
-          '• Quiz Arenas (e.g., Speed Trivia Clash, True/False Sprint): Timed trivia challenges where score scales dynamically with answering speed.',
+          'Practice and casual games include the listed arcade and quiz titles, subject to current availability.',
+          'Only Space Blaster (`space-blaster-rv001-v1`) and Cyber Hopper (`cyber-hopper-rv001-v1`) are currently certified for TEST / SANDBOX GEL prize competitions. Neon Runner and Pixel Ninja Dash are not certified for that use. Speed Trivia Clash and True / False Sprint are outside the current prize-competition scope.',
         ],
       },
       {
         id: 'dynamic-scaling',
-        heading: '3. Deterministic Dynamic Difficulty Scaling',
+        heading: '3. Live Authority and Result Integrity',
         content: [
-          'All arcade mini-games implement standardized deterministic difficulty scaling derived strictly from tick count: difficultyScale = 1.0 + (tickCount / 5400)^1.4 * 1.5. At 90 seconds (5,400 ticks), velocity and spawn rates reach 2.5x speed while preserving 100% replay determinism.',
+          'For a certified TEST GEL game, the browser sends controls and displays snapshots. The server owns score-bearing simulation state, movement, collision, and terminal results. The server binds controls to the authenticated participant and active authority session.',
         ],
       },
       {
         id: 'settlement-rules',
-        heading: '4. Winner Determination & Rake Structure',
+        heading: '4. Outcomes and Simulated Accounting',
         content: [
-          '• Winner: The player with the higher verified score at match termination.',
-          '• Prize Distribution (COINS): Winner receives 100% of the pot (0% rake).',
-          '• Prize Distribution (DIAMONDS): Winner receives 95% of the pot (5% platform rake fee).',
-          '• Ties & Draws: If scores are identical, both players receive a 100% stake refund.',
+          '• Winner: the result is decided from the server-owned game state and the instance rules.',
+          '• Prize: the eligible winner receives the predetermined simulated prize recorded for that instance.',
+          '• Free entry: a freeroll labels entry as FREE; its predetermined prize remains a separate value.',
+          '• Tie, failed admission, or system interruption: the authority and accounting lifecycle decide whether the instance is settled or voided/refunded. No result is manually assigned to a player.',
+          'TEST / SANDBOX GEL has no real-world value. There are no active deposits, withdrawals, redemptions, or payment rails.',
         ],
       },
     ],
@@ -264,37 +259,34 @@ export const POLICIES: Record<string, PolicyDocument> = {
   diamonds: {
     type: 'DIAMONDS',
     slug: 'diamonds',
-    title: 'Historical Diamond & Wallet Policy',
+    title: 'Historical Diamond Records',
     subtitle: 'Legacy policy information retained for historical Diamond and wallet records.',
-    lastUpdated: 'August 18, 2026',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.DIAMONDS,
     summary:
-      'This historical policy is retained for legacy Diamond and wallet records. Diamond purchases, staking, and cash-outs are retired; current competitions use simulated Test GEL under separate sandbox rules.',
+      'This page explains historical Diamond records only. Diamonds are retired from new play and funding. This archive does not offer or describe an active Diamond purchase, competition, or cash-out service.',
     sections: [
       {
         id: 'dual-currency',
-        heading: '1. Dual Currency Model: COINS vs DIAMONDS',
-        note: 'Historical policy text: Diamond purchases, staking, and cash-outs are retired. Current competitions use simulated Test GEL under the separate Competition Rules. This page remains available for legacy records.',
+        heading: '1. Historical Diamond Records',
+        note: 'DIAMONDS — RETIRED / LEGACY. This page is provided to help interpret historical account records.',
         content: [
-          'Fugluck maintains strict architectural separation between our two currencies:',
-          '• COINS: 100% free-play currency. Granted upon registration (1,000 COINS), refilled monthly, with 0% platform rake. COINS have no cash value, cannot be sold, and cannot be redeemed for real money.',
-          '• DIAMONDS: Premium competitive staking currency designed for real-value skill matches. Staked in Diamond matches with a 5% platform rake fee. Eligible winnings may be submitted for cash-out once payout infrastructure is live.',
+          'Historical Diamond balances and ledger records may appear in account history. New Diamond play, purchases, grants, and matching are retired.',
+          'Current competitions use simulated TEST / SANDBOX GEL under the separate Competition Rules. TEST GEL is not a replacement payment balance and has no real-world value.',
         ],
       },
       {
         id: 'append-only-ledger',
         heading: '2. Append-Only Financial Ledger',
         content: [
-          'Every balance change is recorded in an immutable, append-only PostgreSQL ledger (ledger_entries). User balances are derived mathematically as SUM(amount) for that user and currency.',
-          'Balance mutations are serialized with transactional advisory locks, and the database strictly prohibits any transaction that would result in a negative balance.',
+          'Historical currency entries are preserved for account history and audit. This archive does not create a new Diamond balance or authorize new transfers.',
         ],
       },
       {
         id: 'current-status',
         heading: '3. Current Operating Status',
         content: [
-          'Real-money payment provider integration (Stripe, card acquiring) and withdrawal cash-out execution are currently in active architectural design and regulatory review.',
-          'During the development phase, Diamond shop purchases operate in Sandbox/Test Mode. No real money is currently charged, and cash-outs are not yet operational.',
+          'There is no active Diamond shop, purchase, stake, or cash-out feature. The current platform does not process real-money deposits, withdrawals, card payments, or bank transfers.',
         ],
       },
     ],
@@ -304,37 +296,33 @@ export const POLICIES: Record<string, PolicyDocument> = {
   withdrawals: {
     type: 'WITHDRAWALS',
     slug: 'withdrawals',
-    title: 'Cash-Out & Withdrawal Policy',
-    subtitle: 'Rules, eligibility criteria, and redemption procedures for Diamond cash-outs.',
-    lastUpdated: 'August 18, 2026',
+    title: 'Withdrawal Service — Unavailable',
+    subtitle: 'Status information for a service that is not active.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.WITHDRAWALS,
     summary:
-      'This policy outlines the future lifecycle and rules for converting eligible Diamond winnings into real-money payouts. Cash-out features are currently in pre-launch design.',
+      'Withdrawals and redemption are not available. No future withdrawal terms or eligibility are offered on this page.',
     sections: [
       {
         id: 'withdrawal-lifecycle',
-        heading: '1. Withdrawal Lifecycle & Reservation',
+        heading: '1. Current availability',
         content: [
-          'When cash-out functionality is enabled, the withdrawal process will follow a secure multi-step lifecycle:',
-          '1. Request: The player requests a cash-out of eligible Diamonds.',
-          '2. Atomic Reservation: The requested Diamond amount is immediately debited into withdrawal escrow, preventing concurrent wagering or double-spending.',
-          '3. Compliance & Risk Review: Verification of identity, fair-play audit, and AML playthrough checks.',
-          '4. Payout Dispatch: Real-money funds are transmitted to the player via our approved payout gateway.',
+          'The platform has no active withdrawal, redemption, cash-out, deposit, bank, card, or payment-provider functionality.',
+          'TEST / SANDBOX GEL is simulated and cannot be converted to or paid as real money.',
         ],
       },
       {
         id: 'eligibility-and-aml',
-        heading: '2. Eligibility & Anti-Money Laundering (AML)',
+        heading: '2. Historical balances',
         content: [
-          'To prevent financial fraud and credit card laundering, Diamond balances must meet standard playthrough criteria before withdrawal.',
-          'Won Diamonds from verified matches are 100% cash-out eligible upon completing identity verification. Unwagered deposit balances are subject to original payment method refund rules.',
+          'Historical Diamond balances are retained as legacy records and do not create an active withdrawal right or available redemption service.',
         ],
       },
       {
         id: 'status-notice',
-        heading: '3. Feature Availability Notice',
+        heading: '3. Questions',
         content: [
-          'Withdrawal functionality is not currently live. Real-money payment gateway integration is pending final regulatory classification. Payout limits, processing times, and supported payout methods will be published upon launch.',
+          'For questions about an existing account record, use the Contact and Support page. This status page does not promise a future service or a launch date.',
         ],
       },
     ],
@@ -345,34 +333,32 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'REFUNDS',
     slug: 'refunds',
     title: 'Refund Policy',
-    subtitle: 'Rules governing match entry refunds, technical voids, and transaction disputes.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'How simulated TEST GEL entries are handled when a competition is not completed.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.REFUNDS,
     summary:
-      'Fugluck provides automatic, database-enforced refunds for match draws, disconnects, and server interruptions. Learn how match refunds and purchase refund requests are handled.',
+      'This policy describes simulated TEST GEL competition entries. There are no real-money deposits or purchases to refund in the current product.',
     sections: [
       {
         id: 'match-refunds',
         heading: '1. Match Entry Refunds (Automatic)',
         content: [
-          'The Fugluck ledger engine automatically issues 100% stake refunds in the following scenarios:',
-          '• Match Draws: Both players receive a full refund of their staked entry amounts when verified scores tie.',
-          '• Technical Interruptions & Crashes: If a server restart or network drop interrupts an active match, our orphan recovery engine voids the match and refunds both participants.',
-          '• Opponent No-Show / Queue Timeout: If an opponent disconnects during queueing or pre-game synchronization, your entry stake is immediately returned.',
+          'A TEST GEL competition that is tied, cannot pass live admission, or cannot produce a valid terminal result may be voided and its reserved or captured simulated entries returned through the accounting lifecycle.',
+          'The exact result is recorded on the competition instance. A player or administrator cannot use a casual client score to create a TEST GEL prize result.',
         ],
       },
       {
         id: 'completed-matches',
         heading: '2. Legitimate Completed Matches',
         content: [
-          'Once a match is completed with verified server-side scores, the outcome is final. Staked entries in legitimately resolved matches cannot be refunded due to player dissatisfaction or loss of skill competition.',
+          'A valid completed TEST GEL competition is settled from the server-owned result and predetermined instance terms. TEST GEL is simulated and is not a cash payment or real-value prize.',
         ],
       },
       {
         id: 'purchase-refunds',
         heading: '3. Diamond Purchase Refunds',
         content: [
-          'Once real-money payment processors are operational, requests for refunds of unplayed Diamond packages will be processed through customer support in accordance with consumer protection regulations and payment processor guidelines.',
+          'There are no active Diamond purchases or real-money payment processors in the current product. Historical Diamond records remain available as legacy account history.',
         ],
       },
     ],
@@ -383,8 +369,8 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'RESPONSIBLE_PLAY',
     slug: 'responsible-play',
     title: 'Responsible Play Policy',
-    subtitle: 'Our commitment to healthy gaming habits, spending awareness, and player well-being.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'Suggestions for balanced, enjoyable arcade play.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.RESPONSIBLE_PLAY,
     summary:
       'Fugluck is dedicated to providing a safe, enjoyable, and balanced gaming environment. We encourage all players to compete responsibly and maintain healthy boundaries.',
@@ -394,8 +380,8 @@ export const POLICIES: Record<string, PolicyDocument> = {
         heading: '1. Principles of Responsible Play',
         content: [
           '• Play for Entertainment: Competitive gaming should be an enjoyable test of skill, reflex, and strategy.',
-          '• Never Chase Losses: Avoid wagering larger amounts or extending session times to recover previous losses.',
-          '• Set Personal Limits: Establish clear time and budget boundaries before entering competitive arenas.',
+          '• Take breaks and set time boundaries that work for you.',
+          '• TEST / SANDBOX GEL is simulated and cannot be deposited or withdrawn. It has no real-world value.',
           '• Balance with Life: Gaming should complement, not replace, daily responsibilities, work, or social connections.',
         ],
       },
@@ -403,10 +389,8 @@ export const POLICIES: Record<string, PolicyDocument> = {
         id: 'player-controls',
         heading: '2. Available Account Controls',
         content: [
-          'Fugluck provides tools to help manage your platform engagement:',
-          '• Free Practice & Free Play: You can always play offline Practice Mode or zero-stake guest matches without financial commitments.',
-          '• Account Pause & Cool-Off: You can request temporary account suspension or self-exclusion through our support desk.',
-          '• Account Closure: You may permanently close your account at any time.',
+          'Available controls depend on the current release. You can stop playing at any time and contact support about your account.',
+          'Account closure and data requests are handled through the Contact and Data Rights pages.',
         ],
       },
       {
@@ -428,28 +412,27 @@ export const POLICIES: Record<string, PolicyDocument> = {
     lastUpdated: 'August 18, 2026',
     version: CURRENT_POLICY_VERSIONS.ELIGIBILITY,
     summary:
-      'Fugluck complies with applicable legal, age, and jurisdictional standards for skill-based gaming. Learn about player eligibility requirements and geographical restrictions.',
+      'This page describes current account access limits. It does not state a legal or regulatory classification or approval.',
     sections: [
       {
         id: 'age-requirements',
         heading: '1. Age Requirements',
         content: [
-          'You must be of legal age to form a binding contract and participate in skill-based competitions in your jurisdiction. The minimum age for account registration and participation is subject to local regulatory confirmation.',
+          'Eligibility rules are subject to product and legal review. The current release does not publish a final minimum age or jurisdictional classification here. Do not treat this page as legal advice or a statement of regulatory approval.',
         ],
       },
       {
         id: 'jurisdiction-rules',
         heading: '2. Geographical & Jurisdictional Availability',
         content: [
-          'Skill-based gaming laws vary by country, state, and province. It is the responsibility of each player to ensure that accessing Fugluck and participating in competitive matches is lawful in their location.',
-          'Fugluck reserves the right to restrict access from sanctioned regions, jurisdictions where skill gaming is restricted, or locations where regulatory licensing is required.',
+          'Availability may be restricted by operational decisions or applicable requirements. Contact the platform for current access questions. This page does not make a legal classification of the product.',
         ],
       },
       {
         id: 'identity-verification',
         heading: '3. Identity Verification (KYC)',
         content: [
-          'Prior to processing real-money transactions or cash-out requests, Fugluck may require identity verification (including proof of identity and address) to comply with anti-fraud and anti-money laundering requirements.',
+          'The current product has no real-money deposit, payment, or withdrawal service. No KYC/AML thresholds or withdrawal eligibility are being offered by this page.',
         ],
       },
     ],
@@ -460,37 +443,37 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'FAIR_PLAY',
     slug: 'fair-play',
     title: 'Fair Play & Anti-Cheating Policy',
-    subtitle: 'Our rigorous standards and technological safeguards to guarantee competitive integrity.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'Account, session, and competition integrity expectations.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.FAIR_PLAY,
     summary:
-      'Cheating, botting, score manipulation, and unfair tactics are strictly prohibited on Fugluck. Our server-authoritative simulation engine detects and rejects modified runs automatically.',
+      'Attempts to interfere with accounts, sessions, game operation, or competition results are prohibited. The safeguards described here vary by mode and do not guarantee that every misuse will be detected automatically.',
     sections: [
       {
         id: 'prohibited-tools',
         heading: '1. Prohibited Tools & Behaviors',
         content: [
           'The following activities constitute severe fair-play violations:',
-          '• Automated Input Tools & Bots: Utilizing macros, auto-clickers, artificial intelligence agents, or automated input replay scripts.',
+          '• Automated inputs or tools intended to manipulate play or competition outcomes.',
           '• Client Modification & Injection: Modifying the client JavaScript bundle, injecting memory modifications, or manipulating fixed-timestep loops.',
-          '• Speedhacking & Freeze-Frame Exploits: Artificially slowing down clock timings or creating browser freeze-frames to gain artificial reaction time.',
-          '• Collusion & Rating Abuse: Match fixing, intentionally forfeiting to transfer balances, or queueing against puppet accounts.',
+          '• Attempts to exploit timing, disconnects, or another user’s account.',
+          '• Collusion or attempts to manipulate competition participation or results.',
         ],
       },
       {
         id: 'detection-systems',
         heading: '2. Anti-Cheat & Verification Technology',
         content: [
-          '• Headless Server Simulation: The server runs the identical deterministic game engine against the match seed and client input log to re-derive the authoritative score.',
-          '• Freeze-Frame Auto-Forfeit: Submissions where real-world duration exceeds simulated tick progress by more than 3.0 seconds are automatically rejected as freeze-frame cheating.',
-          '• Anomaly Detection: Impossible input frequencies, superhuman reaction speeds, and inconsistent coordinate jumps are automatically flagged for review.',
+          '• Certified TEST GEL competitions run the score-bearing simulation on the server. Authenticated controls are bound to an authority session; score and terminal results are server-owned.',
+          '• Casual scores are client-reported and are not eligible for TEST GEL prizes.',
+          '• Authority admission, input-shape, session binding, reconnect fencing, and accounting controls are tested by the project’s current automated checks.',
         ],
       },
       {
         id: 'penalties',
         heading: '3. Consequences of Violations',
         content: [
-          'Confirmed violations result in immediate match forfeit, nullification of leaderboard positions, balance forfeiture, and permanent account ban.',
+          'Reported conduct may be reviewed and may result in account restrictions under the applicable procedures. Staff do not manually rewrite settled results or ledger records.',
         ],
       },
     ],
@@ -522,7 +505,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
         heading: '2. Investigation & Resolution Procedure',
         content: [
           '1. Submission: Submit an inquiry via our Help Center (/help) or Contact page (/contact) with match ID, timestamps, and details.',
-          '2. Ledger & Simulation Audit: An administrator reviews the match seed, input logs, and database ledger audit records.',
+          '2. Record Review: For a certified TEST GEL competition, an administrator may review the authority decision, competition lifecycle, and sandbox ledger records. Casual scores do not have replay-based verification.',
           '3. Resolution: Findings are communicated to the player. If an error is verified, compensating ledger adjustments are made.',
         ],
       },
@@ -612,35 +595,34 @@ export const POLICIES: Record<string, PolicyDocument> = {
     type: 'ABOUT',
     slug: 'about',
     title: 'About Fugluck',
-    subtitle: 'The modern competitive skill-arcade platform where true player skill decides the victory.',
-    lastUpdated: 'August 18, 2026',
+    subtitle: 'An online arcade with practice, casual play, and simulated competition features.',
+    lastUpdated: 'September 25, 2026',
     version: CURRENT_POLICY_VERSIONS.ABOUT,
     summary:
-      'Fugluck is an online skill-based gaming arena built for quick, intense head-to-head arcade battles. Every match is 100% server-authoritative, deterministic, and fair.',
+      'Fugluck is an online arcade platform. It offers local practice and casual games, plus a limited set of platform-defined TEST / SANDBOX GEL competitions.',
     sections: [
       {
         id: 'our-mission',
         heading: '1. Our Mission',
         content: [
-          'Fugluck was built on a simple premise: competitive gaming should reward skill, speed, and precision—without pay-to-win mechanics or hidden algorithms.',
-          'Whether you are dodging obstacles in Neon Runner, testing lightning reflexes in Pixel Ninja Dash, clearing waves in Space Blaster, or answering fast in Speed Trivia Clash, you compete against real players under perfectly identical conditions.',
+          'Players can choose practice or casual games. A separate TEST / SANDBOX GEL flow is available only for enabled, certified competition templates.',
+          'Space Blaster and Cyber Hopper are currently certified for the live prize-competition authority. Neon Runner and Pixel Ninja Dash are not certified; Speed Trivia Clash and True / False Sprint are outside the current prize scope.',
         ],
       },
       {
         id: 'fairness-first',
         heading: '2. Fairness by Design',
         content: [
-          'We built our platform from the ground up with a fixed 60 FPS deterministic physics loop, identical random seeds, and headless server anti-cheat simulation. No pay-to-win boosts. No lucky crits. Just player skill.',
+          'For certified TEST GEL competitions, the server runs the score-bearing state and decides results. Casual scores are client-reported and are not used to award TEST GEL prizes.',
         ],
       },
       {
         id: 'game-modes',
         heading: '3. Play Your Way',
         content: [
-          '• Offline Practice: Hone your skills with zero stakes.',
-          '• Instant Free Play: Share an invite link with friends for casual fun.',
-          '• Coin Matches: Enjoy competitive multiplayer using our free virtual currency.',
-          '• Diamond Matches: Compete in high-stakes arenas with real prize potential.',
+          '• Practice: play locally without a competition entry.',
+          '• Casual play: use non-monetary COINS where available.',
+          '• TEST / SANDBOX GEL competitions: platform-set entry fees and predetermined simulated prizes. No real-money deposit, withdrawal, redemption, card processing, bank integration, or payment rail is active.',
         ],
       },
     ],

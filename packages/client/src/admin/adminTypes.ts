@@ -13,6 +13,7 @@ export type Tab =
   | 'competitions_accounting'
   | 'competitions_eligibility'
   | 'test_funding'
+  | 'operations'
 
 export type AdminUser = {
   id: string
@@ -345,4 +346,23 @@ export type GameEligibilityAdminItem = {
   casualCoins: boolean
   authorityVersion: string | null
   technicalNotes: string
+}
+
+export type AdminOperationsData = {
+  checkedAt: string
+  backend: { healthy: boolean; uptimeSeconds: number; revision: string | null }
+  database: { healthy: boolean; region: string | null; migrationAppliedAt: string | null }
+  frontend: { revision: string | null }
+  competitions: { instances: Record<string, number>; activeCount: number }
+  authority: {
+    sessions: Record<string, number>
+    activeSessionCount: number
+    recentAdmissions: Array<{ instanceId: string; gameId: string; sampledAt: string; sampleCount: number; p95RttMs: number | null; medianRttMs: number | null; jitterMs: number | null; accepted: boolean }>
+    recentReconnects: Array<{ instanceId: string; gameId: string; occurredAt: string }>
+    recentErrors: Array<{ code: string; occurredAt: string }>
+    telemetryLifetime: string
+  }
+  accounting: { discrepancyMinor: number; reconciled: boolean } | null
+  databaseRegionStatus: string
+  sourceErrors: string[]
 }

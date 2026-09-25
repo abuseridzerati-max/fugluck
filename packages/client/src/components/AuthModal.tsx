@@ -94,7 +94,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
             <div style={{ fontSize: 44, marginBottom: 'var(--space-3)' }}>✉️</div>
             <h2 style={{ margin: '0 0 var(--space-2)' }}>Check Your Email</h2>
             <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-4)' }}>
-              We sent a verification link to <strong>{email}</strong>. Please check your inbox and verify your account to unlock full wagering and social features.
+              We sent a verification link to <strong>{email}</strong>. Please check your inbox and verify your account to unlock account, casual matchmaking, and social features.
             </p>
 
             {infoMessage && (

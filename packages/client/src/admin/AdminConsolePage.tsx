@@ -18,6 +18,7 @@ import type {
   SandboxLedgerEntryAdmin,
   SandboxFundingGrantAdmin,
   GameEligibilityAdminItem,
+  AdminOperationsData,
 } from './adminTypes'
 import { GrantTestFundsModal, TestFundingHistoryView, UserDetailDrawer } from './AdminFirstIncrementViews'
 import './adminConsole.css'
@@ -43,6 +44,7 @@ import {
   formatGEL,
 } from './CompetitionAdminViews'
 import type { AdminPermission } from '@fugluck/shared'
+import AdminOperationsView from './AdminOperationsView'
 
 const GAME_OPTIONS = [
   { id: '', label: 'All Games' },
@@ -99,6 +101,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
   const [globalSearch, setGlobalSearch] = useState('')
 
   const [gameEligibility, setGameEligibility] = useState<GameEligibilityAdminItem[]>([])
+  const [operationsData, setOperationsData] = useState<AdminOperationsData | null>(null)
 
   // Tab 1: Dashboard
   const [metrics, setMetrics] = useState<Metrics | null>(null)
@@ -466,6 +469,20 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     }
   }, [])
 
+  const fetchOperations = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
+    try {
+      const revision = import.meta.env.VITE_BUILD_REVISION
+      const suffix = typeof revision === 'string' && /^[a-f0-9]{7,40}$/i.test(revision) ? `?frontendRevision=${revision}` : ''
+      setOperationsData(await apiFetch<AdminOperationsData>(`/api/admin/operations${suffix}`))
+    } catch (e: any) {
+      setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load operations status.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   // Competition Action Handlers
   const handleCreateTemplate = async (params: any) => {
     await apiFetch('/api/admin/competitions/templates', {
@@ -555,6 +572,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
       fetchSandboxLedger(1)
     }
     if (activeTab === 'competitions_eligibility') fetchGameEligibility()
+    if (activeTab === 'operations') fetchOperations()
     if (activeTab === 'test_funding') fetchFundingGrants()
     if (activeTab === 'dashboard') fetchDashboard()
     if (activeTab === 'users') fetchUsers(1)
@@ -597,7 +615,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         actionLabel: 'Suspend Account',
         intent: 'warning',
         targetDescription: `User ${user.username} (${user.id})`,
-        impactWarning: 'Account will be immediately restricted from logging in, matchmaking, and wagering.',
+        impactWarning: 'Account will be immediately restricted from signing in and starting or joining matches.',
         onConfirm: async (reason) => {
           await apiFetch(`/api/admin/users/${user.id}/suspend`, {
             method: 'POST',
@@ -932,6 +950,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 fetchSandboxLedger()
               }
               if (activeTab === 'competitions_eligibility') fetchGameEligibility()
+              if (activeTab === 'operations') fetchOperations()
               if (activeTab === 'test_funding') fetchFundingGrants()
               if (activeTab === 'dashboard') fetchDashboard()
               if (activeTab === 'users') fetchUsers()
@@ -983,7 +1002,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
             <NavButton id="ledger" active={activeTab} setActive={setActiveTab} label="Ledger" />
             <NavButton id="competitions_accounting" active={activeTab} setActive={setActiveTab} label="Reconciliation" />
           </div>
-          <div className="admin-nav-group"><span>LIVE OPERATIONS</span><NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Instances" /></div>
+          <div className="admin-nav-group"><span>LIVE OPERATIONS</span><NavButton id="operations" active={activeTab} setActive={setActiveTab} label="Operations / Health" /><NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Instances" /></div>
           <div className="admin-nav-group"><span>RECORDS</span><NavButton id="audit" active={activeTab} setActive={setActiveTab} label="Audit Log" /><NavButton id="matches" active={activeTab} setActive={setActiveTab} label="Legacy Matches" /></div>
         </nav>
         <main className="admin-main">
@@ -1041,6 +1060,10 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
         {activeTab === 'competitions_eligibility' && (
           <CompetitionEligibilityView games={gameEligibility} />
+        )}
+
+        {activeTab === 'operations' && (
+          <AdminOperationsView data={operationsData} loading={isLoading} onRefresh={fetchOperations} />
         )}
 
         {activeTab === 'test_funding' && (
