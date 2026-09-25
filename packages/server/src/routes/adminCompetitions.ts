@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { eq, sql } from "drizzle-orm";
 import {
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY,
+  GAME_COMPETITION_CERTIFICATIONS,
   type CompetitionFormat,
   type CompetitionPrize,
   type CompetitionTemplate,
@@ -654,25 +654,28 @@ competitionAdminRouter.post(
 
 competitionAdminRouter.get("/eligibility", requirePermission("COMPETITIONS_VIEW"), async (_req, res) => {
   try {
-    const registry = Object.entries(GAME_COMPETITION_ELIGIBILITY_REGISTRY).map(([gameId, eligibility]) => ({
+    const registry = Object.entries(GAME_COMPETITION_CERTIFICATIONS).map(([gameId, certification]) => ({
       gameId,
-      status: eligibility,
-      isCandidate: eligibility === "PAID_COMPETITIVE_CANDIDATE",
-      isCoinOnly: eligibility === "COIN_COMPETITIVE",
-      technicalNotes:
-        eligibility === "PAID_COMPETITIVE_CANDIDATE"
-          ? "Deterministic simulation, seed replay verification, and score validation supported. Candidate for sandbox skill competitions only."
-          : "Casual Coin matchmaking and practice play only. Blocked from paid sandbox competitions.",
+      status: certification.testGelCompetition,
+      isCandidate: certification.testGelCompetition === "LEVEL_3_CERTIFIED",
+      testGelEligible: certification.testGelCompetition === "LEVEL_3_CERTIFIED",
+      practice: certification.practice,
+      casualCoins: certification.casualCoins,
+      authorityVersion: certification.authorityVersion ?? null,
+      technicalNotes: certification.testGelCompetition === "LEVEL_3_CERTIFIED"
+        ? `Level 3 TEST GEL authority is enabled for version ${certification.authorityVersion}.`
+        : certification.testGelCompetition === "OUT_OF_SCOPE"
+          ? "Practice and casual Coins only; outside the current prize-bearing scope."
+          : "Practice and casual Coins only; not certified for TEST GEL competitions.",
     }));
 
-    const paidApprovedCount = registry.filter((r) => r.status === ("PAID_COMPETITIVE_APPROVED" as any)).length;
+    const eligibleCount = registry.filter((r) => r.testGelEligible).length;
 
     res.json({
       registry,
-      zeroPaidApproved: paidApprovedCount === 0,
       totalGames: registry.length,
-      candidateGamesCount: registry.filter((r) => r.isCandidate).length,
-      coinOnlyGamesCount: registry.filter((r) => r.isCoinOnly).length,
+      certifiedLevel3Count: eligibleCount,
+      scopeLimitedToSpaceBlasterAndCyberHopper: eligibleCount === 2 && registry.filter((r) => r.testGelEligible).every((r) => r.gameId === "space-blaster" || r.gameId === "cyber-hopper"),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to load game eligibility registry." });

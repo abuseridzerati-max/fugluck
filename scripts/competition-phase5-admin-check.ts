@@ -12,6 +12,8 @@ if (!process.env.JWT_SECRET) process.env.JWT_SECRET = "dev_secret_for_standalone
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import {
+  AUTHORITY_VERSION,
+  CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_COMPETITION_ELIGIBILITY_REGISTRY,
   hasPermission,
   type CompetitionTemplate,
@@ -185,7 +187,7 @@ async function runPhase5AdminChecks(): Promise<void> {
       currency: "GEL",
       entryFeeMinor: 500, // TEST ₾5.00
       prizes: [{ placement: 1, amountMinor: 900, currency: "GEL" }],
-      rulesVersion: "1.0.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "1.0.0",
       jurisdiction: "GE",
       enabled: true,
@@ -203,7 +205,7 @@ async function runPhase5AdminChecks(): Promise<void> {
         currency: "GEL",
         entryFeeMinor: 500,
         prizes: [{ placement: 1, amountMinor: 900, currency: "GEL" }],
-        rulesVersion: "1.0.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "1.0.0",
         jurisdiction: "GE",
         enabled: true,
@@ -224,7 +226,7 @@ async function runPhase5AdminChecks(): Promise<void> {
         currency: "GEL",
         entryFeeMinor: 500,
         prizes: [{ placement: 1, amountMinor: 900, currency: "GEL" }],
-        rulesVersion: "1.0.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "1.0.0",
         jurisdiction: "GE",
         enabled: true,
@@ -245,7 +247,7 @@ async function runPhase5AdminChecks(): Promise<void> {
         currency: "GEL",
         entryFeeMinor: -500,
         prizes: [{ placement: 1, amountMinor: 900, currency: "GEL" }],
-        rulesVersion: "1.0.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "1.0.0",
         jurisdiction: "GE",
         enabled: true,
@@ -269,7 +271,7 @@ async function runPhase5AdminChecks(): Promise<void> {
           { placement: 1, amountMinor: 500, currency: "GEL" },
           { placement: 1, amountMinor: 400, currency: "GEL" }, // Duplicate placement 1
         ],
-        rulesVersion: "1.0.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "1.0.0",
         jurisdiction: "GE",
         enabled: true,
@@ -281,14 +283,14 @@ async function runPhase5AdminChecks(): Promise<void> {
 
     // Req 9: Promotional overlay template accepted (2 x ₾5 entry, ₾20 prize)
     const promoTemplate = await templateService.createTemplate({
-      gameId: "pixel-ninja-dash",
+      gameId: "space-blaster",
       title: `P5 Promotional Overlay ${ts}`,
       format: "HEAD_TO_HEAD",
       participantCapacity: 2,
       currency: "GEL",
       entryFeeMinor: 500, // 2 * 500 = 1000 minor entries
       prizes: [{ placement: 1, amountMinor: 2000, currency: "GEL" }], // 2000 minor prize (1000 subsidy)
-      rulesVersion: "1.0.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "1.0.0",
       jurisdiction: "GE",
       enabled: true,
@@ -310,7 +312,7 @@ async function runPhase5AdminChecks(): Promise<void> {
       currency: "GEL",
       entryFeeMinor: 0, // FREE
       prizes: [{ placement: 1, amountMinor: 100000, currency: "GEL" }], // TEST ₾1,000.00
-      rulesVersion: "1.0.0",
+      rulesVersion: CYBER_HOPPER_AUTHORITY_VERSION,
       skillAssessmentVersion: "1.0.0",
       jurisdiction: "GE",
       enabled: true,
@@ -318,23 +320,41 @@ async function runPhase5AdminChecks(): Promise<void> {
     check("10. Freeroll template accepted (TEST ₾0.00 entry, TEST ₾1,000.00 prize)", freerollTemplate.entryFeeMinor === 0);
 
     // Req 11: Multi-placement prizes accepted
-    const multiPrizeTemplate = await templateService.createTemplate({
-      gameId: "neon-runner",
-      title: `P5 Multi Placement Cup ${ts}`,
+    let multiPrizeTemplate: CompetitionTemplate | null = null;
+    try {
+      multiPrizeTemplate = await templateService.createTemplate({
+        gameId: "space-blaster",
+        title: `P5 Multi Placement Cup ${ts}`,
+        format: "HEAD_TO_HEAD",
+        participantCapacity: 2,
+        currency: "GEL",
+        entryFeeMinor: 1000,
+        prizes: [
+          { placement: 1, amountMinor: 1400, currency: "GEL" },
+          { placement: 2, amountMinor: 400, currency: "GEL" },
+        ],
+        rulesVersion: AUTHORITY_VERSION,
+        skillAssessmentVersion: "1.0.0",
+        jurisdiction: "GE",
+        enabled: true,
+      });
+    } catch (error) {
+      if (!(error instanceof TemplateValidationError)) throw error;
+    }
+    check("11. Unsupported multi-placement head-to-head template is rejected", !multiPrizeTemplate);
+    const opsTemplate = await templateService.createTemplate({
+      gameId: "space-blaster",
+      title: `P5 Safe Operations ${ts}`,
       format: "HEAD_TO_HEAD",
       participantCapacity: 2,
       currency: "GEL",
       entryFeeMinor: 1000,
-      prizes: [
-        { placement: 1, amountMinor: 1400, currency: "GEL" },
-        { placement: 2, amountMinor: 400, currency: "GEL" },
-      ],
-      rulesVersion: "1.0.0",
+      prizes: [{ placement: 1, amountMinor: 1800, currency: "GEL" }],
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "1.0.0",
       jurisdiction: "GE",
       enabled: true,
     });
-    check("11. Multi-placement predetermined prizes accepted (1st: ₾14, 2nd: ₾4)", multiPrizeTemplate.prizes?.length === 2);
 
     // ===========================================================================
     // Section 3: Template Immutability & Snapshots (Requirements 12-15)
@@ -434,7 +454,7 @@ async function runPhase5AdminChecks(): Promise<void> {
 
     // Setup an instance for cancellation: PENDING_ENTRANTS with 1 participant
     const userPreCancelBalance = await adapter.getSandboxBalance(regularUserId);
-    const cancelJoin = await instanceService.joinCompetitionQueue(multiPrizeTemplate.id, regularUserId, adapter);
+    const cancelJoin = await instanceService.joinCompetitionQueue(opsTemplate.id, regularUserId, adapter);
     const cancelTargetInst = (await instanceService.getInstance(cancelJoin.instanceId))!;
 
     const userReservedBalance = await adapter.getSandboxBalance(regularUserId);
@@ -501,8 +521,7 @@ async function runPhase5AdminChecks(): Promise<void> {
     );
     check("23. Duplicate void call is idempotent without duplicate refunds", duplicateVoidRes.status === "VOIDED");
 
-    // Req 24: Settled instance protected from invalid void
-    // Create a new instance, settle it normally, then attempt void
+    // Req 24: Legacy client-side completion is blocked; void is the safe recovery path.
     const settleTemplate = await templateService.createTemplate({
       gameId: "space-blaster",
       title: `P5 Settle Test ${ts}`,
@@ -511,7 +530,7 @@ async function runPhase5AdminChecks(): Promise<void> {
       currency: "GEL",
       entryFeeMinor: 200,
       prizes: [{ placement: 1, amountMinor: 360, currency: "GEL" }],
-      rulesVersion: "1.0.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "1.0.0",
       jurisdiction: "GE",
       enabled: true,
@@ -523,30 +542,17 @@ async function runPhase5AdminChecks(): Promise<void> {
     // Activate instance to capture entries into escrow
     await lifecycleEngine.activateLockedCompetition(settleInst.id, adapter);
 
-    // Settle with decisive result: player 2 forfeits so regularUserId wins
-    const settledNormalRes = await lifecycleEngine.settleCompetition(
-      settleInst.id,
-      { forfeitingUserId: player2Id },
-      adapter,
-    );
-
-    let voidSettledBlocked = false;
+    let legacySettlementRejected = false;
     try {
-      // Direct call to settleCompetition with void on already settled instance
-      const attemptRes = await lifecycleEngine.settleCompetition(
-        settleInst.id,
-        { systemVoid: true, voidReason: "Attempt to void settled instance" },
-        adapter,
-      );
-      // It returns the already-settled state without re-settling
-      const rechecked = await instanceService.getInstance(settleInst.id);
-      voidSettledBlocked = rechecked?.status === "SETTLED" && attemptRes.status === "SETTLED";
-    } catch {
-      voidSettledBlocked = true;
+      await lifecycleEngine.settleCompetition(settleInst.id, { forfeitingUserId: player2Id }, adapter);
+    } catch (error) {
+      legacySettlementRejected = (error as { code?: string }).code === "LIVE_AUTHORITY_REQUIRED";
     }
+    const beforeRecovery = await instanceService.getInstance(settleInst.id);
+    const recovery = await lifecycleEngine.settleCompetition(settleInst.id, { systemVoid: true, voidReason: "Authority run not created in admin fixture" }, adapter);
     check(
-      "24. Terminal protection: SETTLED competitions are immutable and reject void transition",
-      settledNormalRes.status === "SETTLED" && voidSettledBlocked,
+      "24. Legacy forfeit cannot award a winner; unstarted-authority fixture is voided and refunded",
+      legacySettlementRejected && beforeRecovery?.status === "ACTIVE" && beforeRecovery.winnerUserId == null && recovery.status === "VOIDED",
     );
 
     // ===========================================================================
@@ -668,7 +674,7 @@ async function runPhase5AdminChecks(): Promise<void> {
     const coinOnlyGames = registryEntries.filter(([_, status]) => status === "COIN_COMPETITIVE");
     check(
       "34. Game eligibility registry lists candidate and coin-only games accurately",
-      candidateGames.length === 4 && coinOnlyGames.length === 2,
+      candidateGames.length === 2 && coinOnlyGames.length === 2 && registryEntries.filter(([_, status]) => status === "FREE_PLAY_ONLY").length === 2,
     );
 
     // Req 35: Zero games paid-approved

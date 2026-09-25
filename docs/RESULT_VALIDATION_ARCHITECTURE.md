@@ -2,6 +2,8 @@
 
 Decision: RV-001, version 1.0.0, 2026-09-23.
 
+**Historical decision note (verified against the 2026-09-25 source tree):** the decision text below records the original four-game design scope and remains unchanged as an approval artifact. The current implementation certification source of truth is [`COMPETITION_ARCHITECTURE.md`](COMPETITION_ARCHITECTURE.md): only Space Blaster and Cyber Hopper are currently Level 3 certified for TEST GEL competition; Neon Runner and Pixel Ninja Dash are not certified, and Speed Trivia / True-False Sprint are outside prize scope. This file does not certify games, enable templates, or authorize monetary operations.
+
 **USER-APPROVED ARCHITECTURE — implementation acceptance pending.** The user's Phase 5.5A request approves RV-001 and authorizes incremental implementation of the common authority foundation and Space Blaster reference only. Other game migrations, replay deletion, Diamond retirement, deployment, Phase 6 evidence generation and Phase 7 are excluded from that step. Runtime acceptance and monetary activation are not approved by this architecture decision.
 
 Source baseline: `2cbc429caed07dc4e8ece05bbb4662fb27667018`. Source/code review only; no new runtime tests, capacity benchmark or browser trial. Supersedes the open plausibility-only selection in Phase 6 v0.2.0. [Phase 6 specification](PHASE_6_REVENUE_SERVICE_DOSSIER.md) v0.3.0 adopts this decision.

@@ -1,4 +1,4 @@
-export type { GameMode, GameOverPayload, GameModule, GameModuleFactory, InputLogEntry, GameRegistryItem } from "./gameModule";
+export type { GameMode, GameOverPayload, GameModule, GameModuleFactory, GameRegistryItem } from "./gameModule";
 export { VIRTUAL_VIEWPORT, GAME_REGISTRY, getGameTitle } from "./gameModule";
 export type { PublicUser } from "./user";
 export type { RandomFn, SeededRandom } from "./rng";
@@ -25,16 +25,13 @@ export type {
   RematchUnavailablePayload,
   RematchWaitingPayload,
   RespondInvitePayload,
-  ScoreVerdict,
   ServerToClientEvents,
   SubmitScorePayload,
   VisibilityHiddenPayload,
 } from "./matchmaking";
-export type { Currency, DiamondPack, WalletBalances } from "./wallet";
-export { DIAMOND_PACKS, SIGNUP_COIN_GRANT } from "./wallet";
+export type { Currency, WalletBalances } from "./wallet";
+export { SIGNUP_COIN_GRANT } from "./wallet";
 export type { FriendEntry, FriendshipStatus } from "./friends";
-export type { ReplayAdapter, ReplayOutcome } from "./replay";
-export { checkReplayRequestShape, replayEngine, UnrecognizedActionError, MAX_REPLAY_TICKS, MAX_INPUT_LOG_ENTRIES } from "./replay";
 export type { PolicyType, PolicyAcceptanceRecord, SignupAcceptedPolicies, PolicyNavItem } from "./policies";
 export { CURRENT_POLICY_VERSIONS, POLICY_NAV_ITEMS } from "./policies";
 export type { AdminRole, AdminPermission } from "./admin";
@@ -54,6 +51,6 @@ export type {
   CompetitionInstance,
   CompetitionParticipant,
 } from "./competitions";
-export { GAME_COMPETITION_ELIGIBILITY_REGISTRY } from "./competitions";
+export { GAME_COMPETITION_ELIGIBILITY_REGISTRY, GAME_COMPETITION_CERTIFICATIONS, isTestGelCompetitionCertified } from "./competitions";
 
 export * from './authority';

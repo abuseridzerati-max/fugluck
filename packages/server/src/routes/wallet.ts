@@ -1,10 +1,9 @@
-import { DIAMOND_PACKS } from "@fugluck/shared";
 import { desc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { ledgerEntries } from "../db/schema";
-import { ensureSignupGrant, getBalances, grantDiamondsStub } from "../wallet/ledger";
+import { ensureSignupGrant, getBalances } from "../wallet/ledger";
 
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 
@@ -57,46 +56,19 @@ walletRouter.get("/history", async (req, res) => {
 });
 
 walletRouter.get("/packs", (_req, res) => {
-  res.json({ packs: DIAMOND_PACKS });
+  res.json({ packs: [], retired: true });
 });
 
-function isDevDiamondStubAllowed(): boolean {
-  if (process.env.ENABLE_DEV_DIAMOND_STUB === "true") return true;
-  if (process.env.ENABLE_DEV_DIAMOND_STUB === "false") return false;
-  return process.env.NODE_ENV !== "production";
-}
-
-// Development Sandbox stub purchase — no real payment processor. Grants diamonds
-// in dev/sandbox environments so the dual-currency UI and match staking can be tested.
-// Gated off in production/staging unless explicitly enabled via ENABLE_DEV_DIAMOND_STUB=true.
-const handleDiamondPurchaseStub = async (req: import("express").Request, res: import("express").Response) => {
-  if (!isDevDiamondStubAllowed()) {
-    res.status(403).json({ error: "Diamond purchases are disabled in this environment." });
-    return;
-  }
-
-  const packId = req.body?.packId;
-  if (typeof packId !== "string") {
-    res.status(400).json({ error: "packId is required." });
-    return;
-  }
-  const pack = DIAMOND_PACKS.find((p) => p.id === packId);
-  if (!pack) {
-    res.status(404).json({ error: "Unknown diamond pack." });
-    return;
-  }
-
-  await ensureSignupGrant(req.userId!);
-  const balances = await grantDiamondsStub(req.userId!, pack.diamonds, pack.id);
-  res.json({ balances, granted: pack.diamonds, packId: pack.id, stub: true });
+const retiredDiamondsResponse = (_req: import("express").Request, res: import("express").Response) => {
+  res.status(410).json({ error: "Diamond purchases are retired. Historical Diamond records remain available as legacy history." });
 };
 
-walletRouter.post("/purchase-diamonds", walletMutationLimiter, handleDiamondPurchaseStub);
-walletRouter.post("/diamonds/stub-buy", walletMutationLimiter, handleDiamondPurchaseStub);
+walletRouter.post("/purchase-diamonds", walletMutationLimiter, retiredDiamondsResponse);
+walletRouter.post("/diamonds/stub-buy", walletMutationLimiter, retiredDiamondsResponse);
 
 // Convenience re-export for callers that already have balances and just want
 // a refresh without the grant side-effect — still idempotent via ensure.
 walletRouter.get("/", async (req, res) => {
   const balances = await getBalances(req.userId!);
-  res.json({ balances, packs: DIAMOND_PACKS });
+  res.json({ balances, packs: [], retiredCurrencies: ["DIAMONDS"] });
 });

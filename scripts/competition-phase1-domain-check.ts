@@ -15,6 +15,7 @@ import {
   type MoneyAmount,
   type ISO4217Currency,
   GAME_COMPETITION_ELIGIBILITY_REGISTRY,
+  GAME_COMPETITION_CERTIFICATIONS,
   type CompetitionTemplate,
   type CompetitionInstance,
   type CompetitionTemplatePrize,
@@ -126,17 +127,14 @@ check(
   "Space Blaster is classified as PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["space-blaster"] === "PAID_COMPETITIVE_CANDIDATE",
 );
-check(
-  "Pixel Ninja Dash is classified as PAID_COMPETITIVE_CANDIDATE",
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY["pixel-ninja-dash"] === "PAID_COMPETITIVE_CANDIDATE",
-);
+check("Pixel Ninja Dash is blocked from TEST GEL prize competitions", GAME_COMPETITION_CERTIFICATIONS["pixel-ninja-dash"].testGelCompetition === "NOT_CERTIFIED");
 check(
   "Cyber Hopper is classified as PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["cyber-hopper"] === "PAID_COMPETITIVE_CANDIDATE",
 );
 check(
-  "Neon Runner is classified as PAID_COMPETITIVE_CANDIDATE",
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY["neon-runner"] === "PAID_COMPETITIVE_CANDIDATE",
+  "Neon Runner is blocked from TEST GEL prize competitions",
+  GAME_COMPETITION_CERTIFICATIONS["neon-runner"].testGelCompetition === "NOT_CERTIFIED",
 );
 check(
   "Speed Trivia Clash is classified as COIN_COMPETITIVE",
@@ -146,6 +144,7 @@ check(
   "True / False Sprint is classified as COIN_COMPETITIVE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["tf-sprint"] === "COIN_COMPETITIVE",
 );
+check("Space Blaster and Cyber Hopper are the only Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 2);
 
 // Strict invariant: NO game is marked PAID_COMPETITIVE_APPROVED in Phase 1
 const anyApproved = Object.values(GAME_COMPETITION_ELIGIBILITY_REGISTRY).some(

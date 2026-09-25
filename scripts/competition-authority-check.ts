@@ -25,6 +25,7 @@ const adapter=new SandboxAccountingAdapter();
 const sockets:Socket[]=[];
 const firing=new Set<string>();
 const instances:string[]=[];
+const legacyTemplates:string[]=[];
 let server:ReturnType<typeof createServer>|undefined, io:ReturnType<typeof attachMatchmaking>|undefined;
 async function main(){
   const e=new SpaceBlasterEngine(77);const x=e.shipX;e.update(1/60,{moveRight:true});check('legal server movement',e.shipX>x&&e.shipX-x<9);
@@ -56,9 +57,14 @@ async function main(){
     const heartbeat=setInterval(()=>{if(s.connected&&current&&last?.state==='ACTIVE'&&last.startAt!==null&&last.serverTime>last.startAt)s.volatile.emit('authority:controls',{...current,seq:++sequence,snapshot:last.seq,left:false,right:false,up:false,down:false,fire:firing.has(user)})},100);
     s.on('disconnect',()=>clearInterval(heartbeat));s.on('authority:outcome',()=>{last=undefined;current=undefined});s.on('authority:error',p=>console.log('AUTHORITY_EVENT',p.code));const ready=once(s,'connect');s.connect();await ready;return s;}
   let s1=await socket(users[0]),s2=await socket(users[1]);const outsider=await socket(users[2]);
-  for(const gameId of ['neon-runner','pixel-ninja-dash','cyber-hopper']) {
-    const blockedTemplate=await templateService.createTemplate({id:`${prefix}_${gameId}`,gameId,title:'Blocked authority candidate',format:'HEAD_TO_HEAD',participantCapacity:2,currency:'GEL',entryFeeMinor:500,prizes:[{placement:1,amountMinor:900}],rulesVersion:'space-blaster-rv001-v1',skillAssessmentVersion:'v1',enabled:true,isSandbox:true});
-    const rejected=once(s1,'competition:error');s1.emit('competition:join',{templateId:blockedTemplate.id});check(`${gameId} remains blocked at public entry`,(await rejected).message.includes('blocked'));
+  for(const [gameId,rulesVersion] of [['neon-runner','nr-1.0'],['pixel-ninja-dash','pnd-1.0'],['cyber-hopper','ch-1.0']]) {
+    // Emulate legacy rows that predate the current certification guard. New
+    // template creation correctly rejects these candidates before they exist.
+    const blockedId=`${prefix}_${gameId}`;legacyTemplates.push(blockedId);
+    await pool.query(`INSERT INTO competition_templates
+      (id, game_id, title, format, participant_capacity, currency, entry_fee_minor, rules_version, skill_assessment_version, enabled, jurisdiction)
+      VALUES ($1,$2,'Legacy blocked candidate','HEAD_TO_HEAD',2,'GEL',500,$3,'v1',true,'GE')`,[blockedId,gameId,rulesVersion]);
+    const rejected=once(s1,'competition:error');s1.emit('competition:join',{templateId:blockedId});check(`${gameId} remains blocked at public entry`,(await rejected).message.includes('blocked'));
   }
   check('unsupported games reserve no funds',(await pool.query('SELECT count(*)::int n FROM sandbox_entry_reservations WHERE user_id=$1',[users[0]])).rows[0].n===0);
   async function pair(){const bp1=once(s1,'authority:session'),bp2=once(s2,'authority:session');let joined=once(s1,'competition:joined');s1.emit('competition:join',{templateId:template.id});const j=await joined;instances.push(j.instanceId);joined=once(s2,'competition:joined');s2.emit('competition:join',{templateId:template.id});await joined;return {b1:await bp1 as AuthorityBinding,b2:await bp2 as AuthorityBinding,instance:j.instanceId};}
@@ -124,6 +130,7 @@ async function cleanup(){
     await pool.query('DELETE FROM competition_authority_sessions WHERE run_id IN (SELECT id FROM competition_authority_runs WHERE instance_id=$1)',[id]);
     await pool.query('DELETE FROM competition_authority_runs WHERE instance_id=$1',[id]);
   }
+  if(legacyTemplates.length) await pool.query('DELETE FROM competition_templates WHERE id = ANY($1::varchar[])',[legacyTemplates]);
   await pool.end();
 }
 main().catch(e=>{failures++;console.error(e.stack);}).finally(async()=>{await cleanup();process.exit(failures?1:0);});

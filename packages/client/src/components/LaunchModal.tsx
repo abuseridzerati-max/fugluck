@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GAME_COMPETITION_ELIGIBILITY_REGISTRY } from '@fugluck/shared'
+import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 
 type LaunchModalProps = {
@@ -38,10 +38,8 @@ export default function LaunchModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  // Authoritative eligibility check from @fugluck/shared
-  const eligibility = GAME_COMPETITION_ELIGIBILITY_REGISTRY[gameId] ?? 'COIN_COMPETITIVE'
   const isEligibleForSandboxCompetitions =
-    eligibility === 'PAID_COMPETITIVE_CANDIDATE' || eligibility === 'PAID_COMPETITIVE_APPROVED'
+    GAME_COMPETITION_CERTIFICATIONS[gameId]?.testGelCompetition === 'LEVEL_3_CERTIFIED'
 
   const currentCoinBalance = user?.balances.coins ?? 0
 

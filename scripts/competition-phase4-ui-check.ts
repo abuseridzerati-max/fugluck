@@ -10,7 +10,8 @@ dotenv.config({ path: "packages/server/.env" });
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import {
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY,
+  GAME_COMPETITION_CERTIFICATIONS,
+  isTestGelCompetitionCertified,
   type CompetitionTemplate,
   type ISO4217Currency,
 } from "../packages/shared/src/index";
@@ -66,6 +67,7 @@ async function runPhase4UIChecks(): Promise<void> {
   const walletPageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/WalletPage.tsx"), "utf-8");
   const profilePageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/ProfilePage.tsx"), "utf-8");
   const matchLoaderSrc = fs.readFileSync(path.join(clientSrcDir, "game-loader/MatchLoader.tsx"), "utf-8");
+  const authorityCompetitionSrc = fs.readFileSync(path.join(clientSrcDir, "game-loader/AuthorityCompetition.tsx"), "utf-8");
   const competitionsPageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/CompetitionsPage.tsx"), "utf-8");
   const useMatchSocketSrc = fs.readFileSync(path.join(clientSrcDir, "matchmaking/useMatchSocket.ts"), "utf-8");
 
@@ -74,20 +76,21 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 1: Eligible game displays Sandbox Competitions
     // ----------------------------------------------------
     console.log("--- Section 1: Game Eligibility & Launch Controls ---");
-    const eligibleGames = ["space-blaster", "pixel-ninja-dash", "cyber-hopper", "neon-runner"];
-    const allEligible = eligibleGames.every((g) => {
-      const el = GAME_COMPETITION_ELIGIBILITY_REGISTRY[g];
-      return el === "PAID_COMPETITIVE_CANDIDATE" || el === "PAID_COMPETITIVE_APPROVED";
-    });
-    check("1. Eligible games (Space Blaster, etc.) configured for Sandbox Competitions", allEligible);
+    const eligibleGames = ["space-blaster", "cyber-hopper"];
+    const blockedGames = ["neon-runner", "pixel-ninja-dash"];
+    const allEligible = eligibleGames.every((g) => isTestGelCompetitionCertified(g) &&
+      GAME_COMPETITION_CERTIFICATIONS[g].testGelCompetition === "LEVEL_3_CERTIFIED");
+    const blockedRemainBlocked = blockedGames.every((g) => !isTestGelCompetitionCertified(g) &&
+      GAME_COMPETITION_CERTIFICATIONS[g].testGelCompetition === "NOT_CERTIFIED");
+    check("1. Only Space Blaster and Cyber Hopper are Level 3 certified; Neon and Pixel remain blocked", allEligible && blockedRemainBlocked);
 
     // ----------------------------------------------------
     // Test 2: Coin-only game does not expose Sandbox Competitions
     // ----------------------------------------------------
     const coinOnlyGames = ["speed-trivia", "tf-sprint"];
-    const allCoinOnly = coinOnlyGames.every((g) => GAME_COMPETITION_ELIGIBILITY_REGISTRY[g] === "COIN_COMPETITIVE");
+    const allCoinOnly = coinOnlyGames.every((g) => GAME_COMPETITION_CERTIFICATIONS[g].testGelCompetition === "OUT_OF_SCOPE" && !isTestGelCompetitionCertified(g));
     const launchModalEnforcesRegistry =
-      launchModalSrc.includes("GAME_COMPETITION_ELIGIBILITY_REGISTRY[gameId]") &&
+      launchModalSrc.includes("GAME_COMPETITION_CERTIFICATIONS[gameId]?.testGelCompetition === 'LEVEL_3_CERTIFIED'") &&
       launchModalSrc.includes("isEligibleForSandboxCompetitions");
     check(
       "2. Coin-only games (Speed Trivia, TF Sprint) strictly blocked from Sandbox Competitions",
@@ -104,8 +107,8 @@ async function runPhase4UIChecks(): Promise<void> {
     await templateService.ensureDefaultTemplates();
     const secondSeed = await templateService.listTemplates();
     const defaults = secondSeed.filter((t) => t.id.startsWith("tmpl_default_"));
-    check("3a. Concurrent and repeated initialization preserves one copy of all six default templates and prizes",
-      defaults.length === 6 && defaults.every((t) => t.prizes.length === 1) &&
+    check("3a. Concurrent and repeated initialization preserves one copy of all four certified default templates and prizes",
+      defaults.length === 4 && defaults.every((t) => t.prizes.length === 1) &&
       firstSeed.length === secondSeed.length &&
       defaults.every((d) => secondSeed.filter((t) => t.gameId === d.gameId && t.title === d.title).length === 1));
 
@@ -310,9 +313,11 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 18: Client cannot override prize
     // ----------------------------------------------------
     const serverLifecycleSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/competitions/lifecycleEngine.ts"), "utf-8");
+    const authorityStoreSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/competitions/authorityStore.ts"), "utf-8");
     const serverSettlesTemplatePrize =
-      serverLifecycleSrc.includes("competition_instance_prizes") &&
-      serverLifecycleSrc.includes("accountingPort.settleCompetition");
+      authorityStoreSrc.includes("competition_instance_prizes") &&
+      authorityStoreSrc.includes("this.accounting.settleCompetition") &&
+      serverLifecycleSrc.includes("LIVE_AUTHORITY_REQUIRED");
     check("18. Server settles prizes strictly according to template prize schedule", serverSettlesTemplatePrize);
 
     // ----------------------------------------------------
@@ -343,47 +348,49 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     console.log("\n--- Section 5: Waiting Room, Match Ready & Transitions ---");
     const waitingRoomHasStatus =
-      matchLoaderSrc.includes("competitionWaiting") &&
-      matchLoaderSrc.includes("Waiting for competitor") &&
-      matchLoaderSrc.includes("Your entry amount is reserved while you wait");
+      authorityCompetitionSrc.includes("competition:joined") &&
+      authorityCompetitionSrc.includes("Waiting for the other player") &&
+      authorityCompetitionSrc.includes("Waiting for both players to be ready");
     const waitingRoomHasCancel =
-      matchLoaderSrc.includes("CANCEL ENTRY") && matchLoaderSrc.includes("cancelCompetition");
-    check("20. Dedicated 1/2 Waiting Room with reservation notice and [ CANCEL ENTRY ]", waitingRoomHasStatus && waitingRoomHasCancel);
+      authorityCompetitionSrc.includes("Cancel waiting entry") && authorityCompetitionSrc.includes("competition:cancel");
+    check("20. Authority waiting state exposes cancellation only before match lock", waitingRoomHasStatus && waitingRoomHasCancel);
 
     // ----------------------------------------------------
     // Test 21: Match-ready transition 2/2 (cancel button removed, match start)
     // ----------------------------------------------------
     const matchReadyRemovesCancel =
-      matchLoaderSrc.includes("competitionWaiting.isLocked") &&
-      matchLoaderSrc.includes("OPPONENT FOUND");
-    check("21. Match-ready transition removes cancel button and displays opponent found screen", matchReadyRemovesCancel);
+      authorityCompetitionSrc.includes("authority:session") &&
+      authorityCompetitionSrc.includes("setCanCancel(false)") &&
+      authorityCompetitionSrc.includes("authority:ready");
+    check("21. Authority session locks entry, removes cancellation and begins readiness handshake", matchReadyRemovesCancel);
 
     // ----------------------------------------------------
     // Test 22: Existing game loader receives authoritative match data
     // ----------------------------------------------------
     const gameLoaderIntegration =
-      matchLoaderSrc.includes("mod.init(container, 'match', null, matchInfo.seed)") &&
-      matchLoaderSrc.includes("mod.start()");
-    check("22. Existing deterministic game loader launched with authoritative seed and metadata", gameLoaderIntegration);
+      matchLoaderSrc.includes("<AuthorityCompetition") &&
+      authorityCompetitionSrc.includes("renderer.render(ctx)") &&
+      authorityCompetitionSrc.includes("never calls engine.update") &&
+      !authorityCompetitionSrc.includes("socket.emit('submitScore'");
+    check("22. Competition path renders server snapshots without client simulation or score submission", gameLoaderIntegration);
 
     // ----------------------------------------------------
     // Test 23: Authoritative verified winner result screen
     // ----------------------------------------------------
     console.log("\n--- Section 6: Results, Verifications & Rematch Experience ---");
     const winnerResultsCheck =
-      matchLoaderSrc.includes("VICTORY") &&
-      matchLoaderSrc.includes("Result verified by Fugluck server replay.") &&
-      matchLoaderSrc.includes("Competition Prize");
-    check("23. Winner results screen displays verified score, VICTORY badge, and Competition Prize", winnerResultsCheck);
+      authorityCompetitionSrc.includes("You won — the predetermined sandbox prize has been awarded") &&
+      authorityCompetitionSrc.includes("authority:outcome") &&
+      authorityCompetitionSrc.includes("yourScore");
+    check("23. Winner outcome and score are delivered by server authority with predetermined prize wording", winnerResultsCheck);
 
     // ----------------------------------------------------
     // Test 24: Authoritative verified loser result screen
     // ----------------------------------------------------
     const loserResultsCheck =
-      matchLoaderSrc.includes("DEFEAT") &&
-      matchLoaderSrc.includes("Prize") &&
-      matchLoaderSrc.includes("Result verified by Fugluck server replay.");
-    check("24. Loser results screen displays verified score, DEFEAT badge, and Prize: —", loserResultsCheck);
+      authorityCompetitionSrc.includes("Competition finished — your opponent won") &&
+      authorityCompetitionSrc.includes("You won — the predetermined sandbox prize has been awarded");
+    check("24. Server outcome distinguishes winner from non-winner without client score comparison", loserResultsCheck);
 
     // ----------------------------------------------------
     // Test 25: Draw / refund presentation
@@ -403,12 +410,12 @@ async function runPhase4UIChecks(): Promise<void> {
     check("26. Forfeit states display clear, factual competition terminology", forfeitCheck);
 
     // ----------------------------------------------------
-    // Test 27: Invalid replay presentation
+    // Test 27: Casual result ownership is clear
     // ----------------------------------------------------
-    const invalidReplayCheck =
-      matchLoaderSrc.includes("RESULT INVALID") &&
-      matchLoaderSrc.includes("The submitted game result could not be verified.");
-    check("27. Replay rejection displays neutral RESULT INVALID notice without exposing anti-cheat internals", invalidReplayCheck);
+    const casualResultOwnershipCheck =
+      matchLoaderSrc.includes("Casual match result; scores do not determine TEST GEL prizes.") &&
+      !matchLoaderSrc.includes("verified by replay");
+    check("27. Casual score screens do not claim client scores determine TEST GEL prizes", casualResultOwnershipCheck);
 
     // ----------------------------------------------------
     // Test 28: Rematch confirmation shows fresh entry notice

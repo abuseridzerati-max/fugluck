@@ -7,8 +7,6 @@ import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
 
 import { randomUUID } from "node:crypto";
-import { replayEngine, type InputLogEntry } from "@fugluck/shared";
-import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
 import type { QueueEntry } from "../packages/server/src/matchmaking/queue.ts";
 import type { MatchmakingSocket } from "../packages/server/src/matchmaking/socketAuth.ts";
 
@@ -23,17 +21,6 @@ function check(label: string, pass: boolean, detail?: string) {
   }
 }
 
-const VIEWPORT = { width: 1280, height: 720 };
-
-function periodicLog(actionOn: string, actionOff: string | null, period: number, count: number): InputLogEntry[] {
-  const log: InputLogEntry[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = 20 + i * period;
-    log.push({ tick: t, action: actionOn });
-    if (actionOff) log.push({ tick: t + 4, action: actionOff });
-  }
-  return log;
-}
 
 function fakeSocket(userId: string, username: string): MatchmakingSocket {
   const emitted: Array<{ event: string; payload: unknown }> = [];
@@ -121,27 +108,19 @@ async function main() {
   // ---------------------------------------------------------------------------
   console.log("\nTest 2: Normal Match Completion Lifecycle");
 
-  const p1Log = periodicLog("jumpPressed", "jumpReleased", 20, 25);
-  const p2Log: InputLogEntry[] = [];
-  const p1Outcome = replayEngine(neonRunnerReplayAdapter, seed1, p1Log, VIEWPORT);
-  const p2Outcome = replayEngine(neonRunnerReplayAdapter, seed1, p2Log, VIEWPORT);
+  const p1CasualScore = 250;
+  const p2CasualScore = 0;
 
   await submitScore(socketA1, {
     matchId: matchId1,
-    score: p1Outcome.finalScore,
+    score: p1CasualScore,
     reason: "collision",
-    durationMs: Math.round((p1Outcome.finalTick / 60) * 1000),
-    inputLog: p1Log,
-    viewport: VIEWPORT,
   });
 
   await submitScore(socketB1, {
     matchId: matchId1,
-    score: p2Outcome.finalScore,
+    score: p2CasualScore,
     reason: "collision",
-    durationMs: Math.round((p2Outcome.finalTick / 60) * 1000),
-    inputLog: p2Log,
-    viewport: VIEWPORT,
   });
 
   await new Promise((r) => setTimeout(r, 100));
@@ -149,8 +128,8 @@ async function main() {
   const completedDbMatch1 = await db.query.matchesHistory.findFirst({ where: eq(matchesHistory.id, matchId1) });
   check("Match record transitions to COMPLETED status", completedDbMatch1?.status === "COMPLETED");
   check("Winner ID correctly set to Player 1", completedDbMatch1?.winnerId === p1Id);
-  check("Player 1 score recorded correctly", completedDbMatch1?.scoreP1 === p1Outcome.finalScore);
-  check("Player 2 score recorded correctly", completedDbMatch1?.scoreP2 === p2Outcome.finalScore);
+  check("Player 1 casual score recorded correctly", completedDbMatch1?.scoreP1 === p1CasualScore);
+  check("Player 2 casual score recorded correctly", completedDbMatch1?.scoreP2 === p2CasualScore);
   check("Match record endedAt timestamp is populated", Boolean(completedDbMatch1?.endedAt));
 
   const settlement1 = await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, matchId1) });

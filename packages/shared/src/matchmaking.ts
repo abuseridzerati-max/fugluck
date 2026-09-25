@@ -1,15 +1,6 @@
 import type { AuthorityBinding, AuthorityControls, AuthoritySnapshot, AuthorityOutcome } from './authority';
-// Wire protocol for the matchmaking queue, shared between client and server so
-// both sides agree on event names/payload shapes at compile time. Scope: for-fun
-// matches only — async-independent rounds (each player plays their own instance
-// off a shared server-issued seed; no in-match real-time sync). See PROGRESS.md
-// for why async was chosen and what it does/doesn't foreclose for a future
-// live-synchronized mode (e.g. Arena Shooter).
-import type { InputLogEntry } from "./gameModule";
-
-// username is deliberately absent — the server derives it from the
-// authenticated session (see packages/server/src/matchmaking/socketAuth.ts),
-// never trusts a client-supplied display name.
+// Wire protocol for casual matchmaking. TEST GEL prize competitions use the
+// separate durable competition and authority protocol.
 export type JoinQueuePayload = {
   gameId: string;
   currency?: "COINS" | "DIAMONDS";
@@ -19,43 +10,25 @@ export type JoinQueuePayload = {
 export type MatchedPayload = {
   matchId: string;
   gameId: string;
-  // Server-generated (crypto.randomInt), never client-proposed — this is the
-  // whole point of moving seed generation server-side for match mode.
   seed: number;
   opponentUsername: string;
 };
-
 export type SubmitScorePayload = {
   matchId: string;
   score: number;
   reason: string;
-  durationMs: number;
-  // seed is deliberately absent — the server already has the authoritative
-  // seed for this match (issued at createMatch), so replay never trusts a
-  // client-supplied one.
-  inputLog: InputLogEntry[];
-  viewport: { width: number; height: number };
 };
 
-// "valid"/"invalid" come from server-side replay (see
-// packages/server/src/validation/scoreValidator.ts). "unverifiable" is kept
-// in the type for a future non-tick-based game whose input genuinely can't
-// be replayed — no current game's adapter can produce it: match mode only
-// accepts discretely-loggable input (Sky Dodge's analog drag is disabled in
-// match mode specifically so this holds), so an unreplayable match run is
-// treated as invalid, not exempted. See PROGRESS.md Known Gaps.
-export type ScoreVerdict = "valid" | "invalid" | "unverifiable";
+// Casual scores are client-reported and have no prize or wallet authority.
 
-// Explicit status union, not a `forfeited: boolean` + sentinel score value —
-// deliberate choice (session decision, not a default): this type's shape is
-// what escrow will eventually settle payouts on and what a dispute log will
-// read back, so "never played because the opponent left" has to be a real,
+// Explicit result-state union, not a `forfeited: boolean` + sentinel score —
+// a casual score report has no prize authority, but a missing submission
+// still needs a distinct reason so the interface can describe what happened:
+// "never played because the opponent left" has to be a real,
 // distinct state from "scored zero" or "forfeited by timeout," not something
 // encoded into a free-form `reason` string alongside a fake `score: 0`. Three
 // states:
-//  - "completed": a real score was submitted and replayed (verdict: valid or
-//    invalid — see ScoreVerdict below; even an invalid score is still a
-//    completed submission, just a rejected one).
+//  - "completed": a casual client score was submitted; it is not independently verified.
 //  - "forfeited": never submitted anything, by choice or timeout (idle,
 //    tabbed away, deliberately withholding, or the FORFEIT_GRACE_MS window
 //    expired). See PROGRESS.md's forfeit-timeout section for why this is a
@@ -66,14 +39,14 @@ export type ScoreVerdict = "valid" | "invalid" | "unverifiable";
 //    side's action, not this side's inaction. See packages/server/src/
 //    matchmaking/matches.ts's handleDisconnect and PROGRESS.md's session log.
 export type PlayerResult =
-  | { username: string; score: number; reason: string; status: "completed"; verdict: ScoreVerdict }
+  | { username: string; score: number; reason: string; status: "completed" }
   | { username: string; score: null; reason: null; status: "forfeited" }
   | { username: string; score: null; reason: null; status: "opponent_disconnected" };
 
 // Outcome is already relative to the recipient (mirrors you/opponent, which
-// emitResolved already personalizes per socket) — "win"/"loss" from the
-// recipient's own perspective, so the client never has to compare scores
-// itself. "void" is exactly-one-of-{both invalid}; see matchOutcome.ts.
+// emitResolved personalizes per socket) — "win"/"loss" from the recipient's
+// own perspective, so the client never has to compare scores itself. "void"
+// means neither player submitted a casual score; see matchOutcome.ts.
 export type MatchOutcome = "win" | "loss" | "draw" | "void";
 
 export type MatchResolvedPayload = {
@@ -86,7 +59,7 @@ export type MatchResolvedPayload = {
   canRematch: boolean;
 };
 
-// Evidence-only — logged server-side, never affects a verdict or outcome.
+// Evidence-only — logged server-side, never affects a casual match outcome.
 // Sent by the client whenever document.visibilitychange fires hidden, for as
 // long as MatchLoader is mounted (queued through resolved/ended), not just
 // during active play — see PROGRESS.md's freeze-frame Known Gaps entry for

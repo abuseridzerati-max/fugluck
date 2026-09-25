@@ -8,12 +8,12 @@ dotenv.config({ path: "packages/server/.env" });
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import {
+  AUTHORITY_VERSION,
+  CYBER_HOPPER_AUTHORITY_VERSION,
   createMoney,
   GAME_COMPETITION_ELIGIBILITY_REGISTRY,
-  replayEngine,
   type ISO4217Currency,
 } from "../packages/shared/src/index";
-import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay";
 import { SandboxAccountingAdapter } from "../packages/server/src/accounting/sandboxAdapter";
 import {
   templateService,
@@ -71,6 +71,11 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     await pool.query(`DELETE FROM sandbox_settlements`);
     await pool.query(`DELETE FROM sandbox_ledger_entries`);
     await pool.query(`DELETE FROM sandbox_entry_reservations`);
+    // Respect the live-authority FK chain before removing test matches.
+    await pool.query(`DELETE FROM competition_authority_results`);
+    await pool.query(`DELETE FROM competition_authority_decisions`);
+    await pool.query(`DELETE FROM competition_authority_sessions`);
+    await pool.query(`DELETE FROM competition_authority_runs`);
     await pool.query(`DELETE FROM competition_participants`);
     await pool.query(`DELETE FROM competition_instance_prizes`);
     await pool.query(`DELETE FROM match_settlements WHERE match_id IN (SELECT id FROM matches_history WHERE competition_instance_id IS NOT NULL)`);
@@ -122,7 +127,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       currency: "GEL",
       entryFeeMinor: 500,
       prizes: [{ placement: 1, amountMinor: 900 }],
-      rulesVersion: "sb-1.0.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       enabled: true,
       isSandbox: true,
@@ -137,7 +142,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Disabled Template",
       entryFeeMinor: 500,
       prizes: [{ placement: 1, amountMinor: 900 }],
-      rulesVersion: "sb-1.0.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       enabled: false,
       isSandbox: true,
@@ -178,21 +183,16 @@ async function runPhase3LifecycleChecks(): Promise<void> {
         skillAssessmentVersion: "v1",
       });
     } catch (err: any) {
-      coinCompetitiveRejected = err instanceof GameEligibilityError && err.message.includes("COIN_COMPETITIVE");
+      coinCompetitiveRejected = err instanceof GameEligibilityError && err.message.includes("not certified");
     }
     check("4. COIN_COMPETITIVE game rejected for paid sandbox template", coinCompetitiveRejected);
 
-    // 5. Candidate game accepted in explicit sandbox mode
-    const candidateTmpl = await templateService.createTemplate({
-      gameId: "pixel-ninja-dash",
-      title: "Pixel Ninja Dash Sandbox",
-      entryFeeMinor: 200,
-      prizes: [{ placement: 1, amountMinor: 360 }],
-      rulesVersion: "pnd-1.0",
-      skillAssessmentVersion: "v1",
-      isSandbox: true,
-    });
-    check("5. Candidate game accepted in explicit sandbox mode", candidateTmpl.gameId === "pixel-ninja-dash");
+    // 5. A non-certified game stays blocked even in sandbox mode.
+    let uncertifiedRejected = false;
+    try {
+      await templateService.createTemplate({ gameId: "pixel-ninja-dash", title: "Pixel Ninja Dash Sandbox", entryFeeMinor: 200, prizes: [{ placement: 1, amountMinor: 360 }], rulesVersion: "pnd-1.0", skillAssessmentVersion: "v1", isSandbox: true });
+    } catch (err: any) { uncertifiedRejected = err instanceof GameEligibilityError; }
+    check("5. Non-certified game is rejected in sandbox mode", uncertifiedRejected);
 
     // 6. Zero games treated as production-paid approved
     const approvedCount = Object.values(GAME_COMPETITION_ELIGIBILITY_REGISTRY).filter(
@@ -207,19 +207,20 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const hasSnapshot =
       instSnapshot.templateId === template1.id &&
       instSnapshot.entryFeeMinor === 500 &&
-      instSnapshot.rulesVersion === "sb-1.0.0" &&
+      instSnapshot.rulesVersion === AUTHORITY_VERSION &&
       instSnapshot.prizes?.[0]?.amountMinor === 900;
     check("7. Instance snapshots template", hasSnapshot);
 
     // 8. Template edit doesn't alter instance
     await templateService.updateTemplate(template1.id, {
+      enabled: false,
       rulesVersion: "sb-2.0.0-MUTATED",
       title: "New Mutated Title",
     });
     const refreshedInst = await instanceService.getInstance(instSnapshot.id);
     check(
       "8. Template edit doesn't alter instance",
-      refreshedInst?.rulesVersion === "sb-1.0.0" && refreshedInst?.entryFeeMinor === 500,
+      refreshedInst?.rulesVersion === AUTHORITY_VERSION && refreshedInst?.entryFeeMinor === 500,
     );
 
     // 9. Prize edit doesn't alter instance prize snapshot
@@ -237,11 +238,11 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     // 10. First participant creates/joins 1/2 instance
     const queueTmpl = await templateService.createTemplate({
       id: `tmpl_queue_test_${ts}`,
-      gameId: "neon-runner",
-      title: "Neon Runner 1v1",
+      gameId: "space-blaster",
+      title: "Space Blaster 1v1",
       entryFeeMinor: 300,
       prizes: [{ placement: 1, amountMinor: 550 }],
-      rulesVersion: "nr-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -318,7 +319,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Cyber Hopper ₾10",
       entryFeeMinor: 1000,
       prizes: [{ placement: 1, amountMinor: 1800 }],
-      rulesVersion: "ch-1.0",
+      rulesVersion: CYBER_HOPPER_AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -422,7 +423,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Space Blaster Settle Test",
       entryFeeMinor: 500,
       prizes: [{ placement: 1, amountMinor: 950 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -430,67 +431,39 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const sJoin2 = await instanceService.joinCompetitionQueue(settleTmpl.id, testUsers[1].id, adapter);
     const sMatch = await lifecycleEngine.activateLockedCompetition(sJoin1.instanceId, adapter);
 
-    // 25. Valid score uses existing replay validator
-    // Generate an honest replay run for space-blaster
-    const validLog: Array<{ tick: number; action: string }> = [];
-    for (let i = 0; i < 30; i++) validLog.push({ tick: 20 + i * 15, action: "shootPressed" });
-    const validOutcome = replayEngine(spaceBlasterReplayAdapter, sMatch.seed, validLog, { width: 1280, height: 720 });
-    const validDuration = Math.round((validOutcome.finalTick / 60) * 1000);
+    // 25. Client-reported score cannot advance a prize competition.
+    let clientScoreRejected = false;
+    try { await lifecycleEngine.submitScore({ instanceId: sJoin1.instanceId, userId: testUsers[0].id, score: 999999 }, adapter); }
+    catch (err: any) { clientScoreRejected = err.code === "LIVE_AUTHORITY_REQUIRED"; }
+    check("25. Client score requires a certified live authority decision", clientScoreRejected);
 
-    const scoreSub1 = await lifecycleEngine.submitScore(
-      {
-        instanceId: sJoin1.instanceId,
-        userId: testUsers[0].id,
-        score: validOutcome.finalScore,
-        durationMs: validDuration,
-        inputLog: validLog,
-        viewport: { width: 1280, height: 720 },
-      },
-      adapter,
-    );
-    check(
-      "25. Valid score uses existing replay validator",
-      scoreSub1.verdict === "valid" && scoreSub1.status === "VERIFYING" && scoreSub1.resolved === false,
-    );
-
-    // 26. Invalid replay cannot win
-    // Submit invalid replay (malformed viewport) for user 2
-    const scoreSub2 = await lifecycleEngine.submitScore(
-      {
-        instanceId: sJoin1.instanceId,
-        userId: testUsers[1].id,
-        score: 999999, // claimed huge score with invalid viewport
-        durationMs: 5000,
-        inputLog: [],
-        viewport: { width: 500, height: 300 }, // invalid viewport -> verdict: invalid -> score forced to 0
-      },
-      adapter,
-    );
-    check("26. Invalid replay cannot win", scoreSub2.verdict === "invalid" && scoreSub2.resolved === true);
+    // 26. An attacker-supplied score also cannot settle or award a prize.
+    let inflatedScoreRejected = false;
+    try { await lifecycleEngine.submitScore({ instanceId: sJoin1.instanceId, userId: testUsers[1].id, score: 999999999 }, adapter); }
+    catch (err: any) { inflatedScoreRejected = err.code === "LIVE_AUTHORITY_REQUIRED"; }
+    check("26. Inflated client score cannot win", inflatedScoreRejected);
 
     // 27. Standard winner gets snapshotted prize
     const settledInst = await instanceService.getInstance(sJoin1.instanceId);
     const winnerPart = settledInst?.participants.find((p) => p.userId === testUsers[0].id);
     const loserPart = settledInst?.participants.find((p) => p.userId === testUsers[1].id);
     check(
-      "27. Standard winner gets snapshotted prize",
-      settledInst?.status === "SETTLED" &&
-        settledInst?.winnerUserId === testUsers[0].id &&
-        winnerPart?.prizeWonMinor === 950 &&
-        winnerPart?.rank === 1 &&
-        loserPart?.prizeWonMinor === 0 &&
-        loserPart?.rank === 2,
+      "27. Client scores do not write a winner or prize award",
+      settledInst?.status !== "SETTLED" && settledInst?.winnerUserId == null &&
+        winnerPart?.prizeWonMinor === 0 && winnerPart?.rank == null &&
+        loserPart?.prizeWonMinor === 0 && loserPart?.rank == null,
     );
 
     // 28. Duplicate settlement cannot double-award
-    const duplicateSettle = await lifecycleEngine.settleCompetition(sJoin1.instanceId, {}, adapter);
+    const firstVoid = await lifecycleEngine.settleCompetition(sJoin1.instanceId, { systemVoid: true, voidReason: "LEGACY_PATH_DISABLED" }, adapter);
+    const duplicateSettle = await lifecycleEngine.settleCompetition(sJoin1.instanceId, { systemVoid: true, voidReason: "LEGACY_PATH_DISABLED" }, adapter);
     const settlementCountCheck = await pool.query(
       `SELECT count(*) FROM sandbox_settlements WHERE competition_instance_id = $1`,
       [sJoin1.instanceId],
     );
     check(
       "28. Duplicate settlement cannot double-award",
-      duplicateSettle.status === "SETTLED" && Number(settlementCountCheck.rows[0].count) === 1,
+      firstVoid.status === "VOIDED" && duplicateSettle.status === "VOIDED" && Number(settlementCountCheck.rows[0].count) === 1,
     );
 
     console.log("\n--- 29-33: Draw / Tie, Forfeit, Void, & Waiting Cancellation ---");
@@ -501,7 +474,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Tie Refund Test",
       entryFeeMinor: 400,
       prizes: [{ placement: 1, amountMinor: 750 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -509,46 +482,18 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const tJoin2 = await instanceService.joinCompetitionQueue(tieTmpl.id, testUsers[1].id, adapter);
     const tMatch = await lifecycleEngine.activateLockedCompetition(tJoin1.instanceId, adapter);
 
-    // Both submit identical valid scores
-    const tieLog: Array<{ tick: number; action: string }> = [];
-    for (let i = 0; i < 30; i++) tieLog.push({ tick: 20 + i * 15, action: "shootPressed" });
-    const tieOutcome = replayEngine(spaceBlasterReplayAdapter, tMatch.seed, tieLog, { width: 1280, height: 720 });
-    const tieDuration = Math.round((tieOutcome.finalTick / 60) * 1000);
-
-    await lifecycleEngine.submitScore(
-      {
-        instanceId: tJoin1.instanceId,
-        userId: testUsers[0].id,
-        score: tieOutcome.finalScore,
-        durationMs: tieDuration,
-        inputLog: tieLog,
-        viewport: { width: 1280, height: 720 },
-      },
-      adapter,
-    );
-    await lifecycleEngine.submitScore(
-      {
-        instanceId: tJoin1.instanceId,
-        userId: testUsers[1].id,
-        score: tieOutcome.finalScore,
-        durationMs: tieDuration,
-        inputLog: tieLog,
-        viewport: { width: 1280, height: 720 },
-      },
-      adapter,
-    );
-
+    // Client-reported ties are not accepted as competition decisions; void via
+    // the explicit system-failure path and refund the captured entries.
+    let tieScoreRejected = false;
+    try { await lifecycleEngine.submitScore({ instanceId: tJoin1.instanceId, userId: testUsers[0].id, score: 50 }, adapter); }
+    catch (err: any) { tieScoreRejected = err.code === "LIVE_AUTHORITY_REQUIRED"; }
+    const tieVoid = await lifecycleEngine.settleCompetition(tJoin1.instanceId, { systemVoid: true, voidReason: "LEGACY_SCORE_PATH_DISABLED" }, adapter);
     const tieInst = await instanceService.getInstance(tJoin1.instanceId);
     const tieRefundCheck = await pool.query(
       `SELECT total_entries_captured_minor, status FROM sandbox_settlements WHERE competition_instance_id = $1`,
       [tJoin1.instanceId],
     );
-    check(
-      "29. Exact tie produces full refund",
-      tieInst?.status === "VOIDED" &&
-        tieRefundCheck.rows[0]?.status === "REFUNDED" &&
-        Number(tieRefundCheck.rows[0]?.total_entries_captured_minor) === 800,
-    );
+    check("29. Client score cannot declare a tie and system void refunds", tieScoreRejected && tieVoid.status === "VOIDED" && tieInst?.status === "VOIDED" && tieRefundCheck.rows[0]?.status === "REFUNDED" && Number(tieRefundCheck.rows[0]?.total_entries_captured_minor) === 800);
 
     // 30. Player forfeit resolves correctly
     const ffTmpl = await templateService.createTemplate({
@@ -556,7 +501,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Forfeit Test",
       entryFeeMinor: 300,
       prizes: [{ placement: 1, amountMinor: 550 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -564,18 +509,17 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const fJoin2 = await instanceService.joinCompetitionQueue(ffTmpl.id, testUsers[3].id, adapter);
     await lifecycleEngine.activateLockedCompetition(fJoin1.instanceId, adapter);
 
-    // User 3 forfeits
-    const forfeitOutcome = await lifecycleEngine.settleCompetition(
-      fJoin1.instanceId,
-      { forfeitingUserId: testUsers[3].id },
-      adapter,
-    );
+    // Legacy lifecycle calls cannot award a forfeit win without authority.
+    let legacyForfeitRejected = false;
+    try { await lifecycleEngine.settleCompetition(fJoin1.instanceId, { forfeitingUserId: testUsers[3].id }, adapter); }
+    catch (err: any) { legacyForfeitRejected = err.code === "LIVE_AUTHORITY_REQUIRED"; }
+    const forfeitOutcome = await lifecycleEngine.settleCompetition(fJoin1.instanceId, { systemVoid: true, voidReason: "LEGACY_FORFEIT_PATH_DISABLED" }, adapter);
     const forfeitInst = await instanceService.getInstance(fJoin1.instanceId);
     check(
-      "30. Player forfeit resolves correctly",
-      forfeitOutcome.status === "SETTLED" &&
-        forfeitInst?.winnerUserId === testUsers[2].id &&
-        forfeitInst?.participants.find((p) => p.userId === testUsers[2].id)?.prizeWonMinor === 550,
+      "30. Legacy forfeit request cannot award a winner",
+      legacyForfeitRejected && forfeitOutcome.status === "VOIDED" &&
+        forfeitInst?.winnerUserId == null &&
+        forfeitInst?.participants.find((p) => p.userId === testUsers[2].id)?.prizeWonMinor === 0,
     );
 
     // 31. System void refunds correctly
@@ -584,7 +528,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "System Void Test",
       entryFeeMinor: 250,
       prizes: [{ placement: 1, amountMinor: 450 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -609,7 +553,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Timeout Test",
       entryFeeMinor: 150,
       prizes: [{ placement: 1, amountMinor: 270 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });
@@ -671,7 +615,7 @@ async function runPhase3LifecycleChecks(): Promise<void> {
       title: "Crash Recovery Test",
       entryFeeMinor: 200,
       prizes: [{ placement: 1, amountMinor: 360 }],
-      rulesVersion: "sb-1.0",
+      rulesVersion: AUTHORITY_VERSION,
       skillAssessmentVersion: "v1",
       isSandbox: true,
     });

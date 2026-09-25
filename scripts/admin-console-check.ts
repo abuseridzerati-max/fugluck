@@ -20,14 +20,15 @@ console.log("admin-console-check");
 
 async function main() {
   const { hasPermission, ROLE_PERMISSIONS } = await import("../packages/server/src/auth/permissions.ts");
+  const { ALL_ADMIN_PERMISSIONS } = await import("../packages/shared/src/admin.ts");
 
   // ---------------------------------------------------------------------------
   // Test 1: Granular Role-Based Permission Matrix & OWNER Role
   // ---------------------------------------------------------------------------
   console.log("\nTest 1: Granular Role-Based Permission Matrix & OWNER Role");
 
-  check("OWNER has all 16 administrative permissions", ROLE_PERMISSIONS.OWNER.length === 16);
-  check("SUPER_ADMIN has all 16 permissions", ROLE_PERMISSIONS.SUPER_ADMIN.length === 16);
+  check("OWNER has every currently defined administrative permission", ROLE_PERMISSIONS.OWNER.length === ALL_ADMIN_PERMISSIONS.length && ALL_ADMIN_PERMISSIONS.every((p) => ROLE_PERMISSIONS.OWNER.includes(p)));
+  check("SUPER_ADMIN has every currently defined administrative permission", ROLE_PERMISSIONS.SUPER_ADMIN.length === ALL_ADMIN_PERMISSIONS.length && ALL_ADMIN_PERMISSIONS.every((p) => ROLE_PERMISSIONS.SUPER_ADMIN.includes(p)));
   check("OWNER has wallet.grant_coins permission", hasPermission("OWNER", "wallet.grant_coins"));
   check("ADMIN has WALLET_GRANT_COINS permission", hasPermission("ADMIN", "WALLET_GRANT_COINS"));
   check("MODERATOR has MATCHES_VOID permission", hasPermission("MODERATOR", "MATCHES_VOID"));

@@ -1,8 +1,7 @@
 // Fixed-timestep accumulator loop, shared by every game module. The reason
 // this exists: gameplay code should only ever see a constant dt (never real
-// frame-to-frame timing), because a constant dt is what makes a recorded
-// (seed, inputLog) replayable to an identical result later — variable dt
-// bakes this session's frame jitter into the simulation itself.
+// frame-to-frame timing), so physics and scoring do not depend on this
+// session's frame jitter.
 export const FIXED_TIMESTEP_SEC = 1 / 60;
 
 export type FixedTimestepLoopOptions = {
@@ -20,9 +19,7 @@ export type FixedTimestepLoopOptions = {
   // BEFORE it reaches the accumulator — deliberately dropped, not queued
   // for later frames — so a long stall (backgrounded tab, breakpoint, GC
   // pause) can't force a "spiral of death" catch-up freeze. This only
-  // affects the live session's real-time pacing; it never touches
-  // reproducibility, since replay steps ticks from a recorded log instead
-  // of re-running this accumulator against real time. Default 5.
+  // affects the live session's real-time pacing. Default 5.
   maxStepsPerFrame?: number;
   // Injectable clock/scheduler so this loop is testable without a real
   // browser frame source. Default to the real browser globals.

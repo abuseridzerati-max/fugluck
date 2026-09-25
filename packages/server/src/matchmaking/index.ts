@@ -72,7 +72,12 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         return;
       }
 
-      const currency = payload.currency === "DIAMONDS" ? "DIAMONDS" : "COINS";
+      if (payload.currency === "DIAMONDS") {
+        socket.emit("queueError", { message: "Diamonds are retired and cannot be used for new matches." });
+        return;
+      }
+
+      const currency = "COINS" as const;
       let stake = typeof payload.stake === "number" && Number.isFinite(payload.stake) && payload.stake > 0 ? Math.floor(payload.stake) : 0;
       if (stake > 100_000) stake = 100_000;
 
@@ -253,7 +258,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       submitScore(socket, payload);
     });
 
-    // Evidence only — no state, no verdict impact. See PROGRESS.md's
+    // Evidence only — no match state or outcome impact. See PROGRESS.md's
     // freeze-frame Known Gaps entry: this and the client-side auto-forfeit
     // are both things a modified client can simply not do, so this is one
     // signal to look at later, not an enforcement mechanism.

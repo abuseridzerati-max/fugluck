@@ -2,11 +2,10 @@
 // outcome. Pure function, no I/O — matches.ts calls this once both sides are
 // known (both submitted, or the forfeit timer fired) and sends the result to
 // each socket.
-import type { MatchOutcome, ScoreVerdict } from "@fugluck/shared";
+import type { MatchOutcome } from "@fugluck/shared";
 
 export type SidedSubmission = {
   score: number;
-  verdict: ScoreVerdict;
   correctCount?: number;
   totalResponseTicks?: number;
 } | null;
@@ -14,16 +13,9 @@ export type SidedSubmission = {
 export type MatchOutcomeResult = { a: MatchOutcome; b: MatchOutcome };
 
 export function determineMatchOutcome(a: SidedSubmission, b: SidedSubmission): MatchOutcomeResult {
-  const aTrusted = a !== null && a.verdict !== "invalid";
-  const bTrusted = b !== null && b.verdict !== "invalid";
-
   if (a === null && b === null) return { a: "void", b: "void" };
-  if (a === null) return bTrusted ? { a: "loss", b: "win" } : { a: "void", b: "void" };
-  if (b === null) return aTrusted ? { a: "win", b: "loss" } : { a: "void", b: "void" };
-
-  if (aTrusted && !bTrusted) return { a: "win", b: "loss" };
-  if (bTrusted && !aTrusted) return { a: "loss", b: "win" };
-  if (!aTrusted && !bTrusted) return { a: "void", b: "void" };
+  if (a === null) return { a: "loss", b: "win" };
+  if (b === null) return { a: "win", b: "loss" };
 
   // Primary ranking for Trivia: Most correct answers
   if (a.correctCount !== undefined && b.correctCount !== undefined) {
@@ -49,9 +41,8 @@ export function determineMatchOutcome(a: SidedSubmission, b: SidedSubmission): M
 // `a` is always the disconnecting player.
 //
 // Deliberately NOT the same as determineMatchOutcome(null, opponent):
-//  - opponent has a real submission -> identical policy either way (their
-//    own verdict decides: trusted wins, invalid voids) — reuses
-//    determineMatchOutcome directly, no divergence.
+//  - opponent has a casual submission -> same comparison policy as the normal
+//    result path.
 //  - opponent is ALSO null (hasn't submitted anything either, still mid-run)
 //    -> THIS is where it diverges. determineMatchOutcome(null, null) is
 //    void, correct for its actual case (neither player did anything,

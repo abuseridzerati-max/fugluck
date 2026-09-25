@@ -11,10 +11,6 @@
       "import": "./registry.ts",
       "default": "./registry.ts"
     },
-    "./replayAdapters": {
-      "import": "./replayAdapters.ts",
-      "default": "./replayAdapters.ts"
-    },
     "./neon-runner": {
       "import": "./neon-runner/index.ts",
       "default": "./neon-runner/index.ts"

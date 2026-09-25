@@ -133,7 +133,7 @@ export function CompetitionOverviewView({
         <div style={cardStyle}>
           <div style={labelStyle}>VERIFYING</div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#c084fc' }}>{metrics.verifyingInstancesCount}</div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Replay audit in progress</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Authority session and lifecycle records</div>
         </div>
 
         <div style={cardStyle}>
@@ -816,10 +816,10 @@ export function CompetitionEligibilityView({
     <div>
       <div style={{ ...noticeBannerStyle, background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#c7d2fe' }}>
         <div>
-          <strong>TECHNICAL ELIGIBILITY REGISTRY:</strong> Factual classification of platform games. <strong>ZERO (0)</strong> games hold legal approval for real-money wagering. All competitive candidate games operate strictly in simulated sandbox mode.
+          <strong>TEST / SANDBOX ONLY:</strong> Level 3 TEST GEL competition authority is enabled for Space Blaster and Cyber Hopper. No real-money play is active.
         </div>
         <span style={{ fontSize: '11px', fontWeight: 700, background: '#312e81', color: '#c7d2fe', padding: '3px 8px', borderRadius: '4px' }}>
-          0 PAID-APPROVED
+          2 GAMES ENABLED
         </span>
       </div>
 
@@ -828,10 +828,11 @@ export function CompetitionEligibilityView({
           <thead>
             <tr style={{ background: '#0f1017', borderBottom: '1px solid #1e2030', color: '#94a3b8', textAlign: 'left' }}>
               <th style={{ padding: '12px' }}>Game ID & Title</th>
-              <th style={{ padding: '12px' }}>Classification Status</th>
-              <th style={{ padding: '12px' }}>Sandbox GEL Candidate</th>
-              <th style={{ padding: '12px' }}>Paid-Approved Status</th>
-              <th style={{ padding: '12px' }}>Technical Architecture & Mechanics</th>
+              <th style={{ padding: '12px' }}>Practice</th>
+              <th style={{ padding: '12px' }}>Casual Coins</th>
+              <th style={{ padding: '12px' }}>Level 3 TEST GEL</th>
+              <th style={{ padding: '12px' }}>Authority Version</th>
+              <th style={{ padding: '12px' }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -840,36 +841,10 @@ export function CompetitionEligibilityView({
                 <td style={{ padding: '12px' }}>
                   <div style={{ fontWeight: 700, color: '#f8fafc' }}>{g.gameId}</div>
                 </td>
-                <td style={{ padding: '12px' }}>
-                  <span
-                    style={{
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      background:
-                        g.status === 'PAID_COMPETITIVE_CANDIDATE'
-                          ? 'rgba(59, 130, 246, 0.2)'
-                          : 'rgba(234, 179, 8, 0.2)',
-                      color:
-                        g.status === 'PAID_COMPETITIVE_CANDIDATE'
-                          ? '#60a5fa'
-                          : '#fcd34d',
-                    }}
-                  >
-                    {g.status}
-                  </span>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  <span style={{ fontWeight: 600, color: g.isCandidate ? '#34d399' : '#94a3b8' }}>
-                    {g.isCandidate ? 'Eligible (Candidate)' : 'Ineligible (Coin Only)'}
-                  </span>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  <span style={{ padding: '2px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', fontSize: '11px', fontWeight: 600 }}>
-                    NO (0 games approved)
-                  </span>
-                </td>
+                <td style={{ padding: '12px', color: g.practice ? '#34d399' : '#64748b' }}>{g.practice ? 'Available' : 'Unavailable'}</td>
+                <td style={{ padding: '12px', color: g.casualCoins ? '#34d399' : '#64748b' }}>{g.casualCoins ? 'Available' : 'Unavailable'}</td>
+                <td style={{ padding: '12px', color: g.testGelEligible ? '#34d399' : '#fbbf24', fontWeight: 700 }}>{g.testGelEligible ? 'Level 3 certified' : g.status === 'OUT_OF_SCOPE' ? 'Outside current scope' : 'Not certified'}</td>
+                <td style={{ padding: '12px', fontFamily: 'monospace', color: '#cbd5e1' }}>{g.authorityVersion || '—'}</td>
                 <td style={{ padding: '12px', color: '#cbd5e1', fontSize: '12px' }}>
                   {g.technicalNotes}
                 </td>

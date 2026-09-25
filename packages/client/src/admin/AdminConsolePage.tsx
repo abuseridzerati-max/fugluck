@@ -710,13 +710,13 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     })
   }
 
-  async function handleGrantCurrency(userId: string, currency: 'coins' | 'diamonds', amount: number, reason: string) {
+  async function handleGrantCurrency(userId: string, amount: number, reason: string) {
     const idempotencyKey = `ui_grant_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-    await apiFetch(`/api/admin/wallet/grant-${currency}`, {
+    await apiFetch('/api/admin/wallet/grant-coins', {
       method: 'POST',
       body: JSON.stringify({ targetUserId: userId, amount, reason, idempotencyKey }),
     })
-    setStatusMessage(`Successfully granted ${amount} ${currency.toUpperCase()} to user ${userId}.`)
+    setStatusMessage(`Successfully granted ${amount} COINS to user ${userId}.`)
     fetchUsers()
     if (selectedUserDetail) inspectUser(userId)
     if (activeTab === 'ledger') fetchLedger()

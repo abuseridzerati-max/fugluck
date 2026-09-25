@@ -7,7 +7,6 @@ import {
   type GameMode,
   type GameModule,
   type GameModuleFactory,
-  type InputLogEntry,
 } from "@fugluck/shared";
 import { TFSprintEngine, type TFSprintInput } from "./engine";
 import { renderTFSprint } from "./render";
@@ -33,17 +32,10 @@ export class TFSprintModule extends EventTarget implements GameModule {
   private countdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private seed = 0;
-  private inputLog: InputLogEntry[] = [];
   private mode: GameMode = "practice";
-  private lastResizeWidth = VIRTUAL_VIEWPORT.width;
-  private lastResizeHeight = VIRTUAL_VIEWPORT.height;
 
   private input: TFSprintInput = {};
 
-  private logInput(action: string) {
-    if (!this.fixedLoop) return;
-    this.inputLog.push({ tick: this.fixedLoop.tick, action, wallMs: performance.now() - this.runStartTime });
-  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (this.state === "ended" && e.code === "Space") {
@@ -58,11 +50,9 @@ export class TFSprintModule extends EventTarget implements GameModule {
     if (e.code === "KeyT" || e.code === "ArrowLeft" || e.code === "Digit1") {
       e.preventDefault();
       this.input.selectTrue = true;
-      this.logInput("selectTrue");
     } else if (e.code === "KeyF" || e.code === "ArrowRight" || e.code === "Digit2") {
       e.preventDefault();
       this.input.selectFalse = true;
-      this.logInput("selectFalse");
     }
   };
 
@@ -78,12 +68,10 @@ export class TFSprintModule extends EventTarget implements GameModule {
     // Left Card [TRUE]: x = 50..610, y = 325..635
     if (clickX >= 50 && clickX <= 610 && clickY >= 325 && clickY <= 635) {
       this.input.selectTrue = true;
-      this.logInput("selectTrue");
     }
     // Right Card [FALSE]: x = 670..1230, y = 325..635
     else if (clickX >= 670 && clickX <= 1230 && clickY >= 325 && clickY <= 635) {
       this.input.selectFalse = true;
-      this.logInput("selectFalse");
     }
   };
 
@@ -137,8 +125,6 @@ export class TFSprintModule extends EventTarget implements GameModule {
 
     this.resizeObserver = new ResizeObserver(() => {
       if (this.root) {
-        this.lastResizeWidth = this.root.clientWidth || VIRTUAL_VIEWPORT.width;
-        this.lastResizeHeight = this.root.clientHeight || VIRTUAL_VIEWPORT.height;
         this.engine?.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
       }
     });
@@ -162,7 +148,6 @@ export class TFSprintModule extends EventTarget implements GameModule {
   }
 
   private resetGame() {
-    this.inputLog = [];
     this.input = {};
     this.engine = new TFSprintEngine(this.seed);
     this.state = "idle";
@@ -270,8 +255,6 @@ export class TFSprintModule extends EventTarget implements GameModule {
       durationMs: Math.round(performance.now() - this.runStartTime),
       reason,
       seed: this.seed,
-      inputLog: this.inputLog,
-      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
 
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));

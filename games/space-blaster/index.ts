@@ -7,7 +7,6 @@ import {
   type GameMode,
   type GameModule,
   type GameModuleFactory,
-  type InputLogEntry,
 } from "@fugluck/shared";
 import { SpaceBlasterEngine, type SpaceBlasterInput } from "./engine";
 
@@ -33,10 +32,7 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
   private countdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private seed = 0;
-  private inputLog: InputLogEntry[] = [];
   private mode: GameMode = "practice";
-  private lastResizeWidth = VIRTUAL_VIEWPORT.width;
-  private lastResizeHeight = VIRTUAL_VIEWPORT.height;
   private forfeitConfirmTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private input: SpaceBlasterInput = {
@@ -51,10 +47,6 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
   private upKeyDown = false;
   private downKeyDown = false;
 
-  private logInput(action: string) {
-    if (!this.fixedLoop) return;
-    this.inputLog.push({ tick: this.fixedLoop.tick, action, wallMs: performance.now() - this.runStartTime });
-  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
@@ -62,33 +54,28 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
       if (!this.leftKeyDown) {
         this.leftKeyDown = true;
         this.input.moveLeft = true;
-        this.logInput("moveLeftDown");
       }
     } else if (e.code === "ArrowRight" || e.code === "KeyD") {
       e.preventDefault();
       if (!this.rightKeyDown) {
         this.rightKeyDown = true;
         this.input.moveRight = true;
-        this.logInput("moveRightDown");
       }
     } else if (e.code === "ArrowUp" || e.code === "KeyW") {
       e.preventDefault();
       if (!this.upKeyDown) {
         this.upKeyDown = true;
         this.input.moveUp = true;
-        this.logInput("moveUpDown");
       }
     } else if (e.code === "ArrowDown" || e.code === "KeyS") {
       e.preventDefault();
       if (!this.downKeyDown) {
         this.downKeyDown = true;
         this.input.moveDown = true;
-        this.logInput("moveDownDown");
       }
     } else if (e.code === "Space") {
       e.preventDefault();
       this.input.shootPressed = true;
-      this.logInput("shootPressed");
     }
   };
 
@@ -96,19 +83,15 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       this.leftKeyDown = false;
       this.input.moveLeft = false;
-      this.logInput("moveLeftUp");
     } else if (e.code === "ArrowRight" || e.code === "KeyD") {
       this.rightKeyDown = false;
       this.input.moveRight = false;
-      this.logInput("moveRightUp");
     } else if (e.code === "ArrowUp" || e.code === "KeyW") {
       this.upKeyDown = false;
       this.input.moveUp = false;
-      this.logInput("moveUpUp");
     } else if (e.code === "ArrowDown" || e.code === "KeyS") {
       this.downKeyDown = false;
       this.input.moveDown = false;
-      this.logInput("moveDownUp");
     }
   };
 
@@ -169,8 +152,6 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.lastResizeWidth = width;
-          this.lastResizeHeight = height;
           this.engine.resize(width, height);
         }
       }
@@ -180,16 +161,12 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("keyup", this.handleKeyUp);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
-
-    this.lastResizeWidth = VIRTUAL_VIEWPORT.width;
-    this.lastResizeHeight = VIRTUAL_VIEWPORT.height;
     this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   }
 
   start(): void {
     if (this.state !== "idle") return;
     this.state = "countdown";
-    this.inputLog = [];
     this.runStartTime = performance.now();
     this.runCountdown(0);
   }
@@ -260,8 +237,6 @@ export class SpaceBlasterModule extends EventTarget implements GameModule {
       reason,
       durationMs: Math.round(performance.now() - this.runStartTime),
       seed: this.seed,
-      inputLog: this.inputLog,
-      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));
   }

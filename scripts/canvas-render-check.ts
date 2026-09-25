@@ -1,26 +1,18 @@
 // Standalone verification script for Headless Canvas draw() rendering loop,
 // letterboxing math, finite coordinate assertions (NaN / Infinity guard), and
-// replay canvas integration.
 //
 // Run: npx tsx scripts/canvas-render-check.ts
 
 import { VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { RunnerEngine } from "../games/neon-runner/engine";
-import { neonRunnerReplayAdapter } from "../games/neon-runner/replay";
 import { DashEngine } from "../games/pixel-ninja-dash/engine";
-import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay";
 import { SkyDodgeEngine } from "../games/sky-dodge/engine";
-import { skyDodgeReplayAdapter } from "../games/sky-dodge/replay";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
-import { spaceBlasterReplayAdapter } from "../games/space-blaster/replay";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
-import { cyberHopperReplayAdapter } from "../games/cyber-hopper/replay";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
-import { speedTriviaReplayAdapter } from "../games/speed-trivia/replay";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
 import { renderTFSprint } from "../games/tf-sprint/render";
-import { tfSprintReplayAdapter } from "../games/tf-sprint/replay";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -466,191 +458,8 @@ console.log("\nTest 3.9: True / False Sprint 300-Frame Headless Canvas draw() Su
 }
 
 // ---------------------------------------------------------------------------
-// Test 4: Replay Canvas Integration Test
-// ---------------------------------------------------------------------------
-console.log("\nTest 4: Replay Canvas Integration Test\n");
+// Replay drivers were retired; each active game renderer is exercised directly above.
 
-{
-  const mockCtx = createMockCanvasContext();
-
-  // Test Neon Runner Replay Adapter rendering
-  const neonEngine = neonRunnerReplayAdapter.createEngine(999888);
-  neonRunnerReplayAdapter.resize(neonEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  neonEngine.reset();
-  const neonInput = neonRunnerReplayAdapter.createInitialInput();
-  const sampleLogNeon = [
-    { tick: 10, action: "jumpPressed" },
-    { tick: 25, action: "jumpReleased" },
-    { tick: 50, action: "slidePressed" },
-  ];
-
-  let replayPassNeon = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogNeon.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        neonRunnerReplayAdapter.applyAction(neonInput, act.action);
-      }
-      neonRunnerReplayAdapter.update(neonEngine, 1 / 60, neonInput);
-      neonRunnerReplayAdapter.clearPulses(neonInput);
-      neonEngine.draw(mockCtx);
-    }
-  } catch (err) {
-    replayPassNeon = false;
-    console.error("Neon Runner replay render error:", err);
-  }
-  check("Neon Runner replay rendering completes 100 ticks with zero draw errors", replayPassNeon);
-
-  // Test Pixel Ninja Dash Replay Adapter rendering
-  const dashEngine = pixelNinjaDashReplayAdapter.createEngine(777666);
-  pixelNinjaDashReplayAdapter.resize(dashEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  dashEngine.reset();
-  const dashInput = pixelNinjaDashReplayAdapter.createInitialInput();
-  const sampleLogDash = [{ tick: 15, action: "dashPressed" }, { tick: 45, action: "dashPressed" }];
-
-  let replayPassDash = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogDash.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        pixelNinjaDashReplayAdapter.applyAction(dashInput, act.action);
-      }
-      pixelNinjaDashReplayAdapter.update(dashEngine, 1 / 60, dashInput);
-      pixelNinjaDashReplayAdapter.clearPulses(dashInput);
-      dashEngine.draw(mockCtx);
-    }
-  } catch (err) {
-    replayPassDash = false;
-    console.error("Pixel Ninja Dash replay render error:", err);
-  }
-  check("Pixel Ninja Dash replay rendering completes 100 ticks with zero draw errors", replayPassDash);
-
-  // Test Sky Dodge Replay Adapter rendering
-  const skyEngine = skyDodgeReplayAdapter.createEngine(555444);
-  skyDodgeReplayAdapter.resize(skyEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  skyEngine.reset();
-  const skyInput = skyDodgeReplayAdapter.createInitialInput();
-  const sampleLogSky = [{ tick: 10, action: "moveLeft" }, { tick: 30, action: "moveRight" }];
-
-  let replayPassSky = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogSky.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        skyDodgeReplayAdapter.applyAction(skyInput, act.action);
-      }
-      skyDodgeReplayAdapter.update(skyEngine, 1 / 60, skyInput);
-      skyDodgeReplayAdapter.clearPulses(skyInput);
-      skyEngine.draw(mockCtx);
-    }
-  } catch (err) {
-    replayPassSky = false;
-    console.error("Sky Dodge replay render error:", err);
-  }
-  check("Sky Dodge replay rendering completes 100 ticks with zero draw errors", replayPassSky);
-
-  // Test Space Blaster Replay Adapter rendering
-  const blasterEngine = spaceBlasterReplayAdapter.createEngine(333222);
-  spaceBlasterReplayAdapter.resize(blasterEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  blasterEngine.reset();
-  const blasterInput = spaceBlasterReplayAdapter.createInitialInput();
-  const sampleLogBlaster = [{ tick: 10, action: "moveLeftDown" }, { tick: 20, action: "shootPressed" }];
-
-  let replayPassBlaster = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogBlaster.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        spaceBlasterReplayAdapter.applyAction(blasterInput, act.action);
-      }
-      spaceBlasterReplayAdapter.update(blasterEngine, 1 / 60, blasterInput);
-      spaceBlasterReplayAdapter.clearPulses(blasterInput);
-      blasterEngine.render(mockCtx);
-    }
-  } catch (err) {
-    replayPassBlaster = false;
-    console.error("Space Blaster replay render error:", err);
-  }
-  check("Space Blaster replay rendering completes 100 ticks with zero draw errors", replayPassBlaster);
-
-  // Test Cyber Hopper Replay Adapter rendering
-  const hopperEngine = cyberHopperReplayAdapter.createEngine(111222);
-  cyberHopperReplayAdapter.resize(hopperEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  hopperEngine.reset();
-  const hopperInput = cyberHopperReplayAdapter.createInitialInput();
-  const sampleLogHopper = [
-    { tick: 10, action: "hopUp" },
-    { tick: 30, action: "hopUp" },
-    { tick: 50, action: "hopLeft" },
-  ];
-
-  let replayPassHopper = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogHopper.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        cyberHopperReplayAdapter.applyAction(hopperInput, act.action);
-      }
-      cyberHopperReplayAdapter.update(hopperEngine, 1 / 60, hopperInput);
-      cyberHopperReplayAdapter.clearPulses(hopperInput);
-      hopperEngine.render(mockCtx);
-    }
-  } catch (err) {
-    replayPassHopper = false;
-    console.error("Cyber Hopper replay render error:", err);
-  }
-  check("Cyber Hopper replay rendering completes 100 ticks with zero draw errors", replayPassHopper);
-
-  // Test Speed Trivia Replay Adapter rendering
-  const triviaEngine = speedTriviaReplayAdapter.createEngine(999111);
-  speedTriviaReplayAdapter.resize(triviaEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  triviaEngine.reset();
-  const triviaInput = speedTriviaReplayAdapter.createInitialInput();
-  const sampleLogTrivia = [{ tick: 10, action: "selectOption0" }];
-
-  let replayPassTrivia = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogTrivia.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        speedTriviaReplayAdapter.applyAction(triviaInput, act.action);
-      }
-      speedTriviaReplayAdapter.update(triviaEngine, 1 / 60, triviaInput);
-      speedTriviaReplayAdapter.clearPulses(triviaInput);
-      renderSpeedTrivia(mockCtx, triviaEngine);
-    }
-  } catch (err) {
-    replayPassTrivia = false;
-    console.error("Speed Trivia replay render error:", err);
-  }
-  check("Speed Trivia replay rendering completes 100 ticks with zero draw errors", replayPassTrivia);
-
-  // Test True / False Sprint Replay Adapter rendering
-  const tfEngine = tfSprintReplayAdapter.createEngine(555444);
-  tfSprintReplayAdapter.resize(tfEngine, VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  tfEngine.reset();
-  const tfInput = tfSprintReplayAdapter.createInitialInput();
-  const sampleLogTF = [{ tick: 10, action: "selectTrue" }];
-
-  let replayPassTF = true;
-  try {
-    for (let tick = 0; tick < 100; tick++) {
-      const actions = sampleLogTF.filter((e) => e.tick === tick);
-      for (const act of actions) {
-        tfSprintReplayAdapter.applyAction(tfInput, act.action);
-      }
-      tfSprintReplayAdapter.update(tfEngine, 1 / 60, tfInput);
-      tfSprintReplayAdapter.clearPulses(tfInput);
-      renderTFSprint(mockCtx, tfEngine);
-    }
-  } catch (err) {
-    replayPassTF = false;
-    console.error("True / False Sprint replay render error:", err);
-  }
-  check("True / False Sprint replay rendering completes 100 ticks with zero draw errors", replayPassTF);
-}
-
-// ---------------------------------------------------------------------------
 console.log(`\nTotal verified canvas draw operations: ${totalVerifiedDrawCalls}`);
 console.log(`${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

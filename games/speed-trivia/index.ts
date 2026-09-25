@@ -7,7 +7,6 @@ import {
   type GameMode,
   type GameModule,
   type GameModuleFactory,
-  type InputLogEntry,
 } from "@fugluck/shared";
 import { SpeedTriviaEngine, type SpeedTriviaInput } from "./engine";
 import { renderSpeedTrivia } from "./render";
@@ -33,17 +32,10 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
   private countdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private seed = 0;
-  private inputLog: InputLogEntry[] = [];
   private mode: GameMode = "practice";
-  private lastResizeWidth = VIRTUAL_VIEWPORT.width;
-  private lastResizeHeight = VIRTUAL_VIEWPORT.height;
 
   private input: SpeedTriviaInput = {};
 
-  private logInput(action: string) {
-    if (!this.fixedLoop) return;
-    this.inputLog.push({ tick: this.fixedLoop.tick, action, wallMs: performance.now() - this.runStartTime });
-  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (this.state !== "running") return;
@@ -51,19 +43,15 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     if (e.code === "Digit1" || e.code === "KeyA") {
       e.preventDefault();
       this.input.selectOption = 0;
-      this.logInput("selectOption0");
     } else if (e.code === "Digit2" || e.code === "KeyB") {
       e.preventDefault();
       this.input.selectOption = 1;
-      this.logInput("selectOption1");
     } else if (e.code === "Digit3" || e.code === "KeyC") {
       e.preventDefault();
       this.input.selectOption = 2;
-      this.logInput("selectOption2");
     } else if (e.code === "Digit4" || e.code === "KeyD") {
       e.preventDefault();
       this.input.selectOption = 3;
-      this.logInput("selectOption3");
     }
   };
 
@@ -90,7 +78,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
       const pos = positions[i];
       if (clickX >= pos.x && clickX <= pos.x + cardW && clickY >= pos.y && clickY <= pos.y + cardH) {
         this.input.selectOption = i;
-        this.logInput(`selectOption${i}`);
         break;
       }
     }
@@ -148,8 +135,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.lastResizeWidth = width;
-          this.lastResizeHeight = height;
           this.engine.resize(width, height);
         }
       }
@@ -159,16 +144,12 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
     window.addEventListener("keydown", this.handleKeyDown);
     this.canvas.addEventListener("click", this.handleCanvasClick);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
-
-    this.lastResizeWidth = VIRTUAL_VIEWPORT.width;
-    this.lastResizeHeight = VIRTUAL_VIEWPORT.height;
     this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   }
 
   start(): void {
     if (this.state !== "idle") return;
     this.state = "countdown";
-    this.inputLog = [];
     this.runStartTime = performance.now();
     this.runCountdown(0);
   }
@@ -234,8 +215,6 @@ export class SpeedTriviaModule extends EventTarget implements GameModule {
       reason,
       durationMs: Math.round(performance.now() - this.runStartTime),
       seed: this.seed,
-      inputLog: this.inputLog,
-      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));
   }

@@ -13,6 +13,7 @@ import type {
   ISO4217Currency,
 } from "@fugluck/shared";
 import { createMoney } from "@fugluck/shared";
+import { GAME_COMPETITION_CERTIFICATIONS } from "@fugluck/shared";
 import type { CompetitionAccountingPort } from "../accounting/port";
 import { db, pool } from "../db/client";
 import {
@@ -22,7 +23,7 @@ import {
   competitionTemplatePrizes,
   competitionTemplates,
 } from "../db/schema";
-import { templateService } from "./templateService";
+import { assertGameEligibleForCompetition, assertLiveAuthorityTemplateShape, templateService } from "./templateService";
 
 export const ADVISORY_LOCK_TEMPLATE_QUEUE_NAMESPACE = 2094927182;
 
@@ -160,6 +161,16 @@ export class CompetitionInstanceService {
     if (!template.enabled) {
       throw new InstanceRegistrationError("TEMPLATE_DISABLED", `Template ${templateId} is disabled.`);
     }
+    assertGameEligibleForCompetition(template.gameId, {
+      isSandbox: true,
+      enabled: true,
+      rulesVersion: template.rulesVersion,
+    });
+    try {
+      assertLiveAuthorityTemplateShape({ format: template.format, participantCapacity: template.participantCapacity, prizes: template.prizes ?? [] });
+    } catch (error) {
+      throw new InstanceRegistrationError("UNSUPPORTED_TEMPLATE_SHAPE", error instanceof Error ? error.message : "Unsupported authority template shape.");
+    }
 
     const instanceId = `inst_${randomUUID()}`;
 
@@ -231,6 +242,15 @@ export class CompetitionInstanceService {
       }
       if (!tmpl.enabled) {
         throw new InstanceRegistrationError("TEMPLATE_DISABLED", `Template '${templateId}' is currently disabled.`);
+      }
+      const certification = GAME_COMPETITION_CERTIFICATIONS[tmpl.gameId];
+      if (!certification || certification.testGelCompetition !== "LEVEL_3_CERTIFIED" || certification.authorityVersion !== tmpl.rulesVersion) {
+        throw new InstanceRegistrationError("GAME_NOT_CERTIFIED", "This template is not eligible for the active TEST GEL authority version.");
+      }
+      try {
+        assertLiveAuthorityTemplateShape({ format: tmpl.format, participantCapacity: tmpl.participantCapacity, prizes: tmpl.prizes ?? [] });
+      } catch (error) {
+        throw new InstanceRegistrationError("UNSUPPORTED_TEMPLATE_SHAPE", error instanceof Error ? error.message : "Unsupported authority template shape.");
       }
 
       // 2. Find open PENDING_ENTRANTS instance with available seat

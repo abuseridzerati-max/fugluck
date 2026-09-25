@@ -41,7 +41,6 @@ matchesRouter.get("/history", attachSession, requireAuth, matchHistoryLimiter, a
       const opponent = await db.query.users.findFirst({ where: eq(users.id, opponentId) });
       const userScore = isP1 ? m.scoreP1 : m.scoreP2;
       const opponentScore = isP1 ? m.scoreP2 : m.scoreP1;
-      const userInputLog = isP1 ? m.inputLogP1 : m.inputLogP2;
 
       let outcome = "draw";
       if (m.winnerId === userId) outcome = "win";
@@ -57,7 +56,6 @@ matchesRouter.get("/history", attachSession, requireAuth, matchHistoryLimiter, a
         userScore,
         opponentScore,
         seed: m.seed,
-        inputLog: userInputLog ?? [],
         createdAt: m.createdAt.toISOString(),
       };
     }),

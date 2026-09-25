@@ -10,14 +10,8 @@
 //
 // Run: npx tsx scripts/matchmaking-check.ts
 //
-// submitScore's payload now requires a real inputLog/viewport (score
-// validation, a later session) — every submitScore call below uses a real
-// (seed, inputLog) pair replayed via the actual shared adapters/driver to
-// get a real, honestly-validating score, not a hand-picked number. This
-// wasn't true before: 6 assertions here silently failed for two sessions
-// because the payload guard rejected every under-shaped submission and
-// nobody re-ran this file to notice — see PROGRESS.md and CLAUDE.md's
-// "run every test script" rule, added because of exactly this.
+// Casual scores are client-reported and carry no TEST GEL prize authority.
+// This suite tests socket lifecycle behavior only.
 // createMatch now persists and escrows, so this suite requires an isolated test DB.
 import "./require-disposable-test-database.ts";
 
@@ -46,11 +40,8 @@ import {
   handleJoinGuestLink,
 } from "../packages/server/src/matchmaking/invites.ts";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
-import { replayEngine, type InputLogEntry } from "@fugluck/shared";
-import { neonRunnerReplayAdapter } from "../games/neon-runner/replay.ts";
-import { pixelNinjaDashReplayAdapter } from "../games/pixel-ninja-dash/replay.ts";
 import { db } from "../packages/server/src/db/client.ts";
-import { matchesHistory } from "../packages/server/src/db/schema.ts";
+import { matchesHistory, users } from "../packages/server/src/db/schema.ts";
 import { eq } from "drizzle-orm";
 
 let failures = 0;
@@ -64,21 +55,7 @@ function check(label: string, pass: boolean, detail?: string) {
   }
 }
 
-const VIEWPORT = { width: 1280, height: 720 };
-
-// Same rationale as score-validation-check.ts: dense, spread-out periodic
-// input rather than a couple of sparse hand-picked ticks, so it reliably
-// produces a real, non-trivial run regardless of where this seed's
-// obstacles happen to land.
-function periodicLog(actionOn: string, actionOff: string | null, period: number, count: number): InputLogEntry[] {
-  const log: InputLogEntry[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = 20 + i * period;
-    log.push({ tick: t, action: actionOn });
-    if (actionOff) log.push({ tick: t + 4, action: actionOff });
-  }
-  return log;
-}
+function casualScore(actionCount: number): number { return actionCount * 10; }
 
 
 type Emitted = { event: string; payload: unknown };
@@ -113,6 +90,16 @@ async function waitForEvent(
 // doesn't support top-level await.
 async function main() {
 console.log(`(forfeit grace window is ${FORFEIT_GRACE_MS}ms in real code; sped up below for this test only)`);
+const fixtureUsers = [
+  ["user-a", "Alice"], ["user-b", "Bob"], ["user-c", "Cara"], ["user-d", "Dan"], ["user-e", "Eve"],
+  ["user-alice", "Alice"], ["user-bob", "Bob"], ["user-carl", "Carl"], ["user-dana", "Dana"],
+  ["user-eli", "Eli"], ["user-fay", "Fay"], ["user-gus", "Gus"], ["user-hana", "Hana"], ["user-ivy", "Ivy"], ["user-jack", "Jack"],
+  ["guest_abc123", "Guest_abc1"], ["user-host", "HostUser"], ["user_challenger", "Challenger"], ["user_host_guest", "HostGamer"],
+  ["guest_joiner_1", "GuestJoiner"], ["user_host_dc", "HostDC"], ["guest_late", "LateGuest"], ["user_host_pending", "HostPending"], ["guest_waiter", "WaitingGuest"],
+  ["user_lobby1", "LobbyPlayer"], ["user_100a", "Bettor100A"], ["user_25", "Bettor25"], ["user_100b", "Bettor100B"],
+  ["user_rm_a", "RematchA"], ["user_rm_b", "RematchB"], ["user_rm_c", "RematchC"], ["user_rm_d", "RematchD"],
+];
+await db.insert(users).values(fixtureUsers.map(([id], index) => ({ id, username: `mcheck_${index}`, passwordHash: "test-only" }))).onConflictDoNothing();
 
 // ---------------------------------------------------------------------------
 // Test 1: game id validation
@@ -162,13 +149,7 @@ console.log("\nTest 4: match creation");
 const alice = fakeSocket("user-alice", "Alice");
 const bob = fakeSocket("user-bob", "Bob");
 let matchId = "";
-// A fixed test seed, not generateSeed() — Test 5+ need to hand-verify that
-// specific (seed, inputLog) pairs replay to different scores, which isn't
-// possible against a fresh random seed every run (tried it: a random seed
-// can land on an obstacle layout where the sample logs below coincidentally
-// don't diverge — see Test 5's own comment). generateSeed()'s actual
-// randomness/range is still exercised on its own line below, just not used
-// for the match itself.
+// Keep a fixed seed so match-creation payloads remain repeatable.
 const matchSeed = 424242;
 {
   check("generateSeed() returns a value in valid uint32 range", (() => {
@@ -177,8 +158,8 @@ const matchSeed = 424242;
   })());
   await createMatch(
     "neon-runner",
-    { socket: alice, userId: "user-alice", username: "Alice" },
-    { socket: bob, userId: "user-bob", username: "Bob" },
+    { socket: alice, userId: "user-alice", username: "Alice", currency: "COINS", stake: 0 },
+    { socket: bob, userId: "user-bob", username: "Bob", currency: "COINS", stake: 0 },
     matchSeed,
   );
   const aliceMatched = alice.emitted.find((e) => e.event === "matched")?.payload as any;
@@ -192,29 +173,16 @@ const matchSeed = 424242;
 }
 
 // ---------------------------------------------------------------------------
-// Test 5: normal resolution — both submit, both get matchResolved with real, replay-validated scores
+// Test 5: normal resolution — both submit unverifiable casual scores
 // ---------------------------------------------------------------------------
 console.log("\nTest 5: normal resolution (both submit)");
 let aliceScore = 0;
 let bobScore = 0;
 {
-  // Same (seed, log) combination already confirmed to diverge in
-  // score-validation-check.ts's Test 3 — reused here rather than
-  // re-discovering it, since matchSeed above is the same fixed constant.
-  // Two different active patterns (jump-only vs. alternating jump/slide)
-  // were tried first against a random per-run seed and kept landing on
-  // identical scores — jumping alone never helps against an overhang
-  // obstacle, so a jump-only "active" log can die exactly like an empty one
-  // if an overhang happens to be what's fatal. Empty vs. a real active log
-  // is the reliable contrast; the fixed seed makes it reproducible too.
-  const aliceLog = periodicLog("jumpPressed", "jumpReleased", 20, 25);
-  const bobLog: InputLogEntry[] = [];
-  const aliceOutcome = replayEngine(neonRunnerReplayAdapter, matchSeed, aliceLog, VIEWPORT);
-  const bobOutcome = replayEngine(neonRunnerReplayAdapter, matchSeed, bobLog, VIEWPORT);
-  aliceScore = aliceOutcome.finalScore;
-  bobScore = bobOutcome.finalScore;
+  aliceScore = casualScore(25);
+  bobScore = casualScore(0);
   check(
-    "precondition: alice's and bob's honest replays produce different scores",
+    "precondition: Alice and Bob submit different casual scores",
     aliceScore !== bobScore,
     `both ${aliceScore}`,
   );
@@ -223,18 +191,12 @@ let bobScore = 0;
     matchId,
     score: aliceScore,
     reason: "collision",
-    durationMs: Math.round((aliceOutcome.finalTick / 60) * 1000),
-    inputLog: aliceLog,
-    viewport: VIEWPORT,
   });
   check("no resolution yet after only one submission", !alice.emitted.some((e) => e.event === "matchResolved"));
   await submitScore(bob, {
     matchId,
     score: bobScore,
     reason: "collision",
-    durationMs: Math.round((bobOutcome.finalTick / 60) * 1000),
-    inputLog: bobLog,
-    viewport: VIEWPORT,
   });
   const aliceResolved = alice.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   const bobResolved = bob.emitted.find((e) => e.event === "matchResolved")?.payload as any;
@@ -253,7 +215,7 @@ let bobScore = 0;
 console.log("\nTest 6: duplicate submission after resolution");
 {
   const before = alice.emitted.length;
-  await submitScore(alice, { matchId, score: 999, reason: "collision", durationMs: 1, inputLog: [], viewport: VIEWPORT });
+  await submitScore(alice, { matchId, score: 999, reason: "collision" });
   check("resubmitting after resolution emits nothing new", alice.emitted.length === before);
 }
 
@@ -267,13 +229,12 @@ console.log("\nTest 7: forfeit timeout");
   const seed = generateSeed();
   await createMatch(
     "pixel-ninja-dash",
-    { socket: carl, userId: "user-carl", username: "Carl" },
-    { socket: dana, userId: "user-dana", username: "Dana" },
+    { socket: carl, userId: "user-carl", username: "Carl", currency: "COINS", stake: 0 },
+    { socket: dana, userId: "user-dana", username: "Dana", currency: "COINS", stake: 0 },
     seed,
   );
   const carlMatchId = (carl.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
-  const carlLog = periodicLog("dashPressed", null, 15, 40);
-  const carlScore = replayEngine(pixelNinjaDashReplayAdapter, seed, carlLog, VIEWPORT).finalScore;
+  const carlScore = casualScore(40);
 
   // Speed up the real forfeit timer for this one call, without touching
   // matches.ts's use of the real setTimeout/clearTimeout — same goal as
@@ -287,9 +248,6 @@ console.log("\nTest 7: forfeit timeout");
     matchId: carlMatchId,
     score: carlScore,
     reason: "collision",
-    durationMs: 5000,
-    inputLog: carlLog,
-    viewport: VIEWPORT,
   });
   global.setTimeout = realSetTimeout;
 
@@ -324,35 +282,27 @@ console.log("\nTest 8: disconnect mid-match");
   const seed = generateSeed();
   await createMatch(
     "neon-runner",
-    { socket: eli, userId: "user-eli", username: "Eli" },
-    { socket: fay, userId: "user-fay", username: "Fay" },
+    { socket: eli, userId: "user-eli", username: "Eli", currency: "COINS", stake: 0 },
+    { socket: fay, userId: "user-fay", username: "Fay", currency: "COINS", stake: 0 },
     seed,
   );
   const eliMatchId = (eli.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
-  const eliLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
-  const eliScore = replayEngine(neonRunnerReplayAdapter, seed, eliLog, VIEWPORT).finalScore;
+  const eliScore = casualScore(25);
 
   await submitScore(eli, {
     matchId: eliMatchId,
     score: eliScore,
     reason: "collision",
-    durationMs: 5000,
-    inputLog: eliLog,
-    viewport: VIEWPORT,
   }); // starts the real 120s forfeit timer, waiting on fay
   eli.connected = false;
   await handleDisconnect(eli);
   check("8a: disconnect after already submitting emits nothing new", !eli.emitted.some((e) => e.event === "matchResolved"));
 
-  const fayLog = periodicLog("slidePressed", null, 25, 10);
-  const fayScore = replayEngine(neonRunnerReplayAdapter, seed, fayLog, VIEWPORT).finalScore;
+  const fayScore = casualScore(20);
   await submitScore(fay, {
     matchId: eliMatchId,
     score: fayScore,
     reason: "collision",
-    durationMs: 4800,
-    inputLog: fayLog,
-    viewport: VIEWPORT,
   });
   const fayResolved = fay.emitted.find((e) => e.event === "matchResolved")?.payload as any;
   check(
@@ -370,21 +320,17 @@ console.log("\nTest 8: disconnect mid-match");
   const seed = generateSeed();
   await createMatch(
     "neon-runner",
-    { socket: gus, userId: "user-gus", username: "Gus" },
-    { socket: hana, userId: "user-hana", username: "Hana" },
+    { socket: gus, userId: "user-gus", username: "Gus", currency: "COINS", stake: 0 },
+    { socket: hana, userId: "user-hana", username: "Hana", currency: "COINS", stake: 0 },
     seed,
   );
   const gusMatchId = (gus.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId;
-  const gusLog = periodicLog("jumpPressed", "jumpReleased", 20, 10);
-  const gusScore = replayEngine(neonRunnerReplayAdapter, seed, gusLog, VIEWPORT).finalScore;
+  const gusScore = casualScore(25);
 
   await submitScore(gus, {
     matchId: gusMatchId,
     score: gusScore,
     reason: "collision",
-    durationMs: 5000,
-    inputLog: gusLog,
-    viewport: VIEWPORT,
   }); // starts the forfeit timer, waiting on hana
   hana.connected = false;
   await handleDisconnect(hana, 0);
@@ -410,8 +356,8 @@ console.log("\nTest 8: disconnect mid-match");
   const jack = fakeSocket("user-jack", "Jack");
   await createMatch(
     "neon-runner",
-    { socket: ivy, userId: "user-ivy", username: "Ivy" },
-    { socket: jack, userId: "user-jack", username: "Jack" },
+    { socket: ivy, userId: "user-ivy", username: "Ivy", currency: "COINS", stake: 0 },
+    { socket: jack, userId: "user-jack", username: "Jack", currency: "COINS", stake: 0 },
     generateSeed(),
   );
   jack.connected = false;
@@ -442,8 +388,8 @@ console.log("\nTest 9: guest instant play & zero-stake enforcement\n");
   const seed = generateSeed();
   await createMatch(
     "neon-runner",
-    { socket: hostSocket, userId: "user-host", username: "HostUser" },
-    { socket: guestSocket, userId: "guest_abc123", username: "Guest_abc1" },
+    { socket: hostSocket, userId: "user-host", username: "HostUser", currency: "COINS", stake: 0 },
+    { socket: guestSocket, userId: "guest_abc123", username: "Guest_abc1", currency: "COINS", stake: 0 },
     seed,
   );
 
@@ -626,26 +572,18 @@ console.log("\nTest 14: rematch after resolved match\n");
     seed,
   );
   const firstMatchId = (p1.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId as string;
-  const p1Log = periodicLog("jumpPressed", "jumpReleased", 20, 25);
-  const p2Log: InputLogEntry[] = [];
-  const p1Outcome = replayEngine(neonRunnerReplayAdapter, seed, p1Log, VIEWPORT);
-  const p2Outcome = replayEngine(neonRunnerReplayAdapter, seed, p2Log, VIEWPORT);
+  const p1Score = casualScore(25);
+  const p2Score = casualScore(0);
 
   await submitScore(p1, {
     matchId: firstMatchId,
-    score: p1Outcome.finalScore,
+    score: p1Score,
     reason: "collision",
-    durationMs: Math.round((p1Outcome.finalTick / 60) * 1000),
-    inputLog: p1Log,
-    viewport: VIEWPORT,
   });
   await submitScore(p2, {
     matchId: firstMatchId,
-    score: p2Outcome.finalScore,
+    score: p2Score,
     reason: "collision",
-    durationMs: Math.round((p2Outcome.finalTick / 60) * 1000),
-    inputLog: p2Log,
-    viewport: VIEWPORT,
   });
 
   const resolved1 = p1.emitted.find((e) => e.event === "matchResolved")?.payload as any;
@@ -678,23 +616,16 @@ console.log("\nTest 14: rematch after resolved match\n");
     seed2,
   );
   const declineMatchId = (p3.emitted.find((e) => e.event === "matched")?.payload as any)?.matchId as string;
-  const p3Log: InputLogEntry[] = [];
-  const p3Outcome = replayEngine(neonRunnerReplayAdapter, seed2, p3Log, VIEWPORT);
+  const tiedScore = casualScore(10);
   await submitScore(p3, {
     matchId: declineMatchId,
-    score: p3Outcome.finalScore,
+    score: tiedScore,
     reason: "collision",
-    durationMs: Math.round((p3Outcome.finalTick / 60) * 1000),
-    inputLog: p3Log,
-    viewport: VIEWPORT,
   });
   await submitScore(p4, {
     matchId: declineMatchId,
-    score: p3Outcome.finalScore,
+    score: tiedScore,
     reason: "collision",
-    durationMs: Math.round((p3Outcome.finalTick / 60) * 1000),
-    inputLog: p3Log,
-    viewport: VIEWPORT,
   });
   handleRequestRematch(p3, { matchId: declineMatchId });
   handleDeclineRematch(p4, { matchId: declineMatchId });

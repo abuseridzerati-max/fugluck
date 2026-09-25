@@ -699,76 +699,10 @@ adminRouter.post("/wallet/grant-coins", requirePermission("WALLET_GRANT_COINS"),
   }
 });
 
-// Grant Diamonds
-adminRouter.post("/wallet/grant-diamonds", requirePermission("WALLET_GRANT_DIAMONDS"), async (req, res) => {
-  const adminUserId = req.userId!;
-  const { targetUserId, amount, reason, idempotencyKey } = req.body ?? {};
-
-  if (typeof targetUserId !== "string" || targetUserId.length === 0) {
-    res.status(400).json({ error: "Target user ID is required." });
-    return;
-  }
-  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 100_000) {
-    res.status(400).json({ error: "Amount must be a positive integer up to 100,000." });
-    return;
-  }
-  if (typeof reason !== "string" || reason.trim().length === 0) {
-    res.status(400).json({ error: "An explicit reason is required." });
-    return;
-  }
-  if (typeof idempotencyKey !== "string" || idempotencyKey.trim().length === 0) {
-    res.status(400).json({ error: "An idempotencyKey is required." });
-    return;
-  }
-
-  try {
-    const result = await db.transaction(async (tx) => {
-      const existingAudit = await tx.query.adminAuditLogs.findFirst({ where: eq(adminAuditLogs.idempotencyKey, idempotencyKey) });
-      if (existingAudit) {
-        const balances = await getBalances(targetUserId, tx);
-        return { status: 200, body: { success: true, idempotencyKey, note: "Duplicate grant request handled idempotently.", balances } };
-      }
-
-      const targetUser = await tx.query.users.findFirst({ where: eq(users.id, targetUserId) });
-      if (!targetUser) {
-        return { status: 404, body: { error: "Target user not found." } };
-      }
-
-      const grantReason = `admin_grant_diamonds_${idempotencyKey}`;
-      const ledgerId = `ledger_${randomUUID()}`;
-
-      await tx.insert(ledgerEntries).values({
-        id: ledgerId,
-        userId: targetUserId,
-        currency: "DIAMONDS",
-        amount: Math.floor(amount),
-        reason: grantReason,
-      }).onConflictDoNothing();
-
-      const auditLogId = `audit_${randomUUID()}`;
-      await tx.insert(adminAuditLogs).values({
-        id: auditLogId,
-        adminUserId,
-        action: "ADMIN_GRANT_DIAMONDS",
-        targetType: "user",
-        targetId: targetUserId,
-        amount: Math.floor(amount),
-        currency: "DIAMONDS",
-        reason,
-        idempotencyKey,
-      });
-
-      const balances = await getBalances(targetUserId, tx);
-      return { status: 200, body: { success: true, ledgerId, auditLogId, balances } };
-    });
-
-    res.status(result.status).json(result.body);
-  } catch (err: any) {
-    console.error("[admin] Grant diamonds error:", err);
-    res.status(500).json({ error: "Failed to grant diamonds due to an internal error." });
-  }
+// Diamond grants are retired; keep the route as an explicit compatibility response.
+adminRouter.post("/wallet/grant-diamonds", requirePermission("WALLET_GRANT_DIAMONDS"), (_req, res) => {
+  res.status(410).json({ error: "Diamond grants are retired. Historical Diamond balances and ledger entries remain preserved." });
 });
-
 // Reverse Ledger Entry (Compensating Transaction)
 adminRouter.post("/wallet/reverse", requirePermission("WALLET_REVERSE_TRANSACTION"), async (req, res) => {
   const adminUserId = req.userId!;

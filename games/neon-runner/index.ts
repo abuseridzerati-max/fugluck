@@ -6,7 +6,6 @@ import {
   type GameOverPayload,
   type GameMode,
   type GameModule,
-  type InputLogEntry,
 } from "@fugluck/shared";
 import { PALETTE } from "./constants";
 import { RunnerEngine, type EngineInput } from "./engine";
@@ -42,14 +41,11 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
   private countdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private seed = 0;
-  private inputLog: InputLogEntry[] = [];
   private mode: GameMode = "practice";
   // Last size passed to engine.resize() — captured for GameOverPayload so
-  // server-side replay can call resize() with the same value (see
+  // the local render loop uses the same viewport value (see
   // packages/shared/src/gameModule.ts's GameOverPayload doc comment; RunnerEngine's
   // obstacle-spawn/collision math is a function of width).
-  private lastResizeWidth = 0;
-  private lastResizeHeight = 0;
   // Armed by a first click on the Forfeit control; a second click within
   // this window actually forfeits, otherwise it reverts. Cleared in
   // destroy() and endRun() so a stale timer can't fire against a torn-down
@@ -63,16 +59,11 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
   private pointerActive = false;
   private pointerSlidTriggered = false;
 
-  // Records a tick-tagged input transition for replay. Only meaningful once
+  // Input is applied directly to the live game engine once the run has started.
+  // Only meaningful once
   // the run has actually started (fixedLoop exists) — input received during
   // countdown/idle never reaches engine.update, so there's no tick to tag it
   // with.
-  private logInput(action: string) {
-    if (!this.fixedLoop) return;
-    // wallMs is evidence only — never read by tick/action replay. See the
-    // type's doc comment in packages/shared/src/gameModule.ts.
-    this.inputLog.push({ tick: this.fixedLoop.tick, action, wallMs: performance.now() - this.runStartTime });
-  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === "Space" || e.code === "ArrowUp") {
@@ -80,14 +71,12 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
       if (!this.jumpKeyDown) {
         this.jumpKeyDown = true;
         this.input.jumpPressed = true;
-        this.logInput("jumpPressed");
       }
     } else if (e.code === "ArrowDown") {
       e.preventDefault();
       if (!this.slideKeyDown) {
         this.slideKeyDown = true;
         this.input.slidePressed = true;
-        this.logInput("slidePressed");
       }
     }
   };
@@ -96,7 +85,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     if (e.code === "Space" || e.code === "ArrowUp") {
       this.jumpKeyDown = false;
       this.input.jumpReleased = true;
-      this.logInput("jumpReleased");
     } else if (e.code === "ArrowDown") {
       this.slideKeyDown = false;
     }
@@ -117,7 +105,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     if (e.clientY - this.pointerStartY > 40) {
       this.pointerSlidTriggered = true;
       this.input.slidePressed = true;
-      this.logInput("slidePressed");
     }
   };
 
@@ -125,8 +112,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     if (this.pointerActive && !this.pointerSlidTriggered) {
       this.input.jumpPressed = true;
       this.input.jumpReleased = true;
-      this.logInput("jumpPressed");
-      this.logInput("jumpReleased");
     }
     this.pointerActive = false;
   };
@@ -136,7 +121,7 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     if (this.mode === "match") {
       // Match mode has no pause to fall back to (see pause()'s own guard) —
       // going hidden ends the run immediately as a forfeit, the same real
-      // score/inputLog/validation path a manual Forfeit click uses, just a
+      // end-of-run path a manual Forfeit click uses, just a
       // distinct reason string for observability. Deliberately no grace
       // period — see PROGRESS.md's session log for why a short one would
       // just make the freeze-frame exploit repeatable instead of closing it.
@@ -173,7 +158,7 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     // (freeze-frame: a stall-on-demand button would hand a stakes match
     // player unlimited real-world thinking time mid-run, undetectably).
     // Match mode gets a Forfeit control in the same spot instead — an
-    // honest concede path (real score, real inputLog, real validation,
+    // honest concede path,
     // exactly like practice's Quit Run), since removing pause also removed
     // the only other route to endRun("quit"). Click-twice confirm rather
     // than hold-to-confirm: fewer edge cases (touch vs. mouse, pointer
@@ -282,8 +267,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     this.canvas.height = VIRTUAL_VIEWPORT.height * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-    this.lastResizeWidth = VIRTUAL_VIEWPORT.width;
-    this.lastResizeHeight = VIRTUAL_VIEWPORT.height;
   };
 
   start(): void {
@@ -293,7 +276,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
     }
     if (this.state === "running" || this.state === "countdown") return;
     this.engine.reset();
-    this.inputLog = [];
     this.state = "countdown";
     this.runCountdown();
   }
@@ -353,7 +335,7 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
 
   pause(): void {
     // Disabled in match mode: pausing freezes the rendered frame with no
-    // trace in the replay (tick count never advances while stopped), so a
+    // tick count never advances while stopped, so a
     // pause button would be an undetectable, unlimited-time "think about it"
     // exploit in a game whose whole premise is reacting under real time
     // pressure. handleVisibilityChange no longer routes through this guard
@@ -382,8 +364,6 @@ export class NeonRunnerModule extends EventTarget implements GameModule {
       reason,
       durationMs: Math.round(performance.now() - this.runStartTime),
       seed: this.seed,
-      inputLog: this.inputLog,
-      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));
   }

@@ -72,6 +72,7 @@ export function enqueue(
   currency: "COINS" | "DIAMONDS" = "COINS",
   stake: number = 0,
 ): void {
+  if (currency !== "COINS") throw new Error("DIAMONDS_RETIRED");
   const key = makeQueueKey(gameId, currency, stake);
   const entries = queues.get(key) ?? [];
   const withoutStale = entries.filter((e) => e.userId !== socket.data.userId);
@@ -92,6 +93,7 @@ export function tryPair(
   currency: "COINS" | "DIAMONDS" = "COINS",
   stake: number = 0,
 ): [QueueEntry, QueueEntry] | null {
+  if (currency !== "COINS") return null;
   const key = makeQueueKey(gameId, currency, stake);
   const entries = queues.get(key);
   if (!entries || entries.length < 2) return null;

@@ -18,7 +18,6 @@ type MatchHistoryItem = {
   userScore: number
   opponentScore: number
   seed: number
-  inputLog: Array<{ tick: number; action: string }>
   createdAt: string
 }
 

@@ -53,8 +53,15 @@ function isTerminal(phase: Phase): boolean {
 }
 
 export default function MatchLoader(props: MatchLoaderProps) {
-  if (props.matchMode?.kind === 'competition' && (props.gameId === 'space-blaster' || props.gameId === 'cyber-hopper')) {
-    return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} onExit={props.onExit} />
+  if (props.matchMode?.kind === 'competition') {
+    if (props.gameId === 'space-blaster' || props.gameId === 'cyber-hopper') {
+      return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} onExit={props.onExit} />
+    }
+    return (
+      <main role="alert" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, color: '#f8fafc', background: '#090b12', textAlign: 'center' }}>
+        <div><h1>Competition gameplay unavailable</h1><p>This game is not certified for TEST GEL competitions.</p><button type="button" onClick={props.onExit}>Back to competitions</button></div>
+      </main>
+    )
   }
   return <LegacyMatchLoader {...props} />
 }
@@ -144,20 +151,10 @@ function LegacyMatchLoader({
       const matchInfo = phase.match
       mod.addEventListener('gameOver', ((e: Event) => {
         const payload = (e as CustomEvent<GameOverPayload>).detail
-        // TEMPORARY DIAGNOSTIC — mirrors the server-side log in matches.ts's
-        // submitScore. Remove both once the viewport/score-gap investigation
-        // is resolved.
-        console.log(
-          `[match] DIAGNOSTIC gameOver: matchId=${matchInfo.matchId} seed=${matchInfo.seed} ` +
-            `viewport=${payload.viewport.width}x${payload.viewport.height} score=${payload.score}`,
-        )
         submitScore({
           matchId: matchInfo.matchId,
           score: payload.score,
           reason: payload.reason,
-          durationMs: payload.durationMs,
-          inputLog: payload.inputLog,
-          viewport: payload.viewport,
         })
         setPhase((prev) =>
           prev.kind === 'playing' ? { kind: 'awaiting-opponent', match: prev.match, yourScore: payload.score } : prev,
@@ -684,10 +681,10 @@ function ResolvedPanel({
   if (isCompetition) {
     if (outcome === 'win') {
       outcomeBadge = { label: 'VICTORY', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' }
-      message = 'Result verified by Fugluck server replay.'
+      message = 'Casual match result; scores do not determine TEST GEL prizes.'
     } else if (outcome === 'loss') {
       outcomeBadge = { label: 'DEFEAT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444' }
-      message = 'Result verified by Fugluck server replay.'
+      message = 'Casual match result; scores do not determine TEST GEL prizes.'
     } else if (outcome === 'draw') {
       outcomeBadge = { label: 'DRAW', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b' }
       message = 'Both verified scores were equal.'
@@ -1225,11 +1222,6 @@ function ScoreColumn({ label, result, isWinner }: { label: string; result: Playe
       {result.status === 'opponent_disconnected' && (
         <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-warning)' }}>
           opponent left
-        </div>
-      )}
-      {result.status === 'completed' && result.verdict === 'invalid' && (
-        <div className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-danger)' }}>
-          score rejected
         </div>
       )}
     </div>

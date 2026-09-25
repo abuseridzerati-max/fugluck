@@ -6,7 +6,7 @@
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret-for-wallet-check";
 
-import { DIAMOND_PACKS, SIGNUP_COIN_GRANT, type PublicUser } from "@fugluck/shared";
+import { SIGNUP_COIN_GRANT, type PublicUser } from "@fugluck/shared";
 import { getGameTitle } from "@fugluck/shared";
 import { activeGames, navFilters } from "../packages/client/src/mock/homeData";
 
@@ -25,15 +25,10 @@ async function run() {
   console.log("wallet-friends-check");
 
   check("signup grant is 1000 coins", SIGNUP_COIN_GRANT === 1000);
-  check("at least one diamond pack", DIAMOND_PACKS.length >= 1);
-  check(
-    "$2 pack grants 10 diamonds",
-    DIAMOND_PACKS.some((p) => p.priceUsdCents === 200 && p.diamonds === 10),
-  );
-  check(
-    "all packs have positive diamonds and price",
-    DIAMOND_PACKS.every((p) => p.diamonds > 0 && p.priceUsdCents > 0 && p.id.length > 0),
-  );
+  const sharedWalletExports = await import("@fugluck/shared");
+  check("retired Diamond packs are not exported to player UI", !("DIAMOND_PACKS" in sharedWalletExports));
+  check("no active shared export advertises Diamond purchase packs", !Object.keys(sharedWalletExports).some((key) => /diamond.?packs/i.test(key)));
+  check("wallet shared module retains balances without purchase-pack data", !Object.keys(sharedWalletExports).some((key) => key === "DiamondPack"));
 
   const sample: PublicUser = {
     id: "x",

@@ -12,7 +12,10 @@ import type {
   ISO4217Currency,
 } from "@fugluck/shared";
 import {
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY,
+  AUTHORITY_VERSION,
+  CYBER_HOPPER_AUTHORITY_VERSION,
+  GAME_COMPETITION_CERTIFICATIONS,
+  isTestGelCompetitionCertified,
 } from "@fugluck/shared";
 import { db } from "../db/client";
 import {
@@ -67,50 +70,47 @@ export interface UpdateTemplateParams {
  */
 export function assertGameEligibleForCompetition(
   gameId: string,
-  options: { isSandbox?: boolean } = {},
+  options: { isSandbox?: boolean; rulesVersion?: string; enabled?: boolean } = {},
 ): void {
-  const eligibility = GAME_COMPETITION_ELIGIBILITY_REGISTRY[gameId];
+  const certification = GAME_COMPETITION_CERTIFICATIONS[gameId];
 
-  if (!eligibility) {
+  if (!certification) {
     throw new GameEligibilityError(gameId, `Unknown or unregistered game: ${gameId}`);
   }
 
-  if (eligibility === "COIN_COMPETITIVE") {
+  if (!isTestGelCompetitionCertified(gameId)) {
     throw new GameEligibilityError(
       gameId,
-      `Game '${gameId}' is classified as COIN_COMPETITIVE and cannot be used for paid/sandbox GEL competition templates.`,
+      `Game '${gameId}' is not certified for TEST GEL prize competitions.`,
     );
   }
 
-  if (eligibility === "FREE_PLAY_ONLY") {
+  if (options.enabled && options.rulesVersion !== certification.authorityVersion) {
     throw new GameEligibilityError(
       gameId,
-      `Game '${gameId}' is classified as FREE_PLAY_ONLY and cannot be used for competition templates.`,
+      `Enabled TEST GEL templates require authority version '${certification.authorityVersion}'.`,
     );
   }
 
-  if (eligibility === "PAID_COMPETITIVE_APPROVED") {
-    // No games currently hold this status, but if approved, allowed.
-    return;
+  const isSandboxMode = options.isSandbox ??
+    (process.env.SANDBOX_COMPETITION_MODE === "true" || process.env.NODE_ENV !== "production");
+  if (!isSandboxMode) {
+    throw new GameEligibilityError(gameId, "TEST GEL competitions are available only in sandbox mode.");
   }
+}
 
-  if (eligibility === "PAID_COMPETITIVE_CANDIDATE") {
-    // Allowed ONLY in explicit sandbox/test mode
-    const isSandboxMode =
-      options.isSandbox ??
-      (process.env.SANDBOX_COMPETITION_MODE === "true" ||
-        (process.env.NODE_ENV as string) !== "production");
-
-    if (!isSandboxMode) {
-      throw new GameEligibilityError(
-        gameId,
-        `Game '${gameId}' is a PAID_COMPETITIVE_CANDIDATE, but no games have received final Revenue Service PAID_COMPETITIVE_APPROVED status for production.`,
-      );
-    }
-    return;
+/** The current live authority runner supports one winner in a two-player duel. */
+export function assertLiveAuthorityTemplateShape(template: {
+  format: CompetitionFormat;
+  participantCapacity: number;
+  prizes: Array<{ placement: number }>;
+}): void {
+  if (template.format !== "HEAD_TO_HEAD" || template.participantCapacity !== 2) {
+    throw new TemplateValidationError("Live TEST GEL authority currently supports only two-player head-to-head competitions.");
   }
-
-  throw new GameEligibilityError(gameId, `Game '${gameId}' is ineligible for competitions.`);
+  if (template.prizes.length !== 1 || template.prizes[0]?.placement !== 1) {
+    throw new TemplateValidationError("Live TEST GEL head-to-head competitions require one predetermined first-place prize.");
+  }
 }
 
 export class CompetitionTemplateService {
@@ -204,7 +204,16 @@ export class CompetitionTemplateService {
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
       prizes: prizesByTemplate.get(t.id) ?? [],
-    }));
+    })).filter((template) => {
+      const certification = GAME_COMPETITION_CERTIFICATIONS[template.gameId];
+      if (certification?.testGelCompetition !== "LEVEL_3_CERTIFIED" || certification.authorityVersion !== template.rulesVersion) return false;
+      try {
+        assertLiveAuthorityTemplateShape({ format: template.format, participantCapacity: template.participantCapacity, prizes: template.prizes ?? [] });
+        return true;
+      } catch {
+        return false;
+      }
+    });
   }
 
   /**
@@ -272,11 +281,11 @@ export class CompetitionTemplateService {
       skillAssessmentVersion,
       jurisdiction = "GE",
       enabled = true,
-      isSandbox = true,
+      isSandbox = process.env.SANDBOX_COMPETITION_MODE === "true" || process.env.NODE_ENV !== "production",
     } = params;
 
     // Enforce Game Eligibility
-    assertGameEligibleForCompetition(gameId, { isSandbox });
+    assertGameEligibleForCompetition(gameId, { isSandbox, rulesVersion, enabled });
 
     // Validate parameters
     if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -300,6 +309,8 @@ export class CompetitionTemplateService {
     if (!prizes || !Array.isArray(prizes) || prizes.length === 0) {
       throw new TemplateValidationError("At least one prize must be defined for the template.");
     }
+
+    if (enabled) assertLiveAuthorityTemplateShape({ format, participantCapacity, prizes });
 
     const placements = new Set<number>();
     for (const p of prizes) {
@@ -358,6 +369,21 @@ export class CompetitionTemplateService {
     const existing = await this.getTemplate(id);
     if (!existing) {
       throw new TemplateValidationError(`Template with ID '${id}' not found.`);
+    }
+
+    if (updates.enabled === true || updates.rulesVersion !== undefined || updates.prizes !== undefined) {
+      assertGameEligibleForCompetition(existing.gameId, {
+        isSandbox: true,
+        enabled: updates.enabled ?? existing.enabled,
+        rulesVersion: updates.rulesVersion ?? existing.rulesVersion,
+      });
+      if (updates.enabled ?? existing.enabled) {
+        assertLiveAuthorityTemplateShape({
+          format: existing.format,
+          participantCapacity: existing.participantCapacity,
+          prizes: updates.prizes ?? existing.prizes ?? [],
+        });
+      }
     }
 
     return await db.transaction(async (tx) => {
@@ -425,7 +451,7 @@ export class CompetitionTemplateService {
         title: "Space Blaster — Standard Duel",
         entryFeeMinor: 500,
         prizes: [{ placement: 1, amountMinor: 900 }],
-        rulesVersion: "sb-1.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "v1",
       },
       {
@@ -434,7 +460,7 @@ export class CompetitionTemplateService {
         title: "Space Blaster — Promo Duel",
         entryFeeMinor: 500,
         prizes: [{ placement: 1, amountMinor: 2000 }],
-        rulesVersion: "sb-1.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "v1",
       },
       {
@@ -443,25 +469,7 @@ export class CompetitionTemplateService {
         title: "Space Blaster — Freeroll",
         entryFeeMinor: 0,
         prizes: [{ placement: 1, amountMinor: 1000 }],
-        rulesVersion: "sb-1.0",
-        skillAssessmentVersion: "v1",
-      },
-      {
-        id: "tmpl_default_neon_runner_standard",
-        gameId: "neon-runner",
-        title: "Neon Runner — Standard Duel",
-        entryFeeMinor: 300,
-        prizes: [{ placement: 1, amountMinor: 550 }],
-        rulesVersion: "nr-1.0",
-        skillAssessmentVersion: "v1",
-      },
-      {
-        id: "tmpl_default_pixel_ninja_dash_standard",
-        gameId: "pixel-ninja-dash",
-        title: "Pixel Ninja Dash — Standard Duel",
-        entryFeeMinor: 500,
-        prizes: [{ placement: 1, amountMinor: 900 }],
-        rulesVersion: "pnd-1.0",
+        rulesVersion: AUTHORITY_VERSION,
         skillAssessmentVersion: "v1",
       },
       {
@@ -470,7 +478,7 @@ export class CompetitionTemplateService {
         title: "Cyber Hopper — Standard Duel",
         entryFeeMinor: 400,
         prizes: [{ placement: 1, amountMinor: 720 }],
-        rulesVersion: "ch-1.0",
+        rulesVersion: CYBER_HOPPER_AUTHORITY_VERSION,
         skillAssessmentVersion: "v1",
       },
     ];
@@ -478,11 +486,25 @@ export class CompetitionTemplateService {
     const missing = defaults.filter((d) => !existing.some((e) =>
       e.id === d.id || (e.gameId === d.gameId && e.title === d.title),
     ));
-    if (missing.length === 0) return;
-    for (const d of missing) assertGameEligibleForCompetition(d.gameId, { isSandbox: true });
+    const staleEnabled = existing.filter((e) => e.enabled && (!GAME_COMPETITION_CERTIFICATIONS[e.gameId] ||
+      GAME_COMPETITION_CERTIFICATIONS[e.gameId].testGelCompetition !== "LEVEL_3_CERTIFIED" ||
+      GAME_COMPETITION_CERTIFICATIONS[e.gameId].authorityVersion !== e.rulesVersion));
+    if (missing.length === 0 && staleEnabled.length === 0) return;
+    for (const d of missing) assertGameEligibleForCompetition(d.gameId, { isSandbox: true, rulesVersion: d.rulesVersion, enabled: true });
 
     try {
       await db.transaction(async (tx) => {
+        if (staleEnabled.length > 0) {
+          for (const stale of staleEnabled) {
+            await tx.update(competitionTemplates).set({ enabled: false, updatedAt: new Date() }).where(eq(competitionTemplates.id, stale.id));
+          }
+        }
+        for (const current of defaults) {
+          const old = existing.find((e) => e.id === current.id);
+          if (old && old.rulesVersion !== current.rulesVersion) {
+            await tx.update(competitionTemplates).set({ rulesVersion: current.rulesVersion, updatedAt: new Date() }).where(eq(competitionTemplates.id, current.id));
+          }
+        }
         const inserted = await tx.insert(competitionTemplates).values(missing.map(({ prizes, ...d }) => ({
           ...d,
           format: "HEAD_TO_HEAD",

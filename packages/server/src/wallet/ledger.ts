@@ -5,9 +5,7 @@ import { db } from "../db/client";
 import { ledgerEntries, matchSettlements } from "../db/schema";
 
 export const PLATFORM_RAKE_ACCOUNT = "platform_rake_account";
-export const DEFAULT_RAKE_PERCENT = 10;
 export const COINS_RAKE_PERCENT = 0;
-export const DIAMONDS_RAKE_PERCENT = 5;
 
 export type DbClientOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -74,8 +72,8 @@ async function hasReason(userId: string, reason: string, client: DbClientOrTx = 
 }
 
 function validateCurrency(currency: string): asserts currency is Currency {
-  if (currency !== "COINS" && currency !== "DIAMONDS") {
-    throw new Error(`Invalid currency: ${currency}. Must be COINS or DIAMONDS.`);
+  if (currency !== "COINS") {
+    throw new Error("Only non-monetary COINS are supported by casual matchmaking; DIAMONDS are retired.");
   }
 }
 
@@ -140,23 +138,6 @@ export async function ensureSignupGrant(userId: string): Promise<WalletBalances>
     }
   });
   return checkAndApplyMonthlyAllowance(userId);
-}
-
-export async function grantDiamondsStub(userId: string, diamonds: number, packId: string): Promise<WalletBalances> {
-  validatePositiveInteger(diamonds, "Diamond grant");
-  return await db.transaction(async (tx) => {
-    await tx
-      .insert(ledgerEntries)
-      .values({
-        id: randomUUID(),
-        userId,
-        currency: "DIAMONDS",
-        amount: diamonds,
-        reason: `diamond_purchase_stub:${packId}`,
-      })
-      .onConflictDoNothing();
-    return getBalances(userId, tx);
-  });
 }
 
 export async function escrowStake(
@@ -260,9 +241,7 @@ export async function payoutWinner(
   const effectiveRake =
     rakePercent !== undefined
       ? rakePercent
-      : currency === "COINS"
-      ? COINS_RAKE_PERCENT
-      : DIAMONDS_RAKE_PERCENT;
+      : COINS_RAKE_PERCENT;
 
   return await db.transaction(async (tx) =>
     payoutWinnerInTransaction(tx, winnerUserId, loserUserId, currency, stakeAmount, matchId, effectiveRake),
@@ -280,8 +259,8 @@ export async function payoutWinnerInTransaction(
 ): Promise<{ winnerBalances: WalletBalances; rakeFee: number; winnerPayout: number; alreadySettled: boolean }> {
   validatePositiveInteger(stakeAmount, "Stake amount");
   validateCurrency(currency);
-  const effectiveRake =
-    rakePercent !== undefined ? rakePercent : currency === "COINS" ? COINS_RAKE_PERCENT : DIAMONDS_RAKE_PERCENT;
+  if (rakePercent !== undefined && rakePercent !== 0) throw new Error("Casual COINS matches do not support rake.");
+  const effectiveRake = COINS_RAKE_PERCENT;
   const totalPot = stakeAmount * 2;
   const rakeFee = Math.floor((totalPot * effectiveRake) / 100);
   const winnerPayout = totalPot - rakeFee;

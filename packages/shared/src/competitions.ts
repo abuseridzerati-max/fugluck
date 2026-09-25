@@ -3,6 +3,7 @@
 // All monetary values in paid competitions are represented in integer minor units (tetri/cents).
 
 import type { ISO4217Currency } from "./money";
+import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from "./authority";
 
 export type CompetitionFormat = "HEAD_TO_HEAD" | "TOURNAMENT_BRACKET" | "LEADERBOARD_RUSH";
 
@@ -36,17 +37,42 @@ export type GameEligibilityEntry = {
   notes: string;
 };
 
+export type CompetitionCertification = {
+  practice: true;
+  casualCoins: boolean;
+  testGelCompetition: "LEVEL_3_CERTIFIED" | "NOT_CERTIFIED" | "OUT_OF_SCOPE";
+  authorityVersion?: string;
+};
+
+/** Single technical source of truth for current TEST GEL competition eligibility. */
+export const GAME_COMPETITION_CERTIFICATIONS: Record<string, CompetitionCertification> = {
+  "space-blaster": { practice: true, casualCoins: true, testGelCompetition: "LEVEL_3_CERTIFIED", authorityVersion: AUTHORITY_VERSION },
+  "cyber-hopper": { practice: true, casualCoins: true, testGelCompetition: "LEVEL_3_CERTIFIED", authorityVersion: CYBER_HOPPER_AUTHORITY_VERSION },
+  "neon-runner": { practice: true, casualCoins: true, testGelCompetition: "NOT_CERTIFIED" },
+  "pixel-ninja-dash": { practice: true, casualCoins: true, testGelCompetition: "NOT_CERTIFIED" },
+  "speed-trivia": { practice: true, casualCoins: true, testGelCompetition: "OUT_OF_SCOPE" },
+  "tf-sprint": { practice: true, casualCoins: true, testGelCompetition: "OUT_OF_SCOPE" },
+};
+
 // Architectural eligibility classifications per technical audit.
 // Note: These classifications represent technical compatibility assessments (entropy, determinism,
 // viewport letterboxing), NOT statutory or legal conclusions.
-export const GAME_COMPETITION_ELIGIBILITY_REGISTRY: Record<string, GameCompetitionEligibility> = {
-  "space-blaster": "PAID_COMPETITIVE_CANDIDATE",
-  "pixel-ninja-dash": "PAID_COMPETITIVE_CANDIDATE",
-  "cyber-hopper": "PAID_COMPETITIVE_CANDIDATE",
-  "neon-runner": "PAID_COMPETITIVE_CANDIDATE",
-  "speed-trivia": "COIN_COMPETITIVE",
-  "tf-sprint": "COIN_COMPETITIVE",
-};
+/** Compatibility projection for older read-only surfaces. Certification above is authoritative. */
+export const GAME_COMPETITION_ELIGIBILITY_REGISTRY: Record<string, GameCompetitionEligibility> =
+  Object.fromEntries(Object.entries(GAME_COMPETITION_CERTIFICATIONS).map(([gameId, certification]) => [
+    gameId,
+    certification.testGelCompetition === "LEVEL_3_CERTIFIED"
+      ? "PAID_COMPETITIVE_CANDIDATE"
+      : certification.testGelCompetition === "NOT_CERTIFIED"
+        ? "FREE_PLAY_ONLY"
+        : "COIN_COMPETITIVE",
+  ])) as Record<string, GameCompetitionEligibility>;
+
+export function isTestGelCompetitionCertified(gameId: string, rulesVersion?: string): boolean {
+  const certification = GAME_COMPETITION_CERTIFICATIONS[gameId];
+  return certification?.testGelCompetition === "LEVEL_3_CERTIFIED" &&
+    (rulesVersion === undefined || certification.authorityVersion === rulesVersion);
+}
 
 export type CompetitionPrize = {
   placement: number;

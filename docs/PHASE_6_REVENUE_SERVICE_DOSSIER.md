@@ -2,6 +2,8 @@
 
 **Status: PROPOSED FOR APPROVAL — PLANNED, NOT IMPLEMENTED**
 
+**Status note (2026-09-25):** this v0.3.0 text is a historical planning specification, not the current phase tracker. Its claims that Phase 5.5 and Phase 6 are unstarted describe the 2026-09-23 baseline and are superseded by the ongoing user-authorized implementation. Current code certification and architecture status are tracked in [`COMPETITION_ARCHITECTURE.md`](COMPETITION_ARCHITECTURE.md); the Phase 6 evidence package must be refreshed against the completed gates before it is considered current. This note is based on reading the current source and `PROGRESS.md`.
+
 Specification version: `0.3.0`
 
 Prepared: 2026-09-23

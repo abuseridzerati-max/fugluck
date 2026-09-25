@@ -155,16 +155,13 @@ export function ActionConfirmModal({ config }: { config: ConfirmModalConfig }) {
 // ---------------------------------------------------------------------------
 export function GrantCurrencyModal({
   user,
-  initialCurrency = 'coins',
   onClose,
   onGrant,
 }: {
   user: UserItem
-  initialCurrency?: 'coins' | 'diamonds'
   onClose: () => void
-  onGrant: (userId: string, currency: 'coins' | 'diamonds', amount: number, reason: string) => Promise<void>
+  onGrant: (userId: string, amount: number, reason: string) => Promise<void>
 }) {
-  const [currency, setCurrency] = useState<'coins' | 'diamonds'>(initialCurrency)
   const [amount, setAmount] = useState<number>(100)
   const [reason, setReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -180,7 +177,7 @@ export function GrantCurrencyModal({
     setIsSubmitting(true)
     setError(null)
     try {
-      await onGrant(user.id, currency, amount, reason.trim())
+      await onGrant(user.id, amount, reason.trim())
       onClose()
     } catch (err: any) {
       setError(err?.message || 'Grant operation failed.')
@@ -193,7 +190,7 @@ export function GrantCurrencyModal({
       <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', color: '#f8fafc', fontWeight: 600 }}>
-            Grant Wallet Currency
+            Grant Coins
           </h3>
           <button type="button" onClick={onClose} style={closeButtonStyle}>✕</button>
         </div>
@@ -204,7 +201,7 @@ export function GrantCurrencyModal({
             {user.username} <span style={{ color: '#64748b', fontSize: '12px' }}>({user.id})</span>
           </div>
           <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '4px' }}>
-            Current Balances: <strong style={{ color: '#34d399' }}>{user.balances.coins} Coins</strong> | <strong style={{ color: '#fbbf24' }}>{user.balances.diamonds} Diamonds</strong>
+            Current Coins: <strong style={{ color: '#34d399' }}>{user.balances.coins}</strong>
           </div>
         </div>
 
@@ -215,20 +212,9 @@ export function GrantCurrencyModal({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <div>
-              <label style={labelStyle}>CURRENCY TYPE</label>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as 'coins' | 'diamonds')}
-                style={inputStyle}
-              >
-                <option value="coins">COINS (Free-play currency)</option>
-                <option value="diamonds">DIAMONDS (Staked currency)</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>AMOUNT (1 - 100,000)</label>
+              <label style={labelStyle}>COINS AMOUNT (1 - 100,000)</label>
               <input
                 type="number"
                 min={1}
@@ -263,11 +249,11 @@ export function GrantCurrencyModal({
               disabled={!canSubmit || isSubmitting}
               style={{
                 ...primaryButtonStyle,
-                background: currency === 'coins' ? '#059669' : '#d97706',
+                background: '#059669',
                 opacity: !canSubmit || isSubmitting ? 0.5 : 1,
               }}
             >
-              {isSubmitting ? 'Granting...' : `+ Grant ${amount} ${currency.toUpperCase()}`}
+              {isSubmitting ? 'Granting...' : `+ Grant ${amount} COINS`}
             </button>
           </div>
         </form>
@@ -331,7 +317,7 @@ export function UserDetailModal({
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399' }}>{user.balances.coins.toLocaleString()}</div>
           </div>
           <div style={statCardStyle}>
-            <div style={statLabelStyle}>DIAMOND BALANCE</div>
+            <div style={statLabelStyle}>DIAMONDS · RETIRED / LEGACY</div>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fbbf24' }}>{user.balances.diamonds.toLocaleString()}</div>
           </div>
         </div>
@@ -339,7 +325,7 @@ export function UserDetailModal({
         {/* Action Toolbar */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px', padding: '12px', background: '#12131c', borderRadius: '6px', border: '1px solid #1e2030' }}>
           <button type="button" onClick={() => onOpenAction('grant', user)} style={{ ...actionBtnStyle, background: '#059669' }}>
-            + Grant Currency
+            + Grant Coins
           </button>
           <button type="button" onClick={() => onOpenAction('role', user)} style={{ ...actionBtnStyle, background: '#3b82f6' }}>
             Change Role

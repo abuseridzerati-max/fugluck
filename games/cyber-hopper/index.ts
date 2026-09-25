@@ -7,7 +7,6 @@ import {
   type GameMode,
   type GameModule,
   type GameModuleFactory,
-  type InputLogEntry,
 } from "@fugluck/shared";
 import { CyberHopperEngine, type CyberHopperInput } from "./engine";
 
@@ -33,10 +32,7 @@ export class CyberHopperModule extends EventTarget implements GameModule {
   private countdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private seed = 0;
-  private inputLog: InputLogEntry[] = [];
   private mode: GameMode = "practice";
-  private lastResizeWidth = VIRTUAL_VIEWPORT.width;
-  private lastResizeHeight = VIRTUAL_VIEWPORT.height;
   private forfeitConfirmTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private input: CyberHopperInput = {
@@ -46,28 +42,20 @@ export class CyberHopperModule extends EventTarget implements GameModule {
     hopRight: false,
   };
 
-  private logInput(action: string) {
-    if (!this.fixedLoop) return;
-    this.inputLog.push({ tick: this.fixedLoop.tick, action, wallMs: performance.now() - this.runStartTime });
-  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") {
       e.preventDefault();
       this.input.hopUp = true;
-      this.logInput("hopUp");
     } else if (e.code === "ArrowDown" || e.code === "KeyS") {
       e.preventDefault();
       this.input.hopDown = true;
-      this.logInput("hopDown");
     } else if (e.code === "ArrowLeft" || e.code === "KeyA") {
       e.preventDefault();
       this.input.hopLeft = true;
-      this.logInput("hopLeft");
     } else if (e.code === "ArrowRight" || e.code === "KeyD") {
       e.preventDefault();
       this.input.hopRight = true;
-      this.logInput("hopRight");
     }
   };
 
@@ -128,8 +116,6 @@ export class CyberHopperModule extends EventTarget implements GameModule {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.lastResizeWidth = width;
-          this.lastResizeHeight = height;
           this.engine.resize(width, height);
         }
       }
@@ -138,16 +124,12 @@ export class CyberHopperModule extends EventTarget implements GameModule {
 
     window.addEventListener("keydown", this.handleKeyDown);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
-
-    this.lastResizeWidth = VIRTUAL_VIEWPORT.width;
-    this.lastResizeHeight = VIRTUAL_VIEWPORT.height;
     this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   }
 
   start(): void {
     if (this.state !== "idle") return;
     this.state = "countdown";
-    this.inputLog = [];
     this.runStartTime = performance.now();
     this.runCountdown(0);
   }
@@ -221,8 +203,6 @@ export class CyberHopperModule extends EventTarget implements GameModule {
       reason,
       durationMs: Math.round(performance.now() - this.runStartTime),
       seed: this.seed,
-      inputLog: this.inputLog,
-      viewport: { width: this.lastResizeWidth, height: this.lastResizeHeight },
     };
     this.dispatchEvent(new CustomEvent("gameOver", { detail: payload }));
   }

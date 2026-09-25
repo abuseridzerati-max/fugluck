@@ -340,7 +340,9 @@ export type SandboxLedgerEntryAdmin = {
 export type GameEligibilityAdminItem = {
   gameId: string
   status: string
-  isCandidate: boolean
-  isCoinOnly: boolean
+  testGelEligible: boolean
+  practice: boolean
+  casualCoins: boolean
+  authorityVersion: string | null
   technicalNotes: string
 }

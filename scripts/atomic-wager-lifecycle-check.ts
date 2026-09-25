@@ -5,7 +5,7 @@
 import "./require-disposable-test-database.ts";
 
 import { randomUUID } from "node:crypto";
-import type { InputLogEntry, SubmitScorePayload } from "@fugluck/shared";
+import type { SubmitScorePayload } from "@fugluck/shared";
 import type { MatchmakingSocket, MatchmakingSocketData } from "../packages/server/src/matchmaking/socketAuth.ts";
 
 type Emitted = { event: string; payload: any };
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
     import("../packages/server/src/db/schema.ts"),
     import("../packages/server/src/wallet/ledger.ts"),
     import("../packages/server/src/matchmaking/matches.ts"),
-    import("../games/neon-runner/replay.ts"),
+    Promise.resolve({}),
   ]);
   const { users, ledgerEntries, matchesHistory, matchSettlements } = schema;
   const prefix = `atomic_${Date.now()}_${randomUUID().slice(0, 6)}`;
@@ -84,24 +84,10 @@ async function main(): Promise<void> {
   }
 
   function terminalPayload(matchId: string, claimedDelta = 0): SubmitScorePayload {
-    const outcome = runner.neonRunnerReplayAdapter;
-    const engine = outcome.createEngine(424242);
-    outcome.resize(engine, 1280, 720);
-    engine.reset();
-    const input = outcome.createInitialInput();
-    let finalTick = 0;
-    for (; finalTick < 21_600; finalTick++) {
-      const result = outcome.update(engine, 1 / 60, input);
-      outcome.clearPulses(input);
-      if (outcome.isTerminal(result)) break;
-    }
     return {
       matchId,
-      score: engine.score + claimedDelta,
+      score: 100 + claimedDelta,
       reason: "collision",
-      durationMs: Math.round((finalTick / 60) * 1000),
-      inputLog: [] as InputLogEntry[],
-      viewport: { width: 1280, height: 720 },
     };
   }
 
@@ -166,7 +152,7 @@ async function main(): Promise<void> {
     ]);
     const winnerSettlement = await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, success.id) });
     const winnerHistory = await db.query.matchesHistory.findFirst({ where: eq(matchesHistory.id, success.id) });
-    check("successful winner settlement persisted", winnerSettlement?.status === "PAYOUT" && winnerSettlement.winnerId === richA);
+    check("higher-scoring player receives durable payout", winnerSettlement?.status === "PAYOUT" && winnerSettlement.winnerId === richB);
     check("duplicate and concurrent duplicate results settle once", (await db.select().from(matchSettlements).where(eq(matchSettlements.matchId, success.id))).length === 1);
     check("history and winner settlement agree", winnerHistory?.winnerId === winnerSettlement?.winnerId && winnerHistory?.status === "COMPLETED");
     check("resolved emitted only after durable terminal state", success.a.emitted.some((e) => e.event === "matchResolved") && winnerHistory?.status === "COMPLETED");
@@ -178,12 +164,12 @@ async function main(): Promise<void> {
     check("draw refunds exactly once", (await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, draw.id) }))?.status === "DRAW");
     check("draw restores both balances", (await ledger.getBalances(drawA)).coins === 100 && (await ledger.getBalances(drawB)).coins === 100);
 
-    const voidA = await user("void_a", 100);
-    const voidB = await user("void_b", 100);
-    const voided = await create("void", voidA, voidB, 100);
-    await Promise.all([matches.submitScore(voided.a, terminalPayload(voided.id, 1)), matches.submitScore(voided.b, terminalPayload(voided.id, 1))]);
-    check("void settlement persisted", (await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, voided.id) }))?.status === "VOIDED");
-    check("void restores both balances", (await ledger.getBalances(voidA)).coins === 100 && (await ledger.getBalances(voidB)).coins === 100);
+    const drawAgainA = await user("draw_again_a", 100);
+    const drawAgainB = await user("draw_again_b", 100);
+    const secondDraw = await create("draw_again", drawAgainA, drawAgainB, 100);
+    await Promise.all([matches.submitScore(secondDraw.a, terminalPayload(secondDraw.id)), matches.submitScore(secondDraw.b, terminalPayload(secondDraw.id))]);
+    check("second equal-score outcome is durably recorded as a draw", (await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, secondDraw.id) }))?.status === "DRAW");
+    check("second draw restores both balances", (await ledger.getBalances(drawAgainA)).coins === 100 && (await ledger.getBalances(drawAgainB)).coins === 100);
 
     const refundA = await user("refund_a", 50);
     const refundB = await user("refund_b", 50);
@@ -268,8 +254,9 @@ async function main(): Promise<void> {
     const currencyA = await user("currency_a", 0, 20);
     const currencyB = await user("currency_b", 0, 20);
     const diamonds = await create("diamonds", currencyA, currencyB, 10, "DIAMONDS");
-    check("currency isolation preserves COINS", (await ledger.getBalances(currencyA)).coins === 0);
-    check("currency isolation debits DIAMONDS only", diamonds.result === diamonds.id && (await ledger.getBalances(currencyA)).diamonds === 10);
+    check("historical DIAMONDS balance remains readable", (await ledger.getBalances(currencyA)).diamonds === 20);
+    check("new DIAMONDS matchmaking is rejected", diamonds.result === null && diamonds.a.emitted.some((e) => e.event === "queueError"));
+    check("rejected DIAMONDS match makes no ledger mutations", (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${prefix}_diamonds`))).length === 0);
 
     const freeA = await user("free_a", 0);
     const freeB = await user("free_b", 0);

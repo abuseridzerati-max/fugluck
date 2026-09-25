@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
-import type { PlayerResult, ScoreVerdict, SubmitScorePayload } from "@fugluck/shared";
+import type { PlayerResult, SubmitScorePayload } from "@fugluck/shared";
 import { asc, eq, or, sql } from "drizzle-orm";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
-import { validateScore } from "../validation/scoreValidator";
 import { db } from "../db/client";
 import { matchesHistory } from "../db/schema";
 import {
@@ -76,9 +75,6 @@ export const RECONNECT_GRACE_MS = 10_000;
 type SubmittedResult = {
   score: number;
   reason: string;
-  durationMs: number;
-  verdict: ScoreVerdict;
-  inputLog?: Array<{ tick: number; action: string }>;
 };
 
 type MatchPlayer = {
@@ -188,13 +184,12 @@ function toPlayerResult(player: MatchPlayer, disconnectedPlayer?: MatchPlayer): 
     score: player.result.score,
     reason: player.result.reason,
     status: "completed",
-    verdict: player.result.verdict,
   };
 }
 
 function toSidedSubmission(player: MatchPlayer): SidedSubmission {
   if (!player.result) return null;
-  return { score: player.result.score, verdict: player.result.verdict };
+  return { score: player.result.score };
 }
 
 // Single cleanup path for every way a match can end (both submitted, forfeit
@@ -304,8 +299,6 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
         .update(matchesHistory)
         .set({
           winnerId,
-          inputLogP1: p1.result?.inputLog ?? null,
-          inputLogP2: p2.result?.inputLog ?? null,
           scoreP1: p1.result?.score ?? 0,
           scoreP2: p2.result?.score ?? 0,
           status: finalStatus,
@@ -334,7 +327,7 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
       p2.socket.emit("balanceUpdate", { balances: balances.p2Balances });
     }
     const canRematch = Boolean(
-      !disconnectedPlayer && p1.socket.connected && p2.socket.connected,
+      !disconnectedPlayer && match.currency === "COINS" && p1.socket.connected && p2.socket.connected,
     );
     if (canRematch) {
       openRematchWindow(match);
@@ -390,6 +383,11 @@ export async function createMatch(
   seed: number,
   requestedMatchId?: string,
 ): Promise<string | null> {
+  if (a.currency !== "COINS" || b.currency !== "COINS" || a.currency !== b.currency || a.stake !== b.stake) {
+    a.socket.emit("queueError", { message: "Diamond matches are retired; only matching casual Coins settings are supported." });
+    b.socket.emit("queueError", { message: "Diamond matches are retired; only matching casual Coins settings are supported." });
+    return null;
+  }
   // SECURITY INVARIANT: Self-match guard is enforced by queue deduplication.
   // Both sides share the exact same server-issued match.seed.
   // GUEST INVARIANT: Matches involving an unauthenticated guest strictly enforce stake = 0 (Free Play).
@@ -477,28 +475,14 @@ export async function submitScore(socket: MatchmakingSocket, payload: SubmitScor
   const player = playerFor(match, socket);
   if (!player || player.result) return; // not a participant, or a duplicate submission — ignore either way
 
-  console.log(
-    `[matchmaking] DIAGNOSTIC submitScore: matchId=${matchId} seed=${match.seed} user=${socket.data.username} ` +
-      `viewport=${payload.viewport.width}x${payload.viewport.height} claimedScore=${payload.score}`,
-  );
-
-  // SECURITY INVARIANT: Score validation uses match.seed issued by the server at createMatch.
-  // Never uses client-provided seed input.
-  const validation = validateScore({
-    gameId: match.gameId,
-    seed: match.seed,
-    inputLog: payload.inputLog,
-    claimedScore: payload.score,
-    durationMs: payload.durationMs,
-    viewport: payload.viewport,
-  });
+  if (!Number.isSafeInteger(payload.score) || payload.score < 0 || typeof payload.reason !== "string") {
+    socket.emit("queueError", { message: "The casual match result was malformed." });
+    return;
+  }
 
   player.result = {
     score: payload.score,
     reason: payload.reason,
-    durationMs: payload.durationMs,
-    verdict: validation.verdict,
-    inputLog: payload.inputLog,
   };
 
   const opponent = otherPlayer(match, socket);
@@ -688,6 +672,7 @@ function closeRematchWindow(window: RematchWindow, reason?: string, exceptSocket
 }
 
 function openRematchWindow(match: MatchState): void {
+  if (match.currency !== "COINS") return;
   const existing = rematchByMatchId.get(match.id);
   if (existing) closeRematchWindow(existing);
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GAME_COMPETITION_ELIGIBILITY_REGISTRY, type CompetitionTemplate } from '@fugluck/shared'
+import { GAME_COMPETITION_CERTIFICATIONS, type CompetitionTemplate } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import CompetitionCatalog from '../components/CompetitionCatalog'
@@ -13,17 +13,14 @@ type CompetitionsPageProps = {
   onNavigatePolicy?: (path: string) => void
 }
 
-// Only games with PAID_COMPETITIVE_CANDIDATE or PAID_COMPETITIVE_APPROVED eligibility
+// Keep the catalog filters aligned with the single TEST GEL certification model.
 const ELIGIBLE_GAMES = [
   { id: 'all', title: 'All Eligible Games' },
   { id: 'space-blaster', title: 'Space Blaster' },
-  { id: 'neon-runner', title: 'Neon Runner' },
-  { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash' },
   { id: 'cyber-hopper', title: 'Cyber Hopper' },
 ].filter((g) => {
   if (g.id === 'all') return true
-  const el = GAME_COMPETITION_ELIGIBILITY_REGISTRY[g.id]
-  return el === 'PAID_COMPETITIVE_CANDIDATE' || el === 'PAID_COMPETITIVE_APPROVED'
+  return GAME_COMPETITION_CERTIFICATIONS[g.id]?.testGelCompetition === 'LEVEL_3_CERTIFIED'
 })
 
 export default function CompetitionsPage({
@@ -54,7 +51,7 @@ export default function CompetitionsPage({
             Sandbox Skill Competitions
           </h1>
           <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
-            Compete in deterministic head-to-head skill challenges with simulated Test GEL. Replay verified by authoritative Fugluck engine.
+            Play platform-defined skill competitions with simulated Test GEL and server-run game authority.
           </p>
         </div>
 

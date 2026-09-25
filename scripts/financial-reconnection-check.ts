@@ -8,13 +8,13 @@ dotenv.config({ path: "packages/server/.env" });
 
 import type { QueueEntry } from "../packages/server/src/matchmaking/queue.ts";
 import type { MatchmakingSocket } from "../packages/server/src/matchmaking/socketAuth.ts";
+import { randomUUID } from "node:crypto";
 
 async function main() {
   const {
     COINS_RAKE_PERCENT,
-    DEFAULT_RAKE_PERCENT,
-    DIAMONDS_RAKE_PERCENT,
     PLATFORM_RAKE_ACCOUNT,
+    escrowStake,
   } = await import("../packages/server/src/wallet/ledger.ts");
   const {
     createMatch,
@@ -24,6 +24,9 @@ async function main() {
     RECONNECT_GRACE_MS,
   } = await import("../packages/server/src/matchmaking/matches.ts");
   const { generateSeed } = await import("../packages/server/src/matchmaking/queue.ts");
+  const { db } = await import("../packages/server/src/db/client.ts");
+  const { users, matchesHistory } = await import("../packages/server/src/db/schema.ts");
+  const { eq } = await import("drizzle-orm");
 
   let failures = 0;
 
@@ -52,10 +55,9 @@ async function main() {
     return socket;
   }
 
-  console.log("Test 1: 4-Tier Rake Policy & Ledger Idempotency Reasoning\n");
+  console.log("Test 1: Casual COINS policy and retired-Diamonds guard\n");
 
   check("COINS rake percent is 0%", COINS_RAKE_PERCENT === 0);
-  check("DIAMONDS rake percent is 5%", DIAMONDS_RAKE_PERCENT === 5);
   check("Platform rake account identifier exists", PLATFORM_RAKE_ACCOUNT === "platform_rake_account");
 
   const stakeAmount = 100;
@@ -63,14 +65,11 @@ async function main() {
   const coinsRakeFee = Math.floor((totalPot * COINS_RAKE_PERCENT) / 100); // 0 coins
   const coinsWinnerPayout = totalPot - coinsRakeFee; // 200 coins
 
-  const diamondsRakeFee = Math.floor((totalPot * DIAMONDS_RAKE_PERCENT) / 100); // 10 diamonds (5%)
-  const diamondsWinnerPayout = totalPot - diamondsRakeFee; // 190 diamonds (95%)
-
   check("COINS 100-stake match has 0 coins rake fee (0%)", coinsRakeFee === 0);
   check("COINS 100-stake winner receives full 200 coins pot", coinsWinnerPayout === 200);
-
-  check("DIAMONDS 100-stake match has 10 diamonds rake fee (5%)", diamondsRakeFee === 10);
-  check("DIAMONDS 100-stake winner receives 190 diamonds payout (95%)", diamondsWinnerPayout === 190);
+  let diamondEscrowRejected = false;
+  try { await escrowStake("no-user-db-call", "DIAMONDS", 1, "retired-diamond-test"); } catch (error) { diamondEscrowRejected = error instanceof Error && error.message.includes("retired"); }
+  check("new Diamond escrow is rejected before database access", diamondEscrowRejected);
 
   // Monthly 1,000 COIN Allowance Refill Logic Calculations
   const lowBalance = 250;
@@ -113,12 +112,19 @@ check("Reconnection grace period is 10,000ms (10 seconds)", RECONNECT_GRACE_MS =
 check("Forfeit grace window is 120,000ms (2 minutes)", FORFEIT_GRACE_MS === 120_000);
 
 {
-  const alice = fakeSocket("user-alice-rec", "Alice");
-  const bob = fakeSocket("user-bob-rec", "Bob");
+  const aliceId = randomUUID();
+  const bobId = randomUUID();
+  const alice = fakeSocket(aliceId, "Alice");
+  const bob = fakeSocket(bobId, "Bob");
+  const fixtureTag = randomUUID().replaceAll("-", "").slice(0, 12);
+  await db.insert(users).values([
+    { id: aliceId, username: `rec_a_${fixtureTag}`, passwordHash: "test-only" },
+    { id: bobId, username: `rec_b_${fixtureTag}`, passwordHash: "test-only" },
+  ]);
   const seed = generateSeed();
 
-  const entryA: QueueEntry = { socket: alice, userId: "user-alice-rec", username: "Alice" };
-  const entryB: QueueEntry = { socket: bob, userId: "user-bob-rec", username: "Bob" };
+  const entryA: QueueEntry = { socket: alice, userId: aliceId, username: "Alice", currency: "COINS", stake: 0 };
+  const entryB: QueueEntry = { socket: bob, userId: bobId, username: "Bob", currency: "COINS", stake: 0 };
 
   await createMatch("neon-runner", entryA, entryB, seed);
 
@@ -137,8 +143,8 @@ check("Forfeit grace window is 120,000ms (2 minutes)", FORFEIT_GRACE_MS === 120_
   check("Disconnect within grace window does not immediately forfeit match for opponent", true);
 
   // Reconnect Alice with a new socket before grace period expires
-  const aliceNewSocket = fakeSocket("user-alice-rec", "Alice");
-  const reconnected = handleReconnect("user-alice-rec", aliceNewSocket);
+  const aliceNewSocket = fakeSocket(aliceId, "Alice");
+  const reconnected = handleReconnect(aliceId, aliceNewSocket);
 
   check("handleReconnect returns true within grace window", reconnected);
   // @ts-expect-error test helper access
@@ -147,6 +153,9 @@ check("Forfeit grace window is 120,000ms (2 minutes)", FORFEIT_GRACE_MS === 120_
     "Reconnected player receives state resync event",
     aliceReconnectedMatched?.matchId === currentMatchId && aliceReconnectedMatched?.opponentUsername === "Bob",
   );
+  if (currentMatchId) await db.delete(matchesHistory).where(eq(matchesHistory.id, currentMatchId));
+  await db.delete(users).where(eq(users.id, aliceId));
+  await db.delete(users).where(eq(users.id, bobId));
 }
 
   console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
