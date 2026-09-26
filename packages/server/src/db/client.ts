@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
+import { enforceStartupConfig } from '../config/startup';
+import { isHostedEnvironment, connectionStringWithManagedTls } from '../config/deploymentIdentity';
 
 if (!process.env.DATABASE_URL) {
   dotenv.config({ path: "packages/server/.env" });
@@ -13,15 +15,16 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set — copy packages/server/.env.example to .env and fill it in.");
 }
 
+// Imported route modules must not obtain a hosted connection before the
+// environment/target/financial configuration has been validated.
+if (isHostedEnvironment()) enforceStartupConfig();
+
 import { sql } from "drizzle-orm";
 
-// Determine SSL requirements. Remote cloud PostgreSQL providers (Supabase Supavisor
-// pooler, Neon, AWS) use intermediate cloud connection proxies. In Node.js 'pg',
-// connecting with TLS encryption to Supabase poolers requires rejectUnauthorized: false
-// unless Supabase's private root CA certificate is injected into the trust store.
-// This setting is strictly scoped to the PostgreSQL client connection pool and does
-// NOT affect global Node.js TLS verification.
-const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+// Hosted connections verify certificates. Supply a provider CA through
+// DATABASE_CA_CERT if its chain is not trusted by Node. Existing development/test
+// compatibility is separate and is not evidence of production TLS acceptance.
+const isLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(connectionString).hostname);
 const isSslRequired =
   !isLocalhost &&
   (connectionString.includes("sslmode=require") ||
@@ -30,12 +33,16 @@ const isSslRequired =
     process.env.NODE_ENV === "production");
 
 const cleanConnectionString = isSslRequired
-  ? connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "")
+  ? connectionStringWithManagedTls(connectionString)
   : connectionString;
 
 export const pool = new Pool({
   connectionString: cleanConnectionString,
-  ssl: isSslRequired ? { rejectUnauthorized: false } : undefined,
+  ssl: isSslRequired ? {
+    rejectUnauthorized: isHostedEnvironment(),
+    ...(isHostedEnvironment() && process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT.replace(/\\n/g, '\n') } : {}),
+  } : undefined,
+  ...(isHostedEnvironment() ? { connectionTimeoutMillis: 5000, query_timeout: 5000 } : {}),
 });
 export const db = drizzle(pool, { schema });
 

@@ -3,17 +3,25 @@
 # =============================================================================
 services:
   - type: web
-    name: fugluck-server-staging
+    name: fugluck-api-staging
     runtime: node
-    plan: starter
-    region: ohio
-    buildCommand: npm install --include=dev && npm run build:server
+    plan: free # Observed staging plan, not approved for commercial production.
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build:server
     startCommand: npm run start:server
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeploy: false
     envVars:
       - key: NODE_ENV
         value: production
+      - key: APP_ENV
+        value: staging
+      - key: DATABASE_REGION
+        value: eu-central-1
+      - key: DATABASE_TARGET_FINGERPRINT
+        sync: false # SHA-256 of verified routing fields, never the password.
+      - key: DATABASE_CA_CERT
+        sync: false # Provider CA if required for certificate verification.
       - key: DATABASE_URL
         sync: false # Set in Render Dashboard: Staging PostgreSQL connection string
       - key: JWT_SECRET
@@ -24,11 +32,17 @@ services:
         value: https://staging.fugluck.com
       - key: APP_URL
         value: https://staging.fugluck.com
-      - key: COOKIE_DOMAIN
-        value: .fugluck.com
       - key: COOKIE_SAMESITE
         value: lax
       - key: ENABLE_DEV_DIAMOND_STUB
+        value: "false"
+      - key: REAL_MONEY_ENABLED
+        value: "false"
+      - key: REAL_MONEY_DEPOSITS_ENABLED
+        value: "false"
+      - key: REAL_MONEY_WITHDRAWALS_ENABLED
+        value: "false"
+      - key: REAL_MONEY_COMPETITIONS_ENABLED
         value: "false"
       - key: EMAIL_PROVIDER
         value: logger

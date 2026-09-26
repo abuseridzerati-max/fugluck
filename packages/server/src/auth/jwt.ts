@@ -1,6 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { getAppEnvironment } from '../config/environment';
 
 if (!process.env.JWT_SECRET) {
   dotenv.config({ path: "packages/server/.env" });
@@ -19,18 +20,23 @@ function requireJwtSecret(): string {
 const JWT_SECRET = requireJwtSecret();
 
 const EXPIRES_IN = "7d";
+const sessionScope = () => {
+  const environment = getAppEnvironment();
+  return environment === 'staging' || environment === 'production'
+    ? { issuer: `fugluck:${environment}`, audience: `fugluck:${environment}:api` } : {};
+};
 
 export type SessionTokenPayload = {
   sub: string; // user id
 };
 
 export function signSessionToken(payload: SessionTokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: EXPIRES_IN, ...sessionScope() });
 }
 
 export function verifySessionToken(token: string): SessionTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as SessionTokenPayload;
+    return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], ...sessionScope() }) as SessionTokenPayload;
   } catch {
     return null;
   }

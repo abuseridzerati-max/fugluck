@@ -351,8 +351,13 @@ export type GameEligibilityAdminItem = {
 export type AdminOperationsData = {
   checkedAt: string
   backend: { healthy: boolean; environment: string; runtimeMode: string; uptimeSeconds: number; revision: string | null }
-  database: { healthy: boolean; region: string | null; migrationAppliedAt: string | null }
+  database: {
+    healthy: boolean; region: string | null
+    identity?: { fingerprint: string | null; projectRef: string | null; expectedFingerprintMatches: boolean; intendedStagingTargetMatches: boolean }
+    migrations?: { status: string; expectedHead: string | null; appliedHead: string | null; appliedCount: number; expectedCount: number } | null
+  }
   frontend: { revision: string | null }
+  commercial?: { moneyEnabled: boolean; deposits: { allowed: boolean }; withdrawals: { allowed: boolean }; competitions: { allowed: boolean } }
   competitions: { instances: Record<string, number>; activeCount: number }
   authority: {
     sessions: Record<string, number>

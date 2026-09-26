@@ -60,9 +60,15 @@ async function main(){
   const previousAppEnv=process.env.APP_ENV,previousNodeEnv=process.env.NODE_ENV;
   process.env.APP_ENV='staging';process.env.NODE_ENV='production';
   let opsResponse:Response,ops:any;
-  try{opsResponse=await adminRequest('/operations?frontendRevision=abcdef1234567890');ops=await opsResponse.json() as any;}
+  const frontendRevision = 'abcdef12'.repeat(5);
+  try{opsResponse=await adminRequest(`/operations?frontendRevision=${frontendRevision}`);ops=await opsResponse.json() as any;}
   finally{if(previousAppEnv===undefined)delete process.env.APP_ENV;else process.env.APP_ENV=previousAppEnv;if(previousNodeEnv===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=previousNodeEnv;}
-  check('owner can read operations health without secrets',opsResponse!.status===200&&ops.backend?.healthy===true&&ops.database?.healthy===true&&ops.frontend?.revision==='abcdef123456'&&ops.authority?.sessions&&ops.competitions?.instances&&ops.accounting?.reconciled===true&&!JSON.stringify(ops).includes('DATABASE_URL'));
+  const operationsChecks = { status: opsResponse!.status === 200, backend: ops.backend?.healthy === true, database: ops.database?.healthy === true, revision: ops.frontend?.revision === frontendRevision, authority: Boolean(ops.authority?.sessions), competitions: Boolean(ops.competitions?.instances), accounting: ops.accounting?.reconciled === true, secretAbsent: !JSON.stringify(ops).includes('DATABASE_URL') };
+  if (!Object.values(operationsChecks).every(Boolean)) console.error('Operations contract checks:', JSON.stringify(operationsChecks));
+  check('owner can read operations health without secrets',Object.values(operationsChecks).every(Boolean));
+  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0011_terminal_participant_status'&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
+  check('operations exposes a password-independent database fingerprint',/^[a-f0-9]{64}$/.test(ops.database?.identity?.fingerprint));
+  check('operations shows all real-money operations disabled',ops.commercial?.moneyEnabled===false&&ops.commercial.deposits.allowed===false&&ops.commercial.withdrawals.allowed===false&&ops.commercial.competitions.allowed===false);
   check('operations health separates staging environment from production Node runtime',ops.backend?.environment==='staging'&&ops.backend?.runtimeMode==='production');
   const operationsUi=readFileSync('packages/client/src/admin/AdminOperationsView.tsx','utf8');
   check('operations console displays deployment environment and Node runtime separately',operationsUi.includes('name="Environment"')&&operationsUi.includes('name="Node runtime mode"'));

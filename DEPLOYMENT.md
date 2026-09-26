@@ -1,5 +1,52 @@
 # Fugluck — Staging Deployment Guide
 
+## Phase 7A deployment contract (2026-09-27)
+
+**This section supersedes the historical provisioning walkthrough below.** Current evidence, limitations, decisions, and all test counts are in [the Phase 7A.1 baseline](docs/PHASE_7A_BASELINE.md). Existing services must be reused; the blueprint is a configuration reference, not authorization to create a second service or purchase a plan.
+
+**BUILT locally, pending deployment:** hosted startup validates explicit deployment identity, full Git revision, registered database project and routing fingerprint, staging-only origins, host-only cookies, and disabled commercial flags before opening a database connection. The complete migration history is checked before startup recovery or traffic. Hosted runtime schema repair is disabled; migrations remain an explicit operator step. Hosted database TLS verifies the server certificate; configure the provider CA if needed.
+
+The registered staging API is `fugluck-api-staging` / `srv-da2c50c9v7es73db3dkg`, Frankfurt, `api-staging.fugluck.com`. The intended and provider-configured database project is `gzfcucvxfzzjzjtgkwpd`, Frankfurt. Render still displays a `Production` environment label; correct it to an explicit staging label as part of the reviewed rollout. The visible workspace has one API service, so that label is not evidence of a separate production API.
+
+Required backend settings for the reviewed candidate:
+
+| Setting | Value |
+|---|---|
+| `APP_ENV` | `staging` (deployment identity; independent of Node runtime mode) |
+| `NODE_ENV` | `production` |
+| `RENDER_GIT_COMMIT` | Provider-injected full reviewed commit; otherwise supply `GIT_SHA` |
+| `DATABASE_URL` | Existing verified Frankfurt URI, supplied privately; never document its credential |
+| `DATABASE_REGION` | `eu-central-1` |
+| `DATABASE_TARGET_FINGERPRINT` | `6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926` for the inspected routing tuple only |
+| `DATABASE_CA_CERT` | Official Supabase Root 2021 CA PEM; required by the verified pooler preflight. Obtain from the project Database Settings and verify the fingerprint in the baseline report. |
+| `CLIENT_ORIGIN`, `ALLOWED_ORIGINS`, `APP_URL` | `https://staging.fugluck.com` only |
+| `COOKIE_DOMAIN` | Remove / leave empty; the API sets host-only cookies |
+| `COOKIE_SAMESITE` | `lax` |
+| `REAL_MONEY_ENABLED` | `false` |
+| `REAL_MONEY_DEPOSITS_ENABLED` | `false` |
+| `REAL_MONEY_WITHDRAWALS_ENABLED` | `false` |
+| `REAL_MONEY_COMPETITIONS_ENABLED` | `false` |
+
+The fingerprint hashes the normalized host, port, database name, and database username (including the pooler project tenant); it excludes the password. It does not prove secret-store isolation, physical region, restore readiness, or the active runtime connection by itself. Recalculate and independently verify it when routing changes. `npm run audit:environment` prints sanitized offline configuration evidence; `npm run audit:environment -- --check-database` additionally makes a bounded read-only migration query only after hosted configuration passes. Supply configuration through a secure operator environment, not shell arguments/history.
+
+For the staging Vercel Preview branch, set `VITE_APP_ENV=staging` and `VITE_API_URL=https://api-staging.fugluck.com`. Keep System Environment Variables enabled for the full commit SHA. Scope these values to the approved staging branch. **Do not share future production financial credentials with Preview, client builds, or staging.** All `VITE_*` values are public bundle configuration. This release deliberately blocks Vercel Production builds and backend `APP_ENV=production` until a separate production target is accepted in code.
+
+Rollout order:
+
+1. Run all `scripts/*-check.ts` programs, typecheck/client build and server build. Review the Phase 7A report and the exact candidate diff.
+2. Deploy only an explicitly approved feature-branch commit to the verified staging targets. A push can create an automatic Vercel Preview; it is not a deploy-free action. Do not push before the branch-scoped frontend settings and rollout are approved. Do not merge to `main` or promote Vercel Production.
+3. Before any schema change, obtain a fresh protected backup, rehearse an isolated restore, and verify the official migration chain. This candidate adds **no migration**; do not reset, repair, or rewrite the existing migration journal.
+4. Verify the database routing tuple privately and run the read-only TLS/migration preflight. Missing certificates, fingerprint mismatch, or migration mismatch are stops, not reasons to weaken guards.
+5. Apply the non-secret environment settings above to the existing staging service and use the reviewed SHA for both frontend and backend. Preserve the existing authority gate and disabled trial templates. Environment-scoped JWTs require users/admins to sign in again after rollout.
+6. Verify `/deployment.json` at the frontend, `/health` and `/api/health` at the backend, and authenticated Admin Operations. Require full revision equality, explicit staging identity, matching database target and migration chain, all commercial operations OFF, and zero accounting discrepancy. `/health` is liveness; `/api/health` returns 503 if database/migration readiness fails.
+7. Verify catalog first-request timeout/retry and warm behavior, then desktop/mobile UI. Free-instance wake-up delays remain a deployment limitation, not a reason to weaken the six-second catalog deadline.
+
+**PLANNED before production:** separate provider environment/accounts and secret stores, production database/role/region, verified backups and restore targets, certificate validation, durable monitoring, capacity and recovery objectives, and a controlled money-disabled rollout. Application guards cannot prove provider IAM or future credential isolation. Never register a production target by copying staging data or financial credentials.
+
+## Historical initial provisioning walkthrough — superseded
+
+The remainder records the original staging setup and is retained as historical context. Its creation steps, broad cookie domain, automatic deployment, region suggestions, and old revision observations are **not** the current rollout instructions.
+
 This guide provides the complete, step-by-step procedure to deploy Fugluck to a **Public Staging Environment** for real-browser testing on actual domain names:
 * **Frontend Web App**: `https://staging.fugluck.com` (Hosted on **Vercel**)
 * **Backend API & WebSocket Server**: `https://api-staging.fugluck.com` (Hosted on **Render**)

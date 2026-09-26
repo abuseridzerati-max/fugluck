@@ -6,7 +6,7 @@ import { requirePermission } from "../auth/permissions";
 import { verifyPassword } from "../auth/password";
 import { signSessionToken, getSessionCookieOptions, getClearCookieOptions } from "../auth/jwt";
 import { checkAdminLockout, recordFailedAdminLogin, resetAdminLockout } from "../auth/adminLockout";
-import { db } from "../db/client";
+import { db, pool } from "../db/client";
 import { sandboxAccountingAdapter } from "../accounting/sandboxAdapter";
 import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users } from "../db/schema";
 import { ensureMatchSettlementsTable, getBalances } from "../wallet/ledger";
@@ -15,6 +15,9 @@ import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { competitionAdminRouter } from "./adminCompetitions";
 import { getOperationsTelemetry } from "../competitions/operationsTelemetry";
 import { getAppEnvironment, getRuntimeMode } from "../config/environment";
+import { getBuildRevision, getDeploymentIdentity } from '../config/deploymentIdentity';
+import { getCommercialSafety } from '../config/commercialSafety';
+import { readMigrationIdentity } from '../config/migrationIdentity';
 
 const adminLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -713,14 +716,14 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
     db.execute(sql`select status, count(*)::int as count from competition_instances group by status`),
     db.execute(sql`select status, count(*)::int as count from competition_authority_sessions group by status`),
     sandboxAccountingAdapter.getSandboxAccountingSummary(),
-    db.execute(sql`select to_timestamp(created_at / 1000.0) as created_at from drizzle.__drizzle_migrations order by created_at desc limit 1`),
+    readMigrationIdentity(pool),
   ]);
   const value = <T,>(index: number): T | null => results[index].status === 'fulfilled' ? (results[index] as PromiseFulfilledResult<T>).value : null;
   const databaseOk = value<any>(0) !== null;
   const instanceRows = value<any>(1)?.rows ?? [];
   const authorityRows = value<any>(2)?.rows ?? [];
   const accounting = value<any>(3);
-  const migrationRows = value<any>(4)?.rows ?? [];
+  const migrations = value<Awaited<ReturnType<typeof readMigrationIdentity>>>(4);
   const counts = (rows: any[]) => Object.fromEntries(rows.map(row => [String(row.status), Number(row.count)]));
   const region = typeof process.env.DATABASE_REGION === 'string' && /^[a-zA-Z0-9-]{2,32}$/.test(process.env.DATABASE_REGION)
     ? process.env.DATABASE_REGION
@@ -728,14 +731,15 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
   const telemetry = getOperationsTelemetry();
   res.json({
     checkedAt,
-    backend: { healthy: true, environment: getAppEnvironment(), runtimeMode: getRuntimeMode(), uptimeSeconds: Math.floor(process.uptime()), revision: process.env.RENDER_GIT_COMMIT?.slice(0, 12) ?? process.env.GIT_SHA?.slice(0, 12) ?? null },
-    database: { healthy: databaseOk, region, migrationAppliedAt: migrationRows[0]?.created_at ?? null },
-    frontend: { revision: typeof _req.query.frontendRevision === 'string' && /^[a-f0-9]{7,40}$/i.test(_req.query.frontendRevision) ? _req.query.frontendRevision.slice(0, 12) : null },
+    backend: { healthy: true, environment: getAppEnvironment(), runtimeMode: getRuntimeMode(), uptimeSeconds: Math.floor(process.uptime()), revision: getBuildRevision() },
+    database: { healthy: databaseOk, region, identity: getDeploymentIdentity().database, migrations },
+    frontend: { revision: typeof _req.query.frontendRevision === 'string' && /^[a-f0-9]{40}$/i.test(_req.query.frontendRevision) ? _req.query.frontendRevision.toLowerCase() : null, source: 'client-reported; verify against the provider deployment' },
+    commercial: getCommercialSafety(),
     competitions: { instances: counts(instanceRows), activeCount: Number(counts(instanceRows).ACTIVE ?? 0) },
     authority: { sessions: counts(authorityRows), activeSessionCount: Number(counts(authorityRows).ACTIVE ?? 0), recentAdmissions: telemetry.admissions.slice(0, 12), recentReconnects: telemetry.reconnects.slice(0, 12), recentErrors: telemetry.authorityErrors.slice(0, 12), telemetryLifetime: 'Current server process only; cleared on restart.' },
     accounting: accounting ? { discrepancyMinor: accounting.discrepancyMinor, reconciled: accounting.systemReconciled } : null,
     databaseRegionStatus: region ? 'configured' : 'not configured',
-    sourceErrors: results.map((result, index) => result.status === 'rejected' ? ['database','competition counts','authority counts','accounting reconciliation','migration metadata'][index] : null).filter(Boolean),
+    sourceErrors: [...results.map((result, index) => result.status === 'rejected' ? ['database','competition counts','authority counts','accounting reconciliation','migration metadata'][index] : null).filter(Boolean), ...(migrations?.status !== 'match' ? ['migration identity'] : [])],
   });
 });
 // Reverse Ledger Entry (Compensating Transaction)

@@ -1,0 +1,485 @@
+{
+  "auditDate": "2026-09-27",
+  "timezone": "Asia/Tbilisi",
+  "verdict": "NOT_PASS_LIVE_EXIT_GATE",
+  "git": {
+    "baseRevision": "a17a45c126e91cfaac46456f5ca368f8cff78cd3",
+    "branch": "codex/phase-7a-environment-safety"
+  },
+  "deployment": {
+    "frontend": {
+      "provider": "Vercel",
+      "deploymentId": "7FZ4mMAo9MjAp9xc11SDWEA6kKMB",
+      "environment": "Preview",
+      "applicationEnvironment": "not configured",
+      "sha": "f2ce3ddef71ca5369c1479da48236ccd202b4f52"
+    },
+    "backend": {
+      "provider": "Render",
+      "serviceId": "srv-da2c50c9v7es73db3dkg",
+      "deployId": "dep-daqu4co473hc73943t5g",
+      "providerEnvironmentLabel": "Production",
+      "applicationEnvironment": "not configured",
+      "nodeEnvironment": "production",
+      "sha": "150c6c465a81e48bea5a11e19617b65072d22fb3"
+    },
+    "productionFrontend": {
+      "deploymentId": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+      "sha": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+      "observedApiOrigin": "https://api-staging.fugluck.com"
+    },
+    "revisionParity": false
+  },
+  "database": {
+    "checkedAt": "2026-09-26T23:14:55.739Z",
+    "identity": {
+      "fingerprint": "6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926",
+      "projectRef": "gzfcucvxfzzjzjtgkwpd",
+      "expectedStagingTarget": true,
+      "tlsPermitted": true
+    },
+    "certificate": {
+      "subject": "C=US\nST=Delware\nL=New Castle\nO=Supabase Inc\nCN=Supabase Root 2021 CA",
+      "fingerprint256": "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA",
+      "validTo": "Apr 26 10:56:53 2031 GMT",
+      "source": "Supabase project Database Settings > Download certificate"
+    },
+    "tls": {
+      "rejectUnauthorized": true,
+      "authorized": true
+    },
+    "readOnly": true,
+    "connection": {
+      "database": "postgres",
+      "ssl": false,
+      "version": null,
+      "bits": null
+    },
+    "migrations": {
+      "status": "match",
+      "expectedCount": 12,
+      "appliedCount": 12,
+      "expectedHead": "0011_terminal_participant_status",
+      "appliedHead": "0011_terminal_participant_status",
+      "appliedHeadHash": "053be642bb379a9ac3c0853c4efeffa2bc1af681674de34aa7100d534c75c199",
+      "journalTimestamp": 1790200000000,
+      "expectedChainFingerprint": "e925c6ca535f941d36e052ca71d2bda836659f6b60b75c558b68a2949ee5a44e"
+    },
+    "templates": 8
+  },
+  "recovery": {
+    "checkedAt": "2026-09-26T23:17:15.730Z",
+    "sourceProject": "gzfcucvxfzzjzjtgkwpd",
+    "sourceSchemas": [
+      "public",
+      "drizzle"
+    ],
+    "sourceTlsVerifyFull": true,
+    "destination": {
+      "host": "127.0.0.1",
+      "port": 55437,
+      "database": "phase7a_restore",
+      "newIsolatedCluster": true
+    },
+    "backup": {
+      "bytes": 423312,
+      "sha256": "58e82b4b0beff86c8f1f001ba842b79e3ccf9900822a3c9d3bb83d26a0d21a1d",
+      "durationMs": 21137,
+      "consistentSnapshot": true
+    },
+    "restore": {
+      "durationMs": 589,
+      "comparisons": {
+        "rows": true,
+        "columns": true,
+        "constraints": true,
+        "indexes": true,
+        "migrations": true,
+        "reconciliation": true
+      },
+      "reconciliation": {
+        "ledger_sum": "0",
+        "escrow": "0",
+        "reserved": "0",
+        "open_instances": 0,
+        "unbalanced_transactions": 0
+      }
+    },
+    "sourceReconciliation": {
+      "ledger_sum": "0",
+      "escrow": "0",
+      "reserved": "0",
+      "open_instances": 0,
+      "unbalanced_transactions": 0
+    },
+    "tableCount": 24,
+    "clientTlsAuthorized": true,
+    "previousRestoreFailure": "INITDB_FAILED",
+    "isolatedServerStopped": true
+  },
+  "dependencies": {
+    "root": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 1,
+      "critical": 0,
+      "total": 5
+    },
+    "server": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 1,
+      "critical": 0,
+      "total": 5
+    },
+    "client": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "games": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "runtime": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0,
+      "total": 1
+    }
+  },
+  "validation": {
+    "scripts": [
+      {
+        "script": "migration-schema-parity-check.ts",
+        "passed": 321,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "competition-admin-http-check.ts",
+        "passed": 43,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": true
+      },
+      {
+        "script": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "environment-safety-check.ts",
+        "passed": 72,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      },
+      {
+        "script": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "rerun": false
+      }
+    ],
+    "totalPassed": 1576,
+    "totalFailed": 0,
+    "serverBuild": "pass",
+    "typecheckAndClientBuild": "pass"
+  },
+  "commercial": {
+    "master": false,
+    "deposits": false,
+    "withdrawals": false,
+    "competitions": false,
+    "implementation": "unavailable"
+  },
+  "limitations": [
+    "Candidate is not deployed",
+    "Existing production frontend references staging API",
+    "Database TLS proof covers client to session pooler; upstream pg_stat_ssl is false",
+    "Provider SSL enforcement disabled and all IPs allowed",
+    "Local restore covers application schemas only; production/off-site recovery policy missing",
+    "Residual dependency findings are not accepted for commercial launch"
+  ],
+  "otherConfiguredDatabaseFingerprints": {
+    "development": "8654d5007c93c9e17490cd3eca2fead25142b3671bdcd1f47b930bb3e0689ab0",
+    "disposableTests": "ca82ef11b3bc18d868509b4e8c5ee4c6c09a76b33cf6fd8a02fb280eed196ae0",
+    "legacyTokyoNotConnected": "a46de125d8d4004066c2afdcc1085f926c54f0ac7d0a3d940c718261f2d61f0b",
+    "production": null
+  }
+}

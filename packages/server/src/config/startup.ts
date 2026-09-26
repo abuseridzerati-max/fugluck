@@ -1,5 +1,7 @@
 import { logger } from "../utils/safeLogger";
 import { getAppEnvironment } from "./environment";
+import { validateDeploymentIdentity } from './deploymentIdentity';
+import { validateCommercialSafety } from './commercialSafety';
 
 export type StartupValidationResult = {
   valid: boolean;
@@ -57,6 +59,7 @@ export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): Sta
     warnings.push("Neither CLIENT_ORIGIN nor ALLOWED_ORIGINS is set. Falling back to default production domains.");
   }
 
+  errors.push(...validateDeploymentIdentity(env), ...validateCommercialSafety(env));
   return {
     valid: errors.length === 0,
     errors,

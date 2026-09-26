@@ -6,6 +6,7 @@ dotenv.config({ path: "packages/server/.env" });
 import { validateStartupConfig } from "../packages/server/src/config/startup";
 import { getAppEnvironment, getRuntimeMode } from "../packages/server/src/config/environment";
 import { getHealthPayload } from "../packages/server/src/config/health";
+import { getDatabaseTargetIdentity } from '../packages/server/src/config/deploymentIdentity';
 import { getClearCookieOptions, getSessionCookieOptions } from "../packages/server/src/auth/jwt";
 
 let passes = 0;
@@ -36,13 +37,19 @@ const invalidBadUrl = validateStartupConfig({
 });
 check("Rejects non-postgres protocol in DATABASE_URL", invalidBadUrl.errors.some((e) => e.includes("protocol")));
 
+const stagingDatabaseUrl = 'postgresql://postgres.gzfcucvxfzzjzjtgkwpd:fixture@aws-1-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require';
 const validProdConfig = validateStartupConfig({
-  DATABASE_URL: "postgresql://user:pass@host:5432/fugluck_staging?sslmode=require",
+  DATABASE_URL: stagingDatabaseUrl,
+  DATABASE_TARGET_FINGERPRINT: getDatabaseTargetIdentity(stagingDatabaseUrl)!.fingerprint,
+  DATABASE_REGION: 'eu-central-1',
+  GIT_SHA: 'a'.repeat(40),
   JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
   PORT: "4000",
   NODE_ENV: "production",
   APP_ENV: "staging",
   CLIENT_ORIGIN: "https://staging.fugluck.com",
+  ALLOWED_ORIGINS: 'https://staging.fugluck.com',
+  APP_URL: 'https://staging.fugluck.com',
 });
 check("Accepts optimized Node production mode with explicit staging application environment", validProdConfig.valid === true);
 check("No errors on valid staging configuration", validProdConfig.errors.length === 0);
@@ -68,18 +75,18 @@ check("Health payload reports APP_ENV=staging and NODE_ENV=production separately
 console.log("\nSection 2: Cookie Security & Cross-Subdomain Options");
 const originalEnv = { ...process.env };
 process.env.NODE_ENV = "production";
-process.env.COOKIE_DOMAIN = ".fugluck.com";
+delete process.env.COOKIE_DOMAIN;
 process.env.COOKIE_SAMESITE = "lax";
 
 const sessionOpts = getSessionCookieOptions();
 check("Production session cookie is HttpOnly", sessionOpts.httpOnly === true);
 check("Production session cookie is Secure", sessionOpts.secure === true);
-check("Production session cookie has Domain=.fugluck.com", sessionOpts.domain === ".fugluck.com");
+check("Hosted session cookie is API host-only", sessionOpts.domain === undefined);
 check("Production session cookie has SameSite=lax", sessionOpts.sameSite === "lax");
 check("Production session cookie maxAge is 7 days", sessionOpts.maxAge === 7 * 24 * 60 * 60 * 1000);
 
 const clearOpts = getClearCookieOptions();
-check("Clear cookie options preserve Domain", clearOpts.domain === ".fugluck.com");
+check("Clear cookie options preserve host-only scope", clearOpts.domain === undefined);
 check("Clear cookie options preserve SameSite", clearOpts.sameSite === "lax");
 check("Clear cookie options preserve Secure", clearOpts.secure === true);
 

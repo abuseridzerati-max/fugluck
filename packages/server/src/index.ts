@@ -15,6 +15,8 @@ import { walletRouter } from "./routes/wallet";
 import { corsOptions } from "./config/cors";
 import { enforceStartupConfig } from "./config/startup";
 import { getHealthPayload } from "./config/health";
+import { enforceMigrationIdentity, readMigrationIdentity } from './config/migrationIdentity';
+import { isHostedEnvironment } from './config/deploymentIdentity';
 import { ensureUserSchema, pool } from "./db/client";
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
 
@@ -62,9 +64,14 @@ app.get("/api/health", async (_req, res) => {
     logger.warn("[health] database connectivity check failed:", err?.message || err);
     dbStatus = "unavailable";
   }
-  res.json({
+  const migrations = await readMigrationIdentity(pool);
+  const ready = dbStatus === 'connected' && migrations.status === 'match';
+  res.status(ready ? 200 : 503).json({
     ...getHealthPayload(),
+    ok: ready,
+    status: ready ? 'healthy' : 'unavailable',
     database: dbStatus,
+    migrations: migrations.status,
   });
 });
 
@@ -88,7 +95,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 const httpServer = createServer(app);
-const io: MatchmakingServer = attachMatchmaking(httpServer);
+let io: MatchmakingServer | undefined;
 
 const port = Number(process.env.PORT ?? 4000);
 const host = process.env.HOST || "0.0.0.0";
@@ -111,7 +118,8 @@ async function handleGracefulShutdown(signal: string) {
     // 1. Close Socket.IO connections
     logger.info("[server] closing WebSocket connections...");
     await new Promise<void>((resolve) => {
-      io.close(() => resolve());
+      if (io) io.close(() => resolve());
+      else resolve();
     });
 
     // 2. Stop accepting new HTTP requests
@@ -141,11 +149,18 @@ process.on("SIGINT", () => {
 });
 
 async function startServer() {
-  try {
-    await ensureUserSchema();
-  } catch (err) {
-    logger.warn("[server] ensureUserSchema non-fatal boot notice:", err);
+  if (isHostedEnvironment()) await enforceMigrationIdentity(pool);
+  // Never run schema-repair DDL against hosted data. Apply reviewed migrations
+  // through the deployment workflow, then verify the history before recovery.
+  if (!isHostedEnvironment()) {
+    try {
+      await ensureUserSchema();
+    } catch (err) {
+      logger.warn("[server] ensureUserSchema non-fatal boot notice:", err);
+    }
   }
+
+  io = attachMatchmaking(httpServer);
 
   httpServer.listen(port, host, () => {
     logger.info(`[server] listening on http://${host}:${port}`);
@@ -154,6 +169,7 @@ async function startServer() {
 
 void startServer().catch((error) => {
   logger.error("[server] startup failed:", error);
+  void pool.end();
   process.exitCode = 1;
 });
 
