@@ -1,5 +1,9 @@
 # Phase 7B controlled commercial staging acceptance — 2026-09-27
 
+**Later verified state:** [Phase 7I hosted commercial staging acceptance](PHASE_7I_HOSTED_COMMERCIAL_ACCEPTANCE.md) supersedes this document's statements that hosted commercial routes and live game-to-commercial settlement do not exist. The Phase 7I code revision is `b87036ce9394af61714e0a8920944e4a6fe247f4`; full hosted mock E2E passed with all real-money flags OFF, and the three mock action switches were left OFF. This Phase 7B record remains the historical migration/backup baseline for revision `39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3`.
+
+## Historical Phase 7B verdict
+
 **Verdict: PARTIAL STAGING MOCK ACCEPTANCE; COMMERCIAL LAUNCH NOT READY.** The approved candidate `39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3` is deployed to the existing staging frontend and API with migration `0012_commercial_financial_core`. Real-money, deposit, withdrawal and competition switches remain OFF. The hosted API deliberately exposes no commercial mutation routes; the mock financial engine was exercised from a trusted workstation against temporary schemas in the verified staging PostgreSQL project. No real provider or external funds were used. [Sanitized structured evidence](evidence/phase7b-staging-acceptance-20260927.json) records the exact checks.
 
 ## Recovery and migration

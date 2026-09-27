@@ -1,0 +1,695 @@
+{
+  "title": "Phase 7I hosted commercial staging mock acceptance",
+  "auditDate": "2026-09-27",
+  "staging": {
+    "branch": "codex/phase-7b-commercial-candidate",
+    "frontendRevision": "b87036ce9394af61714e0a8920944e4a6fe247f4",
+    "backendRevision": "b87036ce9394af61714e0a8920944e4a6fe247f4",
+    "vercelPreviewId": "GS3HnyHv8SJRmvSZ2abiqGyRif6S",
+    "renderFinalDeployId": "dep-dasi2760tbcc73fghfgg",
+    "renderServiceId": "srv-da2c50c9v7es73db3dkg",
+    "appEnv": "staging",
+    "runtimeMode": "production",
+    "databaseProject": "gzfcucvxfzzjzjtgkwpd",
+    "databaseFingerprint": "6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926",
+    "databaseReady": true,
+    "migrations": "match",
+    "migrationCount": 13,
+    "migrationHeadHash": "9c6a81859792a4ba5ab6ce0f51eb34b195e4fa8573962d9dee55c5e2ea92fed5",
+    "realMoneyFlags": {
+      "master": false,
+      "deposits": false,
+      "withdrawals": false,
+      "competitions": false
+    },
+    "finalMockActionFlags": {
+      "deposits": false,
+      "withdrawals": false,
+      "competitions": false
+    }
+  },
+  "hostedAcceptance": {
+    "method": "Two synthetic non-admin staging users, separate operator/provider secrets, hosted HTTP and Socket.IO, server-owned live Level 3 authority. Secrets and session cookies omitted.",
+    "initialDepositChecks": "Two 3000-minor GEL mock orders, exact-once signed confirmations, duplicate requests/events, forged-signature rejection; both credited 3000 minor before games.",
+    "authorityInstances": [
+      {
+        "id": "inst_f94141f8-8f4f-4580-89c4-c6486bd84d1b",
+        "gameId": "space-blaster",
+        "status": "SETTLED",
+        "reason": "SERVER_RESULTS",
+        "entryFeeMinor": 500,
+        "prizeMinor": 900,
+        "authorityRunId": "7f074fc2-d216-455f-b2ed-f4b176658646",
+        "authorityVersion": "space-blaster-rv001-v1",
+        "decisionKind": "WIN",
+        "resultCount": 2,
+        "authorityResults": [
+          {
+            "userId": "8d22553f-f9b8-4b14-b615-423f5075ae97",
+            "score": 31,
+            "ticks": 944,
+            "reason": "COLLISION"
+          },
+          {
+            "userId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a",
+            "score": 150,
+            "ticks": 2412,
+            "reason": "COLLISION"
+          }
+        ],
+        "matchHistory": {
+          "status": "COMPLETED",
+          "scoreP1": 150,
+          "scoreP2": 31,
+          "winnerId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a"
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 2,
+        "prizeSettlementTransactions": 1,
+        "refundTransactions": 0,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      },
+      {
+        "id": "inst_aedfde07-a865-488a-b0ea-1fa2d6e5436b",
+        "gameId": "space-blaster",
+        "status": "SETTLED",
+        "reason": "SERVER_RESULTS",
+        "entryFeeMinor": 500,
+        "prizeMinor": 900,
+        "authorityRunId": "972001c6-582d-4ee6-98be-5968ca863d9a",
+        "authorityVersion": "space-blaster-rv001-v1",
+        "decisionKind": "WIN",
+        "resultCount": 2,
+        "authorityResults": [
+          {
+            "userId": "8d22553f-f9b8-4b14-b615-423f5075ae97",
+            "score": 5,
+            "ticks": 157,
+            "reason": "COLLISION"
+          },
+          {
+            "userId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a",
+            "score": 88,
+            "ticks": 867,
+            "reason": "COLLISION"
+          }
+        ],
+        "matchHistory": {
+          "status": "COMPLETED",
+          "scoreP1": 88,
+          "scoreP2": 5,
+          "winnerId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a"
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 2,
+        "prizeSettlementTransactions": 1,
+        "refundTransactions": 0,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      },
+      {
+        "id": "inst_9ce909a6-8676-44b8-ac06-52120d95702b",
+        "gameId": "cyber-hopper",
+        "status": "VOIDED",
+        "reason": "LATENCY_ADMISSION_FAILED",
+        "entryFeeMinor": 400,
+        "prizeMinor": 720,
+        "authorityRunId": "2ee78d24-9419-46e9-a822-fa1a1c178435",
+        "authorityVersion": "cyber-hopper-rv001-v1",
+        "decisionKind": "VOID",
+        "resultCount": 0,
+        "authorityResults": null,
+        "matchHistory": {
+          "status": "VOIDED",
+          "scoreP1": 0,
+          "scoreP2": 0,
+          "winnerId": null
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 0,
+        "prizeSettlementTransactions": 0,
+        "refundTransactions": 1,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      },
+      {
+        "id": "inst_1aee79d9-84a9-4f68-848d-ba7085d7da91",
+        "gameId": "cyber-hopper",
+        "status": "SETTLED",
+        "reason": "SERVER_RESULTS",
+        "entryFeeMinor": 400,
+        "prizeMinor": 720,
+        "authorityRunId": "8a35dafe-04e6-4514-b747-7bd32030891e",
+        "authorityVersion": "cyber-hopper-rv001-v1",
+        "decisionKind": "WIN",
+        "resultCount": 2,
+        "authorityResults": [
+          {
+            "userId": "8d22553f-f9b8-4b14-b615-423f5075ae97",
+            "score": 0,
+            "ticks": 10800,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "userId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a",
+            "score": 330,
+            "ticks": 149,
+            "reason": "COLLISION"
+          }
+        ],
+        "matchHistory": {
+          "status": "COMPLETED",
+          "scoreP1": 330,
+          "scoreP2": 0,
+          "winnerId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a"
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 2,
+        "prizeSettlementTransactions": 1,
+        "refundTransactions": 0,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      },
+      {
+        "id": "inst_dad1d3a8-2779-4eb8-acb6-dc1c38ad3114",
+        "gameId": "space-blaster",
+        "status": "VOIDED",
+        "reason": "SERVER_RESULTS",
+        "entryFeeMinor": 500,
+        "prizeMinor": 900,
+        "authorityRunId": "13a78a2e-8a73-4caf-8d99-c5b6a72e0c3c",
+        "authorityVersion": "space-blaster-rv001-v1",
+        "decisionKind": "DRAW",
+        "resultCount": 2,
+        "authorityResults": [
+          {
+            "userId": "8d22553f-f9b8-4b14-b615-423f5075ae97",
+            "score": 23,
+            "ticks": 703,
+            "reason": "COLLISION"
+          },
+          {
+            "userId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a",
+            "score": 23,
+            "ticks": 703,
+            "reason": "COLLISION"
+          }
+        ],
+        "matchHistory": {
+          "status": "DRAW",
+          "scoreP1": 23,
+          "scoreP2": 23,
+          "winnerId": null
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 2,
+        "prizeSettlementTransactions": 0,
+        "refundTransactions": 1,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      },
+      {
+        "id": "inst_ea7744e8-1886-4bd3-ba1b-8809cb63d965",
+        "gameId": "space-blaster",
+        "status": "SETTLED",
+        "reason": "EXPLICIT_FORFEIT",
+        "entryFeeMinor": 500,
+        "prizeMinor": 900,
+        "authorityRunId": "3f3d3e17-da59-4a39-a637-81da1eceee32",
+        "authorityVersion": "space-blaster-rv001-v1",
+        "decisionKind": "FORFEIT",
+        "resultCount": 2,
+        "authorityResults": [
+          {
+            "userId": "8d22553f-f9b8-4b14-b615-423f5075ae97",
+            "score": 0,
+            "ticks": 28,
+            "reason": "FORFEIT"
+          },
+          {
+            "userId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a",
+            "score": 0,
+            "ticks": 28,
+            "reason": "OPPONENT_FORFEIT"
+          }
+        ],
+        "matchHistory": {
+          "status": "COMPLETED",
+          "scoreP1": 0,
+          "scoreP2": 0,
+          "winnerId": "f5ad5b40-8d1d-44a5-be4d-06dd800ea03a"
+        },
+        "reservationTransactions": 2,
+        "captureTransactions": 2,
+        "prizeSettlementTransactions": 1,
+        "refundTransactions": 0,
+        "decisionApplied": true,
+        "winnerMatchesDecision": true
+      }
+    ],
+    "providerEvents": [
+      {
+        "event_type": "DEPOSIT_FAILED",
+        "status": "APPLIED",
+        "n": 1
+      },
+      {
+        "event_type": "DEPOSIT_SUCCEEDED",
+        "status": "APPLIED",
+        "n": 3
+      },
+      {
+        "event_type": "PAYOUT_FAILED",
+        "status": "APPLIED",
+        "n": 1
+      },
+      {
+        "event_type": "PAYOUT_SUCCEEDED",
+        "status": "APPLIED",
+        "n": 2
+      }
+    ],
+    "operationStatuses": [
+      {
+        "kind": "COMPETITION",
+        "status": "REFUNDED",
+        "n": 2
+      },
+      {
+        "kind": "COMPETITION",
+        "status": "SETTLED",
+        "n": 4
+      },
+      {
+        "kind": "DEPOSIT",
+        "status": "CONFIRMED",
+        "n": 3
+      },
+      {
+        "kind": "DEPOSIT",
+        "status": "FAILED",
+        "n": 1
+      },
+      {
+        "kind": "ENTRY",
+        "status": "CAPTURED",
+        "n": 8
+      },
+      {
+        "kind": "ENTRY",
+        "status": "REFUNDED",
+        "n": 2
+      },
+      {
+        "kind": "ENTRY",
+        "status": "RELEASED",
+        "n": 2
+      },
+      {
+        "kind": "WITHDRAWAL",
+        "status": "COMPLETED",
+        "n": 2
+      },
+      {
+        "kind": "WITHDRAWAL",
+        "status": "REVERSED",
+        "n": 2
+      }
+    ],
+    "transactionTypes": [
+      {
+        "eventType": "DEPOSIT_CONFIRMED",
+        "count": 3
+      },
+      {
+        "eventType": "ENTRY_CAPTURE",
+        "count": 10
+      },
+      {
+        "eventType": "ENTRY_REFUND",
+        "count": 2
+      },
+      {
+        "eventType": "ENTRY_RESERVE",
+        "count": 12
+      },
+      {
+        "eventType": "PRIZE_SETTLEMENT",
+        "count": 4
+      },
+      {
+        "eventType": "WITHDRAWAL_COMPLETED",
+        "count": 2
+      },
+      {
+        "eventType": "WITHDRAWAL_RESERVE",
+        "count": 4
+      },
+      {
+        "eventType": "WITHDRAWAL_REVERSAL",
+        "count": 2
+      }
+    ],
+    "ledger": {
+      "postingCount": 94,
+      "globalSumMinor": "0",
+      "userAvailableLiabilityMinor": 5430,
+      "entryReservedMinor": 0,
+      "withdrawalReservedMinor": 0,
+      "unbalancedTransactions": 0,
+      "duplicatePrizes": 0,
+      "unresolvedFinancialOperations": 0,
+      "reconciliationIssues": []
+    },
+    "failureChecks": {
+      "preKillPassed": 19,
+      "afterKillPassed": 11,
+      "ownershipAndIdempotencyPassed": 11,
+      "reconnectAndTerminalReplayPassed": 10,
+      "databaseInvariantChecksPassed": 24
+    },
+    "killSwitchObservation": "Three distinct mock action flags were turned off together while all real-money flags stayed false; new deposit, withdrawal and entry were each denied. Accepted pending deposit callback and uncertain payout retry/completion settled after switch-off. Final action flags remain false. Source review shows active authority sessions route accounting by template without consulting the entry switch; the in-flight competition case was not independently exercised during a toggle.",
+    "transientFindings": [
+      "One Cyber Hopper admission was voided with p95 RTT about 105 ms and jitter about 40 ms, above unchanged admission limits; a subsequent attempt passed and settled.",
+      "One additional Space Blaster reconnect run ended a legitimate zero-score draw and refunded entries; the next reconnect run rotated its binding and settled a server-owned explicit forfeit.",
+      "Initial harness compared player-specific score fields for equality; corrected to shared authoritative outcome fields. No application change was required."
+    ]
+  },
+  "hostedRuntime": {
+    "warmCatalog": {
+      "status": 200,
+      "templateCount": 4,
+      "latencyMs": [
+        367,
+        141,
+        117
+      ],
+      "mockTemplatesExcluded": true
+    },
+    "tls": {
+      "frontendAuthorized": true,
+      "backendAuthorized": true,
+      "frontendValidTo": "2026-11-16T18:37:05Z",
+      "backendValidTo": "2026-11-16T22:35:57Z"
+    },
+    "productionDeploymentUnchanged": {
+      "vercelDeploymentId": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+      "mainRevision": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+      "productionFrontendReferencesStaging": true
+    }
+  },
+  "regression": {
+    "scriptsExecuted": 44,
+    "assertionsPassed": 1682,
+    "assertionsFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 81,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 329,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0
+      }
+    ]
+  },
+  "buildAndAudit": {
+    "typecheckAndClientBuild": "pass",
+    "serverBuild": "pass",
+    "drizzleKitCheck": "pass with non-connecting local placeholder DATABASE_URL",
+    "rootAudit": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 4,
+      "low": 0
+    },
+    "runtimeAudit": {
+      "total": 0
+    }
+  },
+  "remaining": {
+    "phase7A": "NOT PASS: unchanged Production frontend references staging API; separate production approval required",
+    "authenticatedAdminOperations": "EXTERNAL VERIFICATION BLOCKER — AUTHENTICATED ADMIN SIGN-IN REQUIRED",
+    "coldCatalog": "Render Free cold-first timeout/Retry remains the documented staging infrastructure limitation; this run verified warm 4/4 catalog and did not perform a new >15-minute idle probe",
+    "realProvider": "NOT CONNECTED; no external funds moved"
+  }
+}
