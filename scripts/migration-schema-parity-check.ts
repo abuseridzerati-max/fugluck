@@ -36,9 +36,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0009_sandbox_accounting.sql",
     "0010_competition_authority.sql",
     "0011_terminal_participant_status.sql",
+    "0012_commercial_financial_core.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0011) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0012) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -98,6 +99,14 @@ async function verifySchema(pool: Pool): Promise<void> {
     "sandbox_entry_reservations",
     "sandbox_ledger_entries",
     "sandbox_settlements",
+    "commercial_accounts",
+    "commercial_transactions",
+    "commercial_postings",
+    "commercial_operations",
+    "commercial_operation_events",
+    "commercial_provider_events",
+    "commercial_risk_cases",
+    "commercial_risk_events",
     'competition_authority_runs', 'competition_authority_sessions', 'competition_authority_results', 'competition_authority_decisions',
   ];
 

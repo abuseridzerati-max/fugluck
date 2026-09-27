@@ -85,6 +85,13 @@
       "when": 1790200000000,
       "tag": "0011_terminal_participant_status",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790300000000,
+      "tag": "0012_commercial_financial_core",
+      "breakpoints": true
     }
   ]
 }

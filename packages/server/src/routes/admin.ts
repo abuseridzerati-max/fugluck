@@ -717,6 +717,14 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
     db.execute(sql`select status, count(*)::int as count from competition_authority_sessions group by status`),
     sandboxAccountingAdapter.getSandboxAccountingSummary(),
     readMigrationIdentity(pool),
+    pool.query(`SELECT
+      (SELECT count(*)::int FROM commercial_transactions) AS transaction_count,
+      (SELECT count(*)::int FROM commercial_operations WHERE kind IN ('DEPOSIT','WITHDRAWAL')
+        AND status IN ('REQUESTED','EXTERNAL_PENDING','RESERVED','SUBMITTING','SUBMISSION_UNCERTAIN','PROCESSING')) AS pending_count,
+      (SELECT count(*)::int FROM commercial_risk_cases WHERE status IN ('OPEN','IN_REVIEW','RESTRICTED')) AS review_count,
+      (SELECT count(*)::int FROM commercial_provider_events WHERE status IN ('MISMATCH','UNMATCHED','OUT_OF_ORDER')) AS provider_anomaly_count,
+      (SELECT COALESCE(sum(amount_minor),0)::text FROM commercial_postings) AS total_minor,
+      (SELECT count(*)::int FROM (SELECT transaction_id FROM commercial_postings GROUP BY transaction_id HAVING sum(amount_minor)<>0 OR count(*)<2) bad) AS unbalanced_count`),
   ]);
   const value = <T,>(index: number): T | null => results[index].status === 'fulfilled' ? (results[index] as PromiseFulfilledResult<T>).value : null;
   const databaseOk = value<any>(0) !== null;
@@ -724,6 +732,7 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
   const authorityRows = value<any>(2)?.rows ?? [];
   const accounting = value<any>(3);
   const migrations = value<Awaited<ReturnType<typeof readMigrationIdentity>>>(4);
+  const commercialFinance = value<any>(5)?.rows?.[0] ?? null;
   const counts = (rows: any[]) => Object.fromEntries(rows.map(row => [String(row.status), Number(row.count)]));
   const region = typeof process.env.DATABASE_REGION === 'string' && /^[a-zA-Z0-9-]{2,32}$/.test(process.env.DATABASE_REGION)
     ? process.env.DATABASE_REGION
@@ -735,11 +744,17 @@ adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_re
     database: { healthy: databaseOk, region, identity: getDeploymentIdentity().database, migrations },
     frontend: { revision: typeof _req.query.frontendRevision === 'string' && /^[a-f0-9]{40}$/i.test(_req.query.frontendRevision) ? _req.query.frontendRevision.toLowerCase() : null, source: 'client-reported; verify against the provider deployment' },
     commercial: getCommercialSafety(),
+    commercialFinance: commercialFinance ? {
+      mode: 'MOCK_CANDIDATE_ONLY', transactionCount: Number(commercialFinance.transaction_count),
+      pendingCount: Number(commercialFinance.pending_count), reviewCount: Number(commercialFinance.review_count),
+      providerAnomalyCount: Number(commercialFinance.provider_anomaly_count),
+      ledgerBalanced: commercialFinance.total_minor === '0' && Number(commercialFinance.unbalanced_count) === 0,
+    } : null,
     competitions: { instances: counts(instanceRows), activeCount: Number(counts(instanceRows).ACTIVE ?? 0) },
     authority: { sessions: counts(authorityRows), activeSessionCount: Number(counts(authorityRows).ACTIVE ?? 0), recentAdmissions: telemetry.admissions.slice(0, 12), recentReconnects: telemetry.reconnects.slice(0, 12), recentErrors: telemetry.authorityErrors.slice(0, 12), telemetryLifetime: 'Current server process only; cleared on restart.' },
     accounting: accounting ? { discrepancyMinor: accounting.discrepancyMinor, reconciled: accounting.systemReconciled } : null,
     databaseRegionStatus: region ? 'configured' : 'not configured',
-    sourceErrors: [...results.map((result, index) => result.status === 'rejected' ? ['database','competition counts','authority counts','accounting reconciliation','migration metadata'][index] : null).filter(Boolean), ...(migrations?.status !== 'match' ? ['migration identity'] : [])],
+    sourceErrors: [...results.map((result, index) => result.status === 'rejected' ? ['database','competition counts','authority counts','accounting reconciliation','migration metadata','commercial candidate accounting'][index] : null).filter(Boolean), ...(migrations?.status !== 'match' ? ['migration identity'] : [])],
   });
 });
 // Reverse Ledger Entry (Compensating Transaction)

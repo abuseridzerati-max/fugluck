@@ -1,4 +1,4 @@
-/** Phase 7A: configuration contracts only. There is no real-money adapter or rail. */
+/** Hosted money remains unavailable; the local commercial candidate is simulation-only. */
 export const COMMERCIAL_SWITCHES = {
   money: 'REAL_MONEY_ENABLED',
   deposits: 'REAL_MONEY_DEPOSITS_ENABLED',

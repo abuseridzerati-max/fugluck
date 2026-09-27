@@ -1,0 +1,286 @@
+{
+  "date": "2026-09-27",
+  "scope": "local Phase 7A regression plus undeployed mock-only commercial candidate",
+  "branch": "codex/phase-7b-commercial-candidate",
+  "deployedStagingRevision": "542c594c1891784c7dd90efa458cb0f05e8fc9ec",
+  "candidateMigration": "0012_commercial_financial_core",
+  "candidateDeployedToStaging": false,
+  "testDatabase": "guarded disposable Neon; commercial cases in a temporary isolated schema",
+  "method": "All scripts executed serially with exit code 0. Unchanged-script assertion counts use the prior baseline table; changed-script counts were checked against this run output.",
+  "scriptsExecuted": 43,
+  "totalPassed": 1661,
+  "totalFailed": 0,
+  "scripts": [
+    {
+      "file": "migration-schema-parity-check.ts",
+      "passed": 329,
+      "failed": 0,
+      "durationMs": 52925
+    },
+    {
+      "file": "auth-account-lifecycle-check.ts",
+      "passed": 41,
+      "failed": 0,
+      "durationMs": 22928
+    },
+    {
+      "file": "legal-policy-help-check.ts",
+      "passed": 86,
+      "failed": 0,
+      "durationMs": 13728
+    },
+    {
+      "file": "i18n-check.ts",
+      "passed": 65,
+      "failed": 0,
+      "durationMs": 543
+    },
+    {
+      "file": "wallet-friends-check.ts",
+      "passed": 48,
+      "failed": 0,
+      "durationMs": 3421
+    },
+    {
+      "file": "financial-reconnection-check.ts",
+      "passed": 17,
+      "failed": 0,
+      "durationMs": 5788
+    },
+    {
+      "file": "matchmaking-check.ts",
+      "passed": 65,
+      "failed": 0,
+      "durationMs": 15940
+    },
+    {
+      "file": "determinism-check.ts",
+      "passed": 12,
+      "failed": 0,
+      "durationMs": 1039
+    },
+    {
+      "file": "score-validation-check.ts",
+      "passed": 12,
+      "failed": 0,
+      "durationMs": 1664
+    },
+    {
+      "file": "canvas-render-check.ts",
+      "passed": 21,
+      "failed": 0,
+      "durationMs": 1230
+    },
+    {
+      "file": "rate-limit-check.ts",
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 467
+    },
+    {
+      "file": "sql-injection-check.ts",
+      "passed": 19,
+      "failed": 0,
+      "durationMs": 983
+    },
+    {
+      "file": "input-validation-check.ts",
+      "passed": 20,
+      "failed": 0,
+      "durationMs": 1485
+    },
+    {
+      "file": "xss-audit-check.ts",
+      "passed": 17,
+      "failed": 0,
+      "durationMs": 483
+    },
+    {
+      "file": "password-security-check.ts",
+      "passed": 13,
+      "failed": 0,
+      "durationMs": 1674
+    },
+    {
+      "file": "admin-security-check.ts",
+      "passed": 8,
+      "failed": 0,
+      "durationMs": 729
+    },
+    {
+      "file": "admin-console-check.ts",
+      "passed": 49,
+      "failed": 0,
+      "durationMs": 2829
+    },
+    {
+      "file": "admin-reset-recovery-check.ts",
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 19965
+    },
+    {
+      "file": "seed-admin-check.ts",
+      "passed": 7,
+      "failed": 0,
+      "durationMs": 17665
+    },
+    {
+      "file": "cors-audit-check.ts",
+      "passed": 20,
+      "failed": 0,
+      "durationMs": 468
+    },
+    {
+      "file": "registration-verification-check.ts",
+      "passed": 9,
+      "failed": 0,
+      "durationMs": 507
+    },
+    {
+      "file": "owner-admin-lockout-check.ts",
+      "passed": 10,
+      "failed": 0,
+      "durationMs": 16890
+    },
+    {
+      "file": "request-logging-audit-check.ts",
+      "passed": 12,
+      "failed": 0,
+      "durationMs": 493
+    },
+    {
+      "file": "password-policy-check.ts",
+      "passed": 18,
+      "failed": 0,
+      "durationMs": 515
+    },
+    {
+      "file": "file-upload-audit-check.ts",
+      "passed": 4,
+      "failed": 0,
+      "durationMs": 510
+    },
+    {
+      "file": "wallet-settlement-concurrency-check.ts",
+      "passed": 16,
+      "failed": 0,
+      "durationMs": 51043
+    },
+    {
+      "file": "wallet-settlement-integrity-check.ts",
+      "passed": 24,
+      "failed": 0,
+      "durationMs": 48603
+    },
+    {
+      "file": "match-lifecycle-durability-check.ts",
+      "passed": 26,
+      "failed": 0,
+      "durationMs": 44991
+    },
+    {
+      "file": "staging-readiness-check.ts",
+      "passed": 40,
+      "failed": 0,
+      "durationMs": 809
+    },
+    {
+      "file": "competition-phase1-domain-check.ts",
+      "passed": 41,
+      "failed": 0,
+      "durationMs": 489
+    },
+    {
+      "file": "competition-phase2-accounting-check.ts",
+      "passed": 54,
+      "failed": 0,
+      "durationMs": 76271
+    },
+    {
+      "file": "competition-phase3-lifecycle-check.ts",
+      "passed": 45,
+      "failed": 0,
+      "durationMs": 218331
+    },
+    {
+      "file": "competition-phase4-ui-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "durationMs": 26011
+    },
+    {
+      "file": "competition-phase5-admin-check.ts",
+      "passed": 42,
+      "failed": 0,
+      "durationMs": 75161
+    },
+    {
+      "file": "competition-authority-check.ts",
+      "passed": 65,
+      "failed": 0,
+      "durationMs": 232958
+    },
+    {
+      "file": "competition-admin-http-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "durationMs": 56238
+    },
+    {
+      "file": "competition-authority-latency-check.ts",
+      "passed": 26,
+      "failed": 0,
+      "durationMs": 35865
+    },
+    {
+      "file": "authority-presentation-check.ts",
+      "passed": 24,
+      "failed": 0,
+      "durationMs": 509
+    },
+    {
+      "file": "environment-safety-check.ts",
+      "passed": 72,
+      "failed": 0,
+      "durationMs": 5417
+    },
+    {
+      "file": "atomic-wager-lifecycle-check.ts",
+      "passed": 38,
+      "failed": 0,
+      "durationMs": 63093
+    },
+    {
+      "file": "commercial-financial-check.ts",
+      "passed": 76,
+      "failed": 0,
+      "durationMs": 231790
+    },
+    {
+      "file": "cyber-hopper-authority-check.ts",
+      "passed": 42,
+      "failed": 0,
+      "durationMs": 125651
+    },
+    {
+      "file": "test-database-safety-check.ts",
+      "passed": 18,
+      "failed": 0,
+      "durationMs": 448
+    }
+  ],
+  "builds": {
+    "typecheckAndClientBuild": "pass",
+    "serverBuild": "pass",
+    "drizzleKitCheck": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "dependencyAudit": {
+    "critical": 0,
+    "high": 0,
+    "moderate": 4,
+    "low": 0,
+    "runtimeFindings": 0
+  }
+}

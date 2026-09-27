@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-27",
+  "verdict": "PHASE_7A_NOT_PASS",
+  "reason": "Unchanged Vercel Production frontend still embeds the staging API origin",
+  "staging": {
+    "backend": {
+      "serviceId": "srv-da2c50c9v7es73db3dkg",
+      "latestLiveDeployId": "dep-dasen7t9fdbs73d4aj8g",
+      "revision": "542c594c1891784c7dd90efa458cb0f05e8fc9ec",
+      "appEnvironment": "staging",
+      "databaseProject": "gzfcucvxfzzjzjtgkwpd",
+      "databaseRegion": "eu-central-1",
+      "routingFingerprint": "6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926",
+      "databaseReadiness": "connected",
+      "migrationReadiness": "match",
+      "deployedMigrationCount": 12,
+      "deployedMigrationHead": "0011_terminal_participant_status",
+      "realMoneyEnabled": false,
+      "depositsAllowed": false,
+      "withdrawalsAllowed": false,
+      "competitionsAllowed": false
+    },
+    "frontend": {
+      "vercelDeploymentId": "Cd1TVmXmunanBSSaPnbMKtSgUkom",
+      "revision": "542c594c1891784c7dd90efa458cb0f05e8fc9ec",
+      "appEnvironment": "staging",
+      "apiOrigin": "https://api-staging.fugluck.com"
+    },
+    "credentialRotation": {
+      "newCredential": "not read or logged; live readiness after redeploy proves working connection",
+      "oldLocalCredential": "rejected by CA-verified read-only connection",
+      "oldCredentialPostgresCode": "28P01"
+    },
+    "catalog": {
+      "coldSixSecondAttempt": "TaskCanceledException after 6100 ms",
+      "wakeRetry": "HTTP 200, four templates, 11179 ms after a 15-second wait",
+      "warmRequest": "HTTP 200, four templates, 296 ms",
+      "classification": "Render Free cold-start infrastructure limitation; retry recovery verified"
+    },
+    "edgeTls": {
+      "frontendPolicyErrors": "None",
+      "frontendCertificateValidUntilUtc": "2026-11-16T18:37:05Z",
+      "backendPolicyErrors": "None",
+      "backendCertificateValidUntilUtc": "2026-11-16T22:35:57Z"
+    },
+    "cors": "staging origin HTTP 204 with scoped allow-origin and credentials; unapproved origin has no allow-origin",
+    "logoutCookie": "host-only; HttpOnly; Secure; SameSite=Lax"
+  },
+  "productionFrontend": {
+    "deploymentId": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+    "revision": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+    "asset": "/assets/index-BMOhywaz.js",
+    "embedsStagingApi": true,
+    "modifiedByThisRun": false
+  },
+  "postRotationBaselineTests": {
+    "scriptsExecuted": 42,
+    "firstRunFailures": ["competition-authority-check.ts: lease-uncertain fixture timeout on slow disposable Neon database"],
+    "isolatedRerun": "competition-authority-check.ts: 65 PASS, 0 FAIL",
+    "databaseTarget": "guarded disposable Neon test database",
+    "laterCompleteCandidateRun": "43 scripts, 1661 PASS, 0 FAIL; see phase7a-commercial-candidate-20260927.json"
+  },
+  "localCandidate": {
+    "migration": "0012_commercial_financial_core",
+    "stagingApplied": false,
+    "hostedActivation": false,
+    "provider": "mock-only"
+  }
+}

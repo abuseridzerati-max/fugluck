@@ -11,7 +11,7 @@ export type MoneyAmount = {
 };
 
 export function createMoney(amountMinor: number, currency: ISO4217Currency = "GEL"): MoneyAmount {
-  if (!Number.isInteger(amountMinor) || amountMinor < 0) {
+  if (!Number.isSafeInteger(amountMinor) || amountMinor < 0) {
     throw new Error(`Invalid monetary minor amount: ${amountMinor}. Must be a non-negative integer.`);
   }
   if (currency !== "GEL" && currency !== "USD" && currency !== "EUR") {
@@ -21,7 +21,7 @@ export function createMoney(amountMinor: number, currency: ISO4217Currency = "GE
 }
 
 export function formatMoneyDisplay(money: MoneyAmount): string {
-  if (!Number.isInteger(money.amountMinor) || money.amountMinor < 0) {
+  if (!Number.isSafeInteger(money.amountMinor) || money.amountMinor < 0) {
     throw new Error(`Invalid monetary minor amount: ${money.amountMinor}. Must be a non-negative integer.`);
   }
   const major = (money.amountMinor / 100).toFixed(2);

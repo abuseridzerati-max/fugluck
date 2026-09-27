@@ -358,6 +358,7 @@ export type AdminOperationsData = {
   }
   frontend: { revision: string | null }
   commercial?: { moneyEnabled: boolean; deposits: { allowed: boolean }; withdrawals: { allowed: boolean }; competitions: { allowed: boolean } }
+  commercialFinance?: { mode: 'MOCK_CANDIDATE_ONLY'; transactionCount: number; pendingCount: number; reviewCount: number; providerAnomalyCount: number; ledgerBalanced: boolean } | null
   competitions: { instances: Record<string, number>; activeCount: number }
   authority: {
     sessions: Record<string, number>
