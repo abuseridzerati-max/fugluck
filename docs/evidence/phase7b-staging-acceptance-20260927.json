@@ -1,0 +1,529 @@
+{
+  "auditDate": "2026-09-27",
+  "scope": "Controlled feature-branch/staging-only commercial mock rollout; no Production or real-money activation",
+  "branch": "codex/phase-7b-commercial-candidate",
+  "approvedSha": "39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3",
+  "backup": {
+    "result": "PASS",
+    "sourceProject": "gzfcucvxfzzjzjtgkwpd",
+    "sourceTlsVerifyFull": true,
+    "createdAt": "2026-09-27T12:15:38.843Z",
+    "toolVersion": "pg_dump (PostgreSQL) 17.11",
+    "bytes": 423312,
+    "sha256": "211e7fd301b3db80ad7bf6715983c0a754966b1e0edb3b0e69d311543831991f",
+    "protectedIgnoredLocalArtifact": true
+  },
+  "restore": {
+    "result": "PASS",
+    "sourceTableCount": 24,
+    "comparisons": {
+      "rows": true,
+      "columns": true,
+      "constraints": true,
+      "indexes": true,
+      "migrations": true,
+      "reconciliation": true
+    },
+    "sourceReconciliation": {
+      "ledger_sum": "0",
+      "escrow": "0",
+      "reserved": "0",
+      "open_instances": 0,
+      "unbalanced_transactions": 0
+    },
+    "restoredReconciliation": {
+      "ledger_sum": "0",
+      "escrow": "0",
+      "reserved": "0",
+      "open_instances": 0,
+      "unbalanced_transactions": 0
+    },
+    "isolatedServerStopped": true
+  },
+  "migration": {
+    "result": "PASS",
+    "count": 13,
+    "head": "0012_commercial_financial_core",
+    "headHash": "9c6a81859792a4ba5ab6ce0f51eb34b195e4fa8573962d9dee55c5e2ea92fed5",
+    "commercialTables": [
+      "commercial_accounts",
+      "commercial_operation_events",
+      "commercial_operations",
+      "commercial_postings",
+      "commercial_provider_events",
+      "commercial_risk_cases",
+      "commercial_risk_events",
+      "commercial_transactions"
+    ],
+    "triggers": 15,
+    "legacy": {
+      "ledger_sum": "0",
+      "open_instances": 0
+    }
+  },
+  "deployment": {
+    "renderService": "srv-da2c50c9v7es73db3dkg",
+    "renderDeploy": "dep-dasgkhjncjis73a2g9r0",
+    "renderStatus": "Live",
+    "vercelPreview": "98vgUR1jHJgJQhPhcMdV7kjyht8m",
+    "vercelStatus": "Ready",
+    "stagingDomainBranch": "codex/phase-7b-commercial-candidate",
+    "stagingDatabaseProject": "gzfcucvxfzzjzjtgkwpd",
+    "providerFinancialSecretsAbsent": true,
+    "publicChecks": {
+      "checkedAt": "2026-09-27T12:34:57.734Z",
+      "frontend": {
+        "status": 200,
+        "environment": "staging",
+        "revision": "39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3",
+        "apiOrigin": "https://api-staging.fugluck.com",
+        "commercialMoneyEnabled": false
+      },
+      "backend": {
+        "healthStatus": 200,
+        "readyStatus": 200,
+        "revision": "39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3",
+        "environment": "staging",
+        "runtimeMode": "production",
+        "database": "connected",
+        "migrations": "match",
+        "commercial": {
+          "implementation": "unavailable",
+          "moneyEnabled": false,
+          "deposits": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "withdrawals": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "competitions": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          }
+        }
+      },
+      "catalogs": [
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 104
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 92
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 132
+        }
+      ],
+      "cors": {
+        "allowed": {
+          "status": 204,
+          "origin": "https://staging.fugluck.com",
+          "credentials": "true"
+        },
+        "rejected": {
+          "status": 500,
+          "origin": null
+        }
+      },
+      "cookie": {
+        "logoutStatus": 204,
+        "hostOnly": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSiteLax": true
+      },
+      "admin": {
+        "unauthenticatedStatus": 401
+      },
+      "tls": {
+        "frontend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 18:37:05 2026 GMT"
+        },
+        "backend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 22:35:57 2026 GMT"
+        }
+      }
+    }
+  },
+  "mockFinancialStagingDb": {
+    "scope": "Local candidate code against isolated temporary schemas within verified Frankfurt staging PostgreSQL; no hosted financial mutation route",
+    "spaceBlaster": {
+      "passed": 76,
+      "failed": 0
+    },
+    "cyberHopper": {
+      "passed": 76,
+      "failed": 0
+    },
+    "authorityDecision": "fixture seeded; no new live physical Level 3 match",
+    "postTestPublicCommercialRows": 0,
+    "postTestFixtureSchemas": 0,
+    "postTestSandboxLedgerSum": "0"
+  },
+  "coldCatalog": {
+    "idleBeforeVisit": "more than 15 minutes",
+    "url": "https://staging.fugluck.com/competitions",
+    "firstVisit": "client catalog timeout; Retry displayed",
+    "retry": "one Retry recovered catalog",
+    "templatesRendered": 4,
+    "spaceBlaster": 3,
+    "cyberHopper": 1,
+    "coldFirstPass": false,
+    "retryRecoveryPass": true,
+    "limitation": "Current staging cold-first catalog availability is not proven",
+    "observationWindowUtc": "2026-09-27 12:54–12:56 UTC"
+  },
+  "security": {
+    "dependencyRoot": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 4,
+      "low": 0
+    },
+    "dependencyRuntime": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 0,
+      "low": 0
+    },
+    "serverTypecheck": "PASS",
+    "clientTypecheckAndBuild": "PASS",
+    "serverBuild": "PASS",
+    "drizzleSchemaCheck": "PASS"
+  },
+  "regression": {
+    "scriptsExecuted": 43,
+    "totalPassed": 1661,
+    "totalFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 3317
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 18234
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 2005
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 53262
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 20950
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1904
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1659
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 188827
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 47220
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 209468
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 35426
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1228
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 65716
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 184573
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 22928
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 65511
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1285
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 112703
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1366
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 72,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 3669
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1429
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 4763
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1116
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1631
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 13854
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 37001
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 13751
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 329,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 46430
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 15994
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1424
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1947
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1396
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1483
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1284
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1633
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 15437
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1372
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1832
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1285
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 2658
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 45932
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 42369
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 1357
+      }
+    ]
+  },
+  "production": {
+    "vercelDeploy": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+    "mainSha": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+    "servedAssetSha256": "394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59",
+    "assetStillReferencesStaging": true,
+    "observedDeploymentAndAssetUnchanged": true,
+    "noProductionActionsTaken": true
+  },
+  "blockers": [
+    "Production frontend still references staging",
+    "No hosted commercial financial mutation route or live game-to-commercial-settlement test",
+    "Authenticated Admin Operations requires legitimate admin sign-in",
+    "Production resources, provider/legal approvals and disaster-recovery contract absent"
+  ]
+}
