@@ -11,6 +11,7 @@ import { competitionsRouter } from "./routes/competitions";
 import { friendsRouter } from "./routes/friends";
 import { matchesRouter } from "./routes/matches";
 import { walletRouter } from "./routes/wallet";
+import { stagingMockCommercialRouter } from './routes/stagingMockCommercial';
 
 import { corsOptions } from "./config/cors";
 import { enforceStartupConfig } from "./config/startup";
@@ -57,6 +58,7 @@ app.use("/api/wallet", walletRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/matches", matchesRouter);
 app.use("/api/competitions", competitionsRouter);
+app.use('/api/staging-mock-commercial', stagingMockCommercialRouter);
 app.use("/api/admin", adminRouter);
 
 app.get("/health", (_req, res) => {

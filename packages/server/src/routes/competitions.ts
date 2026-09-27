@@ -8,6 +8,10 @@ import { instanceService } from "../competitions/instanceService";
 import { templateService } from "../competitions/templateService";
 import { lifecycleEngine } from "../competitions/lifecycleEngine";
 import { SandboxAccountingAdapter } from "../accounting/sandboxAdapter";
+import { accountingForTemplate } from '../accounting/stagingMockRouter';
+import { CommercialLedger } from '../accounting/commercialLedger';
+import { pool } from '../db/client';
+import { allowedMockUser, isMockTemplate, validMockAuthorization } from '../config/stagingMockCommercial';
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 
 const competitionsLimiter = createRateLimiterMiddleware({
@@ -39,7 +43,8 @@ competitionsRouter.get("/templates", async (req, res) => {
     // listTemplates() to inspect disabled and legacy rows.
     const templates = await templateService.listEnabledTemplates();
     const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
-    res.json({ templates: gameId ? templates.filter((template) => template.gameId === gameId) : templates });
+    const publicTemplates=templates.filter(template=>!isMockTemplate(template.id));
+    res.json({ templates: gameId ? publicTemplates.filter((template) => template.gameId === gameId) : publicTemplates });
   } catch (err: any) {
     console.error("[competitions] Failed to load public competition templates:", err);
     res.status(500).json({ error: "Competition catalog is temporarily unavailable. Please retry." });
@@ -102,13 +107,19 @@ competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, asy
       res.status(403).json({ error: 'Participant ownership required.' });
       return;
     }
-    const adapter = new SandboxAccountingAdapter();
+    if(isMockTemplate(instance.templateId) && (!allowedMockUser(req.userId!) ||
+      !validMockAuthorization(req.header('x-staging-mock-authorization')))) {
+      res.status(403).json({error:'Staging mock authorization required.'});return;
+    }
+    const adapter = accountingForTemplate(instance.templateId);
     const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED");
     if (!cancelRes.cancelled) {
       res.status(400).json({ error: "Competition cannot be cancelled; it may already be locked or started." });
       return;
     }
-    const balance = await adapter.getUserBalance(req.userId!);
+    const balance = isMockTemplate(instance.templateId)
+      ? {availableMinor:await new CommercialLedger(pool).balance({kind:'USER_AVAILABLE',userId:req.userId!},'GEL')}
+      : await new SandboxAccountingAdapter().getUserBalance(req.userId!);
     res.json({
       success: true,
       instanceId,

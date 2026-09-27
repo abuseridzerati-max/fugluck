@@ -213,7 +213,8 @@ async function runPhase4UIChecks(): Promise<void> {
     );
     check(
       "8c. Server applies selected game filter and reports failed fixture seeding as an API error",
-      competitionRouteSrc.includes("templates.filter((template) => template.gameId === gameId)") &&
+      competitionRouteSrc.includes("publicTemplates.filter((template) => template.gameId === gameId)") &&
+        competitionRouteSrc.includes("!isMockTemplate(template.id)") &&
         competitionRouteSrc.includes("Competition catalog is temporarily unavailable. Please retry") &&
         templateServiceSrc.includes("Failed to seed default competition templates"),
     );

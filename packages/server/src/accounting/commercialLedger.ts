@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import type { ISO4217Currency } from '@fugluck/shared';
 import { isHostedEnvironment } from '../config/deploymentIdentity';
+import { stagingMockMode } from '../config/stagingMockCommercial';
 
 export type CommercialAccountKind =
   | 'USER_AVAILABLE' | 'USER_ENTRY_RESERVED' | 'USER_WITHDRAWAL_RESERVED'
@@ -50,7 +51,7 @@ function eventHash(event: FinancialEvent): string {
 
 export class CommercialLedger {
   constructor(private readonly pool: Pool) {
-    if (isHostedEnvironment()) throw new Error('Commercial ledger is simulation-only; hosted activation is not accepted');
+    if (isHostedEnvironment() && !stagingMockMode()) throw new Error('Commercial ledger is unavailable outside the authorized staging mock mode');
   }
 
   /** One transaction, one idempotency key, at least two balanced immutable postings. */

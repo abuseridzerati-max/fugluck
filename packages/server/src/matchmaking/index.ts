@@ -30,7 +30,8 @@ import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketDat
 import { checkSocketRateLimit } from "../utils/rateLimiter";
 import { socketIoCorsOptions } from "../config/cors";
 import { instanceService, lifecycleEngine } from "../competitions";
-import { SandboxAccountingAdapter } from "../accounting";
+import { accountingForTemplate } from '../accounting/stagingMockRouter';
+import { allowedMockUser, isMockTemplate, stagingMockAction, validMockAuthorization } from '../config/stagingMockCommercial';
 
 export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
 
@@ -130,6 +131,10 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
 
       try {
         await startup;
+        if(isMockTemplate(templateId) && (!stagingMockAction('competitions') ||
+          !allowedMockUser(socket.data.userId) ||
+          !validMockAuthorization((socket.handshake.auth as {stagingMockAuthorization?:unknown})?.stagingMockAuthorization)))
+          throw new Error('Staging mock competition authorization required.');
         const template = await templateService.getTemplate(templateId);
         const isSupportedAuthorityGame =
           (template?.gameId === 'space-blaster' && template.rulesVersion === AUTHORITY_VERSION) ||
@@ -140,7 +145,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         const joinResult = await instanceService.joinCompetitionQueue(
           templateId,
           socket.data.userId,
-          new SandboxAccountingAdapter(),
+          accountingForTemplate(templateId),
           { isGuest: Boolean(socket.data.isGuest) },
         );
 
@@ -179,9 +184,12 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       try {
         const owned = await instanceService.getInstance(payload.instanceId);
         if (socket.data.isGuest || !owned?.participants.some(p => p.userId === socket.data.userId)) throw new Error('Participant ownership required.');
+        if(isMockTemplate(owned.templateId) && (!allowedMockUser(socket.data.userId) ||
+          !validMockAuthorization((socket.handshake.auth as {stagingMockAuthorization?:unknown})?.stagingMockAuthorization)))
+          throw new Error('Staging mock competition authorization required.');
         const cancelResult = await lifecycleEngine.cancelUnfilledInstance(
           payload.instanceId,
-          new SandboxAccountingAdapter(),
+          accountingForTemplate(owned.templateId),
           "User cancelled entry before match lock",
         );
 

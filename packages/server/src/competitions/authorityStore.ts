@@ -3,14 +3,14 @@ import { performance } from 'node:perf_hooks';
 import { Pool, type PoolClient } from 'pg';
 import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, createMoney, type ISO4217Currency, type AuthorityOutcome } from '@fugluck/shared';
 import { pool } from '../db/client';
-import { SandboxAccountingAdapter } from '../accounting/sandboxAdapter';
+import { StagingMockAccountingRouter } from '../accounting/stagingMockRouter';
 import type { CompetitionAccountingPort } from '../accounting/port';
 
 export const nonceHash = (nonce: string) => createHash('sha256').update(nonce).digest('hex');
 export class AuthorityStore {
   // A warm, bounded channel keeps lease heartbeats independent of accounting pool traffic.
   private leasePool=new Pool({...pool.options,max:1,connectionTimeoutMillis:5000,statement_timeout:1000});
-  constructor(readonly ownerId = randomUUID(), readonly accounting: CompetitionAccountingPort = new SandboxAccountingAdapter()) {}
+  constructor(readonly ownerId = randomUUID(), readonly accounting: CompetitionAccountingPort = new StagingMockAccountingRouter()) {}
   async transaction<T>(fn: (c: PoolClient) => Promise<T>, stage = 'authority') : Promise<T> {
     const requested=performance.now();
     const c = await pool.connect();

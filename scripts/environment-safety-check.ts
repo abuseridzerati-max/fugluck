@@ -6,12 +6,33 @@ import { commercialGate, getCommercialSafety, COMMERCIAL_SWITCHES } from '../pac
 import { compareMigrationIdentity, expectedMigrations, enforceMigrationIdentity, readMigrationIdentity } from '../packages/server/src/config/migrationIdentity';
 import { getClientDeployment } from '../packages/client/deploymentConfig';
 import { getHealthPayload } from '../packages/server/src/config/health';
+import { allowedMockUser, stagingMockAction, stagingMockMode, validMockAuthorization, validateStagingMockConfig } from '../packages/server/src/config/stagingMockCommercial';
 
 let passed = 0, failed = 0;
 function check(label: string, condition: unknown) { console.log(`${condition ? 'PASS' : 'FAIL'} ${label}`); condition ? passed++ : failed++; }
 const dbUrl = 'postgresql://postgres.gzfcucvxfzzjzjtgkwpd:fixture-secret@aws-1-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require';
 const fingerprint = getDatabaseTargetIdentity(dbUrl)!.fingerprint;
 const base = { APP_ENV: 'staging', NODE_ENV: 'production', DATABASE_URL: dbUrl, DATABASE_TARGET_FINGERPRINT: fingerprint, DATABASE_REGION: 'eu-central-1', JWT_SECRET: 'x'.repeat(64), GIT_SHA: 'a'.repeat(40), CLIENT_ORIGIN: 'https://staging.fugluck.com', ALLOWED_ORIGINS: 'https://staging.fugluck.com', APP_URL: 'https://staging.fugluck.com' };
+const mockIds='11111111-1111-4111-8111-111111111111,22222222-2222-4222-8222-222222222222';
+const mockEnv={...base,RENDER_SERVICE_ID:'srv-da2c50c9v7es73db3dkg',STAGING_MOCK_COMMERCIAL_ENABLED:'true',
+  STAGING_MOCK_DEPOSITS_ENABLED:'true',STAGING_MOCK_COMPETITIONS_ENABLED:'true',STAGING_MOCK_WITHDRAWALS_ENABLED:'true',
+  STAGING_MOCK_AUTHORIZATION:'a'.repeat(64),STAGING_MOCK_PROVIDER_KEY:'b'.repeat(64),STAGING_MOCK_USER_IDS:mockIds};
+check('Explicit registered staging mock mode is accepted',validateStartupConfig(mockEnv).valid&&stagingMockMode(mockEnv));
+check('Staging mock mode cannot activate in production',!stagingMockMode({...mockEnv,APP_ENV:'production'})&&
+  !validateStartupConfig({...mockEnv,APP_ENV:'production'}).valid);
+check('Staging mock mode cannot use another service',!stagingMockMode({...mockEnv,RENDER_SERVICE_ID:'other'})&&
+  validateStagingMockConfig({...mockEnv,RENDER_SERVICE_ID:'other'}).length>0);
+check('Mock actions require the independent master gate',!stagingMockAction('deposits',{...mockEnv,STAGING_MOCK_COMMERCIAL_ENABLED:'false'}));
+check('Mock action kill switches are independent',!stagingMockAction('deposits',{...mockEnv,STAGING_MOCK_DEPOSITS_ENABLED:'false'})&&
+  stagingMockAction('competitions',{...mockEnv,STAGING_MOCK_DEPOSITS_ENABLED:'false'}));
+check('Staging mock requires two separate secrets',!validateStartupConfig({...mockEnv,STAGING_MOCK_PROVIDER_KEY:undefined}).valid&&
+  !validateStartupConfig({...mockEnv,STAGING_MOCK_AUTHORIZATION:undefined}).valid);
+check('Staging mock requires two synthetic allowlisted users',!validateStartupConfig({...mockEnv,STAGING_MOCK_USER_IDS:'any'}).valid&&
+  allowedMockUser(mockIds.split(',')[0],mockEnv)&&!allowedMockUser('outsider',mockEnv));
+check('Operator authorization compares exact secret',validMockAuthorization('a'.repeat(64),mockEnv)&&
+  !validMockAuthorization('c'.repeat(64),mockEnv));
+check('Real-money flags stay forbidden with mock mode',!validateStartupConfig({...mockEnv,REAL_MONEY_ENABLED:'true'}).valid&&
+  !stagingMockMode({...mockEnv,REAL_MONEY_ENABLED:'true'}));
 const invalid = (change: NodeJS.ProcessEnv) => !validateStartupConfig({ ...base, ...change }).valid;
 check('Valid explicit staging configuration is accepted', validateStartupConfig(base).valid);
 check('APP_ENV cannot be omitted', invalid({ APP_ENV: undefined }));

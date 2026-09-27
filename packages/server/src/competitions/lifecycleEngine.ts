@@ -7,7 +7,7 @@ import { randomInt, randomUUID } from "node:crypto";
 import { asc, eq, or } from "drizzle-orm";
 import type { ISO4217Currency } from "@fugluck/shared";
 import type { CompetitionAccountingPort } from "../accounting/port";
-import { SandboxAccountingAdapter } from "../accounting/sandboxAdapter";
+import { StagingMockAccountingRouter } from "../accounting/stagingMockRouter";
 import { db, pool } from "../db/client";
 import {
   competitionInstancePrizes,
@@ -54,7 +54,7 @@ export class CompetitionLifecycleError extends Error {
 }
 
 export class CompetitionLifecycleEngine {
-  constructor(private readonly defaultAccountingPort: CompetitionAccountingPort = new SandboxAccountingAdapter()) {}
+  constructor(private readonly defaultAccountingPort: CompetitionAccountingPort = new StagingMockAccountingRouter()) {}
 
   /**
    * Activates a LOCKED competition instance:

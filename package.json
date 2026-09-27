@@ -24,6 +24,7 @@
     "test:competition-admin-http": "tsx scripts/competition-admin-http-check.ts",
     "test:authority-presentation": "tsx scripts/authority-presentation-check.ts",
     "test:environment-safety": "tsx scripts/environment-safety-check.ts",
+    "test:staging-mock-commercial": "tsx scripts/staging-mock-commercial-check.ts",
     "audit:environment": "tsx scripts/environment-baseline.ts"
   },
   "workspaces": [
