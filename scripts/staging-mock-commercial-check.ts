@@ -25,8 +25,9 @@ async function main(){
   check('registered staging mock config passes startup validation',validateStartupConfig(env).valid);
   check('real-money switches stay false while mock actions run',stagingMockMode(env)&&
     ['REAL_MONEY_ENABLED','REAL_MONEY_DEPOSITS_ENABLED','REAL_MONEY_WITHDRAWALS_ENABLED','REAL_MONEY_COMPETITIONS_ENABLED'].every(k=>env[k]==='false'));
-  check('only two fixed game templates qualify',isMockTemplate(MOCK_TEMPLATES['space-blaster'])&&
+  check('legacy mock game templates remain isolated',isMockTemplate(MOCK_TEMPLATES['space-blaster'])&&
     isMockTemplate(MOCK_TEMPLATES['cyber-hopper'])&&!isMockTemplate('tmpl_standard_space_blaster'));
+  check('mock tournament names require an exact private namespace',isMockTemplate('tmpl_staging_mock_ko_'+'a'.repeat(32))&&!isMockTemplate('tmpl_ko_'+'a'.repeat(32))&&!isMockTemplate('tmpl_staging_mock_ko_arbitrary')&&!isMockTemplate('tmpl_staging_mock_ko_'+'a'.repeat(33)));
   check('independent deposit kill switch preserves competition action',!stagingMockAction('deposits',{...env,STAGING_MOCK_DEPOSITS_ENABLED:'false'})&&
     stagingMockAction('competitions',{...env,STAGING_MOCK_DEPOSITS_ENABLED:'false'}));
   check('production app environment refuses mock activation',!stagingMockMode({...env,APP_ENV:'production'}));

@@ -22,7 +22,7 @@ export function stagingMockMode(env: NodeJS.ProcessEnv = process.env): boolean {
     target?.expectedStagingTarget===true && target.fingerprint===env.DATABASE_TARGET_FINGERPRINT && target.tlsPermitted &&
     /^[a-f0-9]{64}$/i.test(env.STAGING_MOCK_AUTHORIZATION??'') &&
     /^[a-f0-9]{64}$/i.test(env.STAGING_MOCK_PROVIDER_KEY??'') &&
-    ids.length===2 && new Set(ids).size===2 && ids.every(id=>/^[a-f0-9-]{36}$/i.test(id)) &&
+    [2,4,8,16].includes(ids.length) && new Set(ids).size===ids.length && ids.every(id=>/^[a-f0-9-]{36}$/i.test(id)) &&
     env[switches.enabled] === 'true' && Object.values({money:env.REAL_MONEY_ENABLED,
       deposits:env.REAL_MONEY_DEPOSITS_ENABLED,withdrawals:env.REAL_MONEY_WITHDRAWALS_ENABLED,
       competitions:env.REAL_MONEY_COMPETITIONS_ENABLED}).every(value=>value===undefined||value==='false');
@@ -34,7 +34,7 @@ export function stagingMockAction(action:StagingMockAction, env:NodeJS.ProcessEn
 }
 
 export function isMockTemplate(id:string):boolean {
-  return Object.values(MOCK_TEMPLATES).includes(id as typeof MOCK_TEMPLATES[keyof typeof MOCK_TEMPLATES]);
+  return Object.values(MOCK_TEMPLATES).includes(id as typeof MOCK_TEMPLATES[keyof typeof MOCK_TEMPLATES])||/^tmpl_staging_mock_ko_[a-f0-9]{32}$/.test(id);
 }
 
 export function allowedMockUser(userId:string,env:NodeJS.ProcessEnv=process.env):boolean {
@@ -61,7 +61,7 @@ export function validateStagingMockConfig(env:NodeJS.ProcessEnv):string[] {
   if(!/^[a-f0-9]{64}$/i.test(env.STAGING_MOCK_AUTHORIZATION??'')) errors.push('Staging mock authorization must be a 256-bit hex secret.');
   if(!/^[a-f0-9]{64}$/i.test(env.STAGING_MOCK_PROVIDER_KEY??'')) errors.push('Staging mock provider key must be a separate 256-bit hex secret.');
   const ids=(env.STAGING_MOCK_USER_IDS??'').split(',').filter(Boolean);
-  if(ids.length!==2||new Set(ids).size!==2||ids.some(id=>!/^[a-f0-9-]{36}$/i.test(id)))
-    errors.push('Staging mock mode requires exactly two distinct synthetic user IDs.');
+  if(![2,4,8,16].includes(ids.length)||new Set(ids).size!==ids.length||ids.some(id=>!/^[a-f0-9-]{36}$/i.test(id)))
+    errors.push('Staging mock mode requires 2, 4, 8, or 16 distinct synthetic user IDs.');
   return errors;
 }

@@ -6,7 +6,7 @@ import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerT
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch } from '../lib/api'
 import { competitionErrorKey, moneyLabel, type PlayerCompetition } from '../lib/competitionPresentation'
-import { CompetitionPlayerSlots, CompetitionTerms, CompetitionRules, CompetitionResult } from '../components/CompetitionUI'
+import { CompetitionPlayerSlots, CompetitionTerms, CompetitionRules, CompetitionResult, CompetitionBracket } from '../components/CompetitionUI'
 import '../components/competition.css'
 import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { AuthorityPresentation } from './authorityPresentation'
@@ -56,9 +56,10 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         currentStatus=result.instance.status
         setInstance(result.instance)
         setCanCancel(!binding.current&&result.instance.status==='PENDING_ENTRANTS'&&result.instance.participants.some(p=>p.userId===userId.current))
-        if(['SETTLED','CANCELLED','VOIDED'].includes(result.instance.status)) {
+        if(['SETTLED','CANCELLED','VOIDED'].includes(result.instance.status)||result.instance.tournament?.playerState==='ELIMINATED') {
           complete=true;setTerminal(true);setActive(false);setCanCancel(false);sessionStorage.removeItem(storageKey);neutral();reportComplete()
         } else if(!binding.current&&result.instance.status==='PENDING_ENTRANTS')say('waiting')
+        else if(!binding.current&&result.instance.tournament){pendingRecovery=true;say('knockout.nextRound')}
       } catch { if(!disposed&&!complete&&!binding.current)say('waitingRetry') }
       finally {window.clearTimeout(timeout);reading=null}
     }
@@ -85,7 +86,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       void readInstance()
       if(p.code==='CONTROLLER_REPLACED') {socket.disconnect();setActive(false)}
     })
-    socket.on('authority:session',p=>{binding.current=p;setHasSession(true);waitingInstance.current=null;setCanCancel(false);instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;presentation=new AuthorityPresentation();socket.emit('authority:ready',p);void readInstance()})
+    socket.on('authority:session',p=>{if(complete)return;binding.current=p;pendingRecovery=false;setHasSession(true);waitingInstance.current=null;setCanCancel(false);instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;snapshot=null;neutral();presentation=new AuthorityPresentation();socket.emit('authority:ready',p);void readInstance()})
     socket.on('authority:snapshot',p=>{
       if(complete)return
       const received=performance.now()
@@ -106,6 +107,10 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       say(p.state==='COMPLETED'?'runComplete':playing?gameId==='cyber-hopper'?'hopperControls':'blasterControls':p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
+      if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
+      if(p.status==='ROUND_COMPLETE'){
+        binding.current=null;snapshot=null;presentation=new AuthorityPresentation();setHasSession(false);setActive(false);neutral();pendingRecovery=true;say('knockout.nextRound');void readInstance();return
+      }
       complete=true;sessionStorage.removeItem(storageKey);setTerminal(true);setActive(false);setCanCancel(false);neutral()
       reportComplete()
       if(p.yourScore!==undefined){renderer.score=p.yourScore;const ctx=canvas.current?.getContext('2d');if(ctx)renderer.render(ctx)}
@@ -216,8 +221,10 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const preparing=hasSession&&!active&&!terminal&&(status==='starting'||status==='countdown')
   return <section className="competition-play competition-ux" lang={i18n.resolvedLanguage}>
     <header className="competition-play-header"><h2>{gameTitle}</h2>{!terminal&&<span className="competition-test-label">{t('competition.testLabel')}</span>}</header>
+    {instance?.tournament?.currentMatch&&!terminal&&<p>{t(`competition.knockout.rounds.${instance.tournament.currentMatch.roundName}`)}</p>}
     {terminal?<CompetitionResult instance={instance} userId={user?.id} onRetry={()=>refreshInstance.current?.()}/>:!hasSession?<div className="competition-waiting">
       <h2>{t(instance?'competition.youreIn':'competition.connecting')}</h2>
+      {instance?.tournament?.cycle&&<p>{t('competition.knockout.starts',{date:new Intl.DateTimeFormat(i18n.resolvedLanguage,{timeZone:instance.tournament.cycle.timezone,weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(instance.tournament.cycle.startsAt)),zone:instance.tournament.cycle.timezone})}</p>}
       {terms&&<CompetitionTerms entryMinor={terms.entryFeeMinor} prizeMinor={terms.prizes?.find(p=>p.placement===1)?.amountMinor??0} currency={terms.currency}/>}
       {instance&&<CompetitionPlayerSlots joined={instance.currentParticipants} capacity={instance.participantCapacity}/>}
       <p role="status">{t(`competition.${status==='waiting'&&instance?'waitingPlayers':status}`,{count:instance?Math.max(0,instance.participantCapacity-instance.currentParticipants):0,amount:moneyLabel(terms?.entryFeeMinor??0,terms?.currency)})}</p>
@@ -255,6 +262,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     </div>}
     {active&&<button type="button" className="ac-btn ac-btn--secondary" onClick={()=>{if(binding.current)connection.current?.emit('authority:forfeit',binding.current)}}>{t('competition.forfeit')}</button>}
     <button type="button" className="ac-btn ac-btn--ghost" onClick={onExit}>{t(active?'competition.leaveActive':'competition.backToCompetitions')}</button>
+    {instance?.tournament&&<CompetitionBracket instance={instance} userId={user?.id}/>}
     {template&&<CompetitionRules template={template}/>}
     {diagnosticEnabled&&<details><summary>Staging connection diagnostics</summary>
       <p>Optional 24-second automated control check: alternating steering and held firing through the normal socket controls. Results remain server-owned.</p>

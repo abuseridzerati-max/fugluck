@@ -54,3 +54,4 @@ export type {
 export { GAME_COMPETITION_ELIGIBILITY_REGISTRY, GAME_COMPETITION_CERTIFICATIONS, isTestGelCompetitionCertified } from "./competitions";
 
 export * from './authority';
+export * from './tournaments';

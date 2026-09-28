@@ -35,6 +35,16 @@ check('Real-money flags stay forbidden with mock mode',!validateStartupConfig({.
   !stagingMockMode({...mockEnv,REAL_MONEY_ENABLED:'true'}));
 const invalid = (change: NodeJS.ProcessEnv) => !validateStartupConfig({ ...base, ...change }).valid;
 check('Valid explicit staging configuration is accepted', validateStartupConfig(base).valid);
+const knockout={...base,ENABLE_KNOCKOUT_TOURNAMENTS:'true',ENABLE_COMPETITION_AUTHORITY:'true'};
+check('Knockout staging requires certified authority',validateStartupConfig(knockout).valid&&!validateStartupConfig({...knockout,ENABLE_COMPETITION_AUTHORITY:'false'}).valid);
+check('Knockout cannot activate in production',!validateStartupConfig({...knockout,APP_ENV:'production'}).valid);
+check('Knockout cannot activate any real-money switch',Object.values(COMMERCIAL_SWITCHES).every(key=>!validateStartupConfig({...knockout,[key]:'true'}).valid));
+for(const count of [4,8,16]){
+  const ids=Array.from({length:count},(_,i)=>(i+1).toString(16).padStart(8,'0')+'-1111-4111-8111-111111111111').join(',');
+  check(count+' synthetic mock participants are allowed only in staging',validateStartupConfig({...mockEnv,STAGING_MOCK_USER_IDS:ids}).valid&&!stagingMockMode({...mockEnv,STAGING_MOCK_USER_IDS:ids,APP_ENV:'production'}));
+}
+check('Duplicate synthetic allowlist members are refused',!validateStartupConfig({...mockEnv,STAGING_MOCK_USER_IDS:Array(4).fill(mockIds.split(',')[0]).join(',')}).valid);
+check('Unsupported three-player allowlist is refused',!validateStartupConfig({...mockEnv,STAGING_MOCK_USER_IDS:mockIds+',33333333-3333-4333-8333-333333333333'}).valid);
 check('APP_ENV cannot be omitted', invalid({ APP_ENV: undefined }));
 check('APP_ENV cannot be inferred from a production runtime', getDeploymentIdentity({ NODE_ENV: 'production' }).environment === 'unconfigured');
 check('Hosted service cannot downgrade runtime security', invalid({ NODE_ENV: 'development' }));

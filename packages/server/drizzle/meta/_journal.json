@@ -92,6 +92,13 @@
       "when": 1790300000000,
       "tag": "0012_commercial_financial_core",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790400000000,
+      "tag": "0013_knockout_tournaments",
+      "breakpoints": true
     }
   ]
 }

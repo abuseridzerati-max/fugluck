@@ -1,4 +1,8 @@
 import { AuthorityRuntime, type AuthorityOptions } from '../competitions/authorityRuntime';
+import { AuthorityStore } from '../competitions/authorityStore';
+import type { CompetitionAccountingPort } from '../accounting/port';
+import { TournamentService } from '../competitions/tournamentService';
+import { knockoutEnabled, readProduct } from '../competitions/tournamentPersistence';
 import { templateService } from '../competitions/templateService';
 import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from '@fugluck/shared';
 import type { Server as HttpServer } from "node:http";
@@ -38,7 +42,7 @@ export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvent
 // Sole entry point for this module: builds the Socket.IO server, wires
 // session auth and the queue/match event handlers, and returns it. Nothing
 // outside this file reaches into queue.ts/matches.ts directly.
-export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string; authorityOptions?: AuthorityOptions }): MatchmakingServer {
+export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string; authorityOptions?: AuthorityOptions; competitionAccounting?:CompetitionAccountingPort }): MatchmakingServer {
   // Trigger crash recovery for any uncompleted active matches from a prior server run
   const startup = recoverOrphanMatches().then(() => lifecycleEngine.recoverOrphanCompetitions());
 
@@ -47,7 +51,16 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
     maxHttpBufferSize: 1 * 1024 * 1024, // 1MB payload buffer limit protection
   });
 
-  const authority = new AuthorityRuntime(undefined, _opts?.authorityOptions);
+  // Internal composition seam; never populated from HTTP/socket payloads or environment switches.
+  const competitionAccounting=(id:string)=>_opts?.competitionAccounting??accountingForTemplate(id);
+  const authority = new AuthorityRuntime(new AuthorityStore(undefined,_opts?.competitionAccounting), _opts?.authorityOptions);
+  // Stop simulation before Socket.IO disconnects players. Otherwise a maintenance
+  // shutdown can look like BOTH_DISCONNECTED and wrongly void a recoverable round.
+  const closeSockets = io.close.bind(io);
+  io.close = (...args: Parameters<typeof io.close>) => {
+    authority.close();
+    return closeSockets(...args);
+  };
   io.engine.on('close', () => authority.close());
   httpServer.once('close', () => authority.close());
   io.use(socketAuthMiddleware);
@@ -139,13 +152,14 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         const isSupportedAuthorityGame =
           (template?.gameId === 'space-blaster' && template.rulesVersion === AUTHORITY_VERSION) ||
           (template?.gameId === 'cyber-hopper' && template.rulesVersion === CYBER_HOPPER_AUTHORITY_VERSION);
-        if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2) {
+        const tournament=template?.format==='TOURNAMENT_BRACKET'&&knockoutEnabled()?await readProduct(templateId):null;
+        if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || (!tournament&&(template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2))) {
           throw new Error('Competition gameplay is blocked pending live authority acceptance.');
         }
-        const joinResult = await instanceService.joinCompetitionQueue(
+        const joinResult = tournament?await new TournamentService(competitionAccounting(templateId)).join(templateId,socket.data.userId):await instanceService.joinCompetitionQueue(
           templateId,
           socket.data.userId,
-          accountingForTemplate(templateId),
+          competitionAccounting(templateId),
           { isGuest: Boolean(socket.data.isGuest) },
         );
 
@@ -158,7 +172,8 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         });
 
         // If instance is locked (2/2 for head to head), activate match
-        if (joinResult.isLocked) {
+        if(tournament)await new TournamentService(competitionAccounting(templateId)).process(joinResult.instanceId);
+        else if (joinResult.isLocked) {
           await authority.create(joinResult.instanceId);
         }
       } catch (err: any) {
@@ -189,8 +204,9 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
           throw new Error('Staging mock competition authorization required.');
         const cancelResult = await lifecycleEngine.cancelUnfilledInstance(
           payload.instanceId,
-          accountingForTemplate(owned.templateId),
+          competitionAccounting(owned.templateId),
           "User cancelled entry before match lock",
+          socket.data.userId,
         );
 
         if (cancelResult.cancelled) {

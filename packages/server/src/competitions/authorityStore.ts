@@ -5,6 +5,7 @@ import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS,
 import { pool } from '../db/client';
 import { StagingMockAccountingRouter } from '../accounting/stagingMockRouter';
 import type { CompetitionAccountingPort } from '../accounting/port';
+import { TournamentService } from './tournamentService';
 
 export const nonceHash = (nonce: string) => createHash('sha256').update(nonce).digest('hex');
 export class AuthorityStore {
@@ -23,21 +24,27 @@ export class AuthorityStore {
     if (!r || (requireLease && (r.owner_id !== this.ownerId || !r.healthy || r.terminal_at))) throw Error('AUTHORITY_FENCED');
     return r;
   }
-  async create(instanceId: string, capTicks=AUTHORITY_CAP_TICKS, seed=randomInt(1,2147483647)) {
+  async create(instanceId: string, capTicks=AUTHORITY_CAP_TICKS, seed=randomInt(1,2147483647), bracketMatchId?:string) {
     if(!Number.isSafeInteger(seed)||seed<1||seed>=2147483647)throw Error('INVALID_SERVER_SEED');
     await this.leasePool.query('SELECT 1');
     return this.transaction(async c => {
       const inst = (await c.query('SELECT * FROM competition_instances WHERE id=$1 FOR UPDATE', [instanceId])).rows[0];
-      const existing = (await c.query('SELECT * FROM competition_authority_runs WHERE instance_id=$1', [instanceId])).rows[0];
-      if (existing) throw Error('AUTHORITY_ALREADY_EXISTS');
-      if (!inst || inst.status !== 'LOCKED' || !['space-blaster', 'cyber-hopper'].includes(inst.game_id) || inst.participant_capacity !== 2) throw Error('AUTHORITY_UNSUPPORTED');
-      const players = (await c.query('SELECT user_id FROM competition_participants WHERE instance_id=$1 ORDER BY seat_index', [instanceId])).rows;
+      let bracket:any, readyMs=30000;
+      if(bracketMatchId){
+        const root=(await c.query(`SELECT t.*,cy.starts_at FROM competition_tournaments t LEFT JOIN competition_special_cycles cy ON cy.id=t.cycle_id WHERE t.instance_id=$1 FOR UPDATE OF t`,[instanceId])).rows[0];
+        bracket=(await c.query('SELECT * FROM competition_bracket_matches WHERE id=$1 AND instance_id=$2 FOR UPDATE',[bracketMatchId,instanceId])).rows[0];
+        if(!root||root.state!=='PLAYING'||!bracket||bracket.state!=='READY'||!bracket.player1_id||!bracket.player2_id||root.starts_at&&Date.now()<new Date(root.starts_at).getTime())throw Error('BRACKET_NOT_READY');
+        readyMs=root.terms.config.readyMs;
+      }else if((await c.query('SELECT 1 FROM competition_authority_runs WHERE instance_id=$1',[instanceId])).rowCount)throw Error('AUTHORITY_ALREADY_EXISTS');
+      if (!inst || !['LOCKED',...(bracket?['ACTIVE']:[])].includes(inst.status) || !['space-blaster', 'cyber-hopper'].includes(inst.game_id) || (!bracket&&inst.participant_capacity !== 2)) throw Error('AUTHORITY_UNSUPPORTED');
+      const players = bracket?[{user_id:bracket.player1_id},{user_id:bracket.player2_id}]:(await c.query('SELECT user_id FROM competition_participants WHERE instance_id=$1 ORDER BY seat_index', [instanceId])).rows;
       if (players.length !== 2) throw Error('AUTHORITY_CAPACITY');
       const id = randomUUID(), matchId = `comp_match_${randomUUID()}`;
       const version = inst.game_id === 'cyber-hopper' ? CYBER_HOPPER_AUTHORITY_VERSION : AUTHORITY_VERSION;
       await c.query(`INSERT INTO matches_history(id,game_id,player1_id,player2_id,competition_instance_id,currency,stake,seed,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'ACTIVE')`, [matchId,inst.game_id,players[0].user_id,players[1].user_id,instanceId,inst.currency,inst.entry_fee_minor,seed]);
-      await c.query('UPDATE competition_instances SET match_id=$2 WHERE id=$1', [instanceId,matchId]);
-      await c.query(`INSERT INTO competition_authority_runs(id,instance_id,match_id,game_id,version,seed,owner_id,lease_until,cap_ticks) VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp()+interval '2 seconds',$8)`, [id,instanceId,matchId,inst.game_id,version,seed,this.ownerId,capTicks]);
+      if(!bracket)await c.query('UPDATE competition_instances SET match_id=$2 WHERE id=$1', [instanceId,matchId]);
+      else await c.query("UPDATE competition_bracket_matches SET state='ACTIVE',attempt=attempt+1,ready_deadline=clock_timestamp()+$2*interval '1 millisecond' WHERE id=$1",[bracketMatchId,readyMs]);
+      await c.query(`INSERT INTO competition_authority_runs(id,instance_id,match_id,game_id,version,seed,owner_id,lease_until,cap_ticks,bracket_match_id,bracket_attempt) VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp()+interval '2 seconds',$8,$9,$10)`, [id,instanceId,matchId,inst.game_id,version,seed,this.ownerId,capTicks,bracketMatchId??null,bracket?bracket.attempt+1:null]);
       const sessions = [];
       for (const p of players) {
         const sessionId = randomUUID();
@@ -45,7 +52,7 @@ export class AuthorityStore {
         sessions.push({ sessionId, userId: p.user_id as string });
       }
       await c.query(`UPDATE competition_authority_runs SET lease_until=clock_timestamp()+interval '2 seconds' WHERE id=$1`, [id]);
-      return { id, instanceId, matchId, gameId: inst.game_id as string, version, seed, sessions };
+      return { id, instanceId, matchId, gameId: inst.game_id as string, version, seed, sessions, bracketMatchId, readyMs };
     });
   }
   async renew(ids: string[]) {
@@ -72,26 +79,39 @@ export class AuthorityStore {
     if(r.cap_ticks!==capTicks)throw Error('RULES_MISMATCH');
     const sessions = (await pool.query('SELECT * FROM competition_authority_sessions WHERE run_id=$1', [id])).rows;
     if (sessions.length !== 2 || sessions.some(s => s.status !== 'READY')) throw Error('NOT_READY');
-    for (const s of sessions) {
+    for (const s of r.bracket_match_id?[]:sessions) {
       const cap = await this.accounting.captureEntry({competitionInstanceId:r.instance_id,userId:s.user_id,idempotencyKey:`authority_capture:${s.id}`});
       if (!cap.success) throw Error('CAPTURE_FAILED');
     }
       const t = (await pool.query(`WITH run AS (
-        UPDATE competition_authority_runs SET status='ACTIVE',start_at=clock_timestamp()+$2*interval '1 millisecond',deadline=clock_timestamp()+($2+$3)*interval '1 millisecond' WHERE id=$1 AND owner_id=$5 AND status='CREATED' AND lease_until>clock_timestamp() AND terminal_at IS NULL RETURNING id,start_at,deadline
+        UPDATE competition_authority_runs SET status='ACTIVE',start_at=clock_timestamp()+$2*interval '1 millisecond',deadline=clock_timestamp()+($2+$3)*interval '1 millisecond' WHERE id=$1 AND owner_id=$5 AND status='CREATED' AND lease_until>clock_timestamp() AND terminal_at IS NULL AND (bracket_match_id IS NULL OR EXISTS(SELECT 1 FROM competition_tournaments WHERE instance_id=$4 AND state='PLAYING')) RETURNING id,start_at,deadline
       ), sessions AS (UPDATE competition_authority_sessions SET status='ACTIVE' WHERE run_id IN (SELECT id FROM run) AND status='READY'),
       instance AS (UPDATE competition_instances SET status='ACTIVE',started_at=(SELECT start_at FROM run) WHERE id=$4 AND EXISTS(SELECT 1 FROM run)),
-      participants AS (UPDATE competition_participants SET status='PLAYING' WHERE instance_id=$4 AND EXISTS(SELECT 1 FROM run))
+      participants AS (UPDATE competition_participants SET status='PLAYING',score=NULL WHERE instance_id=$4 AND user_id IN (SELECT user_id FROM competition_authority_sessions WHERE run_id=$1) AND EXISTS(SELECT 1 FROM run))
       SELECT start_at,deadline FROM run`, [id,countdown,capTicks/60*1000,r.instance_id,this.ownerId])).rows[0];
       if(!t)throw Error('ILLEGAL_START');
       return { startAt: new Date(t.start_at).getTime(), deadline: new Date(t.deadline).getTime() };
   }
   async result(id: string, sessionId: string, score: number, ticks: number, reason: string) {
-      const result = await pool.query(`WITH leased AS (SELECT id,instance_id FROM competition_authority_runs WHERE id=$2 AND owner_id=$7 AND lease_until>clock_timestamp() AND terminal_at IS NULL FOR UPDATE), session AS (
+      const result = await pool.query(`WITH leased AS (SELECT id,instance_id,bracket_match_id FROM competition_authority_runs WHERE id=$2 AND owner_id=$7 AND lease_until>clock_timestamp() AND terminal_at IS NULL FOR UPDATE), session AS (
         UPDATE competition_authority_sessions SET status=CASE WHEN $6='FORFEIT' THEN 'FORFEITED' ELSE 'COMPLETED' END,terminal_at=clock_timestamp() WHERE id=$1 AND run_id IN (SELECT id FROM leased) AND status='ACTIVE' RETURNING id,user_id
       ), receipt AS (INSERT INTO competition_authority_results(id,session_id,score,ticks,reason) SELECT $3,id,$4,$5,$6 FROM session RETURNING id),
       participant AS (UPDATE competition_participants SET status=CASE WHEN $6='FORFEIT' THEN 'FORFEITED' ELSE 'SUBMITTED' END,score=$4 WHERE instance_id=(SELECT instance_id FROM leased) AND user_id=(SELECT user_id FROM session)),
-      instance AS (UPDATE competition_instances SET status='VERIFYING' WHERE id=(SELECT instance_id FROM leased) AND status='ACTIVE') SELECT id FROM receipt`, [sessionId,id,randomUUID(),score,ticks,reason,this.ownerId]);
+      instance AS (UPDATE competition_instances SET status='VERIFYING' WHERE id=(SELECT instance_id FROM leased WHERE bracket_match_id IS NULL) AND status='ACTIVE') SELECT id FROM receipt`, [sessionId,id,randomUUID(),score,ticks,reason,this.ownerId]);
       if(!result.rowCount)throw Error('ILLEGAL_RESULT');
+  }
+  /** A ready deadline is server evidence, never a submitted player score. Zero ticks cannot qualify. */
+  async noShow(id:string,absentUserId:string) {
+    await this.transaction(async c=>{
+      const r=await this.lock(c,id);
+      const b=(await c.query('SELECT ready_deadline<=clock_timestamp() expired FROM competition_bracket_matches WHERE id=$1',[r.bracket_match_id])).rows[0];
+      const sessions=(await c.query('SELECT * FROM competition_authority_sessions WHERE run_id=$1',[id])).rows;
+      if(!b?.expired||r.status!=='CREATED'||sessions.length!==2||!sessions.some(s=>s.user_id===absentUserId&&s.status==='CREATED')||!sessions.some(s=>s.user_id!==absentUserId&&s.status==='READY'))throw Error('INVALID_NO_SHOW');
+      for(const s of sessions){
+        await c.query('INSERT INTO competition_authority_results(id,session_id,score,ticks,reason) VALUES($1,$2,0,0,$3) ON CONFLICT(session_id) DO NOTHING',[randomUUID(),s.id,s.user_id===absentUserId?'FORFEIT':'OPPONENT_NO_SHOW']);
+        await c.query('UPDATE competition_authority_sessions SET status=$2,terminal_at=clock_timestamp() WHERE id=$1',[s.id,s.user_id===absentUserId?'FORFEITED':'COMPLETED']);
+      }
+    });
   }
   async decide(id: string, reason: string, forfeitUser?: string, systemVoid = false, recovery = false, administrativeVoid = false) {
     const began=performance.now();
@@ -120,8 +140,9 @@ export class AuthorityStore {
   }
   async apply(id: string): Promise<AuthorityOutcome> {
     const lookupStarted=performance.now();
-    const d = (await pool.query('SELECT d.*,r.instance_id,r.match_id FROM competition_authority_decisions d JOIN competition_authority_runs r ON r.id=d.run_id WHERE run_id=$1', [id])).rows[0];
+    const d = (await pool.query('SELECT d.*,r.instance_id,r.match_id,r.bracket_match_id FROM competition_authority_decisions d JOIN competition_authority_runs r ON r.id=d.run_id WHERE run_id=$1', [id])).rows[0];
     if (!d) throw Error('DECISION_PENDING');
+    if(d.bracket_match_id)return new TournamentService(this.accounting).applyDecision(id);
     const status = d.winner_user_id ? 'SETTLED':'VOIDED';
     if (!d.applied_at) {
       const began=performance.now();
@@ -163,7 +184,7 @@ export class AuthorityStore {
     }
   }
   async resumeOutcome(instanceId:string,userId:string) {
-    const r=(await pool.query(`SELECT r.id,v.score FROM competition_authority_runs r JOIN competition_authority_sessions s ON s.run_id=r.id JOIN competition_authority_decisions d ON d.run_id=r.id LEFT JOIN competition_authority_results v ON v.session_id=s.id WHERE r.instance_id=$1 AND s.user_id=$2`,[instanceId,userId])).rows[0];
-    return r?{...await this.apply(r.id),yourScore:r.score??undefined}:null;
+    const r=(await pool.query(`SELECT r.id,r.match_id,v.score FROM competition_authority_runs r JOIN competition_authority_sessions s ON s.run_id=r.id JOIN competition_authority_decisions d ON d.run_id=r.id LEFT JOIN competition_authority_results v ON v.session_id=s.id WHERE r.instance_id=$1 AND s.user_id=$2 ORDER BY r.created_at DESC LIMIT 1`,[instanceId,userId])).rows[0];
+    return r?{...await this.apply(r.id),matchId:r.match_id,yourScore:r.score??undefined}:null;
   }
 }

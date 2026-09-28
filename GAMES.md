@@ -14,6 +14,8 @@ Current status is based on the source tree and checks named below. **BUILT** mea
 
 ## Verification
 
+- **BUILT locally, hosted rollout PLANNED:** Space Blaster and Cyber Hopper also support the gated reusable 2/4/8/16-player knockout product. Each round runs the same certified Level 3 game engine and version above; the tournament domain controls seeding, advancement and the final frozen prize. `tournament-rules-check`, `tournament-domain-check`, `tournament-recovery-check` and genuine four-player `tournament-authority-check` verify the integration. [The restructure report](docs/COMPETITION_RESTRUCTURE_REPORT.md) records final counts and rollout limits. Sandbox/mock tournaments never earn real qualification. Game engines, the canonical viewport and casual Coins/practice behavior were not changed.
+
 - Game IDs and runtime capability map: `packages/shared/src/gameModule.ts`, `packages/shared/src/competitions.ts`, and `packages/client/src/registry.ts`.
 - TEST GEL eligibility is defined by `GAME_COMPETITION_CERTIFICATIONS` and enforced by server template, instance, and join services. The game certification and input-validation checks verify certified, not-certified, and out-of-scope cases.
 - Practice/casual engine determinism is checked by `scripts/determinism-check.ts`; finite canvas rendering is checked by `scripts/canvas-render-check.ts`.

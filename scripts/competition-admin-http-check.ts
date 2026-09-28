@@ -66,7 +66,7 @@ async function main(){
   const operationsChecks = { status: opsResponse!.status === 200, backend: ops.backend?.healthy === true, database: ops.database?.healthy === true, revision: ops.frontend?.revision === frontendRevision, authority: Boolean(ops.authority?.sessions), competitions: Boolean(ops.competitions?.instances), accounting: ops.accounting?.reconciled === true, secretAbsent: !JSON.stringify(ops).includes('DATABASE_URL') };
   if (!Object.values(operationsChecks).every(Boolean)) console.error('Operations contract checks:', JSON.stringify(operationsChecks));
   check('owner can read operations health without secrets',Object.values(operationsChecks).every(Boolean));
-  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0012_commercial_financial_core'&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
+  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0013_knockout_tournaments'&&ops.database.migrations.expectedCount===14&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
   check('operations exposes a password-independent database fingerprint',/^[a-f0-9]{64}$/.test(ops.database?.identity?.fingerprint));
   check('operations shows all real-money operations disabled',ops.commercial?.moneyEnabled===false&&ops.commercial.deposits.allowed===false&&ops.commercial.withdrawals.allowed===false&&ops.commercial.competitions.allowed===false);
   check('operations reports mock commercial ledger without enabling money',ops.commercialFinance?.mode==='MOCK_CANDIDATE_ONLY'&&ops.commercialFinance.ledgerBalanced===true&&ops.commercial?.moneyEnabled===false);

@@ -37,9 +37,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0010_competition_authority.sql",
     "0011_terminal_participant_status.sql",
     "0012_commercial_financial_core.sql",
+    "0013_knockout_tournaments.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0012) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0013) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -108,6 +109,8 @@ async function verifySchema(pool: Pool): Promise<void> {
     "commercial_risk_cases",
     "commercial_risk_events",
     'competition_authority_runs', 'competition_authority_sessions', 'competition_authority_results', 'competition_authority_decisions',
+    'competition_product_configs','competition_special_cycles','competition_products','competition_tournaments','competition_bracket_matches',
+    'competition_entry_intents','competition_qualification_events','competition_qualification_tracks','competition_qualification_tickets',
   ];
 
   const tableRes = await pool.query(

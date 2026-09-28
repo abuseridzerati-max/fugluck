@@ -1,0 +1,1258 @@
+{
+  "checkedAt": "2026-09-28T17:10:41.884Z",
+  "scope": "LOCAL_ONLY",
+  "branch": "codex/competition-restructure",
+  "baseRevision": "4ae3fc3290bfbb1b367c57caeb01bd68140ead03",
+  "verifiedAncestors": [
+    "4ae3fc3290bfbb1b367c57caeb01bd68140ead03",
+    "f6a32600479d71bc5857944e7220f3674a4fc4b5",
+    "ea3a8af34594e35af9a0c0f2f8a2dd0f78dc3c3f",
+    "b87036ce9394af61714e0a8920944e4a6fe247f4",
+    "39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3",
+    "91ca7533c8d4d3e78bc090031d69097731b03d8b"
+  ],
+  "baseline": {
+    "scripts": 45,
+    "assertions": 1775
+  },
+  "regression": {
+    "scriptsExecuted": 49,
+    "totalPassed": 2172,
+    "totalFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49,
+        "durationMs": 2684
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 18630
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8,
+        "durationMs": 1747
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38,
+        "durationMs": 58116
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 21932
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 1627
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21,
+        "durationMs": 2003
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76,
+        "durationMs": 204723
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44,
+        "durationMs": 55400
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 265803
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 35592
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 3255
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54,
+        "durationMs": 84321
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 45,
+        "durationMs": 4222,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44,
+        "durationMs": 3501,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 85272
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 110,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 110,
+        "durationMs": 30762
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 3209
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 138652
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 3671
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 89,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 89,
+        "durationMs": 10700
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4,
+        "durationMs": 3498
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 9808
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 3356
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 4169
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86,
+        "durationMs": 17256
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 46568
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 21696
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 338,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 338,
+        "durationMs": 62699
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10,
+        "durationMs": 21615
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 3988
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13,
+        "durationMs": 5182
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 3620
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9,
+        "durationMs": 3738
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 3611
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 5058
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7,
+        "durationMs": 19809
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19,
+        "durationMs": 3816
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13,
+        "durationMs": 3764
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40,
+        "durationMs": 3398
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 3287
+      },
+      {
+        "file": "tournament-authority-check.ts",
+        "passed": 33,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 33,
+        "durationMs": 322217
+      },
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 97,
+        "durationMs": 5028,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 52,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 52,
+        "durationMs": 6108,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "tournament-rules-check.ts",
+        "passed": 180,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 180,
+        "durationMs": 1311
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48,
+        "durationMs": 2237
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16,
+        "durationMs": 52325
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 50475
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 1028
+      }
+    ]
+  },
+  "firstPass": {
+    "checkedAt": "2026-09-28T17:07:10.2945245Z",
+    "scriptsExecuted": 49,
+    "totalPassed": 2022,
+    "totalFailed": 11,
+    "exitFailures": 7,
+    "countMismatches": 7,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49,
+        "durationMs": 2684
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 18630
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8,
+        "durationMs": 1747
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38,
+        "durationMs": 58116
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 21932
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 1627
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21,
+        "durationMs": 2003
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76,
+        "durationMs": 204723
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 43,
+        "failed": 1,
+        "exitCode": 1,
+        "expectedPassed": 44,
+        "durationMs": 53076
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 248682
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 35592
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 3255
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54,
+        "durationMs": 84321
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 0,
+        "failed": 0,
+        "exitCode": 1,
+        "expectedPassed": 45,
+        "durationMs": 8863
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 3,
+        "failed": 1,
+        "exitCode": 1,
+        "expectedPassed": 44,
+        "durationMs": 10048
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 85272
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 109,
+        "failed": 1,
+        "exitCode": 1,
+        "expectedPassed": 110,
+        "durationMs": 40324
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 3209
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 147680
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 3671
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 89,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 89,
+        "durationMs": 10700
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4,
+        "durationMs": 3498
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 9808
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 3356
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 4169
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86,
+        "durationMs": 17256
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 46568
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 21696
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 338,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 338,
+        "durationMs": 62699
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10,
+        "durationMs": 21615
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 3988
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13,
+        "durationMs": 5182
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 3620
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9,
+        "durationMs": 3738
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 3611
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 5058
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7,
+        "durationMs": 19809
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19,
+        "durationMs": 3816
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13,
+        "durationMs": 3764
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40,
+        "durationMs": 3398
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 3287
+      },
+      {
+        "file": "tournament-authority-check.ts",
+        "passed": 25,
+        "failed": 8,
+        "exitCode": 1,
+        "expectedPassed": 31,
+        "durationMs": 278673
+      },
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 52,
+        "failed": 0,
+        "exitCode": 1,
+        "expectedPassed": 97,
+        "durationMs": 561458
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 43,
+        "failed": 0,
+        "exitCode": 1,
+        "expectedPassed": 52,
+        "durationMs": 256294
+      },
+      {
+        "file": "tournament-rules-check.ts",
+        "passed": 180,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 180,
+        "durationMs": 1311
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48,
+        "durationMs": 2237
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16,
+        "durationMs": 52325
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 50475
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 1028
+      }
+    ]
+  },
+  "reruns": [
+    {
+      "file": "competition-phase3-lifecycle-check.ts",
+      "passed": 45,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 238855
+    },
+    {
+      "file": "competition-phase4-ui-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 46953
+    },
+    {
+      "file": "competition-admin-http-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 55400
+    },
+    {
+      "file": "competition-player-ux-check.ts",
+      "passed": 110,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 30762
+    },
+    {
+      "file": "tournament-authority-check.ts",
+      "passed": 33,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 322217
+    },
+    {
+      "file": "competition-authority-check.ts",
+      "passed": 65,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 265803
+    },
+    {
+      "file": "cyber-hopper-authority-check.ts",
+      "passed": 42,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 138652
+    },
+    {
+      "file": "tournament-domain-check.ts",
+      "passed": 97,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 5028,
+      "database": "local-postgresql-17-disposable"
+    },
+    {
+      "file": "tournament-recovery-check.ts",
+      "passed": 52,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 6108,
+      "database": "local-postgresql-17-disposable"
+    },
+    {
+      "file": "competition-phase3-lifecycle-check.ts",
+      "passed": 45,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 4222,
+      "database": "local-postgresql-17-disposable"
+    },
+    {
+      "file": "competition-phase4-ui-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "exitCode": 0,
+      "durationMs": 3501,
+      "database": "local-postgresql-17-disposable"
+    }
+  ],
+  "repairs": [
+    "Admin HTTP expectation updated from migration 0012/13 entries to 0013/14 entries.",
+    "Legacy Phase 3 cleanup collided with protected product foreign keys; Phase 3 and Phase 4 now use fresh disposable schemas. Phase 4 first-pass failure followed the partial legacy cleanup.",
+    "Player UX failure injection matched an obsolete SQL spelling; it now injects the database outage independently of SQL text.",
+    "Active-Final restart exposed Socket.IO disconnecting before authority stopped. The close boundary now stops simulation first, leaving a fenced attempt for durable recovery instead of an erroneous BOTH_DISCONNECTED void."
+  ],
+  "additionalAttempts": {
+    "initialLocalFixtures": [
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 5383,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 43,
+        "failed": 0,
+        "exitCode": 1,
+        "durationMs": 5159,
+        "database": "local-postgresql-17-disposable"
+      }
+    ],
+    "httpFixtureAttempt": [
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "durationMs": 5383,
+        "database": "local-postgresql-17-disposable"
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 44,
+        "failed": 4,
+        "exitCode": 1,
+        "durationMs": 7874,
+        "database": "local-postgresql-17-disposable"
+      }
+    ]
+  },
+  "testInfrastructure": {
+    "initial": "Guarded disposable Neon arcadeclash_atomic_test",
+    "finalDomainAndRecovery": "Fresh PostgreSQL 17.11 on 127.0.0.1:55439, fugluck_atomic_test, isolated schema per suite",
+    "interruption": "Domain first pass stopped at 52 passing checks after connection timeout and transient DNS failure; final local rerun passed all 97",
+    "httpFixtureRepairs": "Use usernames within 32 characters; preload both tsx module modes against the same isolated disposable schema before hosted-identity guard fixtures; no staging connection is opened"
+  },
+  "builds": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:server",
+      "exitCode": 0
+    }
+  ],
+  "drizzleCheck": {
+    "command": "npx drizzle-kit check",
+    "cwd": "packages/server",
+    "result": "PASS",
+    "connectedToDatabase": false
+  },
+  "diffCheck": "PASS",
+  "audits": {
+    "runtime": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "full": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 0,
+      "critical": 0,
+      "total": 4
+    }
+  },
+  "migration": {
+    "head": "0013_knockout_tournaments",
+    "entries": 14,
+    "lfSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+    "hostedApplied": false,
+    "parityAssertions": 338,
+    "newTables": 9
+  },
+  "genuineAuthority": {
+    "scope": "Four authenticated Socket.IO clients per game on loopback; unchanged game engines; signed mock-provider deposits; disposable isolated schemas",
+    "capTicks": 240,
+    "seedFactory": 127,
+    "externalMoney": false,
+    "directWinnerOrScoreWrites": false,
+    "runs": [
+      {
+        "game": "space-blaster",
+        "instanceId": "inst_801fd7b9-183d-4679-8d31-052a0f305e34",
+        "winnerUserId": "live_bracket_player_0",
+        "finalRunId": "613d6069-9db9-4f00-b24e-b65205faa96c",
+        "authorityRuns": [
+          {
+            "id": "76e6a40f-feae-4bc4-998d-0a5dd7edb895",
+            "kind": "WIN",
+            "bracketMatchId": "c5b9bf7f-2c9c-47ae-bb47-b34341eff1b3"
+          },
+          {
+            "id": "236963c8-b755-4388-bc0b-ed5bd2d41b2d",
+            "kind": "WIN",
+            "bracketMatchId": "b143c4c8-f27a-4864-afcb-e71c68374e06"
+          },
+          {
+            "id": "613d6069-9db9-4f00-b24e-b65205faa96c",
+            "kind": "WIN",
+            "bracketMatchId": "f242041b-6f0f-4388-9dc6-b500897763dc"
+          }
+        ],
+        "scores": [
+          {
+            "score": 6,
+            "ticks": 200,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 18,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 6,
+            "ticks": 200,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 18,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 6,
+            "ticks": 200,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 18,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          }
+        ],
+        "prizeMinor": 1800
+      },
+      {
+        "game": "cyber-hopper",
+        "instanceId": "inst_43bf57fc-a820-4345-8ee2-1ccdb543282d",
+        "winnerUserId": "live_bracket_player_0",
+        "finalRunId": "3345961e-897a-4c91-952f-a59a749d6c7c",
+        "authorityRuns": [
+          {
+            "id": "310c7a02-5827-48ed-aecd-0e2e95597fce",
+            "kind": "WIN",
+            "bracketMatchId": "d23fd81a-590e-49b7-8ea6-ac5a6559313a"
+          },
+          {
+            "id": "6b0aae1c-b2b9-4ae9-b795-05448423c860",
+            "kind": "WIN",
+            "bracketMatchId": "7a468417-2eaf-4efb-b315-8777ed631156"
+          },
+          {
+            "id": "8ce8d127-4ba5-4e52-b933-ca3381c75520",
+            "kind": "VOID",
+            "bracketMatchId": "aa7bb8ef-7b2d-49b4-a9e3-bd3936c18cb8"
+          },
+          {
+            "id": "3345961e-897a-4c91-952f-a59a749d6c7c",
+            "kind": "WIN",
+            "bracketMatchId": "aa7bb8ef-7b2d-49b4-a9e3-bd3936c18cb8"
+          }
+        ],
+        "scores": [
+          {
+            "score": 10,
+            "ticks": 158,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 0,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 10,
+            "ticks": 158,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 0,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 10,
+            "ticks": 158,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 0,
+            "ticks": 240,
+            "reason": "CAP_REACHED"
+          }
+        ],
+        "prizeMinor": 1440
+      }
+    ]
+  },
+  "browser": {
+    "scope": "Local Chromium; physical devices and hosted idle behavior not certified",
+    "englishRequestedWidths": [
+      320,
+      375,
+      390,
+      430,
+      768,
+      1024,
+      1440
+    ],
+    "englishLayouts": [
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 305,
+        "width": 305
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 360,
+        "width": 360
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 415,
+        "width": 415
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 753,
+        "width": 753
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 1009,
+        "width": 1009
+      },
+      {
+        "cards": 12,
+        "overflow": 0,
+        "scrollWidth": 1425,
+        "width": 1425
+      }
+    ],
+    "georgianWidths": [
+      320,
+      390
+    ],
+    "russianWidths": [
+      320,
+      1440
+    ],
+    "observations": [
+      "12 cards; 6 per game filter",
+      "16 occupancy icons wrap",
+      "Promo/GIFT locked for synthetic accounts",
+      "Compact four-player Join terms inspected then cancelled",
+      "No horizontal page/terms/slots overflow at inspected widths"
+    ],
+    "dateFormatting": "Numeric day/month and 24-hour time avoid unsupported-locale English weekday/day-period fallback",
+    "screenshot": "Temp/competition-restructure/tournament-desktop.png"
+  },
+  "hosted": {
+    "pushed": false,
+    "migrated": false,
+    "deployed": false,
+    "productionModified": false,
+    "mainMerged": false,
+    "historicalAcceptedRevision": "b87036ce9394af61714e0a8920944e4a6fe247f4",
+    "historicalRevisionRevalidated": false
+  },
+  "codeSha256Lf": {
+    "package.json": "0bcd1022164756f01e9da8c7615e4046e48a0edda75398505ea8003cbf4d4504",
+    "packages/client/src/components/CompetitionCatalog.tsx": "0a079459b0467554c5cbc623beaae733c7e911a086326039e6f81b48dcac69f7",
+    "packages/client/src/components/CompetitionUI.tsx": "df33081b9bcd32da833ede0b948d591463de66a49a35a6f1a1908c1433b32607",
+    "packages/client/src/components/MyCompetitions.tsx": "da555a0c3dfa13e329ad4edf67b5285a67b3402db507b9c18a13dc8727bb5499",
+    "packages/client/src/components/competition.css": "1c922fec2aec169419596ab1ad69de439dce08cbe41d3b298603b4f68ef53edc",
+    "packages/client/src/game-loader/AuthorityCompetition.tsx": "96beb7c2b37ab117a068ed2ae82b419f7ff202b3588f4cb1c3d927eb5455ceae",
+    "packages/client/src/lib/competitionPresentation.ts": "6807d559ae647b130b211e88b0833a77cd159ac3ecb6ec1eced485ce50cacac2",
+    "packages/client/src/locales/en.json": "3bcdedd397e772188e69d450484d4e9ac2da7163f0fef60b1eff0f1d0f3cce6e",
+    "packages/client/src/locales/ka.json": "646b0e0e75b33eec8e49444f9f5961513c08f28b1ace5b02cecac675cf218ee8",
+    "packages/client/src/locales/ru.json": "989f5f958f82cedcff31b5e102d5411a52eb592e9a79beb3057cf726dc5a597c",
+    "packages/server/.env.example": "2d7524d75ac2c8feeef83ff5dfb3175bf2659907c207befaccaf885a303a422f",
+    "packages/server/drizzle/0013_knockout_tournaments.sql": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+    "packages/server/drizzle/meta/_journal.json": "e3d5c6a0beb6b1edc1970bc9ef36d4a8e07f3b8d7d25d318179b3527be4f222e",
+    "packages/server/src/accounting/commercialAdapter.ts": "b83258f4401171f71d86fecf4ea10ce3fdd5ff9d14b093de9567017876578f54",
+    "packages/server/src/accounting/sandboxAdapter.ts": "8b44568cf594f30974ca4d06bfd293411a484e20f78c839f12a82db85e0670f3",
+    "packages/server/src/competitions/authorityRuntime.ts": "5bf345a894ed52200dceff481ce89a0e3ce6a29aea2ce7c648cbf406869bee9a",
+    "packages/server/src/competitions/authorityStore.ts": "71f054e1168ac122b6753adef4e05dcee775863bd836239c12c58973f5bd0443",
+    "packages/server/src/competitions/lifecycleEngine.ts": "8491ab0186106d5ae83b563ff8c5e3b2e870488cc96ac5ef4729e3d3043769a4",
+    "packages/server/src/competitions/playerReadModel.ts": "19291a5ca3a16fa89471a2b36d0c09af6a4db65c4853d8c461c4d4e6f24267b7",
+    "packages/server/src/competitions/templateService.ts": "73f29c67bd97017995f8ba6e8cefa972b0584de4b50fedf4f7dcc94f2a12cc9b",
+    "packages/server/src/competitions/tournamentPersistence.ts": "e589d703edc926028ae90a8fb68fd933ac4b996497ae29759ae3d645f4734b83",
+    "packages/server/src/competitions/tournamentQualification.ts": "10789be97e5ecd7f441e54e39c5a86222451ff128bde5194d2c0cb144ab8e384",
+    "packages/server/src/competitions/tournamentRules.ts": "e446be9f4930d778aa78dbbad6a731fb15e196388e0c2f3a7c92b6ac27aa7be6",
+    "packages/server/src/competitions/tournamentService.ts": "f4cd6cf7ea8b63cb76d3b90d348770df4078281782a81de566ea04a790ec3362",
+    "packages/server/src/config/stagingMockCommercial.ts": "90a1fd81fd9c92c420fbf38d8685571a8799a9dff28e1beba5fe320e4aa38192",
+    "packages/server/src/config/startup.ts": "b1a3d3763c25aa755f718c657ce7a7a16ebec029b869d31349f007bb4c74627e",
+    "packages/server/src/db/schema.ts": "e3327eec8b5567155d001831ac17de75cd715c1239e3508067320bebecfe798f",
+    "packages/server/src/index.ts": "e2ff94c1b5e9f4f0e9b9f11964db75025997304c1d772b81836aaa35b1d5c741",
+    "packages/server/src/matchmaking/index.ts": "0f5284c6dd940debe1bb6dcdccacc661c9a159a26b65d99df35f1be37bd073f4",
+    "packages/server/src/routes/competitions.ts": "608ac2b22f585de5b6fd91505ac577193afbe5e859617d13bfceae16183a4829",
+    "packages/server/src/routes/stagingMockCommercial.ts": "9bef8b8a39b2927377b559efa9d5c1f8e5b1c7e8cec2f647f07c9044889b2e95",
+    "packages/shared/src/authority.ts": "f68459b64c14a066e054004c47958048a397e16b98e226e08422d7d149c12981",
+    "packages/shared/src/competitions.ts": "45836b8a639a4cbe734a8a1c3bd1d5de41f81c3a0ee513d533653575e9c02394",
+    "packages/shared/src/index.ts": "5b1b906836136da16ccbeb03c24ce17110a65ee0aef949f7c3fe28ea7b866e8d",
+    "packages/shared/src/tournaments.ts": "65d50071aa18a444aeb68fd26008064142779f4fbe77aa5ebf78fd303d0df48d",
+    "scripts/competition-admin-http-check.ts": "c4de04d3e671c93494ea2a1c34bfdd2b966475b1e6f76087e3f5ac1753dbdd3c",
+    "scripts/competition-phase3-lifecycle-check.ts": "fa5c37dbc91b9051c40dc8ab0453703acd241a951ccdcba4b4c9455577fe4825",
+    "scripts/competition-phase4-ui-check.ts": "67847b269f5cbb6e7d57935395fd3d5b8e1b679049c1ca5e03b54717fa05a22f",
+    "scripts/competition-player-ux-check.ts": "2d5743d0dcc50ceaacfd853d57c95a286b36d4aabd5821093128b7dc99d2405d",
+    "scripts/environment-safety-check.ts": "de3786aa837a970fa0fae30ea7c5c86d181f8f793ee31f223b9054860becacdf",
+    "scripts/migration-schema-parity-check.ts": "102b80eabbab87160645163497de476c5e7435576d6460b212bd204a03fb49fb",
+    "scripts/staging-mock-commercial-check.ts": "30e7b9e00f27c9b8f4f8d4fa68a7fe7707cb5e6269a3fe5300252c34ca4cb34d",
+    "scripts/tournament-authority-check.ts": "3325c938baf062af0830aa1489f35b49d856562d5b722b150604001f0dcffecf",
+    "scripts/tournament-domain-check.ts": "5f163ed38540c7785e0227b387baa1cff09a40b7acc19966d8875ce8ced2ac6d",
+    "scripts/tournament-recovery-check.ts": "a3fbc7130a5c5f9235e20782bcd4033b325a89cf2ab1611dfe683f20b741c211",
+    "scripts/tournament-rules-check.ts": "01651bebecc48023a9438043a615e238fd84b61e09c231911a6626af6efbd227",
+    "scripts/tournament-test-database.ts": "4232ffdb81d34e41e9b746d22b13bffbc6b9d75637d2f29d31017a97248948df"
+  }
+}

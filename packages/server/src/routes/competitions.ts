@@ -13,7 +13,8 @@ import { CommercialLedger } from '../accounting/commercialLedger';
 import { pool } from '../db/client';
 import { allowedMockUser, isMockTemplate, validMockAuthorization } from '../config/stagingMockCommercial';
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
-import { readCatalogRooms, readMyCompetitions, readPlayerInstance } from '../competitions/playerReadModel';
+import { readCatalogRooms, readMyCompetitions, readPlayerInstance, readTournamentCatalog } from '../competitions/playerReadModel';
+import { ensureTournamentCatalog, knockoutEnabled } from '../competitions/tournamentPersistence';
 
 const competitionsLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -35,14 +36,16 @@ competitionsRouter.use(competitionsLimiter);
 competitionsRouter.get("/templates", attachSession, async (req, res) => {
   try {
     // Include disabled templates so an intentionally closed catalog stays empty.
-    const allTemplates = await templateService.listTemplates();
-    if (allTemplates.length === 0) {
-      await templateService.ensureDefaultTemplates(allTemplates);
+    const tournaments=knockoutEnabled();
+    if(!tournaments){
+      const allTemplates = await templateService.listTemplates();
+      if (allTemplates.length === 0) await templateService.ensureDefaultTemplates(allTemplates);
     }
     // Public player discovery must use the same certification, authority-version,
     // and live-template-shape gate as registration. Admin views still use
     // listTemplates() to inspect disabled and legacy rows.
-    const templates = await templateService.listEnabledTemplates();
+    const productIds=tournaments?await ensureTournamentCatalog():null;
+    const templates = productIds?await readTournamentCatalog((await templateService.listTemplates(productIds)).filter(t=>t.enabled),req.userId):await templateService.listEnabledTemplates();
     const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
     const publicTemplates=templates.filter(template=>!isMockTemplate(template.id));
     const selected=gameId ? publicTemplates.filter((template) => template.gameId === gameId) : publicTemplates;
@@ -122,7 +125,7 @@ competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, asy
       res.status(403).json({error:'Staging mock authorization required.'});return;
     }
     const adapter = accountingForTemplate(instance.templateId);
-    const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED");
+    const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED",req.userId);
     if (!cancelRes.cancelled) {
       res.status(400).json({ error: "Competition cannot be cancelled; it may already be locked or started." });
       return;
@@ -163,10 +166,10 @@ competitionsRouter.get("/templates/:id", async (req, res) => {
  * Retrieves safe public status and participant summary for an instance.
  * Strictly excludes internal accounting accounts, ledger references, and private data.
  */
-competitionsRouter.get("/instances/:id", async (req, res) => {
+competitionsRouter.get("/instances/:id", attachSession, async (req, res) => {
   res.setHeader('Cache-Control','no-store');
   try {
-    const instance = await readPlayerInstance(String(req.params.id));
+    const instance = await readPlayerInstance(String(req.params.id),req.userId);
     if (!instance) {
       res.status(404).json({ error: "Competition instance not found." });
       return;

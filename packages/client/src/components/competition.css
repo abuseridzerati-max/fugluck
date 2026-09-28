@@ -19,3 +19,7 @@
 @media(prefers-reduced-motion:reduce){.competition-skeleton{animation:none}.competition-card{transition:none}}
 .competition-ux .ac-btn--primary:hover,.competition-dialog .ac-btn--primary:hover{background:#7130d9;border-color:#7130d9}
 .competition-policy-links a{display:inline-flex;align-items:center;min-height:44px}
+.competition-players>span{flex-shrink:0}.competition-slots{max-width:152px}.competition-slots:has(.competition-slot:nth-child(9)){gap:4px}.competition-slots:has(.competition-slot:nth-child(9)) .competition-slot{width:24px;height:24px}
+.competition-qualification{font-size:12px;line-height:1.6;color:var(--color-text-muted);overflow-wrap:anywhere}.competition-qualification p{margin:0 0 6px}.competition-qualification small{display:block}.competition-qualification summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.competition-card .competition-qualification{margin-top:auto}
+.competition-bracket ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}.competition-bracket li{display:flex;flex-direction:column;padding:10px;border:1px solid var(--color-border);border-radius:8px;overflow-wrap:anywhere}.competition-bracket .is-yours{border-color:#a87be4}

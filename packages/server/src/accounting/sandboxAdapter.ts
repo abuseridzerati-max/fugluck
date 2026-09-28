@@ -425,6 +425,12 @@ export class SandboxAccountingAdapter implements CompetitionAccountingPort {
       const totalCapturedMinor = Number((capturedRes.rows[0] as any)?.total_captured ?? 0);
       const totalPrizesMinor = prizes.reduce((sum, p) => sum + p.amount.amountMinor, 0);
 
+      const tournament=(await tx.execute(sql`SELECT t.*,d.kind,d.winner_user_id AS final_winner FROM competition_tournaments t
+        LEFT JOIN competition_authority_decisions d ON d.run_id=t.final_run_id WHERE t.instance_id=${competitionInstanceId}`)).rows[0] as any;
+      if(tournament&&(!['FINALIZING','SETTLED'].includes(tournament.state)||!['WIN','FORFEIT'].includes(tournament.kind)||prizes.length!==1||prizes[0].placement!==1||
+        tournament.winner_user_id!==prizes[0].userId||tournament.final_winner!==prizes[0].userId||tournament.terms.prizeMinor!==totalPrizesMinor||tournament.terms.scheduledEntryTotalMinor!==totalCapturedMinor))
+        throw Error('Tournament settlement requires its frozen final result');
+
       // 4. Calculate economic breakdown (Platform Margin vs Promotional Subsidy)
       let platformMarginMinor = 0;
       let promotionalSubsidyMinor = 0;

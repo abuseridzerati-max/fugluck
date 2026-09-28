@@ -98,6 +98,7 @@ export type CompetitionInstancePrize = {
 };
 
 export type CompetitionTemplate = {
+  tournament?: import('./tournaments').TournamentCardInfo;
   id: string;
   gameId: string;
   title: string;

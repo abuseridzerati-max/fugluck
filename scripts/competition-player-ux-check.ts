@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { AUTHORITY_VERSION, type CompetitionTemplate } from '@fugluck/shared'
 import { catalogPresentation, competitionAction, competitionErrorKey, competitionResult, joinBlockReason, moneyLabel, publicCompetitionStatus, templateForInstance, type PlayerCompetition } from '../packages/client/src/lib/competitionPresentation'
-import { CompetitionPlayerSlots, CompetitionResult, CompetitionRules, CompetitionTerms } from '../packages/client/src/components/CompetitionUI'
+import { CompetitionPlayerSlots, CompetitionResult, CompetitionRules, CompetitionTerms, CompetitionBracket, CompetitionQualification } from '../packages/client/src/components/CompetitionUI'
 import { pool } from '../packages/server/src/db/client'
 import { templateService, instanceService, lifecycleEngine } from '../packages/server/src/competitions'
 import { SandboxAccountingAdapter } from '../packages/server/src/accounting/sandboxAdapter'
@@ -60,6 +60,10 @@ async function main(){
   check('snapshot room owns entry and prize independently',catalogPresentation(template,{...instance,entryFeeMinor:300,prizes:[{placement:1,amountMinor:1555,currency:'GEL'}]}).entryMinor===300&&catalogPresentation(template,{...instance,entryFeeMinor:300,prizes:[{placement:1,amountMinor:1555,currency:'GEL'}]}).prizeMinor===1555)
   check('resume template retains snapshot terms',templateForInstance(instance).entryFeeMinor===500&&templateForInstance(instance).prizes![0].amountMinor===900)
   check('integer minor units displayed',moneyLabel(1555)==='15.55 GEL')
+  const knockout:PlayerCompetition={...instance,status:'ACTIVE',format:'TOURNAMENT_BRACKET',participantCapacity:4,winnerUserId:null,tournament:{product:'STANDARD',cycle:null,state:'PLAYING',playerState:'ELIMINATED',currentMatch:null,yourScore:31,opponentScore:150,matches:[{id:'semi',round:1,roundName:'SEMIFINAL',position:0,players:['alice','bob'],playerNames:['Alice','Bob'],winnerUserId:'alice',status:'COMPLETE',attempt:1},{id:'final',round:2,roundName:'FINAL',position:0,players:['alice',null],playerNames:['Alice',null],winnerUserId:null,status:'WAITING',attempt:0}]}}
+  const special:CompetitionTemplate={...template,format:'TOURNAMENT_BRACKET',participantCapacity:16,entryFeeMinor:0,tournament:{product:'GIFT',cycle:null,eligibility:'QUALIFY',promo:{progress:4,threshold:5,ticketStatus:null,targetCycleId:null,expiresAt:null},gift:{progress:4,threshold:10,ticketStatus:null,targetCycleId:null,expiresAt:null},nextPromoCycle:null,nextGiftCycle:null}}
+  check('eliminated player sees their own last round before tournament ends',competitionResult(knockout,'bob').kind==='loss'&&competitionResult(knockout,'bob').yourScore===31&&competitionResult(knockout,'bob').opponentScore===150)
+  for(const [code,key] of Object.entries({QUALIFICATION_REQUIRED:'qualify',QUALIFICATION_INVALIDATED:'qualify',CYCLE_CLOSED:'cycleClosed',TICKET_ALREADY_USED:'cycleClosed'}))check('tournament error safely mapped '+code,competitionErrorKey(code)===key)
   const i18n=i18next.createInstance();await i18n.init({resources:{en:{translation:en},ka:{translation:ka},ru:{translation:ru}},fallbackLng:'en',interpolation:{escapeValue:false}})
   for(const lang of ['en','ka','ru']){
     await i18n.changeLanguage(lang)
@@ -74,6 +78,14 @@ async function main(){
     check(`${lang} winner headline scores prize`,result.includes(i18n.t('competition.results.win'))&&result.includes('150')&&result.includes('31')&&result.includes('9.00 GEL'))
     const pending=render(React.createElement(CompetitionResult,{instance:null,userId:'alice',onRetry:()=>{}}))
     check(`${lang} missing result offers retry`,pending.includes(i18n.t('competition.retry'))&&!pending.includes('9.00 GEL'))
+    const sixteen=render(React.createElement(CompetitionPlayerSlots,{joined:7,capacity:16}))
+    check(`${lang} all sixteen slots remain visible`,(sixteen.match(/<svg /g)||[]).length===16&&(sixteen.match(/is-filled/g)||[]).length===7)
+    const bracket=render(React.createElement(CompetitionBracket,{instance:knockout,userId:'bob'}))
+    check(`${lang} optional bracket names rounds and player path`,bracket.includes('<details')&&bracket.includes(i18n.t('competition.knockout.rounds.SEMIFINAL'))&&bracket.includes(i18n.t('competition.knockout.rounds.FINAL'))&&bracket.includes(i18n.t('competition.knockout.you'))&&bracket.includes('Alice'))
+    const progress=render(React.createElement(CompetitionQualification,{template:special}))
+    check(`${lang} independent qualification and locked copy`,progress.includes('4 / 5')&&progress.includes('4 / 10')&&progress.includes(i18n.t('competition.knockout.eligibility.QUALIFY'))&&!progress.includes('{{'))
+    const knockoutRules=render(React.createElement(CompetitionRules,{template:special}))
+    check(`${lang} tournament rules disclose round and leave policy`,knockoutRules.includes(i18n.t('competition.knockout.rules'))&&knockoutRules.includes(i18n.t('competition.knockout.leaveRule')))
   }
 
   const id=`ux_${randomUUID()}`,other=`ux_${randomUUID()}`,tid=`tmpl_${id}`
@@ -119,7 +131,7 @@ async function main(){
     check('missing instance safe null',await readPlayerInstance('ux_missing')===null)
     const original=pool.query.bind(pool)
     try {
-      (pool as any).query=(sql:any,...args:any[])=>typeof sql==='string'&&sql.includes('DISTINCT ON (template_id)')?Promise.reject(Error('private_database_detail')):original(sql,...args)
+      (pool as any).query=()=>Promise.reject(Error('private_database_detail'))
       const failed=await fetch(`${url}/templates`);const failedBody=await failed.text()
       check('catalog API failure generic and recoverable',failed.status===500&&!failedBody.includes('private_database_detail')&&failedBody.includes('retry'))
     } finally {(pool as any).query=original}

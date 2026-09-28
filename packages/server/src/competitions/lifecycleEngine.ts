@@ -223,6 +223,13 @@ export class CompetitionLifecycleEngine {
     winnerUserId?: string | null;
   }> {
     return await lifecycleMutex.runExclusive(`settle:${instanceId}`, async () => {
+      if((await pool.query('SELECT 1 FROM competition_tournaments WHERE instance_id=$1',[instanceId])).rowCount){
+        if(!options.systemVoid)throw new CompetitionLifecycleError('LIVE_AUTHORITY_REQUIRED','The final bracket decision owns settlement.');
+        const {TournamentService}=await import('./tournamentService');const service=new TournamentService(accountingPort);
+        await service.requestVoid(instanceId,options.voidReason??'ADMINISTRATIVE_VOID');await service.process(instanceId);
+        const t=(await pool.query('SELECT state,winner_user_id,void_reason FROM competition_tournaments WHERE instance_id=$1',[instanceId])).rows[0];
+        return {status:t.state,outcome:t.void_reason??t.state,winnerUserId:t.winner_user_id};
+      }
       const authorityRun = (await pool.query('SELECT id FROM competition_authority_runs WHERE instance_id=$1', [instanceId])).rows[0];
       if (authorityRun) {
         if (!options.systemVoid) throw new CompetitionLifecycleError('LIVE_AUTHORITY_REQUIRED', 'Authority decisions own settlement and recovery.');
@@ -258,8 +265,12 @@ export class CompetitionLifecycleEngine {
     instanceId: string,
     accountingPort: CompetitionAccountingPort = this.defaultAccountingPort,
     _reason: string = "WAITING_TIMEOUT",
+    participantUserId?:string,
   ): Promise<{ instanceId: string; cancelled: boolean }> {
     return await lifecycleMutex.runExclusive(`cancel:${instanceId}`, async () => {
+      if((await pool.query('SELECT 1 FROM competition_tournaments WHERE instance_id=$1',[instanceId])).rowCount){
+        const {TournamentService}=await import('./tournamentService');return {instanceId,cancelled:await new TournamentService(accountingPort).cancel(instanceId,participantUserId)};
+      }
       const instRows = await pool.query(
         `SELECT id, status FROM competition_instances WHERE id = $1`,
         [instanceId],
@@ -317,6 +328,7 @@ export class CompetitionLifecycleEngine {
     let recoveredActive = 0;
 
     for (const inst of nonTerminalRows) {
+      if((await pool.query('SELECT 1 FROM competition_tournaments WHERE instance_id=$1',[inst.id])).rowCount)continue;
       if ((await pool.query('SELECT 1 FROM competition_authority_runs WHERE instance_id=$1', [inst.id])).rowCount) continue;
       try {
         if (inst.status === "PENDING_ENTRANTS") {

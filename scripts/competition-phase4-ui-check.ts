@@ -7,7 +7,8 @@ import path from "node:path";
 import dotenv from "dotenv";
 dotenv.config({ path: "packages/server/.env" });
 
-import { Pool } from "pg";
+import { pool } from "../packages/server/src/db/client";
+import { tournamentTestDatabase } from "./tournament-test-database";
 import { randomUUID } from "node:crypto";
 import {
   GAME_COMPETITION_CERTIFICATIONS,
@@ -36,24 +37,8 @@ function check(label: string, condition: boolean, detail?: string): void {
 async function runPhase4UIChecks(): Promise<void> {
   console.log("=== Fugluck Competition Economy — Phase 4 UI & Experience Check ===\n");
 
-  const connectionString = process.env.DATABASE_URL!;
-  const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
-  const isSslRequired =
-    !isLocalhost &&
-    (connectionString.includes("sslmode=require") ||
-      connectionString.includes("supabase.com") ||
-      connectionString.includes("neon.tech") ||
-      process.env.NODE_ENV === "production");
-
-  const cleanConnectionString = isSslRequired
-    ? connectionString.replace(/[?&]sslmode=[^&]+/g, "").replace(/\?$/, "")
-    : connectionString;
-
-  const pool = new Pool({
-    connectionString: cleanConnectionString,
-    ssl: isSslRequired ? { rejectUnauthorized: false } : false,
-    max: 5,
-  });
+  const cleanup = await tournamentTestDatabase();
+  process.env.ENABLE_KNOCKOUT_TOURNAMENTS = 'false';
 
   const sandboxAdapter = new SandboxAccountingAdapter(pool);
 
@@ -502,7 +487,7 @@ async function runPhase4UIChecks(): Promise<void> {
       foundForbidden.length > 0 ? `Found: ${foundForbidden.join(", ")}` : undefined,
     );
   } finally {
-    await pool.end();
+    await cleanup();
   }
 
   console.log(`\n=== Phase 4 UI & Experience Check Complete ===`);

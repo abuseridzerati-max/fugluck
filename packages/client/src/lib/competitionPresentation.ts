@@ -1,6 +1,7 @@
-import { getGameTitle, type CompetitionTemplate, type CompetitionStatus } from '@fugluck/shared'
+import { getGameTitle, type CompetitionTemplate, type CompetitionStatus, type PlayerTournamentView } from '@fugluck/shared'
 
 export type PlayerCompetition = {
+  tournament?:PlayerTournamentView;
   id: string; templateId: string; gameId: string; format: CompetitionTemplate['format'];
   participantCapacity: number; currentParticipants: number; currency: CompetitionTemplate['currency'];
   entryFeeMinor: number; status: CompetitionStatus; winnerUserId?: string | null;
@@ -42,6 +43,8 @@ export function joinBlockReason({ signedIn, balanceMinor, entryMinor, status, jo
   return null
 }
 export function competitionErrorKey(code: string): string {
+  if (['QUALIFICATION_REQUIRED','QUALIFICATION_INVALIDATED'].includes(code)) return 'qualify'
+  if (['CYCLE_CLOSED','CYCLE_FULL','TICKET_ALREADY_USED'].includes(code)) return 'cycleClosed'
   if (['INSUFFICIENT_FUNDS','INSUFFICIENT_BALANCE'].includes(code)) return 'insufficient'
   if (['DUPLICATE_USER_IN_INSTANCE','ALREADY_JOINED'].includes(code)) return 'alreadyJoined'
   if (['GUEST_NOT_ALLOWED','AUTH_REQUIRED'].includes(code)) return 'signIn'
@@ -64,7 +67,7 @@ export function catalogPresentation(template: CompetitionTemplate, room?: Catalo
     isFree:terms.entryFeeMinor === 0, isPromo:terms.entryFeeMinor > 0 && /promo/i.test(template.title) }
 }
 export function templateForInstance(instance: PlayerCompetition): CompetitionTemplate {
-  return { ...instance, id:instance.templateId, title:getGameTitle(instance.gameId), enabled:true,
+  return { ...instance, tournament:undefined, id:instance.templateId, title:getGameTitle(instance.gameId), enabled:true,
     updatedAt:instance.createdAt, prizes:instance.prizes.map((p,i)=>({...p,id:`display_${i}`,templateId:instance.templateId})) }
 }
 export function competitionResult(instance: PlayerCompetition | null, userId?: string) {
@@ -72,11 +75,13 @@ export function competitionResult(instance: PlayerCompetition | null, userId?: s
   const you=instance.participants.find(p=>p.userId===userId)
   if (!you) return {kind:'pending' as const}
   const opponent=instance.participants.find(p=>p.userId!==userId)
+  const scores=instance.tournament?{yourScore:instance.tournament.yourScore,opponentScore:instance.tournament.opponentScore}:{yourScore:you.score,opponentScore:opponent?.score}
   if (instance.status === 'VOIDED' || instance.status === 'CANCELLED')
     return {kind:instance.resultKind==='DRAW'?'draw' as const:instance.status==='VOIDED'?'void' as const:you.entryReturned?'refund' as const:'canceled' as const,
       returnedMinor:you.entryReturned ? instance.entryFeeMinor : undefined,
-      yourScore:you.score, opponentScore:opponent?.score, currency:instance.currency}
+      ...scores, currency:instance.currency}
+  if(instance.tournament?.playerState==='ELIMINATED')return {kind:'loss' as const,...scores,prizeMinor:0,currency:instance.currency}
   if (instance.status !== 'SETTLED' || !instance.winnerUserId) return {kind:'pending' as const}
   return {kind:instance.winnerUserId===userId?'win' as const:'loss' as const,
-    yourScore:you.score,opponentScore:opponent?.score,prizeMinor:you.prizeWonMinor,currency:instance.currency}
+    ...scores,prizeMinor:you.prizeWonMinor,currency:instance.currency}
 }

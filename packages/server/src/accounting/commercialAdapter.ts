@@ -7,7 +7,7 @@ import type { CompetitionAccountingPort, ReserveEntryParams, ReserveEntryResult,
 import { CommercialLedger, assertFinancialAmount, assertFinancialCurrency, type FinancialPosting } from './commercialLedger';
 
 type Operation = { id:string;status:string;currency:ISO4217Currency;amount_minor:string;terminal_reference:string|null };
-type Instance = { id:string;game_id:string;rules_version:string;entry_fee_minor:number;currency:ISO4217Currency;status:string };
+type Instance = { id:string;game_id:string;rules_version:string;entry_fee_minor:number;currency:ISO4217Currency;status:string;format?:string };
 
 export class CommercialAccountingAdapter implements CompetitionAccountingPort {
   readonly ledger: CommercialLedger;
@@ -22,7 +22,7 @@ export class CommercialAccountingAdapter implements CompetitionAccountingPort {
     await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`commercial-instance:${instanceId}`]);
   }
   private async instance(client:PoolClient,id:string):Promise<Instance> {
-    const result=await client.query<Instance>('SELECT id,game_id,rules_version,entry_fee_minor,currency,status FROM competition_instances WHERE id=$1',[id]);
+    const result=await client.query<Instance>("SELECT id,game_id,rules_version,entry_fee_minor,currency,status,to_jsonb(ci)->>'format' AS format FROM competition_instances ci WHERE id=$1",[id]);
     const instance=result.rows[0];
     if (!instance || !isTestGelCompetitionCertified(instance.game_id,instance.rules_version)) throw new Error('Commercial competition requires certified authority and immutable instance');
     assertFinancialCurrency(instance.currency);
@@ -126,11 +126,13 @@ export class CommercialAccountingAdapter implements CompetitionAccountingPort {
       if(instance.entry_fee_minor>0 && (rows.length!==participantIds.size || rows.some(row=>!participantIds.has(row.user_id))))
         throw new Error('Commercial settlement requires every participant entry to be captured');
       // The lifecycle may pass a prize, but only a durable server authority
-      // decision can authorize the recipient. Current certified scope is a
-      // two-player, first-place result.
+      // decision can authorize the recipient. A tournament requires its Final's
+      // decision; a semifinal winner cannot authorize the whole prize.
+      const tournament=instance.format==='TOURNAMENT_BRACKET'?(await client.query(`SELECT * FROM competition_tournaments WHERE instance_id=$1`,[id])).rows[0]:null;
+      if(instance.format==='TOURNAMENT_BRACKET'&&(!tournament||!['FINALIZING','SETTLED'].includes(tournament.state)||tournament.winner_user_id!==prizes[0]?.userId||tournament.terms.prizeMinor!==prizes[0]?.amount.amountMinor||tournament.terms.scheduledEntryTotalMinor!==captured||tournament.terms.capacity!==participantIds.size))throw Error('Tournament settlement requires its frozen final result');
       const authority=(await client.query<{kind:string;winner_user_id:string|null}>(`
         SELECT d.kind,d.winner_user_id FROM competition_authority_decisions d
-        JOIN competition_authority_runs r ON r.id=d.run_id WHERE r.instance_id=$1`,[id])).rows[0];
+        JOIN competition_authority_runs r ON r.id=d.run_id WHERE r.instance_id=$1 AND ($2::text IS NULL OR r.id=$2)`,[id,tournament?.final_run_id??null])).rows[0];
       if(prizes.length!==1||prizes[0].placement!==1||!authority||
          !['WIN','FORFEIT'].includes(authority.kind)||authority.winner_user_id!==prizes[0].userId)
         throw new Error('Commercial settlement requires the matching durable server-authority winner');

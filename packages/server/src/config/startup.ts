@@ -61,6 +61,11 @@ export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): Sta
   }
 
   errors.push(...validateDeploymentIdentity(env), ...validateCommercialSafety(env), ...validateStagingMockConfig(env));
+  if(env.ENABLE_KNOCKOUT_TOURNAMENTS==='true'){
+    if(!['development','test','staging'].includes(appEnvironment))errors.push('Knockout tournaments currently require an isolated non-production environment.');
+    if(env.ENABLE_COMPETITION_AUTHORITY!=='true')errors.push('Knockout tournaments require certified server authority.');
+    if(['REAL_MONEY_ENABLED','REAL_MONEY_DEPOSITS_ENABLED','REAL_MONEY_WITHDRAWALS_ENABLED','REAL_MONEY_COMPETITIONS_ENABLED'].some(key=>env[key]==='true'))errors.push('Knockout candidate cannot enable real money.');
+  }
   return {
     valid: errors.length === 0,
     errors,

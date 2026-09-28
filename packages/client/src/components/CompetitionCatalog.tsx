@@ -5,7 +5,7 @@ import { apiFetch } from '../lib/api'
 import { useAuth } from '../auth/AuthContext'
 import { catalogPresentation, moneyLabel, publicCompetitionStatus, type CatalogRoom } from '../lib/competitionPresentation'
 import CompetitionConfirmationModal from './CompetitionConfirmationModal'
-import { CompetitionDialog, CompetitionGameVisual, CompetitionPlayerSlots, CompetitionRules, CompetitionTerms } from './CompetitionUI'
+import { CompetitionDialog, CompetitionGameVisual, CompetitionPlayerSlots, CompetitionRules, CompetitionTerms, CompetitionQualification } from './CompetitionUI'
 import './competition.css'
 
 const CATALOG_REQUEST_TIMEOUT_MS = 6_000
@@ -53,9 +53,10 @@ export default function CompetitionCatalog({gameId,onJoinCompetition,onClose,onS
         return <article key={template.id} className="competition-card" aria-label={`${view.gameName}, ${t('competition.entry')} ${view.isFree?t('competition.free'):moneyLabel(view.entryMinor,view.currency)}, ${t('competition.prize')} ${moneyLabel(view.prizeMinor,view.currency)}`}>
           <CompetitionGameVisual gameId={template.gameId}/><div className="competition-card-body">
             <div className="competition-card-top"><span className="competition-status">{t(`competition.status.${available?publicCompetitionStatus(view.status,view.joined,view.capacity):'unavailable'}`)}</span>{view.isFree||view.isPromo?<span className="competition-badge">{t(view.isFree?'competition.free':'competition.promo')}</span>:null}</div>
-            <h2>{view.gameName}</h2><CompetitionTerms entryMinor={view.entryMinor} prizeMinor={view.prizeMinor} currency={view.currency}/>
+            <h2>{view.gameName}</h2>{template.tournament&&<span className="competition-badge">{t(`competition.knockout.products.${template.tournament.product}`)} · {view.capacity}</span>}<CompetitionTerms entryMinor={view.entryMinor} prizeMinor={view.prizeMinor} currency={view.currency}/>
             {roomsKnown?<CompetitionPlayerSlots joined={view.joined} capacity={view.capacity}/>:<p className="ac-text-muted">{t('competition.playersUnavailable')}</p>}
-            <button type="button" className="ac-btn ac-btn--primary competition-primary" disabled={!room?.viewerJoined&&(!available||publicCompetitionStatus(view.status,view.joined,view.capacity)!=='open')} onClick={()=>{if(room?.viewerJoined){sessionStorage.setItem(`authority:${template.id}`,room.id);onJoinCompetition(displayed)}else setSelected({template:displayed,room})}}>{t(room?.viewerJoined?'competition.actions.view':!available?'competition.status.unavailable':view.isFree?'competition.joinFree':'competition.join')}</button>
+            <CompetitionQualification template={template}/>
+            <button type="button" className="ac-btn ac-btn--primary competition-primary" disabled={!room?.viewerJoined&&(!available||publicCompetitionStatus(view.status,view.joined,view.capacity)!=='open'||Boolean(template.tournament&&!['AVAILABLE','SIGN_IN'].includes(template.tournament.eligibility)))} onClick={()=>{if(room?.viewerJoined){sessionStorage.setItem(`authority:${template.id}`,room.id);onJoinCompetition(displayed)}else setSelected({template:displayed,room})}}>{t(room?.viewerJoined?'competition.actions.view':!available?'competition.status.unavailable':view.isFree?'competition.joinFree':'competition.join')}</button>
             <button type="button" className="competition-secondary" onClick={()=>setDetails(displayed)}>{t('competition.rulesDetails')}</button>
           </div>
         </article>

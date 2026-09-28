@@ -6,7 +6,7 @@ import { competitionResult, moneyLabel, type PlayerCompetition } from '../lib/co
 export function CompetitionPlayerSlots({joined,capacity}:{joined:number;capacity:number}) {
   const {t}=useTranslation()
   return <div className="competition-players" aria-label={t('competition.playersCount',{joined,capacity})}>
-    <div className="competition-slots" aria-hidden="true">{Array.from({length:Math.min(capacity,8)},(_,i)=><span key={i} className={`competition-slot${i<joined?' is-filled':''}`}><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3Z"/></svg></span>)}</div>
+    <div className="competition-slots" aria-hidden="true">{Array.from({length:Math.min(capacity,16)},(_,i)=><span key={i} className={`competition-slot${i<joined?' is-filled':''}`}><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3Z"/></svg></span>)}</div>
     <span><strong>{joined} / {capacity}</strong> {t('competition.players')}</span>
   </div>
 }
@@ -38,9 +38,30 @@ export function CompetitionRules({template}:{template:CompetitionTemplate}) {
   const {t}=useTranslation()
   return <details className="competition-rules"><summary>{t('competition.rulesDetails')}</summary>
     <dl><div><dt>{t('competition.format')}</dt><dd>{t(`competition.formats.${template.format}`)}</dd></div><div><dt>{t('competition.players')}</dt><dd>{template.participantCapacity}</dd></div></dl>
-    <p>{t(template.gameId==='cyber-hopper'?'competition.hopperControls':'competition.blasterControls')}</p><p>{t('competition.gameRules')}</p><p>{t('competition.leaveRule')}</p>
+    <p>{t(template.gameId==='cyber-hopper'?'competition.hopperControls':'competition.blasterControls')}</p><p>{t(template.format==='TOURNAMENT_BRACKET'?'competition.knockout.rules':'competition.gameRules')}</p><p>{t(template.format==='TOURNAMENT_BRACKET'?'competition.knockout.leaveRule':'competition.leaveRule')}</p>
     <div className="competition-policy-links"><a href="/rules" target="_blank" rel="noreferrer">{t('competition.rules')}</a><a href="/entry-fees-prizes" target="_blank" rel="noreferrer">{t('competition.entryPrizeDetails')}</a><a href="/fair-play" target="_blank" rel="noreferrer">{t('competition.fairPlay')}</a><a href="/terms" target="_blank" rel="noreferrer">{t('competition.terms')}</a><a href="/sandbox-notice" target="_blank" rel="noreferrer">{t('competition.sandboxDetails')}</a></div>
   </details>
+}
+export function CompetitionBracket({instance,userId}:{instance:PlayerCompetition;userId?:string}){
+  const {t}=useTranslation();const bracket=instance.tournament;if(!bracket)return null;
+  return <details className="competition-rules competition-bracket"><summary>{t('competition.knockout.bracket')}</summary>
+    {Array.from(new Set(bracket.matches.map(m=>m.round))).map(round=><section key={round}><h3>{t(`competition.knockout.rounds.${bracket.matches.find(m=>m.round===round)!.roundName}`)}</h3>
+      <ul>{bracket.matches.filter(m=>m.round===round).map(m=><li key={m.id} className={m.players.includes(userId??'')?'is-yours':''}>
+        {m.players.map((id,i)=><span key={i}>{m.winnerUserId===id&&id?'★ ':''}{id===userId?t('competition.knockout.you'):m.playerNames[i]??t('competition.knockout.pendingPlayer')}</span>)}
+      </li>)}</ul></section>)}
+  </details>
+}
+export function CompetitionQualification({template}:{template:CompetitionTemplate}){
+  const {t,i18n}=useTranslation(),info=template.tournament;if(!info)return null;
+  const date=(value:string)=>new Intl.DateTimeFormat([i18n.resolvedLanguage??'en','en-GB'],{timeZone:info.cycle?.timezone??'Asia/Tbilisi',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
+  return <div className="competition-qualification">
+    {info.cycle&&<p>{t('competition.knockout.starts',{date:date(info.cycle.startsAt),zone:info.cycle.timezone})}</p>}
+    {info.product!=='STANDARD'&&<p>{t(`competition.knockout.eligibility.${info.eligibility}`)}</p>}
+    <details><summary>{t('competition.knockout.qualification')}</summary>
+      {(['promo','gift'] as const).map(product=>{const track=info[product],cycle=product==='promo'?info.nextPromoCycle:info.nextGiftCycle;return <p key={product}>{t(`competition.knockout.products.${product.toUpperCase()}`)}: {track.progress} / {track.threshold} {track.ticketStatus&&t(`competition.knockout.tickets.${track.ticketStatus}`)}{cycle&&<small>{t('competition.knockout.next',{date:date(cycle.startsAt)})}</small>}</p>})}
+      <p>{t('competition.knockout.qualificationRule',{promo:info.promo.threshold,gift:info.gift.threshold})}</p>
+    </details>
+  </div>
 }
 export function CompetitionResult({instance,userId,onRetry}:{instance:PlayerCompetition|null;userId?:string;onRetry?:()=>void}) {
   const {t}=useTranslation();const result=competitionResult(instance,userId)

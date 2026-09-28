@@ -1,5 +1,13 @@
 # Fugluck — Staging Deployment Guide
 
+## Local knockout restructure candidate — not deployed
+
+**BUILT locally / hosted rollout PLANNED:** `codex/competition-restructure` extends UI commit `4ae3fc3290bfbb1b367c57caeb01bd68140ead03` with Standard/Promo/GIFT products and 2/4/8/16-player tournaments. [The restructure report](docs/COMPETITION_RESTRUCTURE_REPORT.md) contains the exact local acceptance evidence; the final handoff identifies the candidate SHA. No push, hosted migration or deployment has occurred for this candidate. The accepted Phase 7I runtime below is unchanged by this work, and the Production isolation blocker is not part of this change.
+
+The candidate adds `0013_knockout_tournaments` (14 migrations total) and the default-OFF `ENABLE_KNOCKOUT_TOURNAMENTS` gate. It requires certified authority in development/test/staging and rejects production or real-money activation. Follow [the exact backup, isolated restore, migration, branch-scoped deployment and genuine four-user acceptance sequence](docs/COMPETITION_RESTRUCTURE_ROLLOUT.md). Fresh approval precedes pushing because a push can create a Preview. After 0013, rollback must use a compatible runtime with new admission disabled; the old 13-migration binary is not a safe automatic rollback.
+
+The guarded hosted mock allowlist accepts 2/4/8/16 distinct synthetic users; the new operator-only `/api/staging-mock-commercial/tournaments/ensure` route prepares two fixed four-player Standard products. It is unavailable without the registered staging identity, operator authorization, approved origin and both relevant gates. No hosting settings or allowlist were changed locally. Ordinary sandbox/mock gameplay never earns qualification, and all four real-money switches remain OFF.
+
 **Pre-bank handoff (2026-09-27, documentation only):** [Bank integration intake](docs/BANK_INTEGRATION_INTAKE.md) captures required/optional/unknown bank facts, and [bank integration readiness](docs/BANK_INTEGRATION_READINESS.md) maps the current provider interface, unbuilt refund/status/real-callback gaps and the separately authorized Production isolation sequence. No provider-specific implementation, migration, Production configuration or deployment was made for this handoff. The accepted staging runtime remains `b87036ce9394af61714e0a8920944e4a6fe247f4`; do not push documentation-only commits to the auto-deploy branch merely to publish this pack.
 
 ## Current Phase 7I hosted mock commercial staging deployment — 2026-09-27

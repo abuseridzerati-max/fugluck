@@ -10,6 +10,8 @@ import { HostedMockPaymentProvider } from '../payments/hostedMockProvider';
 import type { EligibilityPolicy } from '../payments/eligibility';
 import { templateService } from '../competitions/templateService';
 import { MOCK_TEMPLATES, allowedMockUser, stagingMockAction, stagingMockMode, validMockAuthorization } from '../config/stagingMockCommercial';
+import { currentTournamentConfig, knockoutEnabled, materializeTournamentProduct, tournamentTx } from '../competitions/tournamentPersistence';
+import { freezeTournamentTerms } from '../competitions/tournamentRules';
 
 export const stagingMockCommercialRouter=Router();
 stagingMockCommercialRouter.use((_req,res,next)=>{res.setHeader('Cache-Control','no-store');next();});
@@ -83,6 +85,21 @@ stagingMockCommercialRouter.get('/balance',async(req,res)=>{
     entryReservedMinor:await ledger.balance({kind:'USER_ENTRY_RESERVED',userId:req.userId},'GEL'),
     withdrawalReservedMinor:await ledger.balance({kind:'USER_WITHDRAWAL_RESERVED',userId:req.userId},'GEL')});}
   catch {res.status(500).json({error:'Mock balance unavailable'});}
+});
+// Explicit operator provisioning for a separately approved four-player hosted acceptance run.
+// No public discovery, real eligibility, client terms, or qualification bypass is introduced.
+stagingMockCommercialRouter.post('/tournaments/ensure',async(_req,res)=>{
+  if(!knockoutEnabled()||!stagingMockAction('competitions')){res.status(403).json({error:'Mock tournaments disabled'});return;}
+  try{
+    const templates=await tournamentTx(async c=>{
+      const ids:string[]=[];
+      for(const game of ['space-blaster','cyber-hopper']){
+        const {config,revision}=await currentTournamentConfig(game,c);
+        if(config.referenceEntryMinor>10000)throw Error('Mock entry exceeds limit');
+        ids.push(await materializeTournamentProduct(c,game,freezeTournamentTerms('STANDARD',4,config,revision),null,'STAGING_MOCK'));
+      }return ids;
+    });res.json({mode:'TEST / MOCK / STAGING',templates});
+  }catch{res.status(500).json({error:'Mock tournament templates unavailable'});}
 });
 stagingMockCommercialRouter.post('/faults/one-shot',(req,res)=>{
   const {kind,idempotencyKey,fault}=req.body??{};

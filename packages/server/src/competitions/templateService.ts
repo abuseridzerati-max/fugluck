@@ -219,10 +219,12 @@ export class CompetitionTemplateService {
   /**
    * Lists all competition templates (both enabled and disabled) for administration.
    */
-  async listTemplates(): Promise<CompetitionTemplate[]> {
+  async listTemplates(selectedIds?: string[]): Promise<CompetitionTemplate[]> {
+    if(selectedIds?.length===0)return [];
     const rows = await db
       .select()
       .from(competitionTemplates)
+      .where(selectedIds?sql`${competitionTemplates.id} in ${selectedIds}`:undefined)
       .orderBy(asc(competitionTemplates.createdAt));
 
     if (rows.length === 0) return [];

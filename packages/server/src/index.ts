@@ -19,6 +19,7 @@ import { getHealthPayload } from "./config/health";
 import { enforceMigrationIdentity, readMigrationIdentity } from './config/migrationIdentity';
 import { isHostedEnvironment } from './config/deploymentIdentity';
 import { ensureUserSchema, pool } from "./db/client";
+import { closeTournamentLocks } from './competitions/tournamentPersistence';
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
 
 // Enforce mandatory configuration at boot
@@ -140,6 +141,7 @@ async function handleGracefulShutdown(signal: string) {
 
     // 3. Close database connection pool
     logger.info("[server] closing database pool...");
+    await closeTournamentLocks();
     await pool.end();
 
     logger.info("[server] graceful shutdown complete.");

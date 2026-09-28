@@ -26,4 +26,4 @@ export interface AuthoritySnapshot {
   gridX?: number; gridY?: number; roundsCompleted?: number;
   obstacles?: CyberHopperObstacleSnapshot[];
 }
-export interface AuthorityOutcome { instanceId: string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }
+export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

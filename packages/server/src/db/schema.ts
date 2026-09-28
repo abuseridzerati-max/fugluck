@@ -1,4 +1,4 @@
-import { boolean, bigserial, check, foreignKey, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { boolean, bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -454,8 +454,59 @@ export type NewSandboxLedgerEntryRecord = typeof sandboxLedgerEntries.$inferInse
 export type SandboxSettlementRecord = typeof sandboxSettlements.$inferSelect;
 export type NewSandboxSettlementRecord = typeof sandboxSettlements.$inferInsert;
 
+// Frozen products and whole-tournament state are separate from individual authority runs.
+export const competitionProductConfigs = pgTable('competition_product_configs', {
+  gameId:text('game_id').notNull(),revision:integer('revision').notNull(),config:jsonb('config').notNull(),
+  active:boolean('active').notNull().default(true),actorId:text('actor_id').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>({pk:primaryKey({columns:[t.gameId,t.revision]}),active:uniqueIndex('competition_product_active_config').on(t.gameId).where(sql`${t.active}`),
+  revision:check('competition_product_configs_revision_check',sql`${t.revision}>0`),game:check('competition_product_configs_game_id_check',sql`${t.gameId} IN ('space-blaster','cyber-hopper')`)}));
+export const competitionSpecialCycles=pgTable('competition_special_cycles',{
+  id:text('id').primaryKey(),gameId:text('game_id').notNull(),product:text('product').notNull(),
+  opensAt:timestamp('opens_at',{withTimezone:true}).notNull(),cutoffAt:timestamp('cutoff_at',{withTimezone:true}).notNull(),
+  startsAt:timestamp('starts_at',{withTimezone:true}).notNull(),endsAt:timestamp('ends_at',{withTimezone:true}).notNull(),timezone:text('timezone').notNull(),terms:jsonb('terms').notNull(),
+},t=>({cycle:uniqueIndex('competition_special_cycles_game_id_product_starts_at_key').on(t.gameId,t.product,t.startsAt),
+  product:check('competition_special_cycles_product_check',sql`${t.product} IN ('PROMO','GIFT')`),times:check('competition_special_cycles_check',sql`${t.opensAt}<=${t.cutoffAt} AND ${t.cutoffAt}<=${t.startsAt} AND ${t.startsAt}<${t.endsAt}`)}));
+export const competitionProducts=pgTable('competition_products',{
+  templateId:varchar('template_id',{length:64}).primaryKey().references(()=>competitionTemplates.id),gameId:text('game_id').notNull(),product:text('product').notNull(),terms:jsonb('terms').notNull(),
+  cycleId:text('cycle_id').unique().references(()=>competitionSpecialCycles.id),provenance:text('provenance').notNull(),
+},t=>({product:check('competition_products_product_check',sql`${t.product} IN ('STANDARD','PROMO','GIFT')`),provenance:check('competition_products_provenance_check',sql`${t.provenance} IN ('SANDBOX','STAGING_MOCK','LIVE')`),
+  cycle:check('competition_products_check',sql`(${t.product}='STANDARD' AND ${t.cycleId} IS NULL) OR (${t.product}<>'STANDARD' AND ${t.cycleId} IS NOT NULL)`)}));
+export const competitionTournaments=pgTable('competition_tournaments',{
+  instanceId:text('instance_id').primaryKey().references(()=>competitionInstances.id),terms:jsonb('terms').notNull(),cycleId:text('cycle_id').unique().references(()=>competitionSpecialCycles.id),
+  provenance:text('provenance').notNull(),state:text('state').notNull().default('WAITING'),seed:text('seed'),seededOrder:jsonb('seeded_order'),seedCommitment:text('seed_commitment'),finalRunId:text('final_run_id'),
+  winnerUserId:text('winner_user_id').references(()=>users.id),voidReason:text('void_reason'),cancellationActorId:text('cancellation_actor_id').references(()=>users.id),invalidated:boolean('invalidated').notNull().default(false),
+  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),capturedAt:timestamp('captured_at',{withTimezone:true}),completedAt:timestamp('completed_at',{withTimezone:true}),completionProcessedAt:timestamp('completion_processed_at',{withTimezone:true}),
+},t=>({provenance:check('competition_tournaments_provenance_check',sql`${t.provenance} IN ('SANDBOX','STAGING_MOCK','LIVE')`),state:check('competition_tournaments_state_check',sql`${t.state} IN ('WAITING','CAPTURING','PLAYING','FINALIZING','SETTLED','REFUNDING','VOIDED','CANCELLED')`),
+  seed:check('competition_tournaments_check',sql`(${t.seed} IS NULL AND ${t.seededOrder} IS NULL AND ${t.seedCommitment} IS NULL) OR (${t.seed} IS NOT NULL AND ${t.seededOrder} IS NOT NULL AND ${t.seedCommitment} IS NOT NULL)`)}));
+export const competitionBracketMatches=pgTable('competition_bracket_matches',{
+  id:text('id').primaryKey(),instanceId:text('instance_id').notNull().references(()=>competitionTournaments.instanceId),round:integer('round').notNull(),position:integer('position').notNull(),
+  player1Id:text('player1_id').references(()=>users.id),player2Id:text('player2_id').references(()=>users.id),winnerUserId:text('winner_user_id').references(()=>users.id),state:text('state').notNull(),
+  attempt:integer('attempt').notNull().default(0),failures:integer('failures').notNull().default(0),readyDeadline:timestamp('ready_deadline',{withTimezone:true}),completedAt:timestamp('completed_at',{withTimezone:true}),
+},t=>({slot:uniqueIndex('competition_bracket_matches_instance_id_round_position_key').on(t.instanceId,t.round,t.position),round:check('competition_bracket_matches_round_check',sql`${t.round} BETWEEN 1 AND 4`),position:check('competition_bracket_matches_position_check',sql`${t.position} BETWEEN 0 AND 7`),
+  state:check('competition_bracket_matches_state_check',sql`${t.state} IN ('WAITING','READY','ACTIVE','COMPLETE','VOIDED')`),attempt:check('competition_bracket_matches_attempt_check',sql`${t.attempt}>=0`),failures:check('competition_bracket_matches_failures_check',sql`${t.failures}>=0`),
+  players:check('competition_bracket_matches_check',sql`${t.player1Id} IS NULL OR ${t.player2Id} IS NULL OR ${t.player1Id}<>${t.player2Id}`),winner:check('competition_bracket_matches_check1',sql`${t.winnerUserId} IS NULL OR ${t.winnerUserId}=${t.player1Id} OR ${t.winnerUserId}=${t.player2Id}`)}));
+export const competitionEntryIntents=pgTable('competition_entry_intents',{
+  instanceId:text('instance_id').notNull().references(()=>competitionTournaments.instanceId),userId:text('user_id').notNull().references(()=>users.id),state:text('state').notNull().default('PENDING'),ticketId:text('ticket_id'),
+  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>({pk:primaryKey({columns:[t.instanceId,t.userId]}),state:check('competition_entry_intents_state_check',sql`${t.state} IN ('PENDING','ACCEPTED','COMPENSATING','REJECTED')`)}));
+export const competitionQualificationEvents=pgTable('competition_qualification_events',{
+  instanceId:text('instance_id').notNull().references(()=>competitionTournaments.instanceId),userId:text('user_id').notNull().references(()=>users.id),gameId:text('game_id').notNull(),outcome:text('outcome').notNull(),completedAt:timestamp('completed_at',{withTimezone:true}).notNull(),appliedAt:timestamp('applied_at',{withTimezone:true}),
+},t=>({pk:primaryKey({columns:[t.instanceId,t.userId]}),outcome:check('competition_qualification_events_outcome_check',sql`${t.outcome} IN ('WIN','LOSS')`)}));
+export const competitionQualificationTracks=pgTable('competition_qualification_tracks',{
+  userId:text('user_id').notNull().references(()=>users.id),gameId:text('game_id').notNull(),product:text('product').notNull(),progress:integer('progress').notNull().default(0),contributions:jsonb('contributions').notNull().default([]),targetCycleId:text('target_cycle_id').references(()=>competitionSpecialCycles.id),
+},t=>({pk:primaryKey({columns:[t.userId,t.gameId,t.product]}),product:check('competition_qualification_tracks_product_check',sql`${t.product} IN ('PROMO','GIFT')`),progress:check('competition_qualification_tracks_progress_check',sql`${t.progress}>=0`)}));
+export const competitionQualificationTickets=pgTable('competition_qualification_tickets',{
+  id:text('id').primaryKey(),userId:text('user_id').notNull().references(()=>users.id),gameId:text('game_id').notNull(),product:text('product').notNull(),cycleId:text('cycle_id').notNull().references(()=>competitionSpecialCycles.id),state:text('state').notNull(),
+  qualifiedAt:timestamp('qualified_at',{withTimezone:true}).notNull(),sourceInstances:jsonb('source_instances').notNull().default([]),consumedAt:timestamp('consumed_at',{withTimezone:true}),consumedInstanceId:text('consumed_instance_id').references(()=>competitionInstances.id),replacedBy:text('replaced_by'),
+},t=>({cycle:uniqueIndex('competition_qualification_tickets_user_id_game_id_product_cy_key').on(t.userId,t.gameId,t.product,t.cycleId),
+  entitlement:uniqueIndex('qualification_one_entitlement').on(t.userId,t.gameId,t.product).where(sql`${t.state} IN ('AVAILABLE','CONSUMED')`),
+  product:check('competition_qualification_tickets_product_check',sql`${t.product} IN ('PROMO','GIFT')`),state:check('competition_qualification_tickets_state_check',sql`${t.state} IN ('AVAILABLE','CONSUMED','EXPIRED','REPLACED','REVOKED')`),
+  replacement:foreignKey({columns:[t.replacedBy],foreignColumns:[t.id],name:'competition_qualification_tickets_replaced_by_fkey'})}));
+
 export const competitionAuthorityRuns = pgTable('competition_authority_runs', {
-  id: text('id').primaryKey(), instanceId: text('instance_id').notNull().unique().references(() => competitionInstances.id),
+  id: text('id').primaryKey(), instanceId: text('instance_id').notNull().references(() => competitionInstances.id),
+  bracketMatchId: text('bracket_match_id').references(() => competitionBracketMatches.id),
+  bracketAttempt: integer('bracket_attempt'),
   matchId: text('match_id').notNull().unique().references(() => matchesHistory.id),
   gameId: text('game_id').notNull(), version: text('version').notNull(), seed: integer('seed').notNull(),
   capTicks: integer('cap_ticks').notNull().default(10800),
@@ -464,6 +515,9 @@ export const competitionAuthorityRuns = pgTable('competition_authority_runs', {
   startAt: timestamp('start_at', { withTimezone: true }), deadline: timestamp('deadline', { withTimezone: true }),
   terminalAt: timestamp('terminal_at', { withTimezone: true }), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => ({
+  legacyInstance: uniqueIndex('authority_legacy_instance_unique').on(t.instanceId).where(sql`${t.bracketMatchId} IS NULL`),
+  bracketAttempt: uniqueIndex('authority_bracket_attempt_unique').on(t.bracketMatchId,t.bracketAttempt).where(sql`${t.bracketMatchId} IS NOT NULL`),
+  bracketLive: uniqueIndex('authority_bracket_live_unique').on(t.bracketMatchId).where(sql`${t.bracketMatchId} IS NOT NULL AND ${t.terminalAt} IS NULL`),
   statusCheck: check('competition_authority_runs_status_check', sql`${t.status} in ('CREATED','READY','ACTIVE','COMPLETED','VOIDED')`),
   capCheck: check('competition_authority_runs_cap_ticks_check', sql`${t.capTicks} > 0`),
 }));

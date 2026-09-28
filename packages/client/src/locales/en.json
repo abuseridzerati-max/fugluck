@@ -297,7 +297,9 @@
       "limit": "Your competition entry limit has been reached.",
       "account": "This competition is unavailable for your account.",
       "retryLater": "Please wait a moment and try again.",
-      "cannotLeave": "You can't leave now. The competition may already be starting."
+      "cannotLeave": "You can't leave now. The competition may already be starting.",
+      "qualify": "Complete Standard tournaments to unlock",
+      "cycleClosed": "Registration closed"
     },
     "formats": {
       "HEAD_TO_HEAD": "Head to head",
@@ -313,6 +315,40 @@
     },
     "emptyGame": "No {{game}} competitions available right now.",
     "showAll": "Show All",
-    "playersUnavailable": "Player count unavailable"
+    "playersUnavailable": "Player count unavailable",
+    "knockout": {
+      "leaveRule": "Leaving before the tournament fills cancels this room and returns every entry. Your special-event ticket remains used; other players receive a replacement. Once full, entries cannot be canceled.",
+      "products": {
+        "STANDARD": "Standard",
+        "PROMO": "Promo",
+        "GIFT": "Gift"
+      },
+      "starts": "Starts {{date}} · {{zone}}",
+      "next": "Next: {{date}}",
+      "qualification": "Your progress",
+      "qualificationRule": "Complete {{promo}} Standard tournaments for Promo, {{gift}} for Gift. Test play does not count. A ticket lasts for one cycle; progress restarts when it ends.",
+      "eligibility": {
+        "AVAILABLE": "You can join",
+        "SIGN_IN": "Sign in to see your progress",
+        "QUALIFY": "Complete Standard tournaments to unlock",
+        "CLOSED": "Registration closed",
+        "USED": "Ticket used"
+      },
+      "tickets": {
+        "AVAILABLE": "Ticket ready",
+        "CONSUMED": "Ticket used"
+      },
+      "bracket": "Tournament bracket",
+      "you": "You",
+      "pendingPlayer": "Next winner",
+      "nextRound": "Waiting for your next match",
+      "rounds": {
+        "ROUND_OF_16": "Round of 16",
+        "QUARTERFINAL": "Quarterfinal",
+        "SEMIFINAL": "Semifinal",
+        "FINAL": "Final"
+      },
+      "rules": "All seats must fill. One entry covers every round. Win to advance; a tie means a rematch. Only the final winner receives the displayed prize. Miss the ready deadline and you forfeit; if neither player is ready, the tournament is voided and entries returned."
+    }
   }
 }

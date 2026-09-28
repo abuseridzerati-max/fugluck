@@ -8,6 +8,9 @@ import { getOnlineSocket } from '../matchmaking/presence';
 import { AuthorityStore } from './authorityStore';
 import { measureAdmission } from './authorityAdmission';
 import { recordAdmission, recordAuthorityError, recordAuthorityReconnect } from './operationsTelemetry';
+import { pool } from '../db/client';
+import { TournamentService } from './tournamentService';
+import { ensureTournamentCatalog, knockoutEnabled } from './tournamentPersistence';
 
 /** Constructor dependencies only; never populated from socket or HTTP messages. */
 export interface AuthorityOptions { capTicks?: number; countdownMs?: number; readyMs?: number; reconnectMs?: number; seedFactory?: () => number }
@@ -59,6 +62,7 @@ interface Player {
 }
 interface Run {
   id:string; instanceId:string; matchId:string; gameId:string; version:string; players:Player[]; created:number;
+  bracketMatchId?:string; readyMs:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
   stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
   delivery:{generated:number;emitAttempts:number;backpressure:number;bytes:number;maxBytes:number;maxCreationToEmitMs:number;transports:Record<string,number>};
@@ -73,6 +77,7 @@ export class AuthorityRuntime {
   private renewing=false;
   private recovering=false;
   private recoveryFailed=false;
+  private catalogAt=0;
   constructor(readonly store=new AuthorityStore(), readonly options:AuthorityOptions={}) {
     this.leaseTimer=setInterval(()=>{
       if(this.renewing||!this.runs.size)return;
@@ -93,12 +98,29 @@ export class AuthorityRuntime {
     },500);this.leaseTimer.unref();
     this.recoveryTimer=setInterval(()=>{
       if(this.recovering)return;this.recovering=true;
-      void store.recover().then(()=>{this.recoveryFailed=false}).catch(()=>{
+      void store.recover().then(()=>this.pumpTournaments()).then(()=>{this.recoveryFailed=false}).catch(()=>{
         if(!this.recoveryFailed)console.warn('[authority] Recovery delayed; durable outcomes are preserved and will retry.');
         this.recoveryFailed=true;
       }).finally(()=>{this.recovering=false;});
     },1000);
     this.recoveryTimer.unref();
+  }
+  private findRun(instanceId:string,userId:string,matchId?:string){
+    return [...this.runs.values()].find(r=>r.instanceId===instanceId&&(!matchId||r.matchId===matchId)&&r.players.some(p=>p.userId===userId));
+  }
+  /** Persisted jobs also finish after the new-entry switch is turned off. */
+  async pumpTournaments(){
+    if(this.closed)return;
+    if(knockoutEnabled()&&Date.now()-this.catalogAt>60000){await ensureTournamentCatalog();this.catalogAt=Date.now();}
+    await new TournamentService(this.store.accounting).recover();
+    const active=(await pool.query("SELECT instance_id FROM competition_tournaments WHERE state='PLAYING'")).rows.map(r=>r.instance_id);
+    for(const r of this.runs.values())if(r.bracketMatchId&&!active.includes(r.instanceId)&&!r.stopped)void this.finish(r,'TOURNAMENT_VOIDED',undefined,true);
+    const ready=(await pool.query(`SELECT b.id,b.instance_id FROM competition_bracket_matches b JOIN competition_tournaments t ON t.instance_id=b.instance_id
+      LEFT JOIN competition_special_cycles cy ON cy.id=t.cycle_id WHERE b.state='READY' AND t.state='PLAYING' AND (cy.id IS NULL OR cy.starts_at<=clock_timestamp()) ORDER BY b.instance_id,b.round,b.position LIMIT 32`)).rows;
+    for(const b of ready){if(this.closed)return;
+      // A second process may win this slot. Durable row and unique live-run locks decide ownership.
+      try{await this.create(b.instance_id,b.id);}catch(e){if((e as Error).message!=='BRACKET_NOT_READY')throw e;}
+    }
   }
   register(socket:MatchmakingSocket) {
     let windowStart=performance.now(),messages=0,lastResume=-Infinity;
@@ -111,7 +133,7 @@ export class AuthorityRuntime {
     };
     socket.on('authority:resume',guarded(async p=>{
       if(performance.now()-lastResume<500)throw Error('RESUME_RATE');lastResume=performance.now();
-      const r=this.runs.get(p.instanceId);
+      const r=this.findRun(p.instanceId,socket.data.userId);
       if(!r) {
         const outcome=await this.store.resumeOutcome(p.instanceId,socket.data.userId);
         if(outcome) {socket.emit('authority:outcome',outcome);return;}
@@ -149,7 +171,7 @@ export class AuthorityRuntime {
       } finally {if(player.readyPendingEpoch===p.epoch)player.readyPendingEpoch=undefined;}
     }));
     socket.on('authority:controls',guarded(p=>{
-      if(this.runs.get(p.instanceId)?.stopped)return;
+      if(this.findRun(p.instanceId,socket.data.userId,p.matchId)?.stopped)return;
       const {r,player}=this.authenticate(socket,p);
       if(player.state!=='ACTIVE'||!r.startAt||Date.now()<r.startAt) throw Error('NOT_ACTIVE');
       if (r.gameId === 'cyber-hopper') {
@@ -171,7 +193,7 @@ export class AuthorityRuntime {
     });
   }
   authenticate(socket:MatchmakingSocket,p:AuthorityBinding) {
-    const r=this.runs.get(p.instanceId);
+    const r=this.findRun(p.instanceId,socket.data.userId);
     const player=r?.players.find(a=>a.sessionId===p.sessionId);
     if(!r||r.stopped||!player||player.userId!==socket.data.userId||player.socket?.id!==socket.id) throw Error('SESSION_OWNERSHIP');
     const b=player.binding;
@@ -196,12 +218,13 @@ export class AuthorityRuntime {
     });
     return p.pending;
   }
-  async create(instanceId:string) {
-    const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.());
+  async create(instanceId:string,bracketMatchId?:string) {
+    const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.(),bracketMatchId);
+    if(this.closed)throw Error('AUTHORITY_CLOSED'); // The durable lease expires to the next owner.
     const now=performance.now();
     const r:Run={...record,gameId:record.gameId,version:record.version,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:record.gameId==='cyber-hopper'?new CyberHopperEngine(record.seed):new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     r.players.forEach(p=>p.engine.resize(VIRTUAL_VIEWPORT.width,VIRTUAL_VIEWPORT.height));
-    this.runs.set(instanceId,r);
+    this.runs.set(bracketMatchId?record.matchId:instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
     for(const p of r.players) { const socket=getOnlineSocket(p.userId); if(socket) await this.bind(r,p,socket); }
     return r;
@@ -256,7 +279,12 @@ export class AuthorityRuntime {
     const now=performance.now();
     if(now-r.leaseConfirmed>1900) { console.warn('[authority] lease acknowledgement age ms',Math.round(now-r.leaseConfirmed)); void this.finish(r,'LEASE_UNCERTAIN',undefined,true); return; }
     if(r.startMono===null) {
-      if(now-r.created>(this.options.readyMs??30000)) void this.finish(r,'READY_EXPIRED',undefined,true);
+      if(now-r.created>(r.bracketMatchId?r.readyMs:(this.options.readyMs??30000))&&!r.starting){
+        const ready=r.players.filter(p=>p.state==='READY'&&p.socket?.connected);
+        const absent=r.players.find(p=>p.state==='CREATED');
+        if(r.bracketMatchId&&ready.length===1&&absent)void this.finish(r,'READY_NO_SHOW',absent.userId);
+        else void this.finish(r,'READY_EXPIRED',undefined,true);
+      }
     } else if(now>=r.startMono) {
       const target=Math.floor((now-r.startMono)/(FIXED_TIMESTEP_SEC*1000));
       if(now-r.startMono-r.ticks*FIXED_TIMESTEP_SEC*1000>250) { void this.finish(r,'SERVER_TICK_LAG',undefined,true); return; }
@@ -299,6 +327,7 @@ export class AuthorityRuntime {
     let receiptWaitMs=0, decisionAndApplyMs=0, notificationEmitMs=0;
     r.stopped=true; clearInterval(r.timer);
     try {
+      if(reason==='READY_NO_SHOW'&&forfeitUser)await this.store.noShow(r.id,forfeitUser);
       if(forfeitUser&&!systemVoid) for(const p of r.players) if(p.state==='ACTIVE') {
         p.state=p.userId===forfeitUser?'FORFEITED':'COMPLETED';
         p.pending=p.pending.then(()=>this.persistResult(r,p,p.userId===forfeitUser?'FORFEIT':'OPPONENT_FORFEIT'));
@@ -311,7 +340,7 @@ export class AuthorityRuntime {
       const outcome=await this.store.decide(r.id,reason,forfeitUser,systemVoid);
       decisionAndApplyMs=performance.now()-decisionStarted;
       const notificationStarted=performance.now();
-      r.players.forEach(p=>p.socket?.emit('authority:outcome',{...outcome,yourScore:p.engine.score}));
+      r.players.forEach(p=>p.socket?.emit('authority:outcome',{...outcome,matchId:r.matchId,yourScore:p.engine.score}));
       notificationEmitMs=performance.now()-notificationStarted;
     } catch {
       // No speculative winner: durable decisions retry; lost state expires to recovery/refund.
@@ -319,7 +348,7 @@ export class AuthorityRuntime {
     } finally {
       // Bounded operational evidence; never includes controls, session nonces or account identifiers.
       console.info('[authority] run metrics',JSON.stringify({instanceId:r.instanceId,reason,ticks:r.ticks,activeMs:r.startMono===null?0:Math.max(0,finished-r.startMono),settlementMs:performance.now()-finished,receiptWaitMs,decisionAndApplyMs,notificationEmitMs,...r.metrics,delivery:r.delivery}));
-      this.runs.delete(r.instanceId);
+      this.runs.delete(r.bracketMatchId?r.matchId:r.instanceId);
     }
   }
   private closed=false;
