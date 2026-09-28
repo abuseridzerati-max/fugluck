@@ -1,103 +1,28 @@
 import { useState } from 'react'
-import { GAME_COMPETITION_CERTIFICATIONS, type CompetitionTemplate } from '@fugluck/shared'
+import { useTranslation } from 'react-i18next'
+import type { CompetitionTemplate } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import CompetitionCatalog from '../components/CompetitionCatalog'
+import MyCompetitions from '../components/MyCompetitions'
+import { useAuth } from '../auth/AuthContext'
+import { apiFetch } from '../lib/api'
+import '../components/competition.css'
 
-type CompetitionsPageProps = {
-  onNavigateHome: () => void
-  onNavigateProfile: () => void
-  onNavigateFriends: () => void
-  onNavigateWallet: () => void
-  onLaunchCompetition: (gameId: string, template: CompetitionTemplate) => void
-  onNavigatePolicy?: (path: string) => void
-}
-
-// Keep the catalog filters aligned with the single TEST GEL certification model.
-const ELIGIBLE_GAMES = [
-  { id: 'all', title: 'All Eligible Games' },
-  { id: 'space-blaster', title: 'Space Blaster' },
-  { id: 'cyber-hopper', title: 'Cyber Hopper' },
-].filter((g) => {
-  if (g.id === 'all') return true
-  return GAME_COMPETITION_CERTIFICATIONS[g.id]?.testGelCompetition === 'LEVEL_3_CERTIFIED'
-})
-
-export default function CompetitionsPage({
-  onNavigateHome,
-  onNavigateProfile,
-  onNavigateFriends,
-  onNavigateWallet,
-  onLaunchCompetition,
-  onNavigatePolicy,
-}: CompetitionsPageProps) {
-  const [selectedGameId, setSelectedGameId] = useState<string>('all')
-
-  const activeGame = ELIGIBLE_GAMES.find((g) => g.id === selectedGameId)
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar
-        onNavigateHome={onNavigateHome}
-        onNavigateProfile={onNavigateProfile}
-        onNavigateFriends={onNavigateFriends}
-        onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={() => setSelectedGameId('all')}
-      />
-
-      <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-2xl)' }}>
-            Sandbox Skill Competitions
-          </h1>
-          <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
-            Play platform-defined skill competitions with simulated Test GEL and server-run game authority.
-          </p>
-          <p style={{ margin: 'var(--space-3) 0 0', maxWidth: 760, lineHeight: 1.65 }}>
-            Each available format publishes its Entry Fee and Predetermined Prize separately before entry. TEST / SANDBOX GEL has zero real-world value; no real-money deposits, withdrawals or prizes are active.
-          </p>
-          <p style={{ margin: 'var(--space-2) 0 0', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem' }}>
-            <a href="/competition-model" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/competition-model') }}>How competitions work</a>
-            <a href="/entry-fees-prizes" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/entry-fees-prizes') }}>Entry Fees and Predetermined Prizes</a>
-            <a href="/sandbox-notice" onClick={(e) => { e.preventDefault(); onNavigatePolicy?.('/sandbox-notice') }}>Sandbox Notice</a>
-          </p>
-        </div>
-
-        {/* Game Filter Pills */}
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-6)' }}>
-          {ELIGIBLE_GAMES.map((g) => {
-            const isActive = selectedGameId === g.id
-            return (
-              <button
-                key={g.id}
-                type="button"
-                className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
-                onClick={() => setSelectedGameId(g.id)}
-                style={{
-                  borderColor: isActive ? '#10b981' : undefined,
-                  background: isActive ? 'rgba(16, 185, 129, 0.2)' : undefined,
-                  color: isActive ? '#10b981' : undefined,
-                  fontWeight: isActive ? 'bold' : 'normal',
-                }}
-              >
-                {g.title}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Competition Catalog */}
-        <CompetitionCatalog
-          key={selectedGameId}
-          gameId={selectedGameId === 'all' ? undefined : selectedGameId}
-          gameTitle={selectedGameId === 'all' ? undefined : activeGame?.title}
-          onJoinCompetition={(template) => {
-            onLaunchCompetition(template.gameId, template)
-          }}
-        />
-      </main>
-
-      <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
-    </div>
-  )
+export default function CompetitionsPage({onNavigateHome,onNavigateProfile,onNavigateFriends,onNavigateWallet,onLaunchCompetition,onNavigatePolicy}:{
+  onNavigateHome:()=>void;onNavigateProfile:()=>void;onNavigateFriends:()=>void;onNavigateWallet:()=>void;
+  onLaunchCompetition:(gameId:string,template:CompetitionTemplate)=>void;onNavigatePolicy?:(path:string)=>void
+}) {
+  const {t,i18n}=useTranslation();const {user,refreshUser}=useAuth();const [game,setGame]=useState('all');const [funding,setFunding]=useState(false);const [fundingError,setFundingError]=useState(false)
+  async function addTestFunds(){setFunding(true);setFundingError(false);try{await apiFetch('/api/competitions/sandbox-faucet',{method:'POST',body:JSON.stringify({amountMinor:10000})});await refreshUser()}catch{setFundingError(true)}finally{setFunding(false)}}
+  return <div className="competition-ux" lang={i18n.resolvedLanguage} style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+    <Navbar onNavigateHome={onNavigateHome} onNavigateProfile={onNavigateProfile} onNavigateFriends={onNavigateFriends} onNavigateWallet={onNavigateWallet} onNavigateCompetitions={()=>setGame('all')}/>
+    <main className="competition-page" style={{flex:1}}><header className="competition-heading"><div><h1>{t('competition.title')}</h1><p>{t('competition.tagline')}</p></div></header>
+      <aside className="competition-notice"><div><strong>{t('competition.testLabel')}</strong><p>{t('competition.testNotice')}</p></div>{user&&<button type="button" className="ac-btn ac-btn--secondary" disabled={funding} onClick={addTestFunds}>{t(funding?'competition.addingTestFunds':'competition.addTestFunds')}</button>}</aside>
+      {fundingError&&<p role="alert">{t('competition.fundsError')}</p>}
+      <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>{['all','space-blaster','cyber-hopper'].map(id=><button key={id} type="button" aria-pressed={game===id} className={`ac-pill${game===id?' ac-pill--active':''}`} onClick={()=>setGame(id)}>{id==='all'?t('competition.all'):id==='space-blaster'?'Space Blaster':'Cyber Hopper'}</button>)}</div>
+      <CompetitionCatalog gameId={game==='all'?undefined:game} onShowAll={()=>setGame('all')} onJoinCompetition={template=>onLaunchCompetition(template.gameId,template)}/>
+      <MyCompetitions onLaunch={template=>onLaunchCompetition(template.gameId,template)}/>
+    </main><Footer onNavigate={onNavigatePolicy??onNavigateHome}/>
+  </div>
 }

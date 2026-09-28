@@ -81,7 +81,7 @@ export default function Navbar({
             cursor: 'pointer',
           }}
         >
-          🏆 Competitions
+          🏆 {t('competition.title')}
         </button>
       )}
 
@@ -219,7 +219,7 @@ export default function Navbar({
                 )}
                 {onNavigateCompetitions && (
                   <MenuItem
-                    label="Competitions"
+                    label={t('competition.title')}
                     onClick={() => {
                       setMenuOpen(false)
                       onNavigateCompetitions()

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { useEffect, useId, useState, type CSSProperties, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 
@@ -11,6 +11,7 @@ type AuthModalProps = {
 
 export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const { t } = useTranslation()
+  const passwordFieldId=useId()
   const { signUp, logIn, forgotPassword, resendVerification, error } = useAuth()
   const [mode, setMode] = useState<AuthModalMode>(initialMode)
   const [username, setUsername] = useState('')
@@ -202,11 +203,11 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 />
               </label>
 
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+                  <label htmlFor={passwordFieldId} className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
                     {t('auth.password')}
-                  </span>
+                  </label>
                   {mode === 'login' && (
                     <button
                       type="button"
@@ -229,6 +230,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   )}
                 </div>
                 <input
+                  id={passwordFieldId}
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -236,7 +238,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   minLength={8}
                   style={inputStyle}
                 />
-              </label>
+              </div>
 
               {mode === 'signup' && (
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

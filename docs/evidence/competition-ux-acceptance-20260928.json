@@ -1,0 +1,1141 @@
+{
+  "scope": "Local simplified player competition UX; not deployed",
+  "date": "2026-09-28",
+  "branch": "codex/competition-ux",
+  "baseRevision": "f6a32600479d71bc5857944e7220f3674a4fc4b5",
+  "hostedRevisionUnchanged": "b87036ce9394af61714e0a8920944e4a6fe247f4",
+  "database": "Guarded disposable arcadeclash_atomic_test; no staging or production mutation",
+  "regression": {
+    "checkedAt": "2026-09-28T14:19:45.9226149Z",
+    "scriptsExecuted": 45,
+    "totalPassed": 1775.0,
+    "totalFailed": 0.0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49,
+        "durationMs": 2980
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 18764
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8,
+        "durationMs": 1497
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38,
+        "durationMs": 54432
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 22439
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 1975
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21,
+        "durationMs": 2464
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76,
+        "durationMs": 206120
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44,
+        "durationMs": 52746
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 231813
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 35892
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41,
+        "durationMs": 2387
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54,
+        "durationMs": 86155
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 45,
+        "durationMs": 206724
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44,
+        "durationMs": 24906
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 68991
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 93,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 93,
+        "durationMs": 31757
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 2384
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42,
+        "durationMs": 129632
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 2635
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 81,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 81,
+        "durationMs": 4479
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4,
+        "durationMs": 2308
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 5664
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 2178
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20,
+        "durationMs": 2865
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86,
+        "durationMs": 14874
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26,
+        "durationMs": 39202
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65,
+        "durationMs": 14536
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 329,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 329,
+        "durationMs": 47946
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10,
+        "durationMs": 16941
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 1592
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13,
+        "durationMs": 1686
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11,
+        "durationMs": 1308
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9,
+        "durationMs": 1345
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 1282
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 1938
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7,
+        "durationMs": 15737
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19,
+        "durationMs": 1598
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12,
+        "durationMs": 1501
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40,
+        "durationMs": 1843
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18,
+        "durationMs": 1715
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48,
+        "durationMs": 3510
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16,
+        "durationMs": 57193
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24,
+        "durationMs": 49735
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17,
+        "durationMs": 2232
+      }
+    ]
+  },
+  "finalTargetedReruns": [
+    {
+      "file": "competition-phase4-ui-check.ts",
+      "passed": 44,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "file": "competition-player-ux-check.ts",
+      "passed": 93,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "file": "i18n-check.ts",
+      "passed": 65,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "file": "auth-account-lifecycle-check.ts",
+      "passed": 41,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "file": "xss-audit-check.ts",
+      "passed": 17,
+      "failed": 0,
+      "exitCode": 0
+    }
+  ],
+  "builds": [
+    "npm run typecheck: PASS",
+    "npm run build:server: PASS",
+    "npm --workspace=@fugluck/client run build: PASS",
+    "git diff --check: PASS"
+  ],
+  "browserFixtureLayouts": {
+    "english": [
+      {
+        "cards": 4,
+        "columns": "272.8px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 235.1999969482422
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 235.1999969482422
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 235.1999969482422
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 235.1999969482422
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 305,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 320
+      },
+      {
+        "cards": 4,
+        "columns": "328px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 290.3999938964844
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 290.3999938964844
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 290.3999938964844
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 290.3999938964844
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 360,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 375
+      },
+      {
+        "cards": 4,
+        "columns": "343.2px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 305.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 305.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 305.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 305.6000061035156
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 375,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 390
+      },
+      {
+        "cards": 4,
+        "columns": "383.2px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 345.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 345.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 345.6000061035156
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 345.6000061035156
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 415,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 430
+      },
+      {
+        "cards": 4,
+        "columns": "342.4px 342.4px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 300.8000183105469
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 300.8000183105469
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 300.8000183105469
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 300.8000183105469
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 753,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 768
+      },
+      {
+        "cards": 4,
+        "columns": "306.925px 306.938px 306.925px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 265.32501220703125
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 265.3374938964844
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 265.32501220703125
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 265.32501220703125
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 1009,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 1024
+      },
+      {
+        "cards": 4,
+        "columns": "273px 273px 273px 273px",
+        "cta": [
+          {
+            "height": 47.20000076293945,
+            "width": 231.40000915527344
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 231.40000915527344
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 231.40000915527344
+          },
+          {
+            "height": 47.20000076293945,
+            "width": 231.40000915527344
+          }
+        ],
+        "overflow": false,
+        "pageWidth": 1425,
+        "terms": [
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "9.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "5.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "20.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "Free"
+          },
+          {
+            "overflow": false,
+            "text": "10.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "4.00 GEL"
+          },
+          {
+            "overflow": false,
+            "text": "7.20 GEL"
+          }
+        ],
+        "width": 1440
+      }
+    ],
+    "georgian": [
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 320
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 375
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 390
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 430
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 768
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 1024
+      },
+      {
+        "lang": "",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 1440
+      }
+    ],
+    "russian": [
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 320
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 375
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 390
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 430
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 768
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 1024
+      },
+      {
+        "lang": "ru",
+        "overflow": false,
+        "termsOverflow": false,
+        "width": 1440
+      }
+    ],
+    "focusTrap": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "realCatalogLayouts": [
+    {
+      "cards": 4,
+      "scrollWidth": 305,
+      "termsOverflow": false,
+      "width": 320
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 360,
+      "termsOverflow": false,
+      "width": 375
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 375,
+      "termsOverflow": false,
+      "width": 390
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 415,
+      "termsOverflow": false,
+      "width": 430
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 753,
+      "termsOverflow": false,
+      "width": 768
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 1009,
+      "termsOverflow": false,
+      "width": 1024
+    },
+    {
+      "cards": 4,
+      "scrollWidth": 1425,
+      "termsOverflow": false,
+      "width": 1440
+    }
+  ],
+  "contrast": [
+    {
+      "background": "rgb(124, 58, 237)",
+      "foreground": "rgb(255, 255, 255)",
+      "ratio": 5.7,
+      "selector": ".competition-primary"
+    },
+    {
+      "background": "rgb(18, 18, 24)",
+      "foreground": "rgb(154, 154, 168)",
+      "ratio": 6.72,
+      "selector": ".competition-terms dt"
+    },
+    {
+      "background": "rgb(18, 18, 24)",
+      "foreground": "rgb(245, 245, 247)",
+      "ratio": 17.14,
+      "selector": ".competition-terms dd"
+    },
+    {
+      "background": "rgb(18, 18, 24)",
+      "foreground": "rgb(128, 226, 188)",
+      "ratio": 12.02,
+      "selector": ".competition-status"
+    },
+    {
+      "background": "rgb(56, 41, 80)",
+      "foreground": "rgb(219, 194, 255)",
+      "ratio": 8.23,
+      "selector": ".competition-badge"
+    },
+    {
+      "background": "rgb(18, 18, 24)",
+      "foreground": "rgb(154, 154, 168)",
+      "ratio": 6.72,
+      "selector": ".competition-secondary"
+    },
+    {
+      "background": "rgb(16, 33, 28)",
+      "foreground": "rgb(154, 154, 168)",
+      "ratio": 6.02,
+      "selector": ".competition-notice p"
+    },
+    {
+      "background": "rgb(16, 33, 28)",
+      "foreground": "rgb(121, 228, 188)",
+      "ratio": 10.85,
+      "selector": ".competition-notice strong"
+    }
+  ],
+  "actualLocalDatabaseEvidence": {
+    "checkedAt": "2026-09-28T14:42:07.063Z",
+    "instances": [
+      {
+        "id": "inst_1f0cb936-9575-440d-84f3-7566ffe8d3b4",
+        "template_id": "tmpl_default_space_blaster_standard",
+        "status": "CANCELLED",
+        "current_participants": 1,
+        "entry_fee_minor": 500,
+        "winner_user_id": null,
+        "score": null,
+        "prize_won_minor": 0
+      },
+      {
+        "id": "inst_ad8a3b51-060b-4bb4-b175-133d6749880d",
+        "template_id": "tmpl_default_space_blaster_standard",
+        "status": "SETTLED",
+        "current_participants": 2,
+        "entry_fee_minor": 500,
+        "winner_user_id": "ux_review_player",
+        "score": 2,
+        "prize_won_minor": 900
+      },
+      {
+        "id": "inst_331f790e-79b1-4b16-973c-e56b3ad10b4c",
+        "template_id": "tmpl_default_cyber_hopper_standard",
+        "status": "SETTLED",
+        "current_participants": 2,
+        "entry_fee_minor": 400,
+        "winner_user_id": "ux_review_player",
+        "score": 10,
+        "prize_won_minor": 720
+      },
+      {
+        "id": "inst_e6f20f9e-9e33-4fda-b11b-785119938e86",
+        "template_id": "tmpl_default_space_blaster_freeroll",
+        "status": "VOIDED",
+        "current_participants": 2,
+        "entry_fee_minor": 0,
+        "winner_user_id": null,
+        "score": 19,
+        "prize_won_minor": 0
+      }
+    ],
+    "reservations": [
+      {
+        "competition_instance_id": "inst_1f0cb936-9575-440d-84f3-7566ffe8d3b4",
+        "status": "RELEASED",
+        "amount_minor": 500
+      },
+      {
+        "competition_instance_id": "inst_ad8a3b51-060b-4bb4-b175-133d6749880d",
+        "status": "CAPTURED",
+        "amount_minor": 500
+      },
+      {
+        "competition_instance_id": "inst_331f790e-79b1-4b16-973c-e56b3ad10b4c",
+        "status": "CAPTURED",
+        "amount_minor": 400
+      },
+      {
+        "competition_instance_id": "inst_e6f20f9e-9e33-4fda-b11b-785119938e86",
+        "status": "REFUNDED",
+        "amount_minor": 0
+      }
+    ],
+    "settlements": [
+      {
+        "competition_instance_id": "inst_ad8a3b51-060b-4bb4-b175-133d6749880d",
+        "total_entries_captured_minor": 1000,
+        "total_prizes_awarded_minor": 900,
+        "platform_margin_minor": 100
+      },
+      {
+        "competition_instance_id": "inst_331f790e-79b1-4b16-973c-e56b3ad10b4c",
+        "total_entries_captured_minor": 800,
+        "total_prizes_awarded_minor": 720,
+        "platform_margin_minor": 80
+      },
+      {
+        "competition_instance_id": "inst_e6f20f9e-9e33-4fda-b11b-785119938e86",
+        "total_entries_captured_minor": 0,
+        "total_prizes_awarded_minor": 0,
+        "platform_margin_minor": 0
+      }
+    ]
+  },
+  "browserResults": [
+    "Guest join redirects to existing sign-in, restores confirmation",
+    "Waiting refresh and My View preserve one reservation",
+    "Pending leave releases 500 and shows confirmed refund",
+    "Space Blaster WIN: server scores 2-2, explicit opponent forfeit, prize 900",
+    "Cyber Hopper WIN: server scores 10-0, keyboard hop controls, prize 720",
+    "Freeroll Free/1000 prize terms; full 2/2, countdown, durable DRAW 19-19; zero entry refunded",
+    "Terminal refreshes create no new entry",
+    "My View Result opens canonical Cyber Hopper result",
+    "Password field and Forgot password button have separate labels",
+    "Modal focus trap and Escape return verified",
+    "Timeout Retry, filtered empty Show All and generic errors verified with isolated browser fixtures"
+  ],
+  "limitations": [
+    "Viewport emulation, no physical-device certification",
+    "No hosted candidate rollout or hosted visual/network acceptance",
+    "Promotional join semantics verified by tests, not a new browser promo transaction",
+    "Existing client chunk-size advisory"
+  ],
+  "localScreenshots": [
+    "Temp/competition-ux/catalog-desktop.png",
+    "Temp/competition-ux/join-mobile.png",
+    "Temp/competition-ux/waiting-desktop.png",
+    "Temp/competition-ux/starting-desktop.png",
+    "Temp/competition-ux/result-desktop.png",
+    "Temp/competition-ux/cyber-result-desktop.png",
+    "Temp/competition-ux/refund-desktop.png",
+    "Temp/competition-ux/freeroll-result.png"
+  ]
+}

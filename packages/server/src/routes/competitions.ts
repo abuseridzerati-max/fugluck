@@ -13,6 +13,7 @@ import { CommercialLedger } from '../accounting/commercialLedger';
 import { pool } from '../db/client';
 import { allowedMockUser, isMockTemplate, validMockAuthorization } from '../config/stagingMockCommercial';
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
+import { readCatalogRooms, readMyCompetitions, readPlayerInstance } from '../competitions/playerReadModel';
 
 const competitionsLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -31,7 +32,7 @@ competitionsRouter.use(competitionsLimiter);
  * GET /api/competitions/templates
  * Lists all enabled competition templates and their prize schedules.
  */
-competitionsRouter.get("/templates", async (req, res) => {
+competitionsRouter.get("/templates", attachSession, async (req, res) => {
   try {
     // Include disabled templates so an intentionally closed catalog stays empty.
     const allTemplates = await templateService.listTemplates();
@@ -44,7 +45,10 @@ competitionsRouter.get("/templates", async (req, res) => {
     const templates = await templateService.listEnabledTemplates();
     const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
     const publicTemplates=templates.filter(template=>!isMockTemplate(template.id));
-    res.json({ templates: gameId ? publicTemplates.filter((template) => template.gameId === gameId) : publicTemplates });
+    const selected=gameId ? publicTemplates.filter((template) => template.gameId === gameId) : publicTemplates;
+    res.setHeader('Cache-Control','no-store');
+    res.json({ templates:selected, rooms:await readCatalogRooms(selected.map(t=>t.id),req.userId),
+      playerMode:'sandbox', joiningAvailable:process.env.ENABLE_COMPETITION_AUTHORITY==='true' });
   } catch (err: any) {
     console.error("[competitions] Failed to load public competition templates:", err);
     res.status(500).json({ error: "Competition catalog is temporarily unavailable. Please retry." });
@@ -68,6 +72,12 @@ competitionsRouter.get("/balance", attachSession, requireAuth, async (req, res) 
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to fetch sandbox balance." });
   }
+});
+
+competitionsRouter.get('/mine', attachSession, requireAuth, async (req,res) => {
+  res.setHeader('Cache-Control','no-store');
+  try {res.json({instances:await readMyCompetitions(req.userId!)});}
+  catch {res.status(500).json({error:'Your competitions are temporarily unavailable. Please retry.'});}
 });
 
 /**
@@ -154,15 +164,17 @@ competitionsRouter.get("/templates/:id", async (req, res) => {
  * Strictly excludes internal accounting accounts, ledger references, and private data.
  */
 competitionsRouter.get("/instances/:id", async (req, res) => {
+  res.setHeader('Cache-Control','no-store');
   try {
-    const instance = await instanceService.getPublicInstanceSummary(String(req.params.id));
+    const instance = await readPlayerInstance(String(req.params.id));
     if (!instance) {
       res.status(404).json({ error: "Competition instance not found." });
       return;
     }
     res.json({ instance });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to fetch instance." });
+    console.error('[competitions] Failed to load player instance:',err);
+    res.status(500).json({ error: "Competition status is temporarily unavailable. Please retry." });
   }
 });
 

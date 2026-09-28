@@ -18,6 +18,8 @@ import {
 import { SandboxAccountingAdapter } from "../packages/server/src/accounting/sandboxAdapter";
 import { templateService } from "../packages/server/src/competitions/index";
 
+import { catalogPresentation, moneyLabel, joinBlockReason, competitionResult } from '../packages/client/src/lib/competitionPresentation';
+import en from '../packages/client/src/locales/en.json';
 let passes = 0;
 let failures = 0;
 
@@ -70,6 +72,9 @@ async function runPhase4UIChecks(): Promise<void> {
   const authorityCompetitionSrc = fs.readFileSync(path.join(clientSrcDir, "game-loader/AuthorityCompetition.tsx"), "utf-8");
   const competitionsPageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/CompetitionsPage.tsx"), "utf-8");
   const useMatchSocketSrc = fs.readFileSync(path.join(clientSrcDir, "matchmaking/useMatchSocket.ts"), "utf-8");
+  const presentationSrc=fs.readFileSync(path.join(clientSrcDir,'lib/competitionPresentation.ts'),'utf8');
+  const uiSrc=fs.readFileSync(path.join(clientSrcDir,'components/CompetitionUI.tsx'),'utf8');
+  const css=fs.readFileSync(path.join(clientSrcDir,'components/competition.css'),'utf8');
 
   try {
     // ----------------------------------------------------
@@ -155,9 +160,7 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 5: Entry amount rendered from server
     // ----------------------------------------------------
     const standardTemplate = spaceBlasterTemplates.find((t) => t.title.includes("Standard Duel"));
-    const entryRendered =
-      catalogSrc.includes("(tmpl.entryFeeMinor / 100).toFixed(2)") &&
-      catalogSrc.includes("tmpl.entryFeeMinor === 0");
+    const entryRendered = standardTemplate !== undefined && catalogPresentation(standardTemplate).entryMinor === 500 && moneyLabel(500) === '5.00 GEL';
     check(
       "5. Entry amount rendered from server-authoritative minor units",
       Boolean(standardTemplate && standardTemplate.entryFeeMinor === 500 && entryRendered),
@@ -166,9 +169,7 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     // Test 6: Prize rendered from server
     // ----------------------------------------------------
-    const prizeRendered =
-      catalogSrc.includes("(prizeAmountMinor / 100).toFixed(2)") &&
-      confirmModalSrc.includes("(firstPrize / 100).toFixed(2)");
+    const prizeRendered = standardTemplate !== undefined && catalogPresentation(standardTemplate).prizeMinor === 900;
     check(
       "6. Prize rendered from server-authoritative prizes schedule",
       Boolean(standardTemplate && standardTemplate.prizes[0].amountMinor === 900 && prizeRendered),
@@ -196,20 +197,20 @@ async function runPhase4UIChecks(): Promise<void> {
     const freerollTemplate = spaceBlasterTemplates.find((t) => t.title.includes("Freeroll"));
     const freerollValid =
       freerollTemplate?.entryFeeMinor === 0 && (freerollTemplate?.prizes[0]?.amountMinor ?? 0) === 1000;
-    const freerollUIRendersFree = catalogSrc.includes("FREEROLL") && confirmModalSrc.includes("'FREE'");
+    const freerollUIRendersFree = freerollTemplate !== undefined && catalogPresentation(freerollTemplate).isFree && en.competition.free === 'Free';
     check("8. Freeroll renders with 'FREE' entry and server-authoritative prize", freerollValid && freerollUIRendersFree);
 
     check(
       "8a. Catalog request has a 6-second deadline and a retry path",
       catalogSrc.includes("CATALOG_REQUEST_TIMEOUT_MS = 6_000") &&
-        catalogSrc.includes("took too long to respond") &&
-        catalogSrc.includes("onClick={loadTemplates}") &&
-        catalogSrc.includes("Retry"),
+        catalogSrc.includes("catalogTimeout") &&
+        catalogSrc.includes("onClick={()=>loadTemplates()}") &&
+        catalogSrc.includes("competition.retry"),
     );
     check(
       "8b. Catalog GET avoids JSON preflight and maps API outage to a recoverable message",
       apiSrc.includes("options.body !== undefined && options.body !== null") &&
-        catalogSrc.includes("temporarily unavailable. Please retry"),
+        catalogSrc.includes("catalogError"),
     );
     check(
       "8c. Server applies selected game filter and reports failed fixture seeding as an API error",
@@ -223,14 +224,8 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 9: Sandbox warning visible on all monetary interfaces
     // ----------------------------------------------------
     console.log("\n--- Section 3: Sandbox Visual Identity & Currency Integrity ---");
-    const catalogHasSandboxWarning =
-      catalogSrc.includes("TEST / SANDBOX GEL") &&
-      catalogSrc.includes("zero real-world value") &&
-      catalogSrc.includes("No real-money deposits, withdrawals, or prizes are active.");
-    const modalHasSandboxWarning =
-      confirmModalSrc.includes("TEST / SANDBOX GEL Competition:") &&
-      confirmModalSrc.includes("zero real-world value") &&
-      confirmModalSrc.includes("No real money is deposited, withdrawn, or awarded.");
+    const catalogHasSandboxWarning = competitionsPageSrc.includes("competition.testNotice") && en.competition.testNotice.includes('simulated') && en.competition.testLabel.includes('NO REAL MONEY');
+    const modalHasSandboxWarning = confirmModalSrc.includes("competition.testNotice") && en.competition.testNotice.includes('cannot be withdrawn');
     const navbarHasSandboxBadge = navbarSrc.includes("TEST / SANDBOX GEL");
     check(
       "9. Sandbox warning persistently visible across catalog, modals, and navigation",
@@ -284,11 +279,7 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     // Test 15: Sandbox GEL never displays as Coins
     // ----------------------------------------------------
-    const gelNeverCoins =
-      catalogSrc.includes("TEST ₾") &&
-      confirmModalSrc.includes("TEST ₾") &&
-      navbarSrc.includes("TEST ₾") &&
-      !navbarSrc.includes("🪙 ${user.balances.sandboxGelMinor}");
+    const gelNeverCoins = uiSrc.includes('moneyLabel') && en.competition.testNotice.includes('Test GEL') && navbarSrc.includes('TEST ₾') && !navbarSrc.includes('🪙 ${user.balances.sandboxGelMinor}');
     check("15. Sandbox GEL strictly formatted as TEST ₾, never called Coins", gelNeverCoins);
 
     // ----------------------------------------------------
@@ -345,20 +336,15 @@ async function runPhase4UIChecks(): Promise<void> {
     const balanceAfter = await sandboxAdapter.getUserBalance(testUserId);
     check("19b. Sandbox faucet reliably provisions test funds via balanced ledger", balanceAfter.availableMinor === balanceBefore.availableMinor + 10000);
 
-    const uiHasFaucetButton =
-      confirmModalSrc.includes("ADD TEST FUNDS") && confirmModalSrc.includes("handleAddTestFunds");
-    check("19c. Confirmation modal provides clear insufficient funds warning and [ ADD TEST FUNDS ]", uiHasFaucetButton);
+    const uiHasFaucetButton = confirmModalSrc.includes('competition.errors.${reason}') && competitionsPageSrc.includes('/api/competitions/sandbox-faucet') && competitionsPageSrc.includes('competition.addTestFunds') && joinBlockReason({signedIn:true,balanceMinor:0,entryMinor:500,status:'PENDING_ENTRANTS',joined:1,capacity:2}) === 'insufficient';
+    check("19c. Compact confirmation explains insufficient funds and links the player to test funds on the catalog", uiHasFaucetButton);
 
     // ----------------------------------------------------
     // Test 20: Dedicated Waiting Room (1/2 with [ CANCEL ENTRY ])
     // ----------------------------------------------------
     console.log("\n--- Section 5: Waiting Room, Match Ready & Transitions ---");
-    const waitingRoomHasStatus =
-      authorityCompetitionSrc.includes("competition:joined") &&
-      authorityCompetitionSrc.includes("Waiting for the other player") &&
-      authorityCompetitionSrc.includes("Waiting for both players to be ready");
-    const waitingRoomHasCancel =
-      authorityCompetitionSrc.includes("Cancel waiting entry") && authorityCompetitionSrc.includes("competition:cancel");
+    const waitingRoomHasStatus = authorityCompetitionSrc.includes('competition:joined') && authorityCompetitionSrc.includes('CompetitionPlayerSlots') && authorityCompetitionSrc.includes('competition.youreIn');
+    const waitingRoomHasCancel = authorityCompetitionSrc.includes('competition.leaveCompetition') && authorityCompetitionSrc.includes('competition:cancel') && authorityCompetitionSrc.includes("result.instance.status==='PENDING_ENTRANTS'");
     check("20. Authority waiting state exposes cancellation only before match lock", waitingRoomHasStatus && waitingRoomHasCancel);
 
     // ----------------------------------------------------
@@ -384,18 +370,13 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 23: Authoritative verified winner result screen
     // ----------------------------------------------------
     console.log("\n--- Section 6: Results, Verifications & Rematch Experience ---");
-    const winnerResultsCheck =
-      authorityCompetitionSrc.includes("You won — the predetermined sandbox prize has been awarded") &&
-      authorityCompetitionSrc.includes("authority:outcome") &&
-      authorityCompetitionSrc.includes("yourScore");
+    const winnerResultsCheck = authorityCompetitionSrc.includes('authority:outcome') && authorityCompetitionSrc.includes('CompetitionResult') && presentationSrc.includes("instance.winnerUserId===userId?'win'") && presentationSrc.includes('prizeMinor:you.prizeWonMinor');
     check("23. Winner outcome and score are delivered by server authority with predetermined prize wording", winnerResultsCheck);
 
     // ----------------------------------------------------
     // Test 24: Authoritative verified loser result screen
     // ----------------------------------------------------
-    const loserResultsCheck =
-      authorityCompetitionSrc.includes("Competition finished — your opponent won") &&
-      authorityCompetitionSrc.includes("You won — the predetermined sandbox prize has been awarded");
+    const loserResultsCheck = presentationSrc.includes("'loss' as const") && !presentationSrc.includes('yourScore >') && en.competition.results.loss === 'You lost';
     check("24. Server outcome distinguishes winner from non-winner without client score comparison", loserResultsCheck);
 
     // ----------------------------------------------------
@@ -445,10 +426,7 @@ async function runPhase4UIChecks(): Promise<void> {
     // Test 30: Guest cannot access paid competition
     // ----------------------------------------------------
     console.log("\n--- Section 7: Access Control, Historical Audit & Responsive UX ---");
-    const guestBlockedFromPaid =
-      catalogSrc.includes("Free competitions have no entry cost. An account is required to enter any competition") &&
-      confirmModalSrc.includes("Free entry costs no Test GEL, but an account is required to enter any competition") &&
-      confirmModalSrc.includes("paid sandbox competitions also require enough Test GEL");
+    const guestBlockedFromPaid = joinBlockReason({signedIn:false,balanceMinor:0,entryMinor:0,status:'PENDING_ENTRANTS',joined:0,capacity:2}) === 'signIn' && en.competition.errors.signIn.includes('Free competitions cost no Test GEL');
     check("30. Guest copy explains free entry cost, account requirement, and paid Test GEL requirement", guestBlockedFromPaid);
 
     // ----------------------------------------------------
@@ -472,31 +450,17 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     // Test 33: Responsive / mobile competition card behavior
     // ----------------------------------------------------
-    const catalogResponsive =
-      catalogSrc.includes("gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))'") &&
-      navbarSrc.includes("maxWidth: '100%'") &&
-      competitionsPageSrc.includes("display: 'flex'") &&
-      competitionsPageSrc.includes("flexWrap: 'wrap'");
+    const catalogResponsive = css.includes('repeat(auto-fill,minmax(min(100%,270px),1fr))') && css.includes('@media(max-width:600px)') && css.includes('min-height:46px');
     check("33. Competition catalog and templates feature mobile/tablet responsive layout", catalogResponsive);
     check(
       "33a. Catalog cards distinguish format, capacity, availability, entry cost, and predetermined prize",
-      catalogSrc.includes("OPEN FOR ENTRIES") &&
-        catalogSrc.includes("🎮 {gameName}") &&
-        catalogSrc.includes("Up to {tmpl.participantCapacity} players") &&
-        catalogSrc.includes("ENTRY COST") &&
-        catalogSrc.includes("PREDETERMINED PRIZE") &&
-        catalogSrc.includes("JOIN FREE COMPETITION"),
+      catalogSrc.includes('publicCompetitionStatus') && catalogSrc.includes('CompetitionTerms') && catalogSrc.includes('CompetitionPlayerSlots') && catalogSrc.includes('competition.joinFree') && uiSrc.includes('competition.format'),
     );
 
     // ----------------------------------------------------
     // Test 34: Keyboard / dialog accessibility
     // ----------------------------------------------------
-    const dialogAccessibility =
-      confirmModalSrc.includes('role="dialog"') &&
-      confirmModalSrc.includes('aria-modal="true"') &&
-      confirmModalSrc.includes("handleKeyDown") &&
-      launchModalSrc.includes('role="dialog"') &&
-      matchLoaderSrc.includes('role="dialog"');
+    const dialogAccessibility = uiSrc.includes('role="dialog"') && uiSrc.includes('aria-modal="true"') && uiSrc.includes('showModal()') && uiSrc.includes('previous?.focus()') && uiSrc.includes('onCancel=');
     check("34. Modals feature semantic dialog roles, aria-modal, and Escape key handling", dialogAccessibility);
 
     // ----------------------------------------------------

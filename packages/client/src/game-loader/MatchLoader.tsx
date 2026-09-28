@@ -55,7 +55,7 @@ function isTerminal(phase: Phase): boolean {
 export default function MatchLoader(props: MatchLoaderProps) {
   if (props.matchMode?.kind === 'competition') {
     if (props.gameId === 'space-blaster' || props.gameId === 'cyber-hopper') {
-      return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} onExit={props.onExit} />
+      return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} template={props.matchMode.template} onExit={props.onExit} onComplete={props.onMatchResolved} />
     }
     return (
       <main role="alert" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, color: '#f8fafc', background: '#090b12', textAlign: 'center' }}>

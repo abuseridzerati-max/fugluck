@@ -82,7 +82,7 @@ type View =
 const ACTIVE_MATCH_STORAGE_KEY = 'fugluck_active_match'
 const LEGACY_ACTIVE_MATCH_STORAGE_KEY = 'arcadeclash_active_match'
 
-type StoredActiveMatch = { id: string; title: string }
+type StoredActiveMatch = { id: string; title: string; competitionTemplateId?: string }
 
 function storeActiveMatch(match: StoredActiveMatch | null) {
   try {
@@ -106,7 +106,8 @@ function readStoredActiveMatch(): StoredActiveMatch | null {
       storeActiveMatch(null)
       return null
     }
-    return { id: value.id, title: value.title }
+    return { id: value.id, title: value.title,
+      ...(typeof value.competitionTemplateId==='string'&&value.competitionTemplateId ? {competitionTemplateId:value.competitionTemplateId} : {}) }
   } catch {
     storeActiveMatch(null)
     return null
@@ -219,7 +220,9 @@ function AppShell() {
   useEffect(() => {
     const stored = readStoredActiveMatch()
     if (stored) {
-      void loadGame(stored.id, stored.title, 'match', { kind: 'resume' }).finally(() => setRestoringActiveMatch(false))
+      const mode:MatchSocketMode=stored.competitionTemplateId
+        ? {kind:'competition',templateId:stored.competitionTemplateId} : {kind:'resume'}
+      void loadGame(stored.id, stored.title, 'match', mode).finally(() => setRestoringActiveMatch(false))
     } else {
       setRestoringActiveMatch(false)
     }
@@ -385,7 +388,7 @@ function AppShell() {
 
   function handleLaunchCompetition(gameId: string, template: CompetitionTemplate) {
     const title = getGameTitle(gameId)
-    storeActiveMatch({ id: gameId, title: `${template.title} — ${title}` })
+    storeActiveMatch({ id: gameId, title: `${template.title} — ${title}`, competitionTemplateId:template.id })
     return loadGame(gameId, `${template.title} — ${title}`, 'match', {
       kind: 'competition',
       templateId: template.id,
