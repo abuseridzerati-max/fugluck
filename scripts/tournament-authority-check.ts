@@ -68,7 +68,11 @@ async function main(){
       await until(async()=>{finalMatchId=(await pool.query('SELECT r.match_id FROM competition_authority_runs r JOIN competition_bracket_matches b ON b.id=r.bracket_match_id WHERE r.instance_id=$1 AND b.round=2 ORDER BY r.created_at DESC LIMIT 1',[id])).rows[0]?.match_id;return Boolean(finalMatchId)});
       await until(()=>[...frames.entries()].some(([user,f])=>bindings.get(user)?.matchId===finalMatchId&&f.state==='ACTIVE'&&f.tickCount>=10));
       check('Cyber Hopper restart interrupts a genuinely active final',[...frames.entries()].some(([user,f])=>bindings.get(user)?.matchId===finalMatchId&&f.tickCount>=10&&f.tickCount<240));
-      await new Promise<void>(r=>io.close(()=>r()));for(const s of sockets)s.disconnect();sockets=[];bindings.clear();frames.clear();
+      // Render drains transports before its shutdown signal reaches the owner.
+      // Reproduce that ordering, not only an in-process io.close().
+      for(const s of sockets)s.disconnect();await sleep(150);
+      check('transport drain before shutdown preserves the active final during reconnect grace',(await pool.query('SELECT state FROM competition_tournaments WHERE instance_id=$1',[id])).rows[0].state==='PLAYING'&&(await pool.query('SELECT state FROM competition_bracket_matches WHERE instance_id=$1 AND round=2',[id])).rows[0].state==='ACTIVE');
+      await new Promise<void>(r=>io.close(()=>r()));sockets=[];bindings.clear();frames.clear();
       await sleep(2500);await boot();for(const user of users)await client(user);
       check('Cyber Hopper restart preserves finished semifinals and seeding',(await pool.query("SELECT count(*)::int n FROM competition_bracket_matches WHERE instance_id=$1 AND round=1 AND state='COMPLETE'",[id])).rows[0].n===2&&JSON.stringify((await pool.query('SELECT seeded_order FROM competition_tournaments WHERE instance_id=$1',[id])).rows[0].seeded_order)===JSON.stringify(seed));
     }

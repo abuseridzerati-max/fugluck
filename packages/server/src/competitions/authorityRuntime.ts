@@ -303,8 +303,13 @@ export class AuthorityRuntime {
       }
       if(r.players.every(p=>p.state==='COMPLETED')) { void this.finish(r,'SERVER_RESULTS'); return; }
       const disconnected=r.players.filter(p=>!p.socket?.connected);
-      if(disconnected.length===2) { void this.finish(r,'BOTH_DISCONNECTED',undefined,true); return; }
-      const gone=disconnected.find(p=>p.state==='ACTIVE'&&p.disconnectedAt!==null&&now-p.disconnectedAt>(this.options.reconnectMs??10000));
+      // A host can drain both transports just before delivering SIGTERM. Keep the
+      // same reconnect grace so close() can fence recovery without refunding a
+      // healthy bracket first. Two genuinely absent players still void after it.
+      if(disconnected.length===2&&disconnected.every(p=>p.disconnectedAt!==null&&now-p.disconnectedAt>(this.options.reconnectMs??10000))) {
+        void this.finish(r,'BOTH_DISCONNECTED',undefined,true); return;
+      }
+      const gone=disconnected.length===1?disconnected.find(p=>p.state==='ACTIVE'&&p.disconnectedAt!==null&&now-p.disconnectedAt>(this.options.reconnectMs??10000)):undefined;
       if(gone) {
         const opponent=r.players.find(p=>p!==gone)!;
         const healthy=opponent.state==='COMPLETED'||now-opponent.controls.lastInput<1000;

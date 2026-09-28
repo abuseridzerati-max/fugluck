@@ -135,9 +135,13 @@ async function handleGracefulShutdown(signal: string) {
 
     // 2. Stop accepting new HTTP requests
     logger.info("[server] stopping HTTP server...");
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((err) => (err ? reject(err) : resolve()));
-    });
+    // Socket.IO closes its attached HTTP server. Avoid treating that successful
+    // close as an error and skipping database cleanup.
+    if (httpServer.listening) {
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((err) => (err ? reject(err) : resolve()));
+      });
+    }
 
     // 3. Close database connection pool
     logger.info("[server] closing database pool...");
@@ -145,7 +149,8 @@ async function handleGracefulShutdown(signal: string) {
     await pool.end();
 
     logger.info("[server] graceful shutdown complete.");
-    process.exit(0);
+    clearTimeout(forceExitTimeout);
+    process.exitCode = 0;
   } catch (error) {
     logger.error("[server] error during graceful shutdown:", error);
     process.exit(1);
