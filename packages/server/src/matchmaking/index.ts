@@ -39,12 +39,19 @@ import { allowedMockUser, isMockTemplate, stagingMockAction, validMockAuthorizat
 
 export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
 
+let matchmakingStartup: Promise<void> = Promise.resolve();
+
+export async function waitForMatchmakingStartup(): Promise<void> {
+  await matchmakingStartup;
+}
+
 // Sole entry point for this module: builds the Socket.IO server, wires
 // session auth and the queue/match event handlers, and returns it. Nothing
 // outside this file reaches into queue.ts/matches.ts directly.
 export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin?: string; authorityOptions?: AuthorityOptions; competitionAccounting?:CompetitionAccountingPort }): MatchmakingServer {
   // Trigger crash recovery for any uncompleted active matches from a prior server run
   const startup = recoverOrphanMatches().then(() => lifecycleEngine.recoverOrphanCompetitions());
+  matchmakingStartup = startup.then(() => undefined);
 
   const io: MatchmakingServer = new Server(httpServer, {
     cors: socketIoCorsOptions,

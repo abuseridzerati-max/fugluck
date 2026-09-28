@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
-import { attachMatchmaking, type MatchmakingServer } from "./matchmaking";
+import { attachMatchmaking, type MatchmakingServer, waitForMatchmakingStartup } from "./matchmaking";
 import { accountRouter } from "./routes/account";
 import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
@@ -145,6 +145,10 @@ async function handleGracefulShutdown(signal: string) {
 
     // 3. Close database connection pool
     logger.info("[server] closing database pool...");
+    // Matchmaking starts orphan recovery when its listeners are attached. A
+    // shutdown can arrive while that recovery still uses the database, so drain
+    // it before ending the shared pool.
+    await waitForMatchmakingStartup();
     await closeTournamentLocks();
     await pool.end();
 
