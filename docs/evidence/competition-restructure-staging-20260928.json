@@ -1,0 +1,3431 @@
+{
+  "recordedAt": "2026-09-28T18:49:41.900Z",
+  "result": "NOT_PASS",
+  "nextPhaseReady": false,
+  "scope": "Authorized exact-revision staging rollout only. No main merge, production deployment/configuration/database mutation, real money or real provider activation.",
+  "revision": {
+    "approved": "ce45607257f52c882b86292c1e62fe42ad57e385",
+    "deployedFrontend": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "deployedBackend": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "localRecoveryRepair": "e339f339e6f7c71adbe04200681a0401bdd49b52",
+    "repairPushed": true,
+    "repairDeployed": true,
+    "branch": "codex/competition-restructure",
+    "uiAncestor": "4ae3fc3290bfbb1b367c57caeb01bd68140ead03"
+  },
+  "deployments": {
+    "checkedAt": "2026-09-29",
+    "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "branch": "codex/competition-restructure",
+    "render": {
+      "serviceId": "srv-da2c50c9v7es73db3dkg",
+      "id": "dep-datfa26gekts73ajgtsg",
+      "liveAt": "2026-09-28T18:47:41Z",
+      "status": "Live",
+      "startCommand": "exec node --import tsx packages/server/src/index.ts",
+      "autoDeploy": false,
+      "plan": "Free",
+      "revision": "0d4ede659ec0776e46f1e583f879a234b9905331"
+    },
+    "vercel": {
+      "id": "AQyXcMmC87f8XJHEx7x4Su7nBhg2",
+      "status": "Ready",
+      "environment": "Preview",
+      "alias": "staging.fugluck.com",
+      "revision": "0d4ede659ec0776e46f1e583f879a234b9905331"
+    },
+    "settings": {
+      "APP_ENV": "staging",
+      "NODE_ENV": "production",
+      "DATABASE_REGION": "eu-central-1",
+      "DATABASE_TARGET_FINGERPRINT": "6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926",
+      "ENABLE_COMPETITION_AUTHORITY": "true",
+      "ENABLE_KNOCKOUT_TOURNAMENTS": "false",
+      "REAL_MONEY_ENABLED": "false",
+      "REAL_MONEY_DEPOSITS_ENABLED": "false",
+      "REAL_MONEY_WITHDRAWALS_ENABLED": "false",
+      "REAL_MONEY_COMPETITIONS_ENABLED": "false",
+      "STAGING_MOCK_COMMERCIAL_ENABLED": "true",
+      "STAGING_MOCK_DEPOSITS_ENABLED": "false",
+      "STAGING_MOCK_COMPETITIONS_ENABLED": "false",
+      "STAGING_MOCK_WITHDRAWALS_ENABLED": "false"
+    }
+  },
+  "backup": {
+    "initialAttempt": {
+      "startedAt": "2026-09-28T17:26:12.050Z",
+      "project": "gzfcucvxfzzjzjtgkwpd",
+      "candidate": "ce45607257f52c882b86292c1e62fe42ad57e385",
+      "sourceSchemas": [
+        "public",
+        "drizzle"
+      ],
+      "destination": {
+        "host": "127.0.0.1",
+        "port": 55440,
+        "database": "knockout_restore_20260928",
+        "newIsolatedCluster": true
+      },
+      "backup": {
+        "createdAt": "2026-09-28T17:26:17.784Z",
+        "completedAt": "2026-09-28T17:26:27.340Z",
+        "bytes": 195691,
+        "sha256": "c8ebac19dc1de6d5256cbee3bcbb9969f8ce52d7e716ba4d5095c8d4c2ca78f4",
+        "consistentSnapshot": true,
+        "tlsVerified": true,
+        "tableCount": 32
+      },
+      "restore": {
+        "completedAt": "2026-09-28T17:26:32.087Z",
+        "comparisons": {
+          "rows": true,
+          "columns": true,
+          "constraints": false,
+          "indexes": true,
+          "triggers": true,
+          "functions": true,
+          "sequences": true,
+          "migrations": true,
+          "reconciliation": true,
+          "operations": true,
+          "balances": true
+        },
+        "reconciliation": {
+          "sandbox_sum": "0",
+          "sandbox_escrow": "0",
+          "sandbox_reserved": "0",
+          "open_instances": 0,
+          "active_authority": 0,
+          "unapplied_decisions": 0,
+          "commercial_sum": "0",
+          "commercial_unbalanced": 0,
+          "commercial_reserved": "0",
+          "unresolved_provider": 0,
+          "duplicate_prizes": 0,
+          "negative_user_balances": 0,
+          "unapplied_provider_events": 0
+        }
+      },
+      "rehearsal": false,
+      "migrationReview": {
+        "result": "PASS",
+        "lfSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+        "dataRewrites": false,
+        "dropTables": false,
+        "truncate": false,
+        "intentionalConstraintReplacement": "competition_authority_runs_instance_id_key replaced by legacy-only unique and bracket attempt/live unique indexes"
+      },
+      "toolVersion": "pg_dump (PostgreSQL) 17.11",
+      "failure": "RESTORE_PARITY_FAILED",
+      "isolatedServerStopped": true
+    },
+    "acceptedAttempt": {
+      "startedAt": "2026-09-28T17:28:47.546Z",
+      "project": "gzfcucvxfzzjzjtgkwpd",
+      "candidate": "ce45607257f52c882b86292c1e62fe42ad57e385",
+      "sourceSchemas": [
+        "public",
+        "drizzle"
+      ],
+      "destination": {
+        "host": "127.0.0.1",
+        "port": 55440,
+        "database": "knockout_restore_20260928",
+        "newIsolatedCluster": true
+      },
+      "backup": {
+        "createdAt": "2026-09-28T17:28:51.623Z",
+        "completedAt": "2026-09-28T17:29:00.664Z",
+        "bytes": 195691,
+        "sha256": "3f705d9d4786ca1c9822fb72a82664a677a6002824d4e815a5e060021679375a",
+        "consistentSnapshot": true,
+        "tlsVerified": true,
+        "tableCount": 32
+      },
+      "restore": {
+        "completedAt": "2026-09-28T17:29:13.275Z",
+        "comparisons": {
+          "rows": true,
+          "columns": true,
+          "constraints": true,
+          "indexes": true,
+          "triggers": true,
+          "functions": true,
+          "sequences": true,
+          "migrations": true,
+          "reconciliation": true,
+          "operations": true,
+          "balances": true
+        },
+        "reconciliation": {
+          "sandbox_sum": "0",
+          "sandbox_escrow": "0",
+          "sandbox_reserved": "0",
+          "open_instances": 0,
+          "active_authority": 0,
+          "unapplied_decisions": 0,
+          "commercial_sum": "0",
+          "commercial_unbalanced": 0,
+          "commercial_reserved": "0",
+          "unresolved_provider": 0,
+          "duplicate_prizes": 0,
+          "negative_user_balances": 0,
+          "unapplied_provider_events": 0
+        },
+        "constraintTextEquality": false,
+        "constraintEquivalence": {
+          "checkedAt": "2026-09-28T17:28:44.586Z",
+          "method": "Parse each of the five source and restored CHECK definitions on the same isolated PostgreSQL server; require identical PostgreSQL canonical definitions and identical truth tables, including null and disallowed values.",
+          "checks": [
+            {
+              "table": "commercial_accounts",
+              "name": "commercial_accounts_kind_check",
+              "canonicalEqual": true,
+              "truthEqual": true,
+              "sourceDefinitionSha256": "d000c9a8973f4690ba9df21fd3657ca242e6a74c0323b398c3d7cf93f5a0ce10",
+              "restoredDefinitionSha256": "c42632b36e8e8612c45671efc40b86b7a79f5898c0d2df63562096c83b242656",
+              "allowed": [
+                "USER_AVAILABLE",
+                "USER_ENTRY_RESERVED",
+                "USER_WITHDRAWAL_RESERVED",
+                "ENTRY_CAPTURED",
+                "PLATFORM_MARGIN",
+                "PRIZE_OBLIGATION",
+                "PROMOTIONAL_SUBSIDY",
+                "PROVIDER_CLEARING",
+                "PROCESSING_FEES",
+                "FINANCIAL_ADJUSTMENTS",
+                "CHARGEBACKS"
+              ],
+              "probes": 26
+            },
+            {
+              "table": "commercial_operations",
+              "name": "commercial_operations_kind_check",
+              "canonicalEqual": true,
+              "truthEqual": true,
+              "sourceDefinitionSha256": "43d7f090ee38e7e09968f2ddecb207853bf4bd3b86ef661f95b921edd8c90ee3",
+              "restoredDefinitionSha256": "588f7b6fff227204f3731496e1a1fe2f59422ca5713a574f14e85c6f760941bf",
+              "allowed": [
+                "DEPOSIT",
+                "WITHDRAWAL",
+                "ENTRY",
+                "COMPETITION"
+              ],
+              "probes": 12
+            },
+            {
+              "table": "commercial_provider_events",
+              "name": "commercial_provider_events_status_check",
+              "canonicalEqual": true,
+              "truthEqual": true,
+              "sourceDefinitionSha256": "a890384035e424599a7607a433d44cd7d5f1ed14729293b16f70039d7f4726f9",
+              "restoredDefinitionSha256": "e2959fd77163429e5efc364e0e3558ceb8824b5fa88afa2a876d9f9a3e6c2733",
+              "allowed": [
+                "APPLIED",
+                "DUPLICATE",
+                "OUT_OF_ORDER",
+                "MISMATCH",
+                "UNMATCHED"
+              ],
+              "probes": 14
+            },
+            {
+              "table": "commercial_risk_cases",
+              "name": "commercial_risk_cases_enforcement_action_check",
+              "canonicalEqual": true,
+              "truthEqual": true,
+              "sourceDefinitionSha256": "3183afd3f6e8d30992a076075312d2342f3860894421e7f4fe23e93cdca08e64",
+              "restoredDefinitionSha256": "db6f5e22945b50a1915329432eebe941bc65d77355a0b2d9f8958d864cabde85",
+              "allowed": [
+                "NONE",
+                "BLOCK_DEPOSITS",
+                "BLOCK_COMPETITIONS",
+                "BLOCK_WITHDRAWALS",
+                "BLOCK_ALL"
+              ],
+              "probes": 14
+            },
+            {
+              "table": "commercial_risk_cases",
+              "name": "commercial_risk_cases_status_check",
+              "canonicalEqual": true,
+              "truthEqual": true,
+              "sourceDefinitionSha256": "bb0d728ec78d32fa1c5dc956cd4d074344f1d9f442d5aae4cf62b1f5312ae2a5",
+              "restoredDefinitionSha256": "4ad22d9b17768be93e1b0a65c891746c9fadf8e9c1f0061a86e05d472f015a9f",
+              "allowed": [
+                "OPEN",
+                "IN_REVIEW",
+                "CLEARED",
+                "RESTRICTED"
+              ],
+              "probes": 12
+            }
+          ],
+          "destinationVersion": "17.11",
+          "sourceVersion": "17.6",
+          "result": "PASS",
+          "isolatedServerStopped": true
+        }
+      },
+      "rehearsal": {
+        "completedAt": "2026-09-28T17:29:13.795Z",
+        "result": "PASS",
+        "migrationCount": 14,
+        "head": "0013_knockout_tournaments",
+        "headHash": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+        "addedTables": [
+          "competition_bracket_matches",
+          "competition_entry_intents",
+          "competition_product_configs",
+          "competition_products",
+          "competition_qualification_events",
+          "competition_qualification_tickets",
+          "competition_qualification_tracks",
+          "competition_special_cycles",
+          "competition_tournaments"
+        ],
+        "priorData": [
+          {
+            "table": "admin_audit_logs",
+            "preserved": true
+          },
+          {
+            "table": "admin_lockout_attempts",
+            "preserved": true
+          },
+          {
+            "table": "commercial_accounts",
+            "preserved": true
+          },
+          {
+            "table": "commercial_operation_events",
+            "preserved": true
+          },
+          {
+            "table": "commercial_operations",
+            "preserved": true
+          },
+          {
+            "table": "commercial_postings",
+            "preserved": true
+          },
+          {
+            "table": "commercial_provider_events",
+            "preserved": true
+          },
+          {
+            "table": "commercial_risk_cases",
+            "preserved": true
+          },
+          {
+            "table": "commercial_risk_events",
+            "preserved": true
+          },
+          {
+            "table": "commercial_transactions",
+            "preserved": true
+          },
+          {
+            "table": "competition_authority_decisions",
+            "preserved": true
+          },
+          {
+            "table": "competition_authority_results",
+            "preserved": true
+          },
+          {
+            "table": "competition_authority_runs",
+            "preserved": true
+          },
+          {
+            "table": "competition_authority_sessions",
+            "preserved": true
+          },
+          {
+            "table": "competition_instance_prizes",
+            "preserved": true
+          },
+          {
+            "table": "competition_instances",
+            "preserved": true
+          },
+          {
+            "table": "competition_participants",
+            "preserved": true
+          },
+          {
+            "table": "competition_template_prizes",
+            "preserved": true
+          },
+          {
+            "table": "competition_templates",
+            "preserved": true
+          },
+          {
+            "table": "email_verification_tokens",
+            "preserved": true
+          },
+          {
+            "table": "friendships",
+            "preserved": true
+          },
+          {
+            "table": "ledger_entries",
+            "preserved": true
+          },
+          {
+            "table": "match_settlements",
+            "preserved": true
+          },
+          {
+            "table": "matches_history",
+            "preserved": true
+          },
+          {
+            "table": "password_reset_tokens",
+            "preserved": true
+          },
+          {
+            "table": "policy_acceptances",
+            "preserved": true
+          },
+          {
+            "table": "sandbox_entry_reservations",
+            "preserved": true
+          },
+          {
+            "table": "sandbox_ledger_entries",
+            "preserved": true
+          },
+          {
+            "table": "sandbox_settlements",
+            "preserved": true
+          },
+          {
+            "table": "trivia_questions",
+            "preserved": true
+          },
+          {
+            "table": "users",
+            "preserved": true
+          }
+        ],
+        "reconciliation": {
+          "sandbox_sum": "0",
+          "sandbox_escrow": "0",
+          "sandbox_reserved": "0",
+          "open_instances": 0,
+          "active_authority": 0,
+          "unapplied_decisions": 0,
+          "commercial_sum": "0",
+          "commercial_unbalanced": 0,
+          "commercial_reserved": "0",
+          "unresolved_provider": 0,
+          "duplicate_prizes": 0,
+          "negative_user_balances": 0,
+          "unapplied_provider_events": 0
+        },
+        "newTriggers": [
+          "bracket_slots_immutable",
+          "tournament_prize_terms",
+          "tournament_instance_terms",
+          "product_config_immutable",
+          "product_terms_immutable",
+          "qualification_event_immutable",
+          "qualification_ticket_immutable",
+          "cycle_terms_immutable",
+          "tournament_terms_immutable"
+        ]
+      },
+      "migrationReview": {
+        "result": "PASS",
+        "lfSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+        "dataRewrites": false,
+        "dropTables": false,
+        "truncate": false,
+        "intentionalConstraintReplacement": "competition_authority_runs_instance_id_key replaced by legacy-only unique and bracket attempt/live unique indexes"
+      },
+      "toolVersion": "pg_dump (PostgreSQL) 17.11",
+      "result": "PASS",
+      "isolatedServerStopped": true
+    },
+    "note": "Initial strict CHECK text mismatch stopped dependent work. Five cast/deparser differences were proved equivalent on the same PostgreSQL parser with 78 truth probes; a fresh backup and full restore/rehearsal then passed. Protected archives are outside Git."
+  },
+  "migration": {
+    "startedAt": "2026-09-28T17:32:44.148Z",
+    "candidate": "ce45607257f52c882b86292c1e62fe42ad57e385",
+    "project": "gzfcucvxfzzjzjtgkwpd",
+    "result": "PASS",
+    "preflight": {
+      "tlsVerified": true,
+      "migrationCount": 13,
+      "backupSha256": "3f705d9d4786ca1c9822fb72a82664a677a6002824d4e815a5e060021679375a",
+      "priorDataUnchangedSinceBackup": true,
+      "reconciliation": {
+        "sandbox_sum": "0",
+        "sandbox_escrow": "0",
+        "sandbox_reserved": "0",
+        "open_instances": 0,
+        "active_authority": 0,
+        "unapplied_decisions": 0,
+        "commercial_sum": "0",
+        "commercial_unbalanced": 0,
+        "commercial_reserved": "0",
+        "unresolved_provider": 0,
+        "duplicate_prizes": 0,
+        "negative_user_balances": 0,
+        "unapplied_provider_events": 0
+      }
+    },
+    "applyStartedAt": "2026-09-28T17:32:48.763Z",
+    "applyFinishedAt": "2026-09-28T17:32:50.202Z",
+    "migrationCount": 14,
+    "head": "0013_knockout_tournaments",
+    "headHash": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+    "headTimestamp": "1790400000000",
+    "addedTables": [
+      "competition_bracket_matches",
+      "competition_entry_intents",
+      "competition_product_configs",
+      "competition_products",
+      "competition_qualification_events",
+      "competition_qualification_tickets",
+      "competition_qualification_tracks",
+      "competition_special_cycles",
+      "competition_tournaments"
+    ],
+    "priorData": [
+      {
+        "table": "admin_audit_logs",
+        "count": 23,
+        "preserved": true
+      },
+      {
+        "table": "admin_lockout_attempts",
+        "count": 2,
+        "preserved": true
+      },
+      {
+        "table": "commercial_accounts",
+        "count": 9,
+        "preserved": true
+      },
+      {
+        "table": "commercial_operation_events",
+        "count": 61,
+        "preserved": true
+      },
+      {
+        "table": "commercial_operations",
+        "count": 26,
+        "preserved": true
+      },
+      {
+        "table": "commercial_postings",
+        "count": 94,
+        "preserved": true
+      },
+      {
+        "table": "commercial_provider_events",
+        "count": 7,
+        "preserved": true
+      },
+      {
+        "table": "commercial_risk_cases",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "commercial_risk_events",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "commercial_transactions",
+        "count": 39,
+        "preserved": true
+      },
+      {
+        "table": "competition_authority_decisions",
+        "count": 31,
+        "preserved": true
+      },
+      {
+        "table": "competition_authority_results",
+        "count": 38,
+        "preserved": true
+      },
+      {
+        "table": "competition_authority_runs",
+        "count": 31,
+        "preserved": true
+      },
+      {
+        "table": "competition_authority_sessions",
+        "count": 62,
+        "preserved": true
+      },
+      {
+        "table": "competition_instance_prizes",
+        "count": 31,
+        "preserved": true
+      },
+      {
+        "table": "competition_instances",
+        "count": 31,
+        "preserved": true
+      },
+      {
+        "table": "competition_participants",
+        "count": 62,
+        "preserved": true
+      },
+      {
+        "table": "competition_template_prizes",
+        "count": 10,
+        "preserved": true
+      },
+      {
+        "table": "competition_templates",
+        "count": 10,
+        "preserved": true
+      },
+      {
+        "table": "email_verification_tokens",
+        "count": 19,
+        "preserved": true
+      },
+      {
+        "table": "friendships",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "ledger_entries",
+        "count": 47,
+        "preserved": true
+      },
+      {
+        "table": "match_settlements",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "matches_history",
+        "count": 40,
+        "preserved": true
+      },
+      {
+        "table": "password_reset_tokens",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "policy_acceptances",
+        "count": 38,
+        "preserved": true
+      },
+      {
+        "table": "sandbox_entry_reservations",
+        "count": 50,
+        "preserved": true
+      },
+      {
+        "table": "sandbox_ledger_entries",
+        "count": 283,
+        "preserved": true
+      },
+      {
+        "table": "sandbox_settlements",
+        "count": 25,
+        "preserved": true
+      },
+      {
+        "table": "trivia_questions",
+        "count": 0,
+        "preserved": true
+      },
+      {
+        "table": "users",
+        "count": 24,
+        "preserved": true
+      }
+    ],
+    "authorityIndexes": [
+      "authority_bracket_attempt_unique",
+      "authority_bracket_live_unique",
+      "authority_legacy_instance_unique"
+    ],
+    "newTriggers": [
+      "bracket_slots_immutable",
+      "tournament_prize_terms",
+      "tournament_instance_terms",
+      "product_config_immutable",
+      "product_terms_immutable",
+      "qualification_event_immutable",
+      "qualification_ticket_immutable",
+      "cycle_terms_immutable",
+      "tournament_terms_immutable"
+    ],
+    "reconciliation": {
+      "sandbox_sum": "0",
+      "sandbox_escrow": "0",
+      "sandbox_reserved": "0",
+      "open_instances": 0,
+      "active_authority": 0,
+      "unapplied_decisions": 0,
+      "commercial_sum": "0",
+      "commercial_unbalanced": 0,
+      "commercial_reserved": "0",
+      "unresolved_provider": 0,
+      "duplicate_prizes": 0,
+      "negative_user_balances": 0,
+      "unapplied_provider_events": 0
+    }
+  },
+  "hosted": {
+    "preparation": {
+      "result": "PASS",
+      "passed": 45,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "exact staging revision and migration readiness",
+          "pass": true
+        },
+        {
+          "name": "real money and withdrawals remain disabled",
+          "pass": true
+        },
+        {
+          "name": "approved mock deposits and competitions enabled",
+          "pass": true
+        },
+        {
+          "name": "four normal synthetic users authenticate",
+          "pass": true
+        },
+        {
+          "name": "anonymous operator access denied",
+          "pass": true
+        },
+        {
+          "name": "incorrect operator key denied",
+          "pass": true
+        },
+        {
+          "name": "twelve public products and no private mock products",
+          "pass": true
+        },
+        {
+          "name": "space-blaster Standard 2/4/8/16 catalog capacities",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 2 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 4 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 8 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 16 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "space-blaster PROMO cycle 6 hours",
+          "pass": true
+        },
+        {
+          "name": "space-blaster PROMO locked at zero of 5",
+          "pass": true
+        },
+        {
+          "name": "space-blaster PROMO frozen 150 percent reference prize",
+          "pass": true
+        },
+        {
+          "name": "space-blaster GIFT cycle 24 hours",
+          "pass": true
+        },
+        {
+          "name": "space-blaster GIFT locked at zero of 10",
+          "pass": true
+        },
+        {
+          "name": "space-blaster GIFT frozen 150 percent reference prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper Standard 2/4/8/16 catalog capacities",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 2 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 4 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 8 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 16 seats frozen 90 percent prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper PROMO cycle 6 hours",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper PROMO locked at zero of 5",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper PROMO frozen 150 percent reference prize",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper GIFT cycle 24 hours",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper GIFT locked at zero of 10",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper GIFT frozen 150 percent reference prize",
+          "pass": true
+        },
+        {
+          "name": "fixed four-seat mock tournament products provisioned",
+          "pass": true
+        },
+        {
+          "name": "player 1 begins without reserves",
+          "pass": true
+        },
+        {
+          "name": "player 1 mock deposit pending",
+          "pass": true
+        },
+        {
+          "name": "player 1 signed mock funding applied",
+          "pass": true
+        },
+        {
+          "name": "duplicate deposit callback does not credit twice",
+          "pass": true
+        },
+        {
+          "name": "player 2 begins without reserves",
+          "pass": true
+        },
+        {
+          "name": "player 2 mock deposit pending",
+          "pass": true
+        },
+        {
+          "name": "player 2 signed mock funding applied",
+          "pass": true
+        },
+        {
+          "name": "player 3 begins without reserves",
+          "pass": true
+        },
+        {
+          "name": "player 3 mock deposit pending",
+          "pass": true
+        },
+        {
+          "name": "player 3 signed mock funding applied",
+          "pass": true
+        },
+        {
+          "name": "player 4 begins without reserves",
+          "pass": true
+        },
+        {
+          "name": "player 4 mock deposit pending",
+          "pass": true
+        },
+        {
+          "name": "player 4 signed mock funding applied",
+          "pass": true
+        },
+        {
+          "name": "mock withdrawals remain off",
+          "pass": true
+        },
+        {
+          "name": "commercial reconciliation remains clean after funding",
+          "pass": true
+        }
+      ]
+    },
+    "spaceBlaster": {
+      "result": "PASS",
+      "passed": 23,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "space-blaster fixed four-seat product",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 1 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 2 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 2 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 3 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 3 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 4 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player 4 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "space-blaster two authority semifinals",
+          "pass": true
+        },
+        {
+          "name": "space-blaster no award before final",
+          "pass": true
+        },
+        {
+          "name": "space-blaster genuine final settles",
+          "pass": true
+        },
+        {
+          "name": "space-blaster all three bracket matches complete",
+          "pass": true
+        },
+        {
+          "name": "space-blaster three applied authority advances",
+          "pass": true
+        },
+        {
+          "name": "space-blaster unchanged hosted 10800-tick cap",
+          "pass": true
+        },
+        {
+          "name": "space-blaster positive-tick live authority receipts",
+          "pass": true
+        },
+        {
+          "name": "space-blaster fresh sessions for each round",
+          "pass": true
+        },
+        {
+          "name": "space-blaster server seeding remains durable",
+          "pass": true
+        },
+        {
+          "name": "space-blaster one frozen final award",
+          "pass": true
+        },
+        {
+          "name": "space-blaster exactly four captures and no per-round charges",
+          "pass": true
+        },
+        {
+          "name": "space-blaster balanced tournament postings",
+          "pass": true
+        },
+        {
+          "name": "space-blaster mock provenance earns no qualification",
+          "pass": true
+        },
+        {
+          "name": "space-blaster player projection resumes champion and bracket",
+          "pass": true
+        },
+        {
+          "name": "space-blaster repeated terminal resume cannot duplicate prize",
+          "pass": true
+        }
+      ],
+      "game": {
+        "gameId": "space-blaster",
+        "instanceId": "inst_e1047648-0509-48af-ae7f-0711d47021bd",
+        "startedAt": "2026-09-28T17:53:25.593Z",
+        "completedAt": "2026-09-28T17:54:50.240Z",
+        "state": "SETTLED",
+        "prizeMinor": 1800,
+        "seedCommitment": "c265e6eb2d43fabfe8846e12dc5f6274368ec3d11c2e7c4da96a927f3fbf0e7a",
+        "finalRunId": "5024c8fe-fe4c-4046-85e2-b8fe20345c27",
+        "runs": [
+          {
+            "id": "c8b44b48-f354-4cca-a9d4-abeb3f2391a7",
+            "bracketMatchId": "8ecc6395-3d0c-4d22-90e4-6e598552eba1",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "DRAW",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T17:53:38.552Z"
+          },
+          {
+            "id": "876e617d-90f4-4e95-b7ee-781d30918d2f",
+            "bracketMatchId": "bf04613c-183b-4576-a583-bd632d2ff533",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T17:53:59.171Z"
+          },
+          {
+            "id": "0de2e919-04bb-4946-9450-b8647a6c261c",
+            "bracketMatchId": "8ecc6395-3d0c-4d22-90e4-6e598552eba1",
+            "attempt": 2,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T17:54:19.627Z"
+          },
+          {
+            "id": "5024c8fe-fe4c-4046-85e2-b8fe20345c27",
+            "bracketMatchId": "033e16f2-e98d-420e-95ba-ad73741c6e1b",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T17:54:46.095Z"
+          }
+        ],
+        "receipts": [
+          {
+            "score": 155,
+            "ticks": 1960,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 32,
+            "ticks": 964,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 66,
+            "ticks": 1087,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 9,
+            "ticks": 271,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 9,
+            "ticks": 271,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 20,
+            "ticks": 610,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 11,
+            "ticks": 350,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 130,
+            "ticks": 1507,
+            "reason": "COLLISION"
+          }
+        ],
+        "bracket": [
+          {
+            "id": "8ecc6395-3d0c-4d22-90e4-6e598552eba1",
+            "round": 1,
+            "position": 0,
+            "state": "COMPLETE",
+            "attempt": 2
+          },
+          {
+            "id": "bf04613c-183b-4576-a583-bd632d2ff533",
+            "round": 1,
+            "position": 1,
+            "state": "COMPLETE",
+            "attempt": 1
+          },
+          {
+            "id": "033e16f2-e98d-420e-95ba-ad73741c6e1b",
+            "round": 2,
+            "position": 0,
+            "state": "COMPLETE",
+            "attempt": 1
+          }
+        ],
+        "payouts": [
+          {
+            "status": "SETTLED",
+            "amountMinor": 1800
+          }
+        ]
+      }
+    },
+    "cyberHopperOrdinary": {
+      "result": "PASS",
+      "passed": 26,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "approved staging revision and mock-only exercise",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper fixed four-seat product",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 1 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 2 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 2 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 3 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 3 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 4 joins same tournament",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player 4 occupies one seat",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper two authority semifinals",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper no award before final",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper genuine final settles",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper all three bracket matches complete",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper three applied authority advances",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper unchanged hosted 10800-tick cap",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper positive-tick live authority receipts",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper fresh sessions for each round",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper server seeding remains durable",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper one frozen final award",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper exactly four captures and no per-round charges",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper balanced tournament postings",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper mock provenance earns no qualification",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper player projection resumes champion and bracket",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper repeated terminal resume cannot duplicate prize",
+          "pass": true
+        },
+        {
+          "name": "final mock commercial reconciliation",
+          "pass": true
+        },
+        {
+          "name": "no unexpected integrity or persistence errors",
+          "pass": true
+        }
+      ],
+      "game": {
+        "gameId": "cyber-hopper",
+        "instanceId": "inst_5deead7a-05fb-4a4c-8f32-0069c5f48e71",
+        "startedAt": "2026-09-28T18:14:45.034Z",
+        "completedAt": "2026-09-28T18:21:06.984Z",
+        "state": "SETTLED",
+        "prizeMinor": 1440,
+        "seedCommitment": "8a73734ebfb46b4dd8865f9d7113bf8b541a0eacaef3cbc8f5c36ddc60cde8f9",
+        "finalRunId": "809402af-128c-4124-be76-b964133ed6e5",
+        "runs": [
+          {
+            "id": "935fb098-dc4e-49d2-83e9-060e6d237761",
+            "bracketMatchId": "3d37acd4-3068-4b6d-9712-9834002efcfd",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T18:17:53.458Z"
+          },
+          {
+            "id": "833a8f8f-e596-4282-8e28-9b28288e4ce8",
+            "bracketMatchId": "55b464bf-9777-44d5-b45a-bb603a36000d",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T18:17:53.572Z"
+          },
+          {
+            "id": "809402af-128c-4124-be76-b964133ed6e5",
+            "bracketMatchId": "14178c11-2afd-4827-ae17-1ed383870657",
+            "attempt": 1,
+            "capTicks": 10800,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "appliedAt": "2026-09-28T18:21:02.636Z"
+          }
+        ],
+        "receipts": [
+          {
+            "score": 0,
+            "ticks": 10800,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 10,
+            "ticks": 167,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 10,
+            "ticks": 184,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 0,
+            "ticks": 10800,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 10,
+            "ticks": 170,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 0,
+            "ticks": 10800,
+            "reason": "CAP_REACHED"
+          }
+        ],
+        "bracket": [
+          {
+            "id": "3d37acd4-3068-4b6d-9712-9834002efcfd",
+            "round": 1,
+            "position": 0,
+            "state": "COMPLETE",
+            "attempt": 1
+          },
+          {
+            "id": "55b464bf-9777-44d5-b45a-bb603a36000d",
+            "round": 1,
+            "position": 1,
+            "state": "COMPLETE",
+            "attempt": 1
+          },
+          {
+            "id": "14178c11-2afd-4827-ae17-1ed383870657",
+            "round": 2,
+            "position": 0,
+            "state": "COMPLETE",
+            "attempt": 1
+          }
+        ],
+        "payouts": [
+          {
+            "status": "SETTLED",
+            "amountMinor": 1440
+          }
+        ]
+      }
+    },
+    "edges": {
+      "result": "PASS",
+      "passed": 46,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "player 1 receives simulated sandbox funds",
+          "pass": true
+        },
+        {
+          "name": "player 2 receives simulated sandbox funds",
+          "pass": true
+        },
+        {
+          "name": "deployed tournament catalog enabled",
+          "pass": true
+        },
+        {
+          "name": "space-blaster PROMO unqualified join rejected",
+          "pass": true
+        },
+        {
+          "name": "space-blaster GIFT unqualified join rejected",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper PROMO unqualified join rejected",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper GIFT unqualified join rejected",
+          "pass": true
+        },
+        {
+          "name": "rejected special joins create no entry or ticket",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 4-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 4-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 4-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 4-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 8-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 8-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 8-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 8-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 16-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 16-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 16-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "space-blaster 16-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 4-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 4-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 4-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 4-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 8-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 8-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 8-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 8-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 16-seat admission preserves frozen terms",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 16-seat duplicate admission idempotent",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 16-seat refresh returns own waiting state",
+          "pass": true
+        },
+        {
+          "name": "cyber-hopper 16-seat cancellation returns reservation",
+          "pass": true
+        },
+        {
+          "name": "forfeit two-player bracket admits exact capacity",
+          "pass": true
+        },
+        {
+          "name": "forfeit one applied authoritative forfeit decision",
+          "pass": true
+        },
+        {
+          "name": "forfeit one completed bracket slot",
+          "pass": true
+        },
+        {
+          "name": "forfeit exactly one frozen sandbox prize",
+          "pass": true
+        },
+        {
+          "name": "forfeit no repeated entry charge",
+          "pass": true
+        },
+        {
+          "name": "forfeit earns no qualification",
+          "pass": true
+        },
+        {
+          "name": "no-show two-player bracket admits exact capacity",
+          "pass": true
+        },
+        {
+          "name": "no-show one applied authoritative forfeit decision",
+          "pass": true
+        },
+        {
+          "name": "no-show one completed bracket slot",
+          "pass": true
+        },
+        {
+          "name": "no-show exactly one frozen sandbox prize",
+          "pass": true
+        },
+        {
+          "name": "no-show no repeated entry charge",
+          "pass": true
+        },
+        {
+          "name": "no-show earns no qualification",
+          "pass": true
+        },
+        {
+          "name": "no-show persists server-owned zero-tick receipts",
+          "pass": true
+        },
+        {
+          "name": "sandbox ledger remains balanced",
+          "pass": true
+        }
+      ]
+    },
+    "closeGuards": {
+      "result": "PASS",
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "staging revision and migration identity",
+          "pass": true
+        },
+        {
+          "name": "all real money actions disabled",
+          "pass": true
+        },
+        {
+          "name": "all three mock action flags off",
+          "pass": true
+        },
+        {
+          "name": "disabled mock deposits rejected",
+          "pass": true
+        },
+        {
+          "name": "disabled mock withdrawals rejected",
+          "pass": true
+        },
+        {
+          "name": "knockout admission off restores four legacy public templates",
+          "pass": true
+        },
+        {
+          "name": "disabled mock tournament admission rejected",
+          "pass": true
+        },
+        {
+          "name": "disabled actions create no commercial operation",
+          "pass": true
+        }
+      ]
+    },
+    "restartAttempts": [
+      {
+        "result": "FAIL",
+        "passed": 34,
+        "failed": 1,
+        "checks": [
+          {
+            "name": "approved staging revision and mock-only exercise",
+            "pass": true
+          },
+          {
+            "name": "space-blaster fixed four-seat product",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 1 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 2 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 2 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 3 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 3 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 4 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player 4 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "space-blaster two authority semifinals",
+            "pass": true
+          },
+          {
+            "name": "space-blaster no award before final",
+            "pass": true
+          },
+          {
+            "name": "space-blaster genuine final settles",
+            "pass": true
+          },
+          {
+            "name": "space-blaster all three bracket matches complete",
+            "pass": true
+          },
+          {
+            "name": "space-blaster three applied authority advances",
+            "pass": true
+          },
+          {
+            "name": "space-blaster unchanged hosted 10800-tick cap",
+            "pass": true
+          },
+          {
+            "name": "space-blaster positive-tick live authority receipts",
+            "pass": true
+          },
+          {
+            "name": "space-blaster fresh sessions for each round",
+            "pass": true
+          },
+          {
+            "name": "space-blaster server seeding remains durable",
+            "pass": true
+          },
+          {
+            "name": "space-blaster one frozen final award",
+            "pass": true
+          },
+          {
+            "name": "space-blaster exactly four captures and no per-round charges",
+            "pass": true
+          },
+          {
+            "name": "space-blaster balanced tournament postings",
+            "pass": true
+          },
+          {
+            "name": "space-blaster mock provenance earns no qualification",
+            "pass": true
+          },
+          {
+            "name": "space-blaster player projection resumes champion and bracket",
+            "pass": true
+          },
+          {
+            "name": "space-blaster repeated terminal resume cannot duplicate prize",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper fixed four-seat product",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 1 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 2 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 2 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 3 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 3 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 4 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 4 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper two authority semifinals",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper no award before final",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper genuine final settles",
+            "pass": false
+          }
+        ],
+        "game": {
+          "gameId": "cyber-hopper",
+          "instanceId": "inst_5e64f350-72c6-44d3-8dfa-63db0f320be5",
+          "startedAt": "2026-09-28T17:54:51.506Z",
+          "state": "VOIDED",
+          "prizeMinor": 1440,
+          "seedCommitment": "2da2f8284054a72184755556ff983408ddc15c355ae6b63572031d00cfb5e7c8",
+          "finalRunId": null,
+          "runs": [
+            {
+              "id": "59f0d5b5-f195-4c03-acf0-f2c6390575c0",
+              "bracketMatchId": "d6b8bb66-89d4-4bb6-b325-e198f4f2b56f",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "WIN",
+              "reason": "SERVER_RESULTS",
+              "appliedAt": "2026-09-28T17:57:59.953Z"
+            },
+            {
+              "id": "331fc0aa-d5a9-498b-a247-937b27dfc98c",
+              "bracketMatchId": "48d2d8c2-f2b4-468d-b70b-65827e2b6a9c",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "WIN",
+              "reason": "SERVER_RESULTS",
+              "appliedAt": "2026-09-28T17:57:59.996Z"
+            },
+            {
+              "id": "649c2d16-3cd3-4ddd-a07e-5402e5158a14",
+              "bracketMatchId": "8fa3c1b7-c254-4645-9d1d-b5f25bc13c1c",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "VOID",
+              "reason": "BOTH_DISCONNECTED",
+              "appliedAt": "2026-09-28T17:59:06.035Z"
+            }
+          ],
+          "receipts": [
+            {
+              "score": 10,
+              "ticks": 175,
+              "reason": "COLLISION"
+            },
+            {
+              "score": 10,
+              "ticks": 184,
+              "reason": "COLLISION"
+            },
+            {
+              "score": 0,
+              "ticks": 10800,
+              "reason": "CAP_REACHED"
+            },
+            {
+              "score": 0,
+              "ticks": 10800,
+              "reason": "CAP_REACHED"
+            },
+            {
+              "score": 10,
+              "ticks": 170,
+              "reason": "COLLISION"
+            }
+          ],
+          "bracket": [
+            {
+              "id": "d6b8bb66-89d4-4bb6-b325-e198f4f2b56f",
+              "round": 1,
+              "position": 0,
+              "state": "COMPLETE",
+              "attempt": 1
+            },
+            {
+              "id": "48d2d8c2-f2b4-468d-b70b-65827e2b6a9c",
+              "round": 1,
+              "position": 1,
+              "state": "COMPLETE",
+              "attempt": 1
+            },
+            {
+              "id": "8fa3c1b7-c254-4645-9d1d-b5f25bc13c1c",
+              "round": 2,
+              "position": 0,
+              "state": "VOIDED",
+              "attempt": 1
+            }
+          ],
+          "payouts": [
+            {
+              "status": "REFUNDED",
+              "amountMinor": 1600
+            }
+          ]
+        },
+        "failure": "cyber-hopper genuine final settles"
+      },
+      {
+        "result": "FAIL",
+        "passed": 11,
+        "failed": 1,
+        "checks": [
+          {
+            "name": "approved staging revision and mock-only exercise",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper fixed four-seat product",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 1 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 2 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 2 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 3 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 3 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 4 joins same tournament",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper player 4 occupies one seat",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper two authority semifinals",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper no award before final",
+            "pass": true
+          },
+          {
+            "name": "cyber-hopper genuine final settles",
+            "pass": false
+          }
+        ],
+        "game": {
+          "gameId": "cyber-hopper",
+          "instanceId": "inst_e38aad82-edce-48d3-b600-bb36d0b1d69c",
+          "startedAt": "2026-09-28T18:07:48.697Z",
+          "state": "VOIDED",
+          "prizeMinor": 1440,
+          "seedCommitment": "2d3245508a205a8608ecfe512908928bae5d24d7f93977ded81bf89e0e706997",
+          "finalRunId": null,
+          "runs": [
+            {
+              "id": "3a7b027b-2a8f-4812-a49b-8aa5d07b4095",
+              "bracketMatchId": "2c8ebc76-fe8c-48e2-a735-819793d686fd",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "WIN",
+              "reason": "SERVER_RESULTS",
+              "appliedAt": "2026-09-28T18:10:56.916Z"
+            },
+            {
+              "id": "f38d9ac3-4747-4d5e-850c-a9604bd9ac5d",
+              "bracketMatchId": "ae70fce3-2eda-4df3-83df-bb00f76d2ad8",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "WIN",
+              "reason": "SERVER_RESULTS",
+              "appliedAt": "2026-09-28T18:10:56.975Z"
+            },
+            {
+              "id": "5c5ca7f9-44e6-44bc-b7a3-fd981e17c14c",
+              "bracketMatchId": "9c5caf95-3fef-4378-bde7-7a02c046892b",
+              "attempt": 1,
+              "capTicks": 10800,
+              "kind": "VOID",
+              "reason": "BOTH_DISCONNECTED",
+              "appliedAt": "2026-09-28T18:11:56.865Z"
+            }
+          ],
+          "receipts": [
+            {
+              "score": 10,
+              "ticks": 159,
+              "reason": "COLLISION"
+            },
+            {
+              "score": 10,
+              "ticks": 190,
+              "reason": "COLLISION"
+            },
+            {
+              "score": 0,
+              "ticks": 10800,
+              "reason": "CAP_REACHED"
+            },
+            {
+              "score": 0,
+              "ticks": 10800,
+              "reason": "CAP_REACHED"
+            },
+            {
+              "score": 10,
+              "ticks": 166,
+              "reason": "COLLISION"
+            }
+          ],
+          "bracket": [
+            {
+              "id": "2c8ebc76-fe8c-48e2-a735-819793d686fd",
+              "round": 1,
+              "position": 0,
+              "state": "COMPLETE",
+              "attempt": 1
+            },
+            {
+              "id": "ae70fce3-2eda-4df3-83df-bb00f76d2ad8",
+              "round": 1,
+              "position": 1,
+              "state": "COMPLETE",
+              "attempt": 1
+            },
+            {
+              "id": "9c5caf95-3fef-4378-bde7-7a02c046892b",
+              "round": 2,
+              "position": 0,
+              "state": "VOIDED",
+              "attempt": 1
+            }
+          ],
+          "payouts": [
+            {
+              "status": "REFUNDED",
+              "amountMinor": 1600
+            }
+          ]
+        },
+        "failure": "cyber-hopper genuine final settles"
+      }
+    ],
+    "harnessCorrections": [
+      "Initial prepare stopped while test flags were still false; no preparation mutation occurred before the corrected saved flags.",
+      "A separate Cyber attempt hit genuine latency admission retries; the helper incorrectly counted historical runs as live runs. It was fixed to count terminal_at IS NULL, without changing latency thresholds. Disconnected clients were safely refunded.",
+      "The final read-only audit used received_at for commercial_provider_events after the initial created_at query failed."
+    ],
+    "qualification": "Hosted mock/sandbox does not qualify. Positive 5/10 thresholds, next-cycle-only entitlement, expiry, no stockpiling and one completion per tournament are isolated-fixture evidence only.",
+    "capacity": "Hosted full four-user tournaments for both games; hosted two-user forfeit/no-show and 4/8/16 partial admission/cancel. Complete 2/4/8/16 brackets also pass isolated domain fixtures."
+  },
+  "public": {
+    "initial": {
+      "checkedAt": "2026-09-28T17:36:57.276Z",
+      "frontend": {
+        "status": 200,
+        "environment": "staging",
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "apiOrigin": "https://api-staging.fugluck.com",
+        "commercialMoneyEnabled": false
+      },
+      "backend": {
+        "healthStatus": 200,
+        "readyStatus": 200,
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "environment": "staging",
+        "runtimeMode": "production",
+        "database": "connected",
+        "migrations": "match",
+        "commercial": {
+          "implementation": "unavailable",
+          "moneyEnabled": false,
+          "deposits": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "withdrawals": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "competitions": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          }
+        }
+      },
+      "catalogs": [
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 183
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 105
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 101
+        }
+      ],
+      "cors": {
+        "allowed": {
+          "status": 204,
+          "origin": "https://staging.fugluck.com",
+          "credentials": "true"
+        },
+        "rejected": {
+          "status": 500,
+          "origin": null
+        }
+      },
+      "cookie": {
+        "logoutStatus": 204,
+        "hostOnly": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSiteLax": true
+      },
+      "admin": {
+        "unauthenticatedStatus": 401
+      },
+      "tls": {
+        "frontend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 18:37:05 2026 GMT"
+        },
+        "backend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 22:35:57 2026 GMT"
+        }
+      }
+    },
+    "knockout": {
+      "checkedAt": "2026-09-28T18:08:16.452Z",
+      "frontend": {
+        "status": 200,
+        "environment": "staging",
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "apiOrigin": "https://api-staging.fugluck.com",
+        "commercialMoneyEnabled": false
+      },
+      "backend": {
+        "healthStatus": 200,
+        "readyStatus": 200,
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "environment": "staging",
+        "runtimeMode": "production",
+        "database": "connected",
+        "migrations": "match",
+        "commercial": {
+          "implementation": "unavailable",
+          "moneyEnabled": false,
+          "deposits": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "withdrawals": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "competitions": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          }
+        }
+      },
+      "catalogs": [
+        {
+          "status": 200,
+          "count": 12,
+          "ms": 115
+        },
+        {
+          "status": 200,
+          "count": 12,
+          "ms": 108
+        },
+        {
+          "status": 200,
+          "count": 12,
+          "ms": 110
+        }
+      ],
+      "cors": {
+        "allowed": {
+          "status": 204,
+          "origin": "https://staging.fugluck.com",
+          "credentials": "true"
+        },
+        "rejected": {
+          "status": 500,
+          "origin": null
+        }
+      },
+      "cookie": {
+        "logoutStatus": 204,
+        "hostOnly": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSiteLax": true
+      },
+      "admin": {
+        "unauthenticatedStatus": 401
+      },
+      "tls": {
+        "frontend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 18:37:05 2026 GMT"
+        },
+        "backend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 22:35:57 2026 GMT"
+        }
+      }
+    },
+    "final": {
+      "checkedAt": "2026-09-28T18:48:12.444Z",
+      "frontend": {
+        "status": 200,
+        "environment": "staging",
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "apiOrigin": "https://api-staging.fugluck.com",
+        "commercialMoneyEnabled": false
+      },
+      "backend": {
+        "healthStatus": 200,
+        "readyStatus": 200,
+        "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+        "environment": "staging",
+        "runtimeMode": "production",
+        "database": "connected",
+        "migrations": "match",
+        "commercial": {
+          "implementation": "unavailable",
+          "moneyEnabled": false,
+          "deposits": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "withdrawals": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          },
+          "competitions": {
+            "allowed": false,
+            "reason": "MONEY_DISABLED"
+          }
+        }
+      },
+      "catalogs": [
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 313
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 110
+        },
+        {
+          "status": 200,
+          "count": 4,
+          "ms": 90
+        }
+      ],
+      "cors": {
+        "allowed": {
+          "status": 204,
+          "origin": "https://staging.fugluck.com",
+          "credentials": "true"
+        },
+        "rejected": {
+          "status": 500,
+          "origin": null
+        }
+      },
+      "cookie": {
+        "logoutStatus": 204,
+        "hostOnly": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSiteLax": true
+      },
+      "admin": {
+        "unauthenticatedStatus": 401
+      },
+      "tls": {
+        "frontend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 18:37:05 2026 GMT"
+        },
+        "backend": {
+          "authorized": true,
+          "authorizationError": null,
+          "validTo": "Nov 16 22:35:57 2026 GMT"
+        }
+      }
+    }
+  },
+  "ui": {
+    "catalog": {
+      "checkedAt": "2026-09-28T18:06:26.924Z",
+      "revision": "ce45607257f52c882b86292c1e62fe42ad57e385",
+      "desktop": {
+        "cards": 12,
+        "scrollWidth": 1265,
+        "viewport": 1265
+      },
+      "mobile": {
+        "requestedWidth": 390,
+        "height": 844,
+        "contentWidth": 375,
+        "scrollWidth": 375,
+        "cards": 12
+      },
+      "languages": [
+        "en",
+        "ka",
+        "ru"
+      ],
+      "rulesDialog": true,
+      "compactJoinDialog": true,
+      "anonymousRequiresSignIn": true,
+      "hardRefresh": true,
+      "authenticatedFlow": "pending"
+    },
+    "session": {
+      "at": "2026-09-28T18:29:10.416Z",
+      "url": "https://staging.fugluck.com/competitions",
+      "normalLoginRenderedUser": true,
+      "historyAfterLogin": "retry error",
+      "hardRefresh": "signed out",
+      "normalCookieHttpControl": {
+        "me": 200,
+        "mine": 200,
+        "ownInstances": 8,
+        "specialEligibility": "QUALIFY"
+      },
+      "result": "BROWSER_SESSION_UNVERIFIED",
+      "note": "The in-app browser did not retain the session; no cookie security setting was relaxed.",
+      "topLevelMe": {
+        "at": "2026-09-28T18:47:52.598Z",
+        "result": "direct API navigation blocked by browser client; not bypassed"
+      }
+    }
+  },
+  "idle": {
+    "startedAt": "2026-09-28T18:45:20.840Z",
+    "idleStartedAt": "2026-09-28T18:29:10.616Z",
+    "noAgentApplicationTrafficMs": 970224,
+    "initialUi": "Loading competitions",
+    "firstFollowupMs": 17861,
+    "cardsAtFirstFollowup": 12,
+    "firstSixSecondState": "not sampled",
+    "providerActuallyCold": "not established",
+    "result": "UNVERIFIED",
+    "finding": "After 16 minutes 10 seconds without agent application traffic, all 12 cards were visible by the 17.861-second follow-up. The first 6-second state and a genuinely spun-down provider were not established, so cold-deadline/Retry acceptance remains unverified.",
+    "summary": "Idle availability observed: 12 cards visible by 17.861 seconds after 16 minutes 10 seconds without agent application traffic. Actual cold-provider state, first 6-second deadline and cold Retry remain UNVERIFIED."
+  },
+  "finalDatabase": {
+    "checkedAt": "2026-09-28T18:48:16.071Z",
+    "candidate": "ce45607257f52c882b86292c1e62fe42ad57e385",
+    "databaseFingerprint": "6b2e32ee04be948ac7015fe81ff6e32ca09ffee7491aade8e69041fcd18eb926",
+    "tlsVerified": true,
+    "migrationCount": 14,
+    "head": {
+      "hash": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+      "created_at": "1790400000000"
+    },
+    "priorCommercialData": [
+      {
+        "table": "commercial_accounts",
+        "priorRows": 9,
+        "preserved": true
+      },
+      {
+        "table": "commercial_operation_events",
+        "priorRows": 61,
+        "preserved": true
+      },
+      {
+        "table": "commercial_operations",
+        "priorRows": 26,
+        "preserved": true
+      },
+      {
+        "table": "commercial_postings",
+        "priorRows": 94,
+        "preserved": true
+      },
+      {
+        "table": "commercial_provider_events",
+        "priorRows": 7,
+        "preserved": true
+      },
+      {
+        "table": "commercial_risk_cases",
+        "priorRows": 0,
+        "preserved": true
+      },
+      {
+        "table": "commercial_risk_events",
+        "priorRows": 0,
+        "preserved": true
+      },
+      {
+        "table": "commercial_transactions",
+        "priorRows": 39,
+        "preserved": true
+      }
+    ],
+    "reconciliation": {
+      "sandbox_sum": "0",
+      "sandbox_escrow": "0",
+      "sandbox_reserved": "0",
+      "open_instances": 0,
+      "active_authority": 0,
+      "unapplied_decisions": 0,
+      "commercial_sum": "0",
+      "commercial_unbalanced": 0,
+      "commercial_reserved": "0",
+      "unresolved_provider": 0,
+      "duplicate_prizes": 0,
+      "negative_user_balances": 0,
+      "unapplied_provider_events": 0
+    },
+    "operations": [
+      {
+        "kind": "COMPETITION",
+        "status": "REFUNDED",
+        "count": 5
+      },
+      {
+        "kind": "COMPETITION",
+        "status": "SETTLED",
+        "count": 6
+      },
+      {
+        "kind": "DEPOSIT",
+        "status": "CONFIRMED",
+        "count": 7
+      },
+      {
+        "kind": "DEPOSIT",
+        "status": "FAILED",
+        "count": 1
+      },
+      {
+        "kind": "ENTRY",
+        "status": "CAPTURED",
+        "count": 16
+      },
+      {
+        "kind": "ENTRY",
+        "status": "REFUNDED",
+        "count": 14
+      },
+      {
+        "kind": "ENTRY",
+        "status": "RELEASED",
+        "count": 2
+      },
+      {
+        "kind": "WITHDRAWAL",
+        "status": "COMPLETED",
+        "count": 2
+      },
+      {
+        "kind": "WITHDRAWAL",
+        "status": "REVERSED",
+        "count": 2
+      }
+    ],
+    "balances": [
+      {
+        "kind": "ENTRY_CAPTURED",
+        "currency": "GEL",
+        "balance_minor": "0"
+      },
+      {
+        "kind": "PLATFORM_MARGIN",
+        "currency": "GEL",
+        "balance_minor": "740"
+      },
+      {
+        "kind": "PRIZE_OBLIGATION",
+        "currency": "GEL",
+        "balance_minor": "0"
+      },
+      {
+        "kind": "PROVIDER_CLEARING",
+        "currency": "GEL",
+        "balance_minor": "-25810"
+      },
+      {
+        "kind": "USER_AVAILABLE",
+        "currency": "GEL",
+        "balance_minor": "25070"
+      },
+      {
+        "kind": "USER_ENTRY_RESERVED",
+        "currency": "GEL",
+        "balance_minor": "0"
+      },
+      {
+        "kind": "USER_WITHDRAWAL_RESERVED",
+        "currency": "GEL",
+        "balance_minor": "0"
+      }
+    ],
+    "commercialPostingCount": 216,
+    "commercialTransactionCount": 88,
+    "tournaments": [
+      {
+        "game_id": "space-blaster",
+        "instance_id": "inst_e1047648-0509-48af-ae7f-0711d47021bd",
+        "state": "SETTLED",
+        "provenance": "STAGING_MOCK",
+        "capacity": "4",
+        "seed_commitment": "c265e6eb2d43fabfe8846e12dc5f6274368ec3d11c2e7c4da96a927f3fbf0e7a",
+        "final_run_id": "5024c8fe-fe4c-4046-85e2-b8fe20345c27",
+        "void_reason": null
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_5e64f350-72c6-44d3-8dfa-63db0f320be5",
+        "state": "VOIDED",
+        "provenance": "STAGING_MOCK",
+        "capacity": "4",
+        "seed_commitment": "2da2f8284054a72184755556ff983408ddc15c355ae6b63572031d00cfb5e7c8",
+        "final_run_id": null,
+        "void_reason": "BOTH_DISCONNECTED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_09322a36-46a3-432c-bb98-fe48b8544896",
+        "state": "VOIDED",
+        "provenance": "STAGING_MOCK",
+        "capacity": "4",
+        "seed_commitment": "30046dca5221107a0476940a3916a3ab4b13cb0a664b81c5d700b8c2e99a335f",
+        "final_run_id": null,
+        "void_reason": "BOTH_DISCONNECTED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_e38aad82-edce-48d3-b600-bb36d0b1d69c",
+        "state": "VOIDED",
+        "provenance": "STAGING_MOCK",
+        "capacity": "4",
+        "seed_commitment": "2d3245508a205a8608ecfe512908928bae5d24d7f93977ded81bf89e0e706997",
+        "final_run_id": null,
+        "void_reason": "BOTH_DISCONNECTED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_5deead7a-05fb-4a4c-8f32-0069c5f48e71",
+        "state": "SETTLED",
+        "provenance": "STAGING_MOCK",
+        "capacity": "4",
+        "seed_commitment": "8a73734ebfb46b4dd8865f9d7113bf8b541a0eacaef3cbc8f5c36ddc60cde8f9",
+        "final_run_id": "809402af-128c-4124-be76-b964133ed6e5",
+        "void_reason": null
+      },
+      {
+        "game_id": "space-blaster",
+        "instance_id": "inst_fd7cd0c7-cf9d-426f-91f1-43f21e344b4f",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "4",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "space-blaster",
+        "instance_id": "inst_55aec6b9-4262-4a13-a3fd-fcfac2d57594",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "8",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "space-blaster",
+        "instance_id": "inst_89488fd8-9a91-4488-832c-fcd8010c57f8",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "16",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_ea983a24-8ce9-451a-969f-c6296d8cf97f",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "4",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_235f92c6-1804-4f78-b9ad-0f37009219c6",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "8",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_319da849-e8f6-4c37-8d90-cee8a2cc29c3",
+        "state": "CANCELLED",
+        "provenance": "SANDBOX",
+        "capacity": "16",
+        "seed_commitment": null,
+        "final_run_id": null,
+        "void_reason": "USER_CANCELLED"
+      },
+      {
+        "game_id": "space-blaster",
+        "instance_id": "inst_30b9faf8-f9bd-43a4-8c06-9915ae1157d8",
+        "state": "SETTLED",
+        "provenance": "SANDBOX",
+        "capacity": "2",
+        "seed_commitment": "bbc0a597426b313f1f6f2c8659fc3983b030d06d8c0f1a1a8ac142d5e0d40305",
+        "final_run_id": "efc6def1-0f26-489c-8670-1c3c3f5d789f",
+        "void_reason": null
+      },
+      {
+        "game_id": "cyber-hopper",
+        "instance_id": "inst_3b9662e9-3279-4b68-99dd-79ee4b3b63fd",
+        "state": "SETTLED",
+        "provenance": "SANDBOX",
+        "capacity": "2",
+        "seed_commitment": "cfe98882094c426c45da2e9939343ba5f7651445d671c1d9169031209f0ececf",
+        "final_run_id": "39eadc72-7410-4ba4-94e1-3378297ad2bd",
+        "void_reason": null
+      }
+    ],
+    "result": "PASS"
+  },
+  "production": {
+    "checkedAt": "2026-09-28T18:38:51.847Z",
+    "asset": "/assets/index-BMOhywaz.js",
+    "sha256": "394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59",
+    "referencesStaging": true,
+    "unchanged": true,
+    "deployment": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+    "main": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+    "method": "read-only public HTML/bundle plus unchanged provider Production overview and remote Git refs"
+  },
+  "regression": {
+    "approvedCandidate": {
+      "checkedAt": "2026-09-28T17:45:45.7093111Z",
+      "scriptsExecuted": 49,
+      "totalPassed": 2172,
+      "totalFailed": 0,
+      "exitFailures": 0,
+      "countMismatches": 0,
+      "scripts": [
+        {
+          "file": "admin-console-check.ts",
+          "passed": 49,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 49,
+          "durationMs": 2292
+        },
+        {
+          "file": "admin-reset-recovery-check.ts",
+          "passed": 11,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 11,
+          "durationMs": 12437
+        },
+        {
+          "file": "admin-security-check.ts",
+          "passed": 8,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 8,
+          "durationMs": 1412
+        },
+        {
+          "file": "atomic-wager-lifecycle-check.ts",
+          "passed": 38,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 38,
+          "durationMs": 3142
+        },
+        {
+          "file": "auth-account-lifecycle-check.ts",
+          "passed": 41,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 41,
+          "durationMs": 12904
+        },
+        {
+          "file": "authority-presentation-check.ts",
+          "passed": 24,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 24,
+          "durationMs": 1687
+        },
+        {
+          "file": "canvas-render-check.ts",
+          "passed": 21,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 21,
+          "durationMs": 2062
+        },
+        {
+          "file": "commercial-financial-check.ts",
+          "passed": 76,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 76,
+          "durationMs": 3954
+        },
+        {
+          "file": "competition-admin-http-check.ts",
+          "passed": 44,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 44,
+          "durationMs": 16066
+        },
+        {
+          "file": "competition-authority-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 87250
+        },
+        {
+          "file": "competition-authority-latency-check.ts",
+          "passed": 26,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 26,
+          "durationMs": 35958
+        },
+        {
+          "file": "competition-phase1-domain-check.ts",
+          "passed": 41,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 41,
+          "durationMs": 1385
+        },
+        {
+          "file": "competition-phase2-accounting-check.ts",
+          "passed": 54,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 54,
+          "durationMs": 12299
+        },
+        {
+          "file": "competition-phase3-lifecycle-check.ts",
+          "passed": 45,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 45,
+          "durationMs": 4129
+        },
+        {
+          "file": "competition-phase4-ui-check.ts",
+          "passed": 44,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 44,
+          "durationMs": 3347
+        },
+        {
+          "file": "competition-phase5-admin-check.ts",
+          "passed": 42,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 42,
+          "durationMs": 12993
+        },
+        {
+          "file": "competition-player-ux-check.ts",
+          "passed": 110,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 110,
+          "durationMs": 13661
+        },
+        {
+          "file": "cors-audit-check.ts",
+          "passed": 20,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 20,
+          "durationMs": 1533
+        },
+        {
+          "file": "cyber-hopper-authority-check.ts",
+          "passed": 42,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 42,
+          "durationMs": 47273
+        },
+        {
+          "file": "determinism-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1602
+        },
+        {
+          "file": "environment-safety-check.ts",
+          "passed": 89,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 89,
+          "durationMs": 2938
+        },
+        {
+          "file": "file-upload-audit-check.ts",
+          "passed": 4,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 4,
+          "durationMs": 1409
+        },
+        {
+          "file": "financial-reconnection-check.ts",
+          "passed": 17,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 17,
+          "durationMs": 2432
+        },
+        {
+          "file": "i18n-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 1393
+        },
+        {
+          "file": "input-validation-check.ts",
+          "passed": 20,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 20,
+          "durationMs": 1723
+        },
+        {
+          "file": "legal-policy-help-check.ts",
+          "passed": 86,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 86,
+          "durationMs": 11760
+        },
+        {
+          "file": "match-lifecycle-durability-check.ts",
+          "passed": 26,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 26,
+          "durationMs": 13225
+        },
+        {
+          "file": "matchmaking-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 2074
+        },
+        {
+          "file": "migration-schema-parity-check.ts",
+          "passed": 338,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 338,
+          "durationMs": 2451
+        },
+        {
+          "file": "owner-admin-lockout-check.ts",
+          "passed": 10,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 10,
+          "durationMs": 12298
+        },
+        {
+          "file": "password-policy-check.ts",
+          "passed": 18,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 18,
+          "durationMs": 1255
+        },
+        {
+          "file": "password-security-check.ts",
+          "passed": 13,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 13,
+          "durationMs": 1576
+        },
+        {
+          "file": "rate-limit-check.ts",
+          "passed": 11,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 11,
+          "durationMs": 1422
+        },
+        {
+          "file": "registration-verification-check.ts",
+          "passed": 9,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 9,
+          "durationMs": 1194
+        },
+        {
+          "file": "request-logging-audit-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1192
+        },
+        {
+          "file": "score-validation-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1699
+        },
+        {
+          "file": "seed-admin-check.ts",
+          "passed": 7,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 7,
+          "durationMs": 11908
+        },
+        {
+          "file": "sql-injection-check.ts",
+          "passed": 19,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 19,
+          "durationMs": 1553
+        },
+        {
+          "file": "staging-mock-commercial-check.ts",
+          "passed": 13,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 13,
+          "durationMs": 1385
+        },
+        {
+          "file": "staging-readiness-check.ts",
+          "passed": 40,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 40,
+          "durationMs": 1347
+        },
+        {
+          "file": "test-database-safety-check.ts",
+          "passed": 18,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 18,
+          "durationMs": 1264
+        },
+        {
+          "file": "tournament-authority-check.ts",
+          "passed": 33,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 33,
+          "durationMs": 60452
+        },
+        {
+          "file": "tournament-domain-check.ts",
+          "passed": 97,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 97,
+          "durationMs": 6279
+        },
+        {
+          "file": "tournament-recovery-check.ts",
+          "passed": 52,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 52,
+          "durationMs": 6018
+        },
+        {
+          "file": "tournament-rules-check.ts",
+          "passed": 180,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 180,
+          "durationMs": 1371
+        },
+        {
+          "file": "wallet-friends-check.ts",
+          "passed": 48,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 48,
+          "durationMs": 2404
+        },
+        {
+          "file": "wallet-settlement-concurrency-check.ts",
+          "passed": 16,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 16,
+          "durationMs": 12668
+        },
+        {
+          "file": "wallet-settlement-integrity-check.ts",
+          "passed": 24,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 24,
+          "durationMs": 12114
+        },
+        {
+          "file": "xss-audit-check.ts",
+          "passed": 17,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 17,
+          "durationMs": 1208
+        }
+      ]
+    },
+    "localRepair": {
+      "checkedAt": "2026-09-28T18:28:05.9198052Z",
+      "scriptsExecuted": 50,
+      "totalPassed": 2177,
+      "totalFailed": 0,
+      "exitFailures": 0,
+      "countMismatches": 0,
+      "scripts": [
+        {
+          "file": "admin-console-check.ts",
+          "passed": 49,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 49,
+          "durationMs": 2045
+        },
+        {
+          "file": "admin-reset-recovery-check.ts",
+          "passed": 11,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 11,
+          "durationMs": 12461
+        },
+        {
+          "file": "admin-security-check.ts",
+          "passed": 8,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 8,
+          "durationMs": 1360
+        },
+        {
+          "file": "atomic-wager-lifecycle-check.ts",
+          "passed": 38,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 38,
+          "durationMs": 3382
+        },
+        {
+          "file": "auth-account-lifecycle-check.ts",
+          "passed": 41,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 41,
+          "durationMs": 13034
+        },
+        {
+          "file": "authority-presentation-check.ts",
+          "passed": 24,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 24,
+          "durationMs": 1324
+        },
+        {
+          "file": "canvas-render-check.ts",
+          "passed": 21,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 21,
+          "durationMs": 1493
+        },
+        {
+          "file": "commercial-financial-check.ts",
+          "passed": 76,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 76,
+          "durationMs": 2653
+        },
+        {
+          "file": "competition-admin-http-check.ts",
+          "passed": 44,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 44,
+          "durationMs": 13445
+        },
+        {
+          "file": "competition-authority-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 86963
+        },
+        {
+          "file": "competition-authority-latency-check.ts",
+          "passed": 26,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 26,
+          "durationMs": 35674
+        },
+        {
+          "file": "competition-phase1-domain-check.ts",
+          "passed": 41,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 41,
+          "durationMs": 1043
+        },
+        {
+          "file": "competition-phase2-accounting-check.ts",
+          "passed": 54,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 54,
+          "durationMs": 11954
+        },
+        {
+          "file": "competition-phase3-lifecycle-check.ts",
+          "passed": 45,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 45,
+          "durationMs": 3500
+        },
+        {
+          "file": "competition-phase4-ui-check.ts",
+          "passed": 44,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 44,
+          "durationMs": 3075
+        },
+        {
+          "file": "competition-phase5-admin-check.ts",
+          "passed": 42,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 42,
+          "durationMs": 12851
+        },
+        {
+          "file": "competition-player-ux-check.ts",
+          "passed": 110,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 110,
+          "durationMs": 12965
+        },
+        {
+          "file": "cors-audit-check.ts",
+          "passed": 20,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 20,
+          "durationMs": 1075
+        },
+        {
+          "file": "cyber-hopper-authority-check.ts",
+          "passed": 42,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 42,
+          "durationMs": 47971
+        },
+        {
+          "file": "determinism-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1508
+        },
+        {
+          "file": "environment-safety-check.ts",
+          "passed": 89,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 89,
+          "durationMs": 3557
+        },
+        {
+          "file": "file-upload-audit-check.ts",
+          "passed": 4,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 4,
+          "durationMs": 1492
+        },
+        {
+          "file": "financial-reconnection-check.ts",
+          "passed": 17,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 17,
+          "durationMs": 2540
+        },
+        {
+          "file": "i18n-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 1187
+        },
+        {
+          "file": "input-validation-check.ts",
+          "passed": 20,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 20,
+          "durationMs": 1591
+        },
+        {
+          "file": "legal-policy-help-check.ts",
+          "passed": 86,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 86,
+          "durationMs": 11728
+        },
+        {
+          "file": "match-lifecycle-durability-check.ts",
+          "passed": 26,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 26,
+          "durationMs": 13160
+        },
+        {
+          "file": "matchmaking-check.ts",
+          "passed": 65,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 65,
+          "durationMs": 2018
+        },
+        {
+          "file": "migration-schema-parity-check.ts",
+          "passed": 338,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 338,
+          "durationMs": 2340
+        },
+        {
+          "file": "owner-admin-lockout-check.ts",
+          "passed": 10,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 10,
+          "durationMs": 12173
+        },
+        {
+          "file": "password-policy-check.ts",
+          "passed": 18,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 18,
+          "durationMs": 1295
+        },
+        {
+          "file": "password-security-check.ts",
+          "passed": 13,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 13,
+          "durationMs": 1724
+        },
+        {
+          "file": "rate-limit-check.ts",
+          "passed": 11,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 11,
+          "durationMs": 1190
+        },
+        {
+          "file": "registration-verification-check.ts",
+          "passed": 9,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 9,
+          "durationMs": 1254
+        },
+        {
+          "file": "request-logging-audit-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1245
+        },
+        {
+          "file": "score-validation-check.ts",
+          "passed": 12,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 12,
+          "durationMs": 1625
+        },
+        {
+          "file": "seed-admin-check.ts",
+          "passed": 7,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 7,
+          "durationMs": 11878
+        },
+        {
+          "file": "shutdown-lifecycle-check.ts",
+          "passed": 4,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 4,
+          "durationMs": 5397
+        },
+        {
+          "file": "sql-injection-check.ts",
+          "passed": 19,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 19,
+          "durationMs": 1489
+        },
+        {
+          "file": "staging-mock-commercial-check.ts",
+          "passed": 13,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 13,
+          "durationMs": 1172
+        },
+        {
+          "file": "staging-readiness-check.ts",
+          "passed": 40,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 40,
+          "durationMs": 1234
+        },
+        {
+          "file": "test-database-safety-check.ts",
+          "passed": 18,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 18,
+          "durationMs": 1136
+        },
+        {
+          "file": "tournament-authority-check.ts",
+          "passed": 34,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 34,
+          "durationMs": 59636
+        },
+        {
+          "file": "tournament-domain-check.ts",
+          "passed": 97,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 97,
+          "durationMs": 6751
+        },
+        {
+          "file": "tournament-recovery-check.ts",
+          "passed": 52,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 52,
+          "durationMs": 6949
+        },
+        {
+          "file": "tournament-rules-check.ts",
+          "passed": 180,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 180,
+          "durationMs": 1395
+        },
+        {
+          "file": "wallet-friends-check.ts",
+          "passed": 48,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 48,
+          "durationMs": 2433
+        },
+        {
+          "file": "wallet-settlement-concurrency-check.ts",
+          "passed": 16,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 16,
+          "durationMs": 12596
+        },
+        {
+          "file": "wallet-settlement-integrity-check.ts",
+          "passed": 24,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 24,
+          "durationMs": 12311
+        },
+        {
+          "file": "xss-audit-check.ts",
+          "passed": 17,
+          "failed": 0,
+          "exitCode": 0,
+          "expectedPassed": 17,
+          "durationMs": 1147
+        }
+      ]
+    },
+    "environment": "Every scripts/*-check.ts program ran against guarded disposable PostgreSQL on loopback; these are post-deployment local regression results, not direct mutation tests against staging.",
+    "builds": {
+      "typecheckAndClientBuild": "PASS",
+      "serverBuild": "PASS",
+      "gitDiffCheck": "PASS"
+    }
+  },
+  "localRepairSourceSha256Lf": {
+    "package.json": "501bc203e57daaf16af4a67143025cf1e70340c73d39f2531c28d10822eda1ad",
+    "packages/server/src/competitions/authorityRuntime.ts": "af67a6e3e9a82cf9f176fb29b382ca5570c25f953efdbf980af4746970354d92",
+    "packages/server/src/index.ts": "522105dd09ebbced586409b361ecc55051f45314b615428ab1df924eadd0edc4",
+    "scripts/tournament-authority-check.ts": "7ebd2c70b5d9c84c9623361f22e5eb6cfeebafc9e1c28e6a674727376ba445c0",
+    "scripts/shutdown-lifecycle-check.ts": "4184175b0da56ab08ffd8032dd618ac7f9ddcc94a509ea8b01b29beb249ee14d"
+  },
+  "blockers": [
+    "Production frontend still embeds the staging API; remediation requires separate explicit Production deployment approval.",
+    "Full hosted 8/16-player progression remains open; only fixture-level full-bracket coverage is established.",
+    "Space Blaster active-Final restart-recovery checkpoint remains open; ordinary bracket/settlement passed.",
+    "Signed-in browser session persistence after refresh remains unverified.",
+    "Cold timeout/manual Retry acceptance remains unverified; only eventual automatic-poll recovery was observed.",
+    "Owner-authenticated Admin Operations and physical-device acceptance remain unverified."
+  ],
+  "latestVerification": {
+    "checkedAt": "2026-09-29",
+    "result": "NOT_PASS",
+    "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "frontendBackendRevisionMatch": true,
+    "appEnv": "staging",
+    "database": "Frankfurt staging; CA/TLS verified; connected",
+    "migrationCount": 14,
+    "migrationHead": "0013_knockout_tournaments",
+    "migrationHeadSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+    "flags": {
+      "allRealMoney": false,
+      "mockDepositActions": false,
+      "mockWithdrawalActions": false,
+      "mockCompetitionActions": false,
+      "knockoutAdmission": false
+    },
+    "localRegression": {
+      "scripts": 50,
+      "assertions": 2177,
+      "failures": 0
+    },
+    "hosted": {
+      "preparation": "45/45 PASS",
+      "edgeCases": "46/46 PASS",
+      "closedActionGuards": "8/8 PASS",
+      "cyberHopperActiveFinalRestart": [
+        "29/29 PASS",
+        "29/29 PASS"
+      ],
+      "spaceBlasterOrdinaryBracket": "18 substantive checks PASS",
+      "spaceBlasterRestartCheckpoint": "OPEN",
+      "fullHosted8And16Progression": "OPEN"
+    },
+    "coldCatalog": "Eventual recovery by automatic polling observed; timeout and manual Retry acceptance not established",
+    "browserRefreshPersistence": "UNVERIFIED",
+    "production": {
+      "deploymentUnchanged": true,
+      "mainRevision": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+      "deploymentId": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+      "servedBundleSha256": "394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59",
+      "servedFrontendStillReferencesStagingApi": true
+    },
+    "tls": "Frontend and backend valid through 2026-11-16 UTC",
+    "commercialData": "Prior commercial tables preserved; zero reconciliation discrepancies or unresolved obligations in final read-only audit"
+  }
+}

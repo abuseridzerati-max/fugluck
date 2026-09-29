@@ -1,0 +1,104 @@
+{
+  "verifiedAt": "2026-09-29T06:45:16.531Z",
+  "branch": "codex/competition-restructure",
+  "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
+  "frontend": {
+    "deployment": "AQyXcMmC87f8XJHEx7x4Su7nBhg2",
+    "environment": "staging",
+    "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "apiOrigin": "https://api-staging.fugluck.com"
+  },
+  "backend": {
+    "service": "srv-da2c50c9v7es73db3dkg",
+    "deployment": "dep-datls6vlot8c73836t20",
+    "environment": "staging",
+    "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
+    "database": "Frankfurt staging",
+    "migrationCount": 14,
+    "migrationHead": "0013_knockout_tournaments",
+    "migrationHeadSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08"
+  },
+  "backupRestore": {
+    "backupAt": "2026-09-28T17:28:51.623Z",
+    "sha256": "3f705d9d4786ca1c9822fb72a82664a677a6002824d4e815a5e060021679375a",
+    "isolatedRestoreAndMigrationRehearsal": "PASS",
+    "priorCommercialRowsPreserved": true
+  },
+  "spaceBlasterRestart": {
+    "instanceId": "inst_b3cac6ce-985d-4ce6-9e49-29bccee18237",
+    "renderRestartAt": "2026-09-29T06:32:41.937Z",
+    "activeFinalReconnectedAfterRestart": true,
+    "fourOfFourClientsReconnectedAt": "2026-09-29T06:32:43Z",
+    "finalSessionMatchId": "comp_match_63da405d-05dd-428c-9967-58fec49f66a8",
+    "recoveredFinalAttempt": 13,
+    "earlierAttemptVoidedReason": "OWNER_STATE_LOST",
+    "bracketSlots": 3,
+    "finalState": "SETTLED",
+    "entryCaptures": 4,
+    "finalPrizeMinor": 1800,
+    "payoutOperations": 1,
+    "testHarness": "18/19 assertions before stopping at a stale attempt-1 checkpoint; recovery was independently corroborated by provider restart event and persisted authority/session/settlement rows"
+  },
+  "postResetChecks": {
+    "closedActionGuards": "8/8 PASS",
+    "mockDepositWithdrawalCompetitionActions": "OFF",
+    "knockoutAdmission": "OFF",
+    "realMoneyDepositsWithdrawalsCompetitions": "OFF",
+    "realMoneyEnabled": false,
+    "priorCommercialRowsPreserved": true,
+    "commercialPostingCount": 596,
+    "commercialTransactionCount": 249,
+    "unbalancedTransactions": 0,
+    "reservedFunds": 0,
+    "openInstances": 0,
+    "activeAuthorityRuns": 0,
+    "unappliedDecisions": 0,
+    "duplicatePrizes": 0,
+    "negativeUserBalances": 0
+  },
+  "publicChecks": {
+    "frontendHealthRevisionEnvironment": "PASS",
+    "backendHealthRevisionEnvironment": "PASS",
+    "databaseConnectedAndMigrationsMatch": "PASS",
+    "catalogAfterSettingsReset": "PASS; 4 legacy public templates; HTTP 200",
+    "catalogLatencyMs": [1214, 123, 597],
+    "stagingOriginCors": "PASS",
+    "unapprovedOriginHasNoAllowOrigin": true,
+    "sessionCookie": "host-only; Secure; HttpOnly; SameSite=Lax",
+    "unauthenticatedAdmin": 401,
+    "tls": {
+      "frontendAuthorized": true,
+      "frontendValidTo": "2026-11-16T18:37:05Z",
+      "backendAuthorized": true,
+      "backendValidTo": "2026-11-16T22:35:57Z"
+    }
+  },
+  "production": {
+    "deployment": "AtViaffzmmQELvKqBn8u56mxRZ6W",
+    "mainRevision": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+    "bundleSha256": "394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59",
+    "bundleStillReferencesStaging": true,
+    "unchangedByThisRollout": true
+  },
+  "acceptance": {
+    "localScripts": 50,
+    "assertions": 2177,
+    "failures": 0,
+    "freshRegressionRerunAt": "2026-09-29T07:08:02.032Z",
+    "freshRegressionCountMismatches": 0,
+    "regressionDatabase": "verified disposable PostgreSQL at 127.0.0.1:55439; stopped after run",
+    "typecheckClientBuildServerBuildWhitespace": "PASS",
+    "hostedPrep": "45/45 PASS",
+    "hostedEdges": "46/46 PASS",
+    "cyberHopperRestart": "2 x 29/29 PASS",
+    "spaceBlasterOrdinary": "PASS",
+    "spaceBlasterRestart": "PASS by provider event plus persisted recovery evidence; harness checkpoint stale",
+    "hostedEightAndSixteenPlayerProgression": "BLOCKED; only four authorized synthetic accounts; user said additional accounts are not yet available",
+    "signedInBrowserRefreshPersistence": "UNVERIFIED",
+    "coldTimeoutAndManualRetry": "UNVERIFIED; idle catalog auto-recovered by background refresh",
+    "qualificationPositiveHostedFlow": "NOT RUN; mock sandbox does not grant qualification; fixture coverage passes",
+    "phase7a": "NOT PASS; production frontend continues to reference staging API",
+    "competitionRestructure": "NOT PASS; hosted 8/16, browser persistence, and cold Retry remain open"
+  },
+  "scope": "Staging-only. No main merge, Production deploy/config/database change, real-money setting, real provider, bank, real deposit, or real withdrawal was performed."
+}

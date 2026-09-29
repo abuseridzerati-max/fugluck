@@ -1,10 +1,50 @@
 # Phase 7A.1 — Commercial Environment & Production Safety Baseline
 
+## Authoritative staging acceptance update — 2026-09-29
+
+**Current verdict: Phase 7A NOT PASS; not ready for the next phase.** This update supersedes the older deployment snapshots below. The exact frontend and backend revision live on staging is `0d4ede659ec0776e46f1e583f879a234b9905331` (current Render deployment after test-switch reset `dep-datls6vlot8c73836t20`; Vercel Preview `AQyXcMmC87f8XJHEx7x4Su7nBhg2`). Live `/deployment.json`, `/health`, `/api/health`, provider deployment views, and read-only database checks verified the SHA, `APP_ENV=staging`, Frankfurt staging database identity, connected database, and matching 14/14 migration journal. Head is `0013_knockout_tournaments`, SHA-256 `a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08`.
+
+**VERIFIED backup/restore/migration:** fresh protected staging backup at `2026-09-28T17:28:51.623Z`, SHA-256 `3f705d9d4786ca1c9822fb72a82664a677a6002824d4e815a5e060021679375a`; isolated PostgreSQL 17.11 restore and official 0013 rehearsal passed schema, row, migration-history, and reconciliation parity. Final SQL review found no destructive DROP/TRUNCATE or legacy data rewrite. Migration 0013 was then applied only to the Frankfurt staging database. Read-only post-migration audit found all prior commercial tables and accounting intact, balanced postings, and zero unresolved provider events, reservations, unapplied decisions, duplicate prizes, or reconciliation discrepancies.
+
+**VERIFIED safety and service state:** staging reports `APP_ENV=staging` and `NODE_ENV=production`; all four real-money flags remain OFF; mock deposit, withdrawal, and competition action switches are OFF; knockout admission is OFF. The saved Render values and live health confirm the temporary test switches returned to false. Post-reset 8/8 guard checks rejected actions without creating commercial operations. Frontend/backend TLS is valid through 2026-11-16 UTC. The public production deployment and bundle hash were rechecked read-only and are unchanged; no production deployment, config, database, or financial resource was modified. Production still serves a frontend bundle pointing at the staging API. Source now fails closed for a future hosted production build without an accepted independent production API/database target; fixing the currently served production bundle remains a separate production action.
+
+**VERIFIED local regression after deployment:** all `scripts/*-check.ts` scripts passed: **50 scripts, 2,177 assertions, 0 failures**. `npm run typecheck`, client production build, `npm run build:server`, and `git diff --check` passed. Per-script assertions:
+
+| Script | Passed | Script | Passed |
+|---|---:|---|---:|
+| admin-console-check.ts | 49 | admin-reset-recovery-check.ts | 11 |
+| admin-security-check.ts | 8 | atomic-wager-lifecycle-check.ts | 38 |
+| auth-account-lifecycle-check.ts | 41 | authority-presentation-check.ts | 24 |
+| canvas-render-check.ts | 21 | commercial-financial-check.ts | 76 |
+| competition-admin-http-check.ts | 44 | competition-authority-check.ts | 65 |
+| competition-authority-latency-check.ts | 26 | competition-phase1-domain-check.ts | 41 |
+| competition-phase2-accounting-check.ts | 54 | competition-phase3-lifecycle-check.ts | 45 |
+| competition-phase4-ui-check.ts | 44 | competition-phase5-admin-check.ts | 42 |
+| competition-player-ux-check.ts | 110 | cors-audit-check.ts | 20 |
+| cyber-hopper-authority-check.ts | 42 | determinism-check.ts | 12 |
+| environment-safety-check.ts | 89 | file-upload-audit-check.ts | 4 |
+| financial-reconnection-check.ts | 17 | i18n-check.ts | 65 |
+| input-validation-check.ts | 20 | legal-policy-help-check.ts | 86 |
+| match-lifecycle-durability-check.ts | 26 | matchmaking-check.ts | 65 |
+| migration-schema-parity-check.ts | 338 | owner-admin-lockout-check.ts | 10 |
+| password-policy-check.ts | 18 | password-security-check.ts | 13 |
+| rate-limit-check.ts | 11 | registration-verification-check.ts | 9 |
+| request-logging-audit-check.ts | 12 | score-validation-check.ts | 12 |
+| seed-admin-check.ts | 7 | shutdown-lifecycle-check.ts | 4 |
+| sql-injection-check.ts | 19 | staging-mock-commercial-check.ts | 13 |
+| staging-readiness-check.ts | 40 | test-database-safety-check.ts | 18 |
+| tournament-authority-check.ts | 34 | tournament-domain-check.ts | 97 |
+| tournament-recovery-check.ts | 52 | tournament-rules-check.ts | 180 |
+| wallet-friends-check.ts | 48 | wallet-settlement-concurrency-check.ts | 16 |
+| wallet-settlement-integrity-check.ts | 24 | xss-audit-check.ts | 17 |
+
+**Hosted scope and open findings:** hosted preparation passed 45/45, edge acceptance 46/46, and closed-action guards 8/8 after the staging actions were disabled again. Cyber Hopper active-Final restart recovery passed twice, 29/29 each. Space Blaster ordinary four-seat authority/bracket/settlement passed; the restart harness stopped at 18/19 on a stale attempt-1 checkpoint, while Render's restart event, post-restart player sessions, persisted attempt 12 `OWNER_STATE_LOST`, attempt 13 completion in the same final slot, and exactly-once 1,800-minor prize independently corroborate recovery. Record this as hosted recovery PASS with an explicit harness-checkpoint defect. Standard 90/10 economics, Promo/GIFT cycle and eligibility rules, expiry, next-cycle-only use, and no-stockpiling passed local rule/domain fixtures; hosted mock play correctly cannot earn qualification. Full hosted 8/16-player progression, signed-in browser refresh persistence, and cold-timeout/manual Retry behavior remain unverified. The user said “not yet” to provisioning twelve additional owner-authorized synthetic accounts. The cold catalog eventually populated after automatic polling; this does not satisfy an explicit cold-state Retry result. Consequently **Standard rules PASS locally; Promo/GIFT rules PASS locally; Cyber Hopper restart PASS hosted; Space Blaster restart PASS by corroboration; Competition Restructure and Phase 7A NOT PASS**. Detailed evidence is in [the current rollout report](COMPETITION_RESTRUCTURE_ROLLOUT.md), [restructure report](COMPETITION_RESTRUCTURE_REPORT.md), and [latest sanitized staging evidence](evidence/competition-restructure-staging-20260929.json).
+
 Audit date: **2026-09-27, Asia/Tbilisi** (UTC observations begin 2026-09-26). Scope: the current repository, visible provider accounts, deployed staging and production frontend, and Phase 7A safety implementation. This is the single Phase 7A baseline report, not commercial launch acceptance. Sections 1–9 below preserve the pre-deployment audit snapshot; the rollout addendum records the later staging state.
 
 Sanitized pre-deployment structured evidence and per-script results: [phase7a-baseline.json](evidence/phase7a-baseline.json). The post-deployment rerun uses the same explicit 42-script count table in §8 and is recorded below. Private connection files, database exports and row-level data are excluded.
 
-**Current verdict: Phase 7A.1 NOT PASS despite a verified Phase 7B staging rollout.** Staging now runs `39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3` with 13/13 matching migrations and all real-money operations OFF. The unchanged Production frontend still embeds the staging API; independent production resources, provider isolation and the production recovery policy remain unaccepted. The mock financial engine has no hosted mutation route. [Controlled staging acceptance](PHASE_7B_STAGING_ACCEPTANCE.md) is the current rollout record; the earlier 12-migration observations below are historical.
+**Historical verdict at the 2026-09-27 audit:** Phase 7A.1 was NOT PASS despite a verified Phase 7B staging rollout. Staging then ran `39debbfa9dfb99a2f38c1c99fa19b5f58f7333c3` with 13/13 matching migrations and all real-money operations OFF. That snapshot is superseded by the 2026-09-29 authoritative update above; older observations below are historical.
 
 Evidence labels used here:
 
@@ -12,7 +52,7 @@ Evidence labels used here:
 - **BUILT locally**: implemented and checked in the working tree; this does not mean deployed.
 - **PLANNED / MISSING**: an unimplemented decision or an acceptance item without evidence. Historical records are identified explicitly.
 
-## Current controlled staging state — Phase 7B rollout on 2026-09-27
+## Historical controlled staging state — Phase 7B rollout on 2026-09-27
 
 **VERIFIED by CA-backed backup/restore, official migration, Git, authenticated provider dashboards and live public HTTP:** a fresh 423,312-byte Frankfurt staging archive was created at 2026-09-27 12:15:38 UTC with SHA-256 `211e7fd301b3db80ad7bf6715983c0a754966b1e0edb3b0e69d311543831991f`; an isolated restore matched all 24 application table fingerprints, schema objects, 12 prior journal rows and zero-discrepancy sandbox accounting. The archive is protected and ignored. Migration `0012_commercial_financial_core` then advanced only the staging database to **13/13**, head hash `9c6a81859792a4ba5ab6ce0f51eb34b195e4fa8573962d9dee55c5e2ea92fed5`, with eight commercial tables and 15 triggers. Existing sandbox accounting remained balanced.
 

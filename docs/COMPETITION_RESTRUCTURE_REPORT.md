@@ -1,6 +1,24 @@
 # FUGLUCK COMPETITION SYSTEM RESTRUCTURE REPORT
 
-September 28, 2026. **Local candidate; hosted tournament acceptance is PLANNED.** All BUILT statements below describe source inspected and the local checks identified under Tests. They do not claim a staging deployment, real-user qualification, bank integration or commercial launch approval.
+September 29, 2026. **Current staging revision `0d4ede659ec0776e46f1e583f879a234b9905331`; Competition Restructure and Phase 7A acceptance NOT PASS.** This supersedes the earlier `ce45607`/`e339f33` deployment status below. After temporary hosted-test switches were reset, Render deploy `dep-datls6vlot8c73836t20` and Vercel Preview `AQyXcMmC87f8XJHEx7x4Su7nBhg2` serve the same full SHA. The required protected backup, isolated restore/rehearsal, and migration 0013 remain valid. The full local regression is 50/2,177/0; hosted Cyber Hopper recovery passed twice. Space Blaster's restart harness checkpoint was stale, but Render and persisted authority records independently confirm post-restart Final reconnection and exactly-once settlement. Full hosted 8/16 progression and signed-in browser/cold Retry checks remain open. Nothing was merged to main or deployed to Production; all real-money and staging mock action switches are now disabled.
+
+## Latest post-deployment acceptance — 2026-09-29
+
+**VERIFIED by live health, public deployment identity, and final guarded requests:** frontend and backend report exact SHA `0d4ede659ec0776e46f1e583f879a234b9905331`, `APP_ENV=staging`, backend `NODE_ENV=production`, database connected, and migration state `match`. Read-only TLS/database verification confirms the Frankfurt target and 14/14 journal entries through `0013_knockout_tournaments` with hash `a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08`. The fresh backup checksum and isolated restore evidence are in the rollout report below. Final staging configuration has all four real-money flags false, all three mock action flags false, and knockout admission false. Live tests proved those disabled actions reject; catalog settled to four legacy templates after the tournament switch was closed.
+
+**VERIFIED by the complete post-deployment run and follow-up guard check:** all 50 `npm test` scripts passed, totaling 2,177 assertions and zero failures; typecheck/client build, server build and `git diff --check` passed. Hosted setup passed 45/45 and hosted edge checks 46/46. Two independent Cyber Hopper active-Final restart recoveries passed 29/29 each. Space Blaster completed genuine server-owned brackets, rounds and one frozen final payout. Its restart harness stopped at 18/19 because it compared an attempt-1 checkpoint captured before twelve draws/rematches; the provider recorded the later restart, four clients reconnected to active Final match `comp_match_63da405d-05dd-428c-9967-58fec49f66a8`, attempt 12 was fenced as `OWNER_STATE_LOST`, attempt 13 completed the same bracket slot, and exactly one 1,800-minor prize settled. This is a corroborated hosted recovery PASS with a harness checkpoint defect, not a clean harness PASS. Hosted 8/16 full progressions remain blocked because only four authorized synthetic users are available; the user replied “not yet” to provisioning more. After more than 16 minutes idle, the staging catalog auto-recovered all 12 cards through periodic refresh; the first observed state briefly had no cards, and the user-operated Retry control was not directly confirmed in that cold interval.
+
+**VERIFIED Production non-change and remaining blocker:** the Production deployment ID `AtViaffzmmQELvKqBn8u56mxRZ6W`, main SHA `91ca7533c8d4d3e78bc090031d69097731b03d8b`, and served JS hash `394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59` were unchanged by the staging rollout and rechecked read-only after test-switch reset. The served Production bundle still embeds `https://api-staging.fugluck.com`. Source review confirms the current client build guard refuses hosted Production builds until an independent target is accepted. No correction to the live Production pointer fits staging-only authorization. Browser refresh persistence, cold manual Retry, authenticated Admin Operations, physical-device verification and full hosted 8/16 progression remain open; therefore this candidate is **not ready for the next phase**.
+
+## Historical recovery finding on ce45607 — superseded by the latest deployment above
+
+**BUILT and verified on staging:** a fresh protected backup and isolated restore/rehearsal preceded migration 0013. The 14-entry journal matches, all prior commercial data remains unchanged, and completed exercises reconcile without reserved funds or open obligations. Space Blaster settled its four-player bracket once for 1,800 minor units, including a genuine draw/rematch; Cyber Hopper settled its ordinary four-player bracket once for 1,440. Both used the unchanged 10,800-tick hosted cap. Duplicate terminal delivery did not duplicate awards, and only four entry captures occurred per tournament. Hosted two-player forfeit/no-show and partial 4/8/16-seat admission/cancellation checks passed.
+
+**FAILED on deployed `ce45607`:** Render drained both active Final transports immediately before SIGTERM. The authority runtime applied `BOTH_DISCONNECTED` before shutdown could preserve the attempt. Earlier rounds/seeding survived and all four entries were refunded, but that is not the required active-Final recovery. The direct Node start command reaches the shutdown handler; it alone does not fix this race. Shutdown also attempted to close an HTTP server already closed by Socket.IO.
+
+**Historical status at the first report:** repair `e339f339e6f7c71adbe04200681a0401bdd49b52` was local and staging verification was pending. It has since been pushed as a descendant and is deployed within `0d4ede659ec0776e46f1e583f879a234b9905331`; see the latest acceptance above. The full 50-script/2,177-assertion rerun and Cyber Hopper hosted recoveries now pass; Space Blaster restart is corroborated by provider and persisted-run evidence, while its one-off harness checkpoint failure remains recorded.
+
+**Scope limits:** positive 5/10-match qualification, next-cycle use, expiry, no stockpiling, one completion per tournament and complete 8/16-player progression are verified by isolated fixtures. Hosted sandbox/mock play correctly earns no qualification; no live qualification was enabled or fabricated. Signed-in browser session persistence and genuine idle-first availability are recorded separately in the rollout evidence. Physical devices, owner-authenticated Admin Operations and production remediation remain outside the passed evidence.
 
 ## Standard Competition Model
 
@@ -64,7 +82,7 @@ Commercial settlement verifies full scheduled entries, capacity, frozen prize, w
 
 ## Migrations
 
-**BUILT locally:** `0013_knockout_tournaments.sql`; expected journal length 14, timestamp `1790400000000`. Nine new tables:
+**BUILT and applied to Frankfurt staging:** `0013_knockout_tournaments.sql`; journal length 14, version timestamp `1790400000000`. Actual application: `2026-09-28T17:32:48.763Z`–`2026-09-28T17:32:50.202Z`, after protected backup/restore verification. Nine new tables:
 
 | Table | Purpose |
 |---|---|
@@ -80,7 +98,7 @@ Commercial settlement verifies full scheduled entries, capacity, frozen prize, w
 
 Authority runs gain bracket-match/attempt fields. Partial indexes preserve legacy one-run-per-instance behavior while enforcing unique bracket attempts and a single live run. Triggers protect configuration, product/cycle/instance/prize terms, draw, slots/winners, tickets, applied evidence and irreversible invalidation. No legacy balance, ledger or result rewrite is included.
 
-Canonical LF SHA-256: `a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08`. Exact CRLF equivalent: `b071114af85a28c5c43a8bcb83246943190ed860e07aa0c981204c54e46c0914`. Applied only to the guarded disposable database and isolated schemas. Hosted migration is **PLANNED**.
+Canonical LF SHA-256: `a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08`. Exact CRLF equivalent: `b071114af85a28c5c43a8bcb83246943190ed860e07aa0c981204c54e46c0914`. The deployed journal contains the canonical LF hash. The source, restore rehearsal and hosted postcondition match; no production database was accessed or mutated.
 
 ## API / UI Integration
 
@@ -88,7 +106,7 @@ Canonical LF SHA-256: `a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9
 
 The catalog selects only current product IDs instead of fetching all historical cycles. Own results show the player's latest opponent and elimination while other rounds continue. Read models expose no authority tokens, seeding secrets or internal financial resources. The existing join message still accepts a template ID rather than economic terms. A private, authenticated operator endpoint provisions fixed four-player mock Standard templates for the eventual hosted exercise; it cannot change client-selected fees or prizes.
 
-## Tests
+## Original candidate tests (rerun after deployment)
 
 **Executed:** all **49 scripts, 2,172/2,172 passing assertions, zero failures**, exit failures or count mismatches in the consolidated final results. Baseline was 45 / 1,775. Every program was run; corrected failures were rerun to completion. [Sanitized evidence](evidence/competition-restructure-acceptance-20260928.json) includes individual counts, the initial run, repairs, final reruns, actual authority receipts and LF source digests.
 
@@ -161,9 +179,9 @@ Local Chromium verified 12 cards, game filtering, locked specials, compact froze
 
 **Verified by source, environment checks and actions performed:** default-off `ENABLE_KNOCKOUT_TOURNAMENTS` requires test/development/staging, authority enabled and all real-money switches false. Existing admitted obligations can finish after the action switch closes. Public tests use sandbox products; commercial E2E uses the existing signed mock provider. No bank implementation or external payment execution was added.
 
-No push, hosted migration, deployment, main merge, production configuration/data access or financial activation was performed. Historical Phase 7I acceptance and bank-readiness evidence remain intact. The accepted hosted SHA in prior evidence is `b87036ce9394af61714e0a8920944e4a6fe247f4`; it was not freshly revalidated here. The production frontend → staging API blocker remains unchanged and explicitly outside this task.
+The original local candidate did not deploy anything. The subsequently approved staging rollout pushed/deployed `ce45607` and applied 0013; its evidence is recorded above and in the rollout report. No main merge, production configuration/data access, production deployment or real financial activation was performed. Historical Phase 7I and bank-readiness evidence remain intact. The production frontend → staging API blocker was freshly reconfirmed and remains outside the authorized production boundary.
 
-## Files Changed
+## Original Candidate Files Changed
 
 **Created (15):**
 
@@ -229,19 +247,20 @@ No push, hosted migration, deployment, main merge, production configuration/data
 
 ## Git State
 
-Branch: `codex/competition-restructure`. Verified parent/UI baseline: `4ae3fc3290bfbb1b367c57caeb01bd68140ead03`. The local candidate is the commit containing this report; its full SHA is supplied in the final handoff (a commit cannot contain its own hash). It contains every verified ancestor listed in the evidence, including the commercial, authority, accepted Phase 7I and local documentation foundation. No older branch was substituted.
+Branch: `codex/competition-restructure`. Approved/pushed/deployed candidate: `ce45607257f52c882b86292c1e62fe42ad57e385`. Verified parent/UI baseline: `4ae3fc3290bfbb1b367c57caeb01bd68140ead03`. It contains every verified ancestor listed in the original evidence, including the commercial, authority, accepted Phase 7I and local documentation foundation. No older branch was substituted.
 
-This candidate has not been pushed, deployed or merged. At handoff, only the user's unrelated AGENTS/PROGRESS/.agents changes remain outside the candidate. Generated local logs, screenshot and test runner stay in ignored `Temp/competition-restructure/`; sanitized durable evidence is committed.
+Local repair `e339f339e6f7c71adbe04200681a0401bdd49b52` and subsequent documentation are ahead of the remote and are not deployed. Main remains `91ca7533c8d4d3e78bc090031d69097731b03d8b`. The user's unrelated AGENTS/PROGRESS/.agents changes remain outside these commits. Generated private logs, backups and test helpers stay in ignored `Temp/competition-rollout-20260928/`; sanitized durable evidence is committed.
 
 ## Staging Rollout Requirements
 
-**PLANNED:** follow [the complete rollout procedure](COMPETITION_RESTRUCTURE_ROLLOUT.md). Required gates are approval of the exact candidate and migration scope; fresh transaction-consistent staging backup; independently verified isolated restore and financial/schema/content parity; rehearsal of the official 13→14 migration; correct Preview/staging identities and all financial guards; then approved feature push and matching frontend/backend deployment. Production remains excluded.
+The initial approved rollout is recorded in [the complete rollout report](COMPETITION_RESTRUCTURE_ROLLOUT.md). **PLANNED:** a subsequent rollout of the local repair with explicit revision approval, current backup/recovery evidence and genuine active-Final hosted restart acceptance. Migration 0013 is already applied; never reinsert or repair its journal entry. Production remains excluded.
 
 After deployment, prove exact revisions, staging identity/database, migration head, TLS, production denial, warm and genuinely idle-first catalog, UI refresh/reconnect, and genuine four-player hosted mock tournaments for both games. Reconcile, close mock switches and record exact results. Do not automatically roll back to the old 13-migration binary: it rejects the extra migration and cannot recover tournament obligations. Contain using a compatible runtime with new admission off, then prefer a forward fix. Backup restoration after new activity needs a separate recovery decision.
 
 ## Remaining Work
 
-- **PLANNED:** the explicitly approved backup/restore/migration/staging rollout and hosted four-player tournament acceptance above; no hosted pass is claimed.
+- **PLANNED:** deploy and revalidate the local recovery repair under a subsequent exact-revision staging approval. The current hosted restart gate is FAILED, so the candidate is not ready for the next phase.
+- **PLANNED:** resolve the signed-in browser session verification and idle-first availability findings recorded in the rollout report. No passing API or warm response substitutes for those observations.
 - **PLANNED:** physical-device/real-network tournament UX and latency verification after staging is approved. Local engine/Socket.IO and Chromium evidence have narrower scope.
 - **External / separately scoped:** real-money provider, legal/business/identity policy activation and the pre-existing production isolation blocker. All remain outside this candidate.
 - **Existing advisories:** client chunk size and development-only dependency audit findings are recorded under Tests; no runtime high/critical finding is accepted silently.
