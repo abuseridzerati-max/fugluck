@@ -36,10 +36,31 @@ export function signSessionToken(payload: SessionTokenPayload): string {
 
 export function verifySessionToken(token: string): SessionTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], ...sessionScope() }) as SessionTokenPayload;
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], ...sessionScope() }) as jwt.JwtPayload;
+    return typeof payload.sub === 'string' && !payload.purpose ? { sub: payload.sub } : null;
   } catch {
     return null;
   }
+}
+
+// Transport-only proof issued through the authenticated HTTP session. Never
+// usable as an HTTP session cookie, and never stored by the browser.
+export function signSocketTicket(userId: string): string {
+  const environment = getAppEnvironment();
+  return jwt.sign({ sub: userId, purpose: 'socket' }, JWT_SECRET, {
+    expiresIn: '60s', issuer: `fugluck:${environment}`, audience: `fugluck:${environment}:socket`,
+  });
+}
+
+export function verifySocketTicket(token: unknown): SessionTokenPayload | null {
+  if (typeof token !== 'string' || !token) return null;
+  try {
+    const environment = getAppEnvironment();
+    const payload = jwt.verify(token, JWT_SECRET, {
+      algorithms: ['HS256'], issuer: `fugluck:${environment}`, audience: `fugluck:${environment}:socket`,
+    }) as jwt.JwtPayload;
+    return typeof payload.sub === 'string' && payload.purpose === 'socket' ? { sub: payload.sub } : null;
+  } catch { return null; }
 }
 
 export const SESSION_COOKIE_NAME = "ac_session";

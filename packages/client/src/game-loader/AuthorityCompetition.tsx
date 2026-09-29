@@ -4,11 +4,11 @@ import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import { CyberHopperEngine } from '@fugluck/games/cyber-hopper/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
-import { API_URL, apiFetch } from '../lib/api'
+import { API_URL, apiFetch, ApiError } from '../lib/api'
 import { competitionErrorKey, moneyLabel, type PlayerCompetition } from '../lib/competitionPresentation'
 import { CompetitionPlayerSlots, CompetitionTerms, CompetitionRules, CompetitionResult, CompetitionBracket } from '../components/CompetitionUI'
 import '../components/competition.css'
-import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/AuthContext'
 import { AuthorityPresentation } from './authorityPresentation'
 
 /** Competition renderer: never calls engine.update and never submits a final score. */
@@ -47,7 +47,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const storageKey=`authority:${templateId}`
     let instanceId:string|null=sessionStorage.getItem(storageKey), seq=0, snapshot:AuthoritySnapshot|null=null, complete=false, pendingRecovery=false
     let presentation=new AuthorityPresentation(), animation=0, diagnosticStarted=0, lastStatus=''
-    let reading:AbortController|null=null, disposed=false, completionReported=false, currentStatus:string|undefined
+    let reading:AbortController|null=null, ticketRequest:AbortController|null=null, disposed=false, completionReported=false, currentStatus:string|undefined, authFailure:string|undefined
     const reportComplete=()=>{if(!completionReported){completionReported=true;finish.current?.()}}
     const readInstance=async()=>{
       if(!instanceId||reading)return
@@ -66,11 +66,18 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       } catch { if(!disposed&&!complete&&!binding.current)say('waitingRetry') }
       finally {window.clearTimeout(timeout);reading=null}
     }
-    refreshInstance.current=()=>{void readInstance()}
+    refreshInstance.current=()=>{if(!socket.connected)socket.connect();else void readInstance()}
     const controlEvidence={samples:0,minX:1280,maxX:0,minY:720,maxY:0,maxScore:0,maxBullets:0,directions:[] as string[],activeMs:0,terminalState:''}
     const say=(text:string)=>{if(text!==lastStatus){lastStatus=text;setStatus(text)}}
     waitingInstance.current=instanceId
-    const socket:Socket<ServerToClientEvents,ClientToServerEvents>=io(API_URL,{withCredentials:true,auth:{token:getStoredAuthToken()},autoConnect:false})
+    const socket:Socket<ServerToClientEvents,ClientToServerEvents>=io(API_URL,{withCredentials:true,autoConnect:false,
+      auth:callback=>{authFailure=undefined;const controller=new AbortController();ticketRequest=controller
+        const timeout=window.setTimeout(()=>controller.abort(),6000)
+        void apiFetch<{token:string}>('/api/auth/socket-ticket',{method:'POST',signal:controller.signal})
+        .then(result=>{if(!disposed)callback({socketTicket:result.token})})
+        .catch(error=>{if(!disposed){authFailure=error instanceof ApiError&&[401,403].includes(error.status)?'errors.signIn':'connectionError';say(authFailure);callback({socketTicket:null})}})
+        .finally(()=>{window.clearTimeout(timeout);if(ticketRequest===controller)ticketRequest=null})},
+    })
     connection.current=socket
     socket.on('authority:probe',ack=>ack())
     socket.on('connect',()=>{
@@ -120,7 +127,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       void readInstance();void refresh.current()
     })
     socket.on('disconnect',()=>{neutral();setActive(false);if(!complete)say('reconnecting')})
-    socket.on('connect_error',()=>say('connectionError'))
+    socket.on('connect_error',error=>say(authFailure??(error.message==='unauthorized'?'errors.signIn':'connectionError')))
     const sendControls = () => {
       if(complete||!socket.connected||!binding.current||!snapshot||snapshot.state!=='ACTIVE')return
       if(diagnosticEnabled&&diagnosticRequested.current&&snapshot.startAt!==null&&snapshot.serverTime>=snapshot.startAt){
@@ -218,7 +225,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const poll=setInterval(()=>{if(!document.hidden)void readInstance()},5000)
     if(instanceId)void readInstance()
     socket.connect()
-    return()=>{disposed=true;reading?.abort();refreshInstance.current=null;triggerSend.current=null;clearInterval(poll);clearInterval(send);clearInterval(retry);clearInterval(diagnosticTimer);observer?.disconnect();cancelAnimationFrame(animation);neutral();socket.disconnect();binding.current=null;window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral);document.removeEventListener('visibilitychange',visibility)}
+    return()=>{disposed=true;reading?.abort();ticketRequest?.abort();refreshInstance.current=null;triggerSend.current=null;clearInterval(poll);clearInterval(send);clearInterval(retry);clearInterval(diagnosticTimer);observer?.disconnect();cancelAnimationFrame(animation);neutral();socket.disconnect();binding.current=null;window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral);document.removeEventListener('visibilitychange',visibility)}
   },[templateId,gameId])
   const terms=instance??template
   const preparing=hasSession&&!active&&!terminal&&(status==='starting'||status==='countdown')

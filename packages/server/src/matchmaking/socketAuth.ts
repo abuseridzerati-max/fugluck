@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { eq } from "drizzle-orm";
 import type { DefaultEventsMap, Socket } from "socket.io";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "../auth/jwt";
+import { SESSION_COOKIE_NAME, verifySessionToken, verifySocketTicket } from "../auth/jwt";
 import { db } from "../db/client";
 import { users } from "../db/schema";
 
@@ -55,8 +55,11 @@ function extractSessionToken(socket: MatchmakingSocket): string | null {
 // the Express auth middleware, applied to the handshake instead of a request.
 // Allows unauthenticated guests with ephemeral IDs for Free-Play instant matches.
 export async function socketAuthMiddleware(socket: MatchmakingSocket, next: (err?: Error) => void): Promise<void> {
+  const auth = socket.handshake.auth as { socketTicket?: unknown } | undefined;
+  const hasTicket = Boolean(auth && Object.prototype.hasOwnProperty.call(auth, 'socketTicket'));
   const token = extractSessionToken(socket);
-  const payload = token ? verifySessionToken(token) : null;
+  const payload = hasTicket ? verifySocketTicket(auth?.socketTicket) : token ? verifySessionToken(token) : null;
+  if (hasTicket && !payload) { next(new Error('unauthorized')); return; }
   if (!payload) {
     // Unauthenticated connections are guests. Instant invite links and free
     // play must work without a prior login — requiring an explicit `isGuest`

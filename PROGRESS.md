@@ -1,5 +1,15 @@
 # Fugluck — Progress Log
 
+## Session 107 (2026-09-30): Signed-in competition socket session repair — local candidate
+
+- **BUILT locally, verified by source and 18 real HTTP/Socket.IO boundary assertions:** competition sockets use a sixty-second, environment/purpose-scoped credential from the authenticated HTTP cookie session. Invalid explicit proof cannot become a guest; signatures, expiry, deployment isolation, current account status, HTTP-cookie separation and legacy guest/cookie-only behavior were tested. Cookie security settings and browser token persistence were not weakened.
+- **VERIFIED by real local backend browser and disposable DB audit:** normal cookie login, one-click green join without confirmation/sign-in error, refresh preserving exactly one 500-minor entry, and Leave releasing the reservation/restoring balance. No prize was paid; browser errors were empty. The original owner Chrome handshake was not inspected; an absent valid socket session is ASSUMED from the reported guest rejection. No hosted gameplay acceptance is claimed.
+- **VERIFIED by all-script execution and builds:** 51 scripts / 2,195 passing assertions / 0 failures / 0 nonzero exits / 0 count mismatches. Every script count is in [the socket session report](docs/COMPETITION_SOCKET_SESSION.md); [sanitized evidence](docs/evidence/competition-socket-session-20260930.json). Typecheck/client production build and server build passed; existing chunk advisory remains.
+- **VERIFIED by Windows Code Integrity events, PE import inspection and cluster identity:** pg_ctl's libpq.dll was blocked by signing policy. PostgreSQL 17.11 server ran directly without importing that client DLL on guarded loopback 55439. No security protection was disabled. JevRouter returned no decision due to low confidence; normal authorized source/browser diagnostics continued. Rejected background helpers were replaced by managed foreground local server sessions.
+- **VERIFIED by successful post-browser CHECKPOINT and current listener/process inspection:** temporary local services are stopped and ports 4000/5173/55439 are closed; the disposable cluster remains preserved.
+- **VERIFIED by source/Git review:** no engine, economics, migration, financial switch or provider/payment setting changed. Prior unrelated edits and .agents/ remain excluded. Commit/push and exact-head staging rollout are PLANNED under existing user authorization.
+
+
 ## Session 105 (2026-09-30): One-click competition Join — local candidate
 
 - **BUILT locally, verified by source and in-app-browser UI fixture:** removed the entry confirmation dialog/component. Join directly starts entry and retains the green inline waiting card. Account/balance/availability checks now run in the click handler, insufficient-funds feedback appears on the card, and a synchronous pending-entry guard prevents duplicate clicks. Optional Rules remains accessible.

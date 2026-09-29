@@ -14,7 +14,7 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
   gameId?:string;gameTitle?:string;onClose?:()=>void;onShowAll?:()=>void
 }) {
   const {t,i18n}=useTranslation()
-  const {user}=useAuth()
+  const {user,loading:authLoading}=useAuth()
   const [templates,setTemplates]=useState<CompetitionTemplate[]>([])
   const [rooms,setRooms]=useState<CatalogRoom[]>([])
   const [available,setAvailable]=useState(false)
@@ -51,7 +51,7 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
   useEffect(()=>{activeTemplateRef.current=null;setActiveTemplate(null);setJoinError(null)},[user?.id])
   function closePlay(){activeTemplateRef.current=null;setActiveTemplate(null);loadTemplates(true)}
   function join(template:CompetitionTemplate,room?:CatalogRoom){
-    if(activeTemplateRef.current)return
+    if(activeTemplateRef.current||authLoading)return
     if(!room?.viewerJoined){
       const reason=joinBlockReason({signedIn:Boolean(user),balanceMinor:user?.balances.sandboxGelMinor??0,entryMinor:template.entryFeeMinor,
         status:room?.status??'PENDING_ENTRANTS',joined:room?.currentParticipants??0,capacity:template.participantCapacity,sandbox:available})
@@ -80,9 +80,9 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
             <h2>{view.gameName}</h2>{template.tournament&&<span className="competition-badge">{t(`competition.knockout.products.${template.tournament.product}`)} · {view.capacity}</span>}<CompetitionTerms entryMinor={view.entryMinor} prizeMinor={view.prizeMinor} currency={view.currency}/>
             {roomsKnown?<CompetitionPlayerSlots joined={view.joined} capacity={view.capacity}/>:<p className="ac-text-muted">{t('competition.playersUnavailable')}</p>}
             <CompetitionQualification template={template}/>
-            <button type="button" className={`ac-btn ac-btn--primary competition-primary${room?.viewerJoined?' is-joined':''}`} disabled={Boolean(activeTemplate)||(!room?.viewerJoined&&(!available||publicCompetitionStatus(view.status,view.joined,view.capacity)!=='open'||Boolean(template.tournament&&!['AVAILABLE','SIGN_IN'].includes(template.tournament.eligibility))))} onClick={()=>join(displayed,room)}>{t(isActive?room?.viewerJoined?'competition.youreIn':'competition.connecting':room?.viewerJoined?'competition.actions.view':!available?'competition.status.unavailable':view.isFree?'competition.joinFree':'competition.join')}</button>
+            <button type="button" className={`ac-btn ac-btn--primary competition-primary${room?.viewerJoined?' is-joined':''}`} disabled={authLoading||Boolean(activeTemplate)||(!room?.viewerJoined&&(!available||publicCompetitionStatus(view.status,view.joined,view.capacity)!=='open'||Boolean(template.tournament&&!['AVAILABLE','SIGN_IN'].includes(template.tournament.eligibility))))} onClick={()=>join(displayed,room)}>{t(isActive?room?.viewerJoined?'competition.youreIn':'competition.connecting':room?.viewerJoined?'competition.actions.view':!available?'competition.status.unavailable':view.isFree?'competition.joinFree':'competition.join')}</button>
             {joinError?.templateId===template.id&&<p className="competition-feedback" role="status">{t(`competition.errors.${joinError.reason}`,{amount:moneyLabel(view.entryMinor,view.currency)})}</p>}
-            {isActive&&lobby&&<div className="competition-card-waiting"><p role="status">{t(`competition.${lobby.status==='waiting'&&joinedInstance?'waitingPlayers':lobby.status}`,{count:Math.max(0,view.capacity-view.joined)})}</p>{lobby.canCancel&&<button type="button" className="competition-secondary" onClick={lobby.cancel}>{t('competition.leaveCompetition')}</button>}{lobby.status==='waitingRetry'&&<button type="button" className="competition-secondary" onClick={lobby.retry}>{t('competition.retry')}</button>}{!joinedInstance&&<button type="button" className="competition-secondary" onClick={closePlay}>{t('common.back')}</button>}</div>}
+            {isActive&&lobby&&<div className="competition-card-waiting"><p role="status">{t(`competition.${lobby.status==='waiting'&&joinedInstance?'waitingPlayers':lobby.status}`,{count:Math.max(0,view.capacity-view.joined)})}</p>{lobby.canCancel&&<button type="button" className="competition-secondary" onClick={lobby.cancel}>{t('competition.leaveCompetition')}</button>}{['waitingRetry','connectionError','errors.signIn'].includes(lobby.status)&&<button type="button" className="competition-secondary" onClick={lobby.retry}>{t('competition.retry')}</button>}{!joinedInstance&&<button type="button" className="competition-secondary" onClick={closePlay}>{t('common.back')}</button>}</div>}
             <button type="button" className="competition-secondary" onClick={()=>setDetails(displayed)}>{t('competition.rulesDetails')}</button>
           </div>
         </article>

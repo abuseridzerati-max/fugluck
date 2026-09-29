@@ -319,7 +319,7 @@ async function runPhase4UIChecks(): Promise<void> {
     const balanceAfter = await sandboxAdapter.getUserBalance(testUserId);
     check("19b. Sandbox faucet reliably provisions test funds via balanced ledger", balanceAfter.availableMinor === balanceBefore.availableMinor + 10000);
 
-    const directJoinWithFeedback = catalogSrc.includes('onClick={()=>join(displayed,room)}') && !catalogSrc.includes('CompetitionConfirmationModal') && catalogSrc.includes('competition.errors.${joinError.reason}') && catalogSrc.includes('if(activeTemplateRef.current)return') && competitionsPageSrc.includes('/api/competitions/sandbox-faucet') && competitionsPageSrc.includes('competition.addTestFunds') && joinBlockReason({signedIn:true,balanceMinor:0,entryMinor:500,status:'PENDING_ENTRANTS',joined:1,capacity:2}) === 'insufficient';
+    const directJoinWithFeedback = catalogSrc.includes('onClick={()=>join(displayed,room)}') && !catalogSrc.includes('CompetitionConfirmationModal') && catalogSrc.includes('competition.errors.${joinError.reason}') && catalogSrc.includes('if(activeTemplateRef.current||authLoading)return') && competitionsPageSrc.includes('/api/competitions/sandbox-faucet') && competitionsPageSrc.includes('competition.addTestFunds') && joinBlockReason({signedIn:true,balanceMinor:0,entryMinor:500,status:'PENDING_ENTRANTS',joined:1,capacity:2}) === 'insufficient';
     check("19c. One-click join prevents duplicate clicks and explains insufficient funds inline beside catalog test funds", directJoinWithFeedback);
 
     // ----------------------------------------------------

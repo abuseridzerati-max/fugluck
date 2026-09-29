@@ -1,0 +1,407 @@
+{
+  "scope": "Local candidate; staging deployment pending",
+  "regression": {
+    "checkedAt": "2026-09-29T22:20:25.7660435Z",
+    "scriptsExecuted": 51,
+    "totalPassed": 2195,
+    "totalFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 45
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 110,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 110
+      },
+      {
+        "file": "competition-socket-session-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 89,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 89
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 338,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 338
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7
+      },
+      {
+        "file": "shutdown-lifecycle-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "tournament-authority-check.ts",
+        "passed": 34,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 34
+      },
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 97
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 52,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 52
+      },
+      {
+        "file": "tournament-rules-check.ts",
+        "passed": 180,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 180
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      }
+    ]
+  },
+  "browser": {
+    "backend": "Real local HTTP, HttpOnly cookie, Socket.IO and guarded disposable PostgreSQL",
+    "oneClickJoin": true,
+    "greenCards": 1,
+    "greenButtons": 1,
+    "confirmationDialogs": 0,
+    "signInError": false,
+    "refreshRecoveredSameEntry": true,
+    "cancellationReturnedBalance": true,
+    "browserErrors": 0,
+    "databaseAudit": {
+      "scope": "Local disposable real HTTP/cookie/socket backend",
+      "singleEntryAfterRefresh": true,
+      "entry": [
+        {
+          "entry_fee_minor": 500,
+          "prize_won_minor": 0,
+          "status": "CANCELLED",
+          "instance_status": "CANCELLED"
+        }
+      ],
+      "reservations": [
+        {
+          "status": "RELEASED"
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "controlToolBlocked": "Windows Code Integrity 3033/3077 rejected libpq.dll",
+    "server": "PostgreSQL 17.11 server run directly; does not import blocked client DLL",
+    "securityPolicyUnchanged": true
+  },
+  "limitations": [
+    "Owner Chrome staging cookie/handshake was not inspected; missing valid socket session inferred from reported guest rejection.",
+    "No hosted competition entry, payout or full gameplay acceptance is claimed."
+  ]
+}

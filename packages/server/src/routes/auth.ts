@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, or } from "drizzle-orm";
 import { Router } from "express";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../auth/password";
-import { getClearCookieOptions, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from "../auth/jwt";
+import { getClearCookieOptions, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken, signSocketTicket } from "../auth/jwt";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
@@ -70,6 +70,11 @@ const forgotPasswordLimiter = createRateLimiterMiddleware({
 });
 
 export const authRouter = Router();
+
+authRouter.post('/socket-ticket', attachSession, requireAuth, (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ token: signSocketTicket(_req.userId!) });
+});
 
 authRouter.get("/policies/versions", (_req, res) => {
   res.json({
