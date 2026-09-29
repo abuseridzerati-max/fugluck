@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import { CyberHopperEngine } from '@fugluck/games/cyber-hopper/engine'
@@ -12,7 +12,8 @@ import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
 import { AuthorityPresentation } from './authorityPresentation'
 
 /** Competition renderer: never calls engine.update and never submits a final score. */
-export function AuthorityCompetition({ gameId = 'space-blaster', templateId, template, onExit, onComplete }: { gameId?: string; templateId: string; template?: CompetitionTemplate; onExit: () => void; onComplete?:()=>void }) {
+export type CompetitionLobbyState = { instance:PlayerCompetition|null; status:string; canCancel:boolean; cancel:()=>void; retry:()=>void }
+export function AuthorityCompetition({ gameId = 'space-blaster', templateId, template, onExit, onComplete, renderLobby, onCancelled }: { gameId?: string; templateId: string; template?: CompetitionTemplate; onExit: () => void; onComplete?:()=>void; renderLobby?:(state:CompetitionLobbyState)=>ReactNode; onCancelled?:()=>void }) {
   const { t, i18n } = useTranslation()
   const canvas = useRef<HTMLCanvasElement>(null)
   const connection = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
@@ -24,6 +25,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const [countdown,setCountdown] = useState(0)
   const [instance,setInstance] = useState<PlayerCompetition|null>(null)
   const [hasSession,setHasSession] = useState(false)
+  const [enteredPlay,setEnteredPlay] = useState(false)
   const refreshInstance=useRef<(()=>void)|null>(null)
   const [active,setActive] = useState(false)
   const [terminal,setTerminal] = useState(false)
@@ -36,6 +38,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const userId = useRef(user?.id);userId.current=user?.id
   const refresh = useRef(refreshUser); refresh.current=refreshUser
   const finish=useRef(onComplete);finish.current=onComplete
+  const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
   const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : 'Space Blaster'
   useEffect(()=>{
@@ -76,7 +79,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       else socket.emit('competition:join',{templateId})
     })
     socket.on('competition:joined',p=>{instanceId=p.instanceId;waitingInstance.current=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);say('waiting');void readInstance();void refresh.current()})
-    socket.on('competition:cancelled',()=>{complete=true;sessionStorage.removeItem(storageKey);setTerminal(true);setCanCancel(false);reportComplete();void readInstance();void refresh.current()})
+    socket.on('competition:cancelled',()=>{complete=true;sessionStorage.removeItem(storageKey);setTerminal(true);setCanCancel(false);reportComplete();void readInstance();void refresh.current();cancelled.current?.()})
     socket.on('competition:error',p=>say(`errors.${competitionErrorKey(p.code)}`))
     socket.on('authority:error',p=>{
       if(complete)return
@@ -86,7 +89,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       void readInstance()
       if(p.code==='CONTROLLER_REPLACED') {socket.disconnect();setActive(false)}
     })
-    socket.on('authority:session',p=>{if(complete)return;binding.current=p;pendingRecovery=false;setHasSession(true);waitingInstance.current=null;setCanCancel(false);instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;snapshot=null;neutral();presentation=new AuthorityPresentation();socket.emit('authority:ready',p);void readInstance()})
+    socket.on('authority:session',p=>{if(complete)return;binding.current=p;pendingRecovery=false;setHasSession(true);setEnteredPlay(true);waitingInstance.current=null;setCanCancel(false);instanceId=p.instanceId;sessionStorage.setItem(storageKey,p.instanceId);seq=0;snapshot=null;neutral();presentation=new AuthorityPresentation();socket.emit('authority:ready',p);void readInstance()})
     socket.on('authority:snapshot',p=>{
       if(complete)return
       const received=performance.now()
@@ -219,7 +222,9 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   },[templateId,gameId])
   const terms=instance??template
   const preparing=hasSession&&!active&&!terminal&&(status==='starting'||status==='countdown')
-  return <section className="competition-play competition-ux" lang={i18n.resolvedLanguage}>
+  const inLobby=Boolean(renderLobby&&!enteredPlay&&!terminal)
+  const cancel=()=>{if(waitingInstance.current)connection.current?.emit('competition:cancel',{instanceId:waitingInstance.current})}
+  return <>{inLobby&&renderLobby?.({instance,status,canCancel,cancel,retry:()=>refreshInstance.current?.()})}<section hidden={inLobby} className="competition-play competition-ux" lang={i18n.resolvedLanguage}>
     <header className="competition-play-header"><h2>{gameTitle}</h2>{!terminal&&<span className="competition-test-label">{t('competition.testLabel')}</span>}</header>
     {instance?.tournament?.currentMatch&&!terminal&&<p>{t(`competition.knockout.rounds.${instance.tournament.currentMatch.roundName}`)}</p>}
     {terminal?<CompetitionResult instance={instance} userId={user?.id} onRetry={()=>refreshInstance.current?.()}/>:!hasSession?<div className="competition-waiting">
@@ -270,5 +275,5 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       <button disabled={!active} onClick={()=>{connection.current?.disconnect();setTimeout(()=>connection.current?.connect(),500)}}>Check reconnect</button>
       <pre data-testid="authority-diagnostics" style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',fontSize:11}}>{diagnostics}</pre>
     </details>}
-  </section>
+  </section></>
 }

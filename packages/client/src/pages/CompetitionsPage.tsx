@@ -21,7 +21,7 @@ export default function CompetitionsPage({onNavigateHome,onNavigateProfile,onNav
       <aside className="competition-notice"><div><strong>{t('competition.testLabel')}</strong><p>{t('competition.testNotice')}</p></div>{user&&<button type="button" className="ac-btn ac-btn--secondary" disabled={funding} onClick={addTestFunds}>{t(funding?'competition.addingTestFunds':'competition.addTestFunds')}</button>}</aside>
       {fundingError&&<p role="alert">{t('competition.fundsError')}</p>}
       <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>{['all','space-blaster','cyber-hopper'].map(id=><button key={id} type="button" aria-pressed={game===id} className={`ac-pill${game===id?' ac-pill--active':''}`} onClick={()=>setGame(id)}>{id==='all'?t('competition.all'):id==='space-blaster'?'Space Blaster':'Cyber Hopper'}</button>)}</div>
-      <CompetitionCatalog gameId={game==='all'?undefined:game} onShowAll={()=>setGame('all')} onJoinCompetition={template=>onLaunchCompetition(template.gameId,template)}/>
+      <CompetitionCatalog gameId={game==='all'?undefined:game} onShowAll={()=>setGame('all')}/>
       <MyCompetitions onLaunch={template=>onLaunchCompetition(template.gameId,template)}/>
     </main><Footer onNavigate={onNavigatePolicy??onNavigateHome}/>
   </div>

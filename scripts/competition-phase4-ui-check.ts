@@ -49,7 +49,6 @@ async function runPhase4UIChecks(): Promise<void> {
   const apiSrc = fs.readFileSync(path.join(clientSrcDir, "lib/api.ts"), "utf-8");
   const competitionRouteSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/routes/competitions.ts"), "utf-8");
   const templateServiceSrc = fs.readFileSync(path.resolve(process.cwd(), "packages/server/src/competitions/templateService.ts"), "utf-8");
-  const confirmModalSrc = fs.readFileSync(path.join(clientSrcDir, "components/CompetitionConfirmationModal.tsx"), "utf-8");
   const navbarSrc = fs.readFileSync(path.join(clientSrcDir, "components/Navbar.tsx"), "utf-8");
   const walletPageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/WalletPage.tsx"), "utf-8");
   const profilePageSrc = fs.readFileSync(path.join(clientSrcDir, "pages/ProfilePage.tsx"), "utf-8");
@@ -169,8 +168,7 @@ async function runPhase4UIChecks(): Promise<void> {
     const promoNotFormula = promoEntry === 500 && promoPrize === 2000;
     const clientDoesNotRecalculatePrize =
       !catalogSrc.includes("entryFeeMinor * 2") &&
-      !catalogSrc.includes("entryFeeMinor * 1.8") &&
-      !confirmModalSrc.includes("entryFeeMinor *");
+      !catalogSrc.includes("entryFeeMinor * 1.8");
     check(
       "7. Promotional prize rendered directly from server schedule, never calculated by client",
       promoNotFormula && clientDoesNotRecalculatePrize,
@@ -210,11 +208,11 @@ async function runPhase4UIChecks(): Promise<void> {
     // ----------------------------------------------------
     console.log("\n--- Section 3: Sandbox Visual Identity & Currency Integrity ---");
     const catalogHasSandboxWarning = competitionsPageSrc.includes("competition.testNotice") && en.competition.testNotice.includes('simulated') && en.competition.testLabel.includes('NO REAL MONEY');
-    const modalHasSandboxWarning = confirmModalSrc.includes("competition.testNotice") && en.competition.testNotice.includes('cannot be withdrawn');
+    const sandboxExplainsSimulatedFunds = en.competition.testNotice.includes('cannot be withdrawn');
     const navbarHasSandboxBadge = navbarSrc.includes("TEST / SANDBOX GEL");
     check(
-      "9. Sandbox warning persistently visible across catalog, modals, and navigation",
-      catalogHasSandboxWarning && modalHasSandboxWarning && navbarHasSandboxBadge,
+      "9. Sandbox warning persistently visible across catalog and navigation",
+      catalogHasSandboxWarning && sandboxExplainsSimulatedFunds && navbarHasSandboxBadge,
     );
 
     // ----------------------------------------------------
@@ -321,8 +319,8 @@ async function runPhase4UIChecks(): Promise<void> {
     const balanceAfter = await sandboxAdapter.getUserBalance(testUserId);
     check("19b. Sandbox faucet reliably provisions test funds via balanced ledger", balanceAfter.availableMinor === balanceBefore.availableMinor + 10000);
 
-    const uiHasFaucetButton = confirmModalSrc.includes('competition.errors.${reason}') && competitionsPageSrc.includes('/api/competitions/sandbox-faucet') && competitionsPageSrc.includes('competition.addTestFunds') && joinBlockReason({signedIn:true,balanceMinor:0,entryMinor:500,status:'PENDING_ENTRANTS',joined:1,capacity:2}) === 'insufficient';
-    check("19c. Compact confirmation explains insufficient funds and links the player to test funds on the catalog", uiHasFaucetButton);
+    const directJoinWithFeedback = catalogSrc.includes('onClick={()=>join(displayed,room)}') && !catalogSrc.includes('CompetitionConfirmationModal') && catalogSrc.includes('competition.errors.${joinError.reason}') && catalogSrc.includes('if(activeTemplateRef.current)return') && competitionsPageSrc.includes('/api/competitions/sandbox-faucet') && competitionsPageSrc.includes('competition.addTestFunds') && joinBlockReason({signedIn:true,balanceMinor:0,entryMinor:500,status:'PENDING_ENTRANTS',joined:1,capacity:2}) === 'insufficient';
+    check("19c. One-click join prevents duplicate clicks and explains insufficient funds inline beside catalog test funds", directJoinWithFeedback);
 
     // ----------------------------------------------------
     // Test 20: Dedicated Waiting Room (1/2 with [ CANCEL ENTRY ])
@@ -455,7 +453,6 @@ async function runPhase4UIChecks(): Promise<void> {
     const allClientFiles = [
       launchModalSrc,
       catalogSrc,
-      confirmModalSrc,
       navbarSrc,
       walletPageSrc,
       profilePageSrc,

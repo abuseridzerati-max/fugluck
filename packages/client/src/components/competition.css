@@ -23,3 +23,7 @@
 .competition-qualification{font-size:12px;line-height:1.6;color:var(--color-text-muted);overflow-wrap:anywhere}.competition-qualification p{margin:0 0 6px}.competition-qualification small{display:block}.competition-qualification summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 .competition-card .competition-qualification{margin-top:auto}
 .competition-bracket ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}.competition-bracket li{display:flex;flex-direction:column;padding:10px;border:1px solid var(--color-border);border-radius:8px;overflow-wrap:anywhere}.competition-bracket .is-yours{border-color:#a87be4}
+.competition-card.is-joined,.competition-card.is-joined:hover{border-color:#59c494;background:linear-gradient(145deg,#163c2d,var(--color-surface) 75%)}
+.competition-ux .competition-primary.is-joined:disabled{background:#235f42;border-color:#59c494;color:#c4ffdf;opacity:1}
+.competition-card-waiting{font-size:13px;line-height:1.5;color:#abf4d3;text-align:center}.competition-card-waiting p{margin:0}.competition-card-waiting .competition-secondary{color:#abf4d3}
+.competition-play[hidden]{display:none}
