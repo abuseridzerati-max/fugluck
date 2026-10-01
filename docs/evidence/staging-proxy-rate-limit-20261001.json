@@ -424,8 +424,402 @@
     "client": "PASS",
     "server": "PASS"
   },
-  "hosted": "PLANNED",
+  "hosted": {
+    "testedRevision": "eb631b37d7dbe5e041b1e5d2b9b709cfc50e8f1d",
+    "generalSecurity": {
+      "passed": 42,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "frontend exact revision and staging identity",
+          "passed": true
+        },
+        {
+          "name": "backend exact revision healthy and migrations match",
+          "passed": true
+        },
+        {
+          "name": "real money deposits withdrawals remain OFF",
+          "passed": true
+        },
+        {
+          "name": "old release session invalidated",
+          "passed": true
+        },
+        {
+          "name": "unauthenticated wallet denied",
+          "passed": true
+        },
+        {
+          "name": "existing synthetic user signs in again",
+          "passed": true
+        },
+        {
+          "name": "host-only Secure HttpOnly Lax cookie",
+          "passed": true
+        },
+        {
+          "name": "query identity cannot select another account",
+          "passed": true
+        },
+        {
+          "name": "private response no-store",
+          "passed": true
+        },
+        {
+          "name": "API security headers enforced",
+          "passed": true
+        },
+        {
+          "name": "wallet history remains session-scoped",
+          "passed": true
+        },
+        {
+          "name": "ordinary user rejected from admin",
+          "passed": true
+        },
+        {
+          "name": "relabeling ordinary cookie cannot authenticate admin",
+          "passed": true
+        },
+        {
+          "name": "hostile-origin logout denied",
+          "passed": true
+        },
+        {
+          "name": "anonymous socket proof denied",
+          "passed": true
+        },
+        {
+          "name": "HTTP socket proof issued without caching",
+          "passed": true
+        },
+        {
+          "name": "current proof authenticates WebSocket",
+          "passed": true
+        },
+        {
+          "name": "hostile WebSocket Origin denied",
+          "passed": true
+        },
+        {
+          "name": "forged explicit socket proof rejected",
+          "passed": true
+        },
+        {
+          "name": "logout successful",
+          "passed": true
+        },
+        {
+          "name": "logout disconnects active authenticated socket",
+          "passed": true
+        },
+        {
+          "name": "copied logged-out HTTP proof rejected",
+          "passed": true
+        },
+        {
+          "name": "copied logged-out transport proof rejected",
+          "passed": true
+        },
+        {
+          "name": "synthetic password change accepted",
+          "passed": true
+        },
+        {
+          "name": "password change invalidates copied old session",
+          "passed": true
+        },
+        {
+          "name": "fresh password-change session works",
+          "passed": true
+        },
+        {
+          "name": "controlled synthetic reset accepted",
+          "passed": true
+        },
+        {
+          "name": "recovery invalidates prior session",
+          "passed": true
+        },
+        {
+          "name": "used recovery token rejected",
+          "passed": true
+        },
+        {
+          "name": "user signs in with recovered credential",
+          "passed": true
+        },
+        {
+          "name": "signed guest reconnect proof issued",
+          "passed": true
+        },
+        {
+          "name": "guest proof uses server-owned identity",
+          "passed": true
+        },
+        {
+          "name": "public guest ID alone cannot impersonate its owner",
+          "passed": true
+        },
+        {
+          "name": "guest proof preserves reconnect identity",
+          "passed": true
+        },
+        {
+          "name": "forged explicit guest proof rejected",
+          "passed": true
+        },
+        {
+          "name": "guest proof cannot authenticate an HTTP account",
+          "passed": true
+        },
+        {
+          "name": "guest wager rejected",
+          "passed": true
+        },
+        {
+          "name": "competition catalog healthy",
+          "passed": true
+        },
+        {
+          "name": "invalid faucet amount rejected safely",
+          "passed": true
+        },
+        {
+          "name": "bad reset error contains no internals",
+          "passed": true
+        },
+        {
+          "name": "temporary proxy diagnostics removed",
+          "passed": true
+        },
+        {
+          "name": "guest issuance rate boundary returns 429",
+          "passed": true
+        }
+      ],
+      "credentialRestored": true,
+      "finalReconciliation": {
+        "sandbox_sum": "0",
+        "sandbox_escrow": "0",
+        "sandbox_reserved": "0",
+        "open_instances": 0,
+        "active_authority": 0,
+        "unapplied_decisions": 0,
+        "commercial_sum": "0",
+        "commercial_unbalanced": 0,
+        "commercial_reserved": "0",
+        "unresolved_provider": 0,
+        "duplicate_prizes": 0,
+        "negative_user_balances": 0,
+        "unapplied_provider_events": 0
+      }
+    },
+    "focusedGuest": {
+      "revision": "eb631b37d7dbe5e041b1e5d2b9b709cfc50e8f1d",
+      "passed": 45,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "frontend/backend match the reviewed staging revision",
+          "passed": true
+        },
+        {
+          "name": "staging healthy and migrations match",
+          "passed": true
+        },
+        {
+          "name": "real money, deposits and withdrawals remain disabled",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 1",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 2",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 3",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 4",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 5",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 6",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 7",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 8",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 9",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 10",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 11",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 12",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 13",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 14",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 15",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 16",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 17",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 18",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 19",
+          "passed": true
+        },
+        {
+          "name": "allowed guest request 20",
+          "passed": true
+        },
+        {
+          "name": "guest request 21 is HTTP 429",
+          "passed": true
+        },
+        {
+          "name": "guest request 21 supplies Retry-After",
+          "passed": true
+        },
+        {
+          "name": "guest request 22 is HTTP 429",
+          "passed": true
+        },
+        {
+          "name": "guest request 22 supplies Retry-After",
+          "passed": true
+        },
+        {
+          "name": "guest request 23 is HTTP 429",
+          "passed": true
+        },
+        {
+          "name": "guest request 23 supplies Retry-After",
+          "passed": true
+        },
+        {
+          "name": "guest request 24 is HTTP 429",
+          "passed": true
+        },
+        {
+          "name": "guest request 24 supplies Retry-After",
+          "passed": true
+        },
+        {
+          "name": "guest request 25 is HTTP 429",
+          "passed": true
+        },
+        {
+          "name": "guest request 25 supplies Retry-After",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: 198.51.100.251",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: 10.1.2.3",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: 172.71.1.1",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: ::ffff:198.51.100.252",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: 2001:db8::1",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: bad:123",
+          "passed": true
+        },
+        {
+          "name": "XFF spoof cannot bypass: 10.2.3.4, 198.51.100.253",
+          "passed": true
+        },
+        {
+          "name": "Forwarded spoof cannot bypass",
+          "passed": true
+        },
+        {
+          "name": "X-Real-IP spoof cannot bypass",
+          "passed": true
+        },
+        {
+          "name": "Render hostname shares the same client/endpoint bucket",
+          "passed": true
+        },
+        {
+          "name": "burst completes inside the configured one-minute window",
+          "passed": true
+        },
+        {
+          "name": "legitimate guest issuance resumes after expiry",
+          "passed": true
+        }
+      ]
+    },
+    "authorityAccounting": {
+      "passed": 23,
+      "failed": 0
+    },
+    "passed": 87,
+    "failed": 0,
+    "acceptance": "PASS FOR REQUESTED STAGING BOUNDARIES",
+    "postDocumentationHeadVerification": "PLANNED after this documentation commit; unchanged application source"
+  },
   "mainRevision": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
   "production": "UNCHANGED",
-  "realMoney": "OFF"
+  "realMoney": "OFF",
+  "deployments": {
+    "render": "dep-davbfoek1f9s739lppeg",
+    "vercelPreview": "27ky1KuC1NhgY5ayAJhVSdGnYFig",
+    "parity": "PASS",
+    "configuration": "TRUST_PROXY=render; only modified setting"
+  },
+  "completedAt": "2026-10-01T19:50:03.362Z"
 }
