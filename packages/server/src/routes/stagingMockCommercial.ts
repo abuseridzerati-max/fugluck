@@ -62,6 +62,17 @@ stagingMockCommercialRouter.post('/provider-event',async(req,res)=>{
 });
 
 stagingMockCommercialRouter.use(attachSession,requireAuth,testUser);
+// Temporary operator-only observation of the staging proxy boundary. Removed
+// after the forwarding-chain investigation; never available in Production.
+stagingMockCommercialRouter.get('/proxy-diagnostics',(req,res)=>res.json({
+  remoteAddress:req.socket.remoteAddress,expressIp:req.ip,
+  forwardedFor:req.header('x-forwarded-for')?.slice(0,1024),
+  forwarded:req.header('forwarded')?.slice(0,1024),
+  cloudflareIp:req.header('cf-connecting-ip')?.slice(0,128),
+  realIp:req.header('x-real-ip')?.slice(0,128),
+  cfRay:req.header('cf-ray')?.slice(0,128),
+  process:process.pid,instance:process.env.RENDER_INSTANCE_ID,
+}));
 stagingMockCommercialRouter.get('/status',(_req,res)=>res.json({mode:'TEST / MOCK / STAGING',
   deposits:stagingMockAction('deposits'),competitions:stagingMockAction('competitions'),
   withdrawals:stagingMockAction('withdrawals'),realMoney:false}));
