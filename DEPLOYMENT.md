@@ -1,5 +1,15 @@
 # Fugluck — Staging Deployment Guide
 
+## Security staging release — 2026-10-01 (latest verified snapshot)
+
+**BUILT on staging, verified by official migration/history and provider/public identity checks:** 0014_security_boundaries is applied, 15/15 migrations. Vercel Preview 4C4tNn8yRdjGaDuzPRobYQnk2WmK and Render dep-davacl7lot8c73cudi0g serve matching ea22611358d3e31bbdf734ebb5053efeec5b2e0c. The documentation-only follow-up is PLANNED for matching staging deployment before final response. [Release report and every script count](docs/SECURITY_STAGING_RELEASE.md).
+
+**Acceptance NOT PASS:** 52 local scripts/2,270 assertions and builds pass; hosted security 40/41 passes and live authority/accounting audit 23/23 passes, but the guest limiter issues 25 proofs in 2.4 seconds without 429. Current TRUST_PROXY=1 resolves changing internal proxy addresses; verified trusted client-IP remediation/retest remains PLANNED. Recovery session handling passed through a controlled fixture token; EMAIL_PROVIDER=logger and actual mail delivery remain unresolved.
+
+**Verified safeguards:** no environment flags changed; existing authority/knockout/mock competitions remain enabled as found, all real-money/deposit/withdrawal flags (including mock deposit/withdrawal) stay false. Keepz/bank inactive. No Production data/configuration/deployment change. Vercel explicitly auto-deploys main to Production; do not push main. Main was not merged because staging acceptance fails. Owner must separately authorize disabling and verifying automatic Production deployment before a future main push.
+
+Older dated configuration snapshots below are historical when they conflict with this section.
+
 ## Final staging configuration — 2026-09-29
 
 **Verified current Render STAGING deploy:** [`dep-datot8u0tbcc73enmlmg`](https://dashboard.render.com/web/srv-da2c50c9v7es73db3dkg/deploys/dep-datot8u0tbcc73enmlmg) is Live and retains exact approved source SHA `0d4ede659ec0776e46f1e583f879a234b9905331` on `codex/competition-restructure`; this was an environment-only redeploy. Public frontend/backend revision endpoints verify the same SHA and `APP_ENV=staging`. The staging database is the Frankfurt target; the live journal matches 14/14 migrations at `0013_knockout_tournaments`.

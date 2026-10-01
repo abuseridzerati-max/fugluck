@@ -1,0 +1,942 @@
+{
+  "checkedAt": "2026-10-01T19:03:08.679Z",
+  "result": "NOT PASS",
+  "branch": "codex/competition-restructure",
+  "initialHead": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+  "securitySourceRevision": "ea22611358d3e31bbdf734ebb5053efeec5b2e0c",
+  "mainUnchanged": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+  "commits": [
+    {
+      "sha": "3618cc898d3adea3b3d476fdc538ea5e90d68aaf",
+      "message": "docs: record competition and socket staging acceptance follow-up"
+    },
+    {
+      "sha": "ea22611358d3e31bbdf734ebb5053efeec5b2e0c",
+      "message": "Harden authentication, authorization and security boundaries"
+    }
+  ],
+  "excluded": [
+    {
+      "path": "AGENTS.md",
+      "reason": "Local JevRouter installation/routing instructions only; preserved unstaged."
+    },
+    {
+      "path": ".agents/",
+      "reason": "Untracked installed JevRouter skill; no repository history proving it belongs in source."
+    },
+    {
+      "path": "how --stat --oneline HEAD",
+      "reason": "Stray shell/Git diagnostic capture, not project source; preserved."
+    }
+  ],
+  "regression": {
+    "checkedAt": "2026-10-01T18:24:19.0235048Z",
+    "scriptsExecuted": 52,
+    "totalPassed": 2270,
+    "totalFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 45
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 110,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 110
+      },
+      {
+        "file": "competition-socket-session-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 89,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 89
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 338,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 338
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "security-boundary-check.ts",
+        "passed": 75,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 75
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7
+      },
+      {
+        "file": "shutdown-lifecycle-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "tournament-authority-check.ts",
+        "passed": 34,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 34
+      },
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 97
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 52,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 52
+      },
+      {
+        "file": "tournament-rules-check.ts",
+        "passed": 180,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 180
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      }
+    ]
+  },
+  "builds": {
+    "serverBuild": 0,
+    "typecheck": 0,
+    "clientBuild": 0
+  },
+  "backup": {
+    "completedAt": "2026-10-01T18:19:56.895Z",
+    "bytes": 423753,
+    "sha256": "2c3e164c32c5a0b35e076ab46c65cfaf50002535651c54047f899de813d0460d",
+    "consistentSnapshot": true,
+    "tlsVerified": true,
+    "tables": 41,
+    "migrations": 14,
+    "reconciliation": {
+      "sandbox_sum": "0",
+      "sandbox_escrow": "0",
+      "sandbox_reserved": "0",
+      "open_instances": 0,
+      "active_authority": 0,
+      "unapplied_decisions": 0,
+      "commercial_sum": "0",
+      "commercial_unbalanced": 0,
+      "commercial_reserved": "0",
+      "unresolved_provider": 0,
+      "duplicate_prizes": 0,
+      "negative_user_balances": 0,
+      "unapplied_provider_events": 0
+    },
+    "archiveGitIgnored": true,
+    "privateAccess": {
+      "checkedAt": "2026-10-01T18:59:40.1449009Z",
+      "privateDirectoryProtected": true,
+      "archiveAllowRules": 3,
+      "archiveUnexpectedRules": 0,
+      "retained": true
+    }
+  },
+  "restore": {
+    "result": "PASS",
+    "comparisons": {
+      "rows": true,
+      "migrations": true,
+      "sequences": true,
+      "reconciliation": true,
+      "operations": true,
+      "balances": true
+    }
+  },
+  "constraintParity": {
+    "result": "PASS",
+    "checks": [
+      {
+        "name": "commercial_accounts_kind_check",
+        "canonicalEqual": true,
+        "truthEqual": true,
+        "probes": 26
+      },
+      {
+        "name": "commercial_operations_kind_check",
+        "canonicalEqual": true,
+        "truthEqual": true,
+        "probes": 12
+      },
+      {
+        "name": "commercial_provider_events_status_check",
+        "canonicalEqual": true,
+        "truthEqual": true,
+        "probes": 14
+      },
+      {
+        "name": "commercial_risk_cases_enforcement_action_check",
+        "canonicalEqual": true,
+        "truthEqual": true,
+        "probes": 14
+      },
+      {
+        "name": "commercial_risk_cases_status_check",
+        "canonicalEqual": true,
+        "truthEqual": true,
+        "probes": 12
+      }
+    ]
+  },
+  "migration": {
+    "result": "PASS",
+    "target": "gzfcucvxfzzjzjtgkwpd",
+    "stagingOnly": true,
+    "productionMutation": false,
+    "completedAt": "2026-10-01T18:27:53.410Z",
+    "count": 15,
+    "head": "0014_security_boundaries",
+    "hash": "04554bb41ab1eb7e96fdb5cc539ddfb57a573a385113ef87bc4b3e548724e7fe",
+    "browserGrants": 0,
+    "defaultAclRecords": 6,
+    "existingPublicTablesPreserved": 40
+  },
+  "deployment": {
+    "checkedRevision": "ea22611358d3e31bbdf734ebb5053efeec5b2e0c",
+    "vercel": {
+      "id": "4C4tNn8yRdjGaDuzPRobYQnk2WmK",
+      "status": "Ready",
+      "environment": "Preview",
+      "domain": "staging.fugluck.com"
+    },
+    "render": {
+      "id": "dep-davacl7lot8c73cudi0g",
+      "status": "Live",
+      "serviceId": "srv-da2c50c9v7es73db3dkg",
+      "domain": "api-staging.fugluck.com"
+    },
+    "finalDocumentationRevisionParity": "PLANNED: deploy documentation follow-up to both staging services and recheck public identities before final response"
+  },
+  "hostedSecurity": {
+    "completedAt": "2026-10-01T18:34:32.504Z",
+    "passed": 40,
+    "failed": 1,
+    "checks": [
+      {
+        "name": "frontend exact revision and staging identity",
+        "passed": true
+      },
+      {
+        "name": "backend exact revision healthy and migrations match",
+        "passed": true
+      },
+      {
+        "name": "real money deposits withdrawals remain OFF",
+        "passed": true
+      },
+      {
+        "name": "old release session invalidated",
+        "passed": true
+      },
+      {
+        "name": "unauthenticated wallet denied",
+        "passed": true
+      },
+      {
+        "name": "existing synthetic user signs in again",
+        "passed": true
+      },
+      {
+        "name": "host-only Secure HttpOnly Lax cookie",
+        "passed": true
+      },
+      {
+        "name": "query identity cannot select another account",
+        "passed": true
+      },
+      {
+        "name": "private response no-store",
+        "passed": true
+      },
+      {
+        "name": "API security headers enforced",
+        "passed": true
+      },
+      {
+        "name": "wallet history remains session-scoped",
+        "passed": true
+      },
+      {
+        "name": "ordinary user rejected from admin",
+        "passed": true
+      },
+      {
+        "name": "relabeling ordinary cookie cannot authenticate admin",
+        "passed": true
+      },
+      {
+        "name": "hostile-origin logout denied",
+        "passed": true
+      },
+      {
+        "name": "anonymous socket proof denied",
+        "passed": true
+      },
+      {
+        "name": "HTTP socket proof issued without caching",
+        "passed": true
+      },
+      {
+        "name": "current proof authenticates WebSocket",
+        "passed": true
+      },
+      {
+        "name": "hostile WebSocket Origin denied",
+        "passed": true
+      },
+      {
+        "name": "forged explicit socket proof rejected",
+        "passed": true
+      },
+      {
+        "name": "logout successful",
+        "passed": true
+      },
+      {
+        "name": "logout disconnects active authenticated socket",
+        "passed": true
+      },
+      {
+        "name": "copied logged-out HTTP proof rejected",
+        "passed": true
+      },
+      {
+        "name": "copied logged-out transport proof rejected",
+        "passed": true
+      },
+      {
+        "name": "synthetic password change accepted",
+        "passed": true
+      },
+      {
+        "name": "password change invalidates copied old session",
+        "passed": true
+      },
+      {
+        "name": "fresh password-change session works",
+        "passed": true
+      },
+      {
+        "name": "controlled synthetic reset accepted",
+        "passed": true
+      },
+      {
+        "name": "recovery invalidates prior session",
+        "passed": true
+      },
+      {
+        "name": "used recovery token rejected",
+        "passed": true
+      },
+      {
+        "name": "user signs in with recovered credential",
+        "passed": true
+      },
+      {
+        "name": "signed guest reconnect proof issued",
+        "passed": true
+      },
+      {
+        "name": "guest proof uses server-owned identity",
+        "passed": true
+      },
+      {
+        "name": "public guest ID alone cannot impersonate its owner",
+        "passed": true
+      },
+      {
+        "name": "guest proof preserves reconnect identity",
+        "passed": true
+      },
+      {
+        "name": "forged explicit guest proof rejected",
+        "passed": true
+      },
+      {
+        "name": "guest proof cannot authenticate an HTTP account",
+        "passed": true
+      },
+      {
+        "name": "guest wager rejected",
+        "passed": true
+      },
+      {
+        "name": "competition catalog healthy",
+        "passed": true
+      },
+      {
+        "name": "invalid faucet amount rejected safely",
+        "passed": true
+      },
+      {
+        "name": "bad reset error contains no internals",
+        "passed": true
+      },
+      {
+        "name": "guest issuance rate boundary returns 429",
+        "passed": false
+      }
+    ],
+    "syntheticCredentialRestored": true
+  },
+  "hostedRate": {
+    "checkedAt": "2026-10-01T18:38:05.241Z",
+    "durationMs": 2444,
+    "statusCounts": {
+      "200": 25
+    },
+    "uniqueIssuedProofs": 25,
+    "trustProxy": "1 (read from staging Render configuration)",
+    "runtimeIpObservation": "The same test client produced three distinct private 10/8 req.ip values in current Render error logs; no original client-IP/header-chain trust proof was obtained.",
+    "result": "FAIL"
+  },
+  "hostedCompetitions": {
+    "checkedAt": "2026-10-01T18:56:56.105Z",
+    "result": "PASS",
+    "passed": 23,
+    "failed": 0,
+    "checks": [
+      {
+        "name": "space-blaster public sandbox tournament settles",
+        "passed": true
+      },
+      {
+        "name": "space-blaster exactly one applied final winner from server results",
+        "passed": true
+      },
+      {
+        "name": "space-blaster retries have applied durable server decisions",
+        "passed": true
+      },
+      {
+        "name": "space-blaster original cap retained",
+        "passed": true
+      },
+      {
+        "name": "space-blaster one complete final bracket slot",
+        "passed": true
+      },
+      {
+        "name": "space-blaster final has two positive-tick engine receipts",
+        "passed": true
+      },
+      {
+        "name": "space-blaster two exact frozen entries ignore submitted stake override",
+        "passed": true
+      },
+      {
+        "name": "space-blaster one exact frozen winner prize ignores override",
+        "passed": true
+      },
+      {
+        "name": "space-blaster all tournament postings balanced",
+        "passed": true
+      },
+      {
+        "name": "space-blaster no remaining reservations",
+        "passed": true
+      },
+      {
+        "name": "space-blaster no commercial or provider operation",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper public sandbox tournament settles",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper exactly one applied final winner from server results",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper retries have applied durable server decisions",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper original cap retained",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper one complete final bracket slot",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper final has two positive-tick engine receipts",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper two exact frozen entries ignore submitted stake override",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper one exact frozen winner prize ignores override",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper all tournament postings balanced",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper no remaining reservations",
+        "passed": true
+      },
+      {
+        "name": "cyber-hopper no commercial or provider operation",
+        "passed": true
+      },
+      {
+        "name": "full staging reconciliation and 15-migration chain",
+        "passed": true
+      }
+    ],
+    "games": [
+      {
+        "gameId": "space-blaster",
+        "instanceId": "inst_1def28d4-a7f7-405a-831b-3cde3028cf50",
+        "authorityDecisions": [
+          {
+            "attempt": 1,
+            "kind": "DRAW",
+            "reason": "SERVER_RESULTS",
+            "capTicks": 10800,
+            "applied": true
+          },
+          {
+            "attempt": 2,
+            "kind": "DRAW",
+            "reason": "SERVER_RESULTS",
+            "capTicks": 10800,
+            "applied": true
+          },
+          {
+            "attempt": 3,
+            "kind": "VOID",
+            "reason": "LATENCY_ADMISSION_FAILED",
+            "capTicks": 10800,
+            "applied": true
+          },
+          {
+            "attempt": 4,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "capTicks": 10800,
+            "applied": true
+          }
+        ],
+        "finalReceipts": [
+          {
+            "score": 13,
+            "ticks": 399,
+            "reason": "COLLISION"
+          },
+          {
+            "score": 36,
+            "ticks": 804,
+            "reason": "COLLISION"
+          }
+        ]
+      },
+      {
+        "gameId": "cyber-hopper",
+        "instanceId": "inst_ce7cc8c3-0cb2-4b55-8dc6-c18a23dbc9fe",
+        "authorityDecisions": [
+          {
+            "attempt": 1,
+            "kind": "WIN",
+            "reason": "SERVER_RESULTS",
+            "capTicks": 10800,
+            "applied": true
+          }
+        ],
+        "finalReceipts": [
+          {
+            "score": 0,
+            "ticks": 10800,
+            "reason": "CAP_REACHED"
+          },
+          {
+            "score": 10,
+            "ticks": 183,
+            "reason": "COLLISION"
+          }
+        ]
+      }
+    ],
+    "reconciliation": {
+      "sandbox_sum": "0",
+      "sandbox_escrow": "0",
+      "sandbox_reserved": "0",
+      "open_instances": 0,
+      "active_authority": 0,
+      "unapplied_decisions": 0,
+      "commercial_sum": "0",
+      "commercial_unbalanced": 0,
+      "commercial_reserved": "0",
+      "unresolved_provider": 0,
+      "duplicate_prizes": 0,
+      "negative_user_balances": 0,
+      "unapplied_provider_events": 0
+    }
+  },
+  "browser": {
+    "method": "Codex in-app browser, authenticated existing synthetic fixture, visible DOM and screenshots",
+    "signIn": true,
+    "immediateJoin": true,
+    "confirmationDialogAbsent": true,
+    "greenWaiting": true,
+    "refreshPreservesOneSeat": true,
+    "leaveRestoresSimulatedBalance": true,
+    "spaceBlasterPracticeCanvas": true,
+    "cyberHopperPracticeCanvas": true,
+    "errorAndWarningLogs": [],
+    "scope": "Login/home/public competition waiting and Space Blaster/Cyber Hopper practice; not an exhaustive all-game/all-device CSP certification."
+  },
+  "harnessCorrections": [
+    "First four-seat STAGING_MOCK attempt stopped at insufficient existing fixture funds; its three reservations expired and read-only reconciliation proved release. No deposit/funding/provider operation was performed.",
+    "The alternate funded fixtures were outside the current four-user mock allowlist and were correctly denied; no allowlist or flag was expanded.",
+    "Public SANDBOX Space Blaster settled after two DRAW decisions and a LATENCY_ADMISSION_FAILED retry. Initial one-attempt harness assumption was corrected through an independent read-only database audit.",
+    "The harness initially queried PRIZE_AWARD; real sandbox event is PRIZE_PAYOUT. The independent audit verified the actual one-time winner payout for both settled tournaments without replaying settlement."
+  ],
+  "operationalLimits": {
+    "emailProvider": "logger",
+    "recoveryHandlerTest": "Controlled one-use token tied to an existing synthetic fixture exercised the real API; original password restored. Actual email delivery NOT VERIFIED and logger is not a delivery transport.",
+    "csp": "Minimal restrictions enforced, full asset/API policy remains Report-Only.",
+    "distributedRateLimits": "Process-local only; restart/replica limits remain manual infrastructure work.",
+    "productionIsolation": "No Production settings/data/deployment changed; older Production-to-staging routing concern remains outside this release and unverified."
+  },
+  "autoDeploy": {
+    "mainPushWouldTriggerProduction": true,
+    "evidence": "Vercel Production environment explicitly says every commit pushed to main creates a Production Deployment; main selected and Auto-Assign Custom Production Domains checked.",
+    "productionDeploymentUnchanged": "AtViaffzmmQELvKqBn8u56mxRZ6W (main 91ca753)"
+  },
+  "realMoney": false,
+  "deposits": false,
+  "withdrawals": false,
+  "mockDeposits": false,
+  "mockWithdrawals": false,
+  "keepzActivated": false,
+  "providerActivated": false,
+  "flagsChanged": false,
+  "productionDeployment": false,
+  "mainMerged": false,
+  "mainPushed": false,
+  "localCleanup": {
+    "checkedAt": "2026-10-01T18:59:14.794Z",
+    "identityVerified": true,
+    "ports": [
+      55439,
+      55440
+    ],
+    "checkpoint": true,
+    "nativeProcessesStopped": true,
+    "listenerCheck": "No LISTENING ports 55439/55440/4000/5173 after verified native process stop; clusters/backup preserved. No graceful shutdown claimed."
+  }
+}

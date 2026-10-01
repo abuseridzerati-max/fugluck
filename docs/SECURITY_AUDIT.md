@@ -1,5 +1,7 @@
 # Security audit — 2026-10-01
 
+**Later staging follow-up:** [Security staging release](SECURITY_STAGING_RELEASE.md) records applied migration 0014, deployed security revision, actual hosted tests and the confirmed proxy/rate-limit blocker. The original local audit below remains a dated scope record; its local-only statements do not describe the later authorized release.
+
 **Result: PASS WITH REMAINING MANUAL ACTIONS — local candidate only.** All 55 requested categories are covered below. This result authorizes no deployment and does not certify hosted security, real-money readiness, or the separate Competition Restructure / Phase 7A acceptance gates.
 
 Scope: `C:\Users\abuse\Fugluck`, `codex/competition-restructure`, base HEAD `c8dd9176b78c03a7dee8f76fd5fa7bd99959d675`, plus local changes. Source inspection, negative HTTP/Socket.IO tests, concurrent PostgreSQL tests, dependency advisories, sanitized secret scans, production builds, and unauthenticated read-only staging HTTPS were used. No hosted database credentials were used, no hosted data/configuration was changed, and no destructive external testing was performed. No push, merge, commit, deployment, DNS action, credential rotation, or provider activation occurred.
