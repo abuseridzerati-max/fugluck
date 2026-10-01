@@ -1,5 +1,11 @@
 # Fugluck — Progress Log
 
+## Session 110 (2026-10-01): Staging guest-ticket proxy identity repair — validation in progress
+
+- **BUILT investigation, verified by operator-protected hosted diagnostics, source and fresh HTTPS:** client → Cloudflare → private Render proxy → loopback → Express; TRUST_PROXY=1 selects the private proxy instead of the client. Fresh burst 25 requests/2,736 ms all HTTP 200. Caller XFF prefixes and Forwarded survive, so trust-all/leftmost headers are unsafe. Limiter remains singleton and endpoint remains 20/minute. Render Free has one instance/no scaling; logs show one Node process, diagnostics one instance. See [repair report](docs/STAGING_PROXY_RATE_LIMIT_FIX.md).
+- **BUILT locally, verified by source and 82/82 HTTP/configuration/normalization assertions:** address-and-position Render ingress trust, direct-mode false, unsafe numeric/trust-all configuration rejection; mapped IPv4 and IPv6 /64 normalization. Actual guest endpoint returns 429 after 20 and resists spoofed prefixes. Temporary protected diagnostic removed from final source. No economics, migration, provider or financial change; local exclusions preserved.
+- **PLANNED/in progress, verification pending:** staging-only exact reviewed-SHA deployment, original hosted security and focused guest/spoof acceptance. **VERIFIED by fresh execution/provider UI:** 53 scripts / 2,352 assertions / 0 failures / 0 exit failures / 0 count mismatches; typecheck/client/server builds pass; every pass count in the repair report. Render TRUST_PROXY=render saved without deployment; no other field edited. **PLANNED before future scaling:** atomic distributed limiter; current process-local scope is explicit. Main/Production unchanged; money/deposits/withdrawals/Keepz off.
+
 ## Session 109 (2026-10-01): Repository cleanup and staging security release — NOT PASS; main untouched
 
 - **BUILT/pushed, verified by complete Git diff/history and explicit staged allowlists:** preserved all legitimate competition/socket documentation and security changes in 3618cc898d3adea3b3d476fdc538ea5e90d68aaf and ea22611358d3e31bbdf734ebb5053efeec5b2e0c. Immediate Join UX was already committed/pushed. No deletion/reset/rewrite occurred. Local AGENTS.md routing, untracked .agents/ skill and stray diagnostic file remain intentional exclusions; ignored credentials/artifacts remain local.

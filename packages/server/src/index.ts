@@ -23,6 +23,7 @@ import { closeTournamentLocks } from './competitions/tournamentPersistence';
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
 import { httpSecurity } from './config/httpSecurity';
 import { createRateLimiterMiddleware } from './utils/rateLimiter';
+import { getTrustProxy } from './config/trustedProxy';
 
 // Enforce mandatory configuration at boot
 enforceStartupConfig();
@@ -31,18 +32,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(httpSecurity);
 
-// Trust reverse proxies (Vercel, Render, Railway, Cloudflare) for accurate client IP & HTTPS detection
-const trustProxyValue = process.env.TRUST_PROXY;
-if (trustProxyValue === "false") {
-  app.set("trust proxy", false);
-} else if (trustProxyValue === "true") {
-  app.set("trust proxy", true);
-} else if (trustProxyValue) {
-  app.set("trust proxy", Number(trustProxyValue) || 1);
-} else {
-  // Default to 1 hop behind hosted reverse proxy
-  app.set("trust proxy", 1);
-}
+app.set('trust proxy', getTrustProxy());
 
 app.use(cors(corsOptions));
 app.use(cookieParser());

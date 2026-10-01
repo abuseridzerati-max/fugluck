@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { normalizeRateLimitIp } from '../config/trustedProxy';
 
 type RateLimiterRecord = {
   timestamps: number[];
@@ -70,7 +71,7 @@ export function createRateLimiterMiddleware(options: RateLimiterOptions) {
   const limiterId = ++nextLimiterId;
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const clientKey = keyGenerator ? keyGenerator(req) : req.userId ? `usr:${req.userId}` : `ip:${req.ip || req.socket.remoteAddress || "unknown"}`;
+    const clientKey = keyGenerator ? keyGenerator(req) : req.userId ? `usr:${req.userId}` : `ip:${normalizeRateLimitIp(req.ip || req.socket.remoteAddress)}`;
     // Parameters/query strings cannot allocate fresh buckets; middleware instances
     // have separate counters even when they are mounted on the same route.
     const key = `http:${limiterId}:${req.baseUrl}:${req.route?.path ?? 'router'}:${clientKey}`;
