@@ -1,6 +1,14 @@
 # Fugluck — Staging Deployment Guide
 
-## Current knockout staging deployment — 2026-09-29, Phase 7A NOT PASS
+## Final staging configuration — 2026-09-29
+
+**Verified current Render STAGING deploy:** [`dep-datot8u0tbcc73enmlmg`](https://dashboard.render.com/web/srv-da2c50c9v7es73db3dkg/deploys/dep-datot8u0tbcc73enmlmg) is Live and retains exact approved source SHA `0d4ede659ec0776e46f1e583f879a234b9905331` on `codex/competition-restructure`; this was an environment-only redeploy. Public frontend/backend revision endpoints verify the same SHA and `APP_ENV=staging`. The staging database is the Frankfurt target; the live journal matches 14/14 migrations at `0013_knockout_tournaments`.
+
+The final saved staging settings have `ENABLE_COMPETITION_AUTHORITY=true`, `ENABLE_KNOCKOUT_TOURNAMENTS=false`, all `REAL_MONEY_*` flags false, all staging mock action flags false, and the original four-user mock allowlist restored. Live public health reports real-money/deposit/withdrawal/competition actions unavailable. Frontend/backend TLS validates. The service's auto-deploy remains off. No main merge, Production deployment/configuration/database change, real-money activation, or real financial provider use occurred.
+
+Latest acceptance passed Space Blaster Standard 8/16 hosted tournament audits (15/15 each), hosted negative Promo/GIFT enforcement (10/10), and final restricted-action guards (8/8); all 50 local scripts passed 2,177 assertions / 0 failures on 2026-09-29. Phase 7A and Competition Restructure remain NOT PASS: Production still serves a frontend bundle that references the staging API, and cold manual Retry, signed-in browser refresh, and a fresh repeat active-Final Space Blaster restart remain open. See [the current rollout report](docs/COMPETITION_RESTRUCTURE_ROLLOUT.md), [Phase 7A baseline](docs/PHASE_7A_BASELINE.md), and [sanitized evidence](docs/evidence/competition-restructure-staging-20260929.json). The deployment snapshot below is historical where it conflicts with this addendum.
+
+## Earlier staging deployment snapshot — 2026-09-29 (superseded above)
 
 **VERIFIED deployed identity (Render and public frontend/backend HTTP):** branch `codex/competition-restructure`, frontend and backend SHA `0d4ede659ec0776e46f1e583f879a234b9905331`; after testing switches were reset, current Render staging deploy [`dep-datls6vlot8c73836t20`](https://dashboard.render.com/web/srv-da2c50c9v7es73db3dkg/deploys/dep-datls6vlot8c73836t20) is Live; Vercel Preview `AQyXcMmC87f8XJHEx7x4Su7nBhg2` serves `staging.fugluck.com`. Public `deployment.json`, `/health`, and `/api/health` agree on the full SHA and staging identity. Render auto-deploy remains OFF. The approved feature deployment and staging-only environment redeploys used no main merge or Production setting.
 

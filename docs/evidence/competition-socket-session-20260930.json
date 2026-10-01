@@ -403,5 +403,100 @@
   "limitations": [
     "Owner Chrome staging cookie/handshake was not inspected; missing valid socket session inferred from reported guest rejection.",
     "No hosted competition entry, payout or full gameplay acceptance is claimed."
-  ]
+  ],
+  "deployment": {
+    "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+    "branch": "codex/competition-restructure",
+    "pushed": true,
+    "vercelPreview": "CMjPEGScKPnkWPmPBdXoCyR85KYd",
+    "vercelStatus": "Ready",
+    "renderDeploy": "dep-dau3oanavr4c73figq40",
+    "renderStatus": "Live",
+    "frontend": {
+      "environment": "staging",
+      "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+      "apiOrigin": "https://api-staging.fugluck.com",
+      "commercialMoneyEnabled": false
+    },
+    "backend": {
+      "ok": true,
+      "status": "healthy",
+      "timestamp": "2026-09-29T22:32:55.591Z",
+      "environment": "staging",
+      "runtimeMode": "production",
+      "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+      "commercial": {
+        "implementation": "unavailable",
+        "moneyEnabled": false,
+        "deposits": {
+          "allowed": false,
+          "reason": "MONEY_DISABLED"
+        },
+        "withdrawals": {
+          "allowed": false,
+          "reason": "MONEY_DISABLED"
+        },
+        "competitions": {
+          "allowed": false,
+          "reason": "MONEY_DISABLED"
+        }
+      },
+      "stagingMockCommercial": {
+        "enabled": true,
+        "deposits": false,
+        "competitions": true,
+        "withdrawals": false,
+        "label": "TEST / MOCK / STAGING — NO REAL MONEY"
+      },
+      "version": "0.0.1",
+      "database": "connected",
+      "migrations": "match"
+    },
+    "hostedAuthentication": {
+      "checkedAt": "2026-09-29T22:32:55.383Z",
+      "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+      "checks": [
+        {
+          "name": "staging exact deployed commit",
+          "passed": true
+        },
+        {
+          "name": "real money deposits and withdrawals remain disabled",
+          "passed": true
+        },
+        {
+          "name": "existing staging fixture signs in",
+          "passed": true
+        },
+        {
+          "name": "HTTP cookie issued",
+          "passed": true
+        },
+        {
+          "name": "HTTP restores same signed-in account",
+          "passed": true
+        },
+        {
+          "name": "anonymous ticket request denied",
+          "passed": true
+        },
+        {
+          "name": "signed-in socket proof issued without caching",
+          "passed": true
+        },
+        {
+          "name": "cookie-free socket recognized as signed-in before payload validation",
+          "passed": true
+        },
+        {
+          "name": "ordinary guest still denied competition admission",
+          "passed": true
+        }
+      ],
+      "financialActions": 0
+    },
+    "validHostedEntries": 0,
+    "productionActions": 0,
+    "configurationMutations": 0
+  }
 }

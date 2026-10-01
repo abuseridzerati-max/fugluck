@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-09-29T06:45:16.531Z",
+  "verifiedAt": "2026-09-29T11:23:47Z",
   "branch": "codex/competition-restructure",
   "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
   "frontend": {
@@ -10,13 +10,14 @@
   },
   "backend": {
     "service": "srv-da2c50c9v7es73db3dkg",
-    "deployment": "dep-datls6vlot8c73836t20",
+    "deployment": "dep-datot8u0tbcc73enmlmg",
     "environment": "staging",
     "revision": "0d4ede659ec0776e46f1e583f879a234b9905331",
     "database": "Frankfurt staging",
     "migrationCount": 14,
     "migrationHead": "0013_knockout_tournaments",
-    "migrationHeadSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08"
+    "migrationHeadSha256": "a39b84386b0cfbfd5fcd7f6bdc3e7a18604d055398829bc8fb470efb9aef3a08",
+    "deployType": "environment-only redeploy; source SHA unchanged"
   },
   "backupRestore": {
     "backupAt": "2026-09-28T17:28:51.623Z",
@@ -37,7 +38,8 @@
     "entryCaptures": 4,
     "finalPrizeMinor": 1800,
     "payoutOperations": 1,
-    "testHarness": "18/19 assertions before stopping at a stale attempt-1 checkpoint; recovery was independently corroborated by provider restart event and persisted authority/session/settlement rows"
+    "testHarness": "18/19 assertions before stopping at a stale attempt-1 checkpoint; recovery was independently corroborated by provider restart event and persisted authority/session/settlement rows",
+    "latestFreshAttempts": "Two follow-up 4-player runs reached an active Final and completed normally, but the host restart did not disconnect/reconnect clients before settlement; restart assertions failed 18/19. Earlier active-Final restart at 2026-09-29T06:32:41.937Z remains independently corroborated by Render event and persisted reconnect/attempt-12-fence/attempt-13-settlement evidence."
   },
   "postResetChecks": {
     "closedActionGuards": "8/8 PASS",
@@ -54,14 +56,19 @@
     "activeAuthorityRuns": 0,
     "unappliedDecisions": 0,
     "duplicatePrizes": 0,
-    "negativeUserBalances": 0
+    "negativeUserBalances": 0,
+    "latestGuardRerun": "PASS 8/8 at 2026-09-29T10:26:13.585Z: disabled mock deposit and withdrawal returned HTTP 404; knockout admission denied; four legacy catalog products remained; no commercial operation created."
   },
   "publicChecks": {
     "frontendHealthRevisionEnvironment": "PASS",
     "backendHealthRevisionEnvironment": "PASS",
     "databaseConnectedAndMigrationsMatch": "PASS",
     "catalogAfterSettingsReset": "PASS; 4 legacy public templates; HTTP 200",
-    "catalogLatencyMs": [1214, 123, 597],
+    "catalogLatencyMs": [
+      1214,
+      123,
+      597
+    ],
     "stagingOriginCors": "PASS",
     "unapprovedOriginHasNoAllowOrigin": true,
     "sessionCookie": "host-only; Secure; HttpOnly; SameSite=Lax",
@@ -71,7 +78,8 @@
       "frontendValidTo": "2026-11-16T18:37:05Z",
       "backendAuthorized": true,
       "backendValidTo": "2026-11-16T22:35:57Z"
-    }
+    },
+    "catalog": "PASS; 4 public templates, HTTP 200; three warm checks 110/104/97 ms"
   },
   "production": {
     "deployment": "AtViaffzmmQELvKqBn8u56mxRZ6W",
@@ -84,7 +92,7 @@
     "localScripts": 50,
     "assertions": 2177,
     "failures": 0,
-    "freshRegressionRerunAt": "2026-09-29T07:08:02.032Z",
+    "freshRegressionRerunAt": "2026-09-29T10:19:10.825Z",
     "freshRegressionCountMismatches": 0,
     "regressionDatabase": "verified disposable PostgreSQL at 127.0.0.1:55439; stopped after run",
     "typecheckClientBuildServerBuildWhitespace": "PASS",
@@ -92,13 +100,70 @@
     "hostedEdges": "46/46 PASS",
     "cyberHopperRestart": "2 x 29/29 PASS",
     "spaceBlasterOrdinary": "PASS",
-    "spaceBlasterRestart": "PASS by provider event plus persisted recovery evidence; harness checkpoint stale",
-    "hostedEightAndSixteenPlayerProgression": "BLOCKED; only four authorized synthetic accounts; user said additional accounts are not yet available",
-    "signedInBrowserRefreshPersistence": "UNVERIFIED",
-    "coldTimeoutAndManualRetry": "UNVERIFIED; idle catalog auto-recovered by background refresh",
+    "spaceBlasterRestart": "Earlier provider plus persisted-record recovery is corroborated; follow-up active-Final restart attempts did not interrupt clients before settlement, so fresh repeat remains unresolved",
+    "hostedEightAndSixteenPlayerProgression": "PASS for Space Blaster Standard brackets, 8/8 and 16/16; Promo/GIFT positive hosted qualification remains untested",
+    "signedInBrowserRefreshPersistence": "UNVERIFIED; API terminal projection and repeated socket resume passed",
+    "coldTimeoutAndManualRetry": "COLD CATALOG PASS after more than 15 minutes idle: initial page showed loading, the transient timeout/Retry message appeared on the first cold attempt, and automatic polling loaded all four expected cards. Manual Retry click remains unverified because polling cleared the control before it could be activated; next idle window began approximately 2026-09-29T11:05:41Z.",
     "qualificationPositiveHostedFlow": "NOT RUN; mock sandbox does not grant qualification; fixture coverage passes",
     "phase7a": "NOT PASS; production frontend continues to reference staging API",
-    "competitionRestructure": "NOT PASS; hosted 8/16, browser persistence, and cold Retry remain open"
+    "competitionRestructure": "NOT PASS; cold Retry, signed-in browser refresh, and fresh repeat Space Blaster restart remain open",
+    "freshRegressionResult": "50 scripts / 2,177 assertions / 0 failures / 0 exit failures / 0 expected-count mismatches",
+    "spaceBlasterEight": "PASS; hosted Standard 8-player audit 15/15",
+    "spaceBlasterSixteen": "PASS; hosted Standard 16-player audit 15/15",
+    "closedActionGuards": "PASS 8/8 after final environment-only deploy at 2026-09-29T10:26:13.585Z"
   },
-  "scope": "Staging-only. No main merge, Production deploy/config/database change, real-money setting, real provider, bank, real deposit, or real withdrawal was performed."
+  "scope": "Staging-only. No main merge, Production deploy/config/database change, real-money setting, real provider, bank, real deposit, or real withdrawal was performed.",
+  "stagingConfig": {
+    "knockoutAdmission": false,
+    "mockCommercialActions": false,
+    "mockDeposits": false,
+    "mockCompetitions": false,
+    "mockWithdrawals": false,
+    "syntheticMockAllowlist": "restored to original four users; IDs withheld",
+    "realMoneyEnabled": false,
+    "realMoneyDeposits": false,
+    "realMoneyWithdrawals": false,
+    "realMoneyCompetitions": false
+  },
+  "hostedStandardBrackets": {
+    "spaceBlaster": {
+      "capacity": 8,
+      "entrants": 8,
+      "bracketMatches": 7,
+      "appliedLevel3Advances": 7,
+      "entryMinor": 500,
+      "prizeMinor": 3600,
+      "entryCaptures": 8,
+      "oneFinalAward": true,
+      "independentAudit": "15/15 PASS"
+    },
+    "spaceBlaster16": {
+      "capacity": 16,
+      "entrants": 16,
+      "bracketMatches": 15,
+      "appliedLevel3Advances": 15,
+      "entryMinor": 500,
+      "prizeMinor": 7200,
+      "entryCaptures": 16,
+      "oneFinalAward": true,
+      "independentAudit": "15/15 PASS"
+    }
+  },
+  "hostedPromoGiftEnforcement": {
+    "result": "PASS",
+    "checks": 10,
+    "unqualifiedJoinCombinationsDenied": 4,
+    "createdEntitlements": 0,
+    "createdReservations": 0,
+    "createdInstances": 0,
+    "positiveHostedQualification": "not run; SANDBOX results do not qualify"
+  },
+  "coldCatalog": {
+    "idlePeriod": "more than 15 minutes after staging player-page traffic stopped",
+    "result": "PASS; the cold page rendered all four expected catalog cards after automatic polling",
+    "timeoutRetryTransientlyObserved": true,
+    "manualRetryClick": "UNVERIFIED; automatic refresh cleared the timeout control before activation",
+    "secondColdObservation": "After a further >15-minute idle interval, all four expected cards rendered immediately",
+    "latestColdRequestAt": "2026-09-29T11:23:00Z"
+  }
 }
