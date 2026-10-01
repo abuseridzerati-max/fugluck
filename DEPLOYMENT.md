@@ -1,5 +1,13 @@
 # Fugluck — Staging Deployment Guide
 
+## Main synchronization and deployment guard — 2026-10-02
+
+**BUILT/verified by source/diff, current official Vercel documentation/schema, live provider UI and GitHub API:** main includes the accepted feature 3a24ea02df7dc9bfa4d06d4d19d13439ae517073 plus guard 9f8a72d57f0541d2a46ddb4b45207066116e08d0. The configured Vercel Root Directory is `packages/client`; its `vercel.json` sets `git.deploymentEnabled.main=false`, disabling Git-triggered main deployments. Dashboard Production branch tracking still says main; dashboard settings, domains and Production variables were not changed. Manual/API deployment is separate and was not performed. No manual dashboard action was needed for this guarded push. [Merge report, scope and every script count](docs/MAIN_MERGE_SAFETY.md).
+
+**VERIFIED after initial guarded main push:** Production history remains AtViaffzmmQELvKqBn8u56mxRZ6W / 91ca7533c8d4d3e78bc090031d69097731b03d8b; no deployment exists for the guard commit. Visible Render inventory has only `fugluck-api-staging`, feature-tracking, Auto-Deploy Off; no Production backend service found. GitHub workflows/webhooks are zero. Fresh validation from main passed 53 scripts/2,352 assertions/zero failures and all builds. Documentation follow-up retains the tested source/guard; final synchronization is checked before reporting completion.
+
+**VERIFIED by fresh public identities and preserved acceptance evidence:** staging frontend/backend remain at 3a24ea02df7dc9bfa4d06d4d19d13439ae517073. Hosted security acceptance is 87/87 from the preceding repair session; no new hosted acceptance run is claimed here. Money/deposits/withdrawals remain denied by current health; Keepz remains OFF per accepted state with no provider mutation. This synchronization does not deploy or certify Production or fix its previously recorded isolation limitations. Earlier dated snapshots below are historical where they conflict with this section.
+
 ## Security staging release — 2026-10-01 (latest verified snapshot)
 
 **BUILT on staging, verified by official migration/history and provider/public identity checks:** 0014_security_boundaries is applied, 15/15 migrations. Vercel Preview 4C4tNn8yRdjGaDuzPRobYQnk2WmK and Render dep-davacl7lot8c73cudi0g serve matching ea22611358d3e31bbdf734ebb5053efeec5b2e0c. The documentation-only follow-up is PLANNED for matching staging deployment before final response. [Release report and every script count](docs/SECURITY_STAGING_RELEASE.md).
