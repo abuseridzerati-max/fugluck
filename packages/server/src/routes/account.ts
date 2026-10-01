@@ -4,6 +4,8 @@ import { hashPassword, validatePasswordPolicy, verifyPassword } from "../auth/pa
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { users } from "../db/schema";
+import { disconnectUserSessions } from '../auth/session';
+import { signSessionToken, SESSION_COOKIE_NAME, getSessionCookieOptions } from '../auth/jwt';
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 
 const passwordChangeLimiter = createRateLimiterMiddleware({
@@ -60,6 +62,8 @@ accountRouter.post("/change-password", passwordChangeLimiter, async (req, res) =
   const newPasswordHash = await hashPassword(newPassword);
 
   await db.update(users).set({ passwordHash: newPasswordHash }).where(eq(users.id, user.id));
+  disconnectUserSessions(user.id);
+  res.cookie(SESSION_COOKIE_NAME, signSessionToken({ sub: user.id }, newPasswordHash), getSessionCookieOptions());
 
   res.json({
     success: true,

@@ -1,5 +1,7 @@
+import { logger } from '../utils/safeLogger';
 // Transactional Email Service for Fugluck
 // Supports environment-driven provider configuration: SMTP, Resend, or safe dev/test logger.
+import { isHostedEnvironment } from '../config/deploymentIdentity';
 
 export type EmailDeliveryResult = {
   success: boolean;
@@ -136,8 +138,8 @@ async function deliverEmail(record: {
   type: "verification" | "password_reset";
   rawToken: string;
 }): Promise<EmailDeliveryResult> {
-  // Always log to in-memory history for audit/testing
-  sentEmailsHistory.push({
+  // Raw recovery credentials are retained only in local bounded test history.
+  if (!isHostedEnvironment()) sentEmailsHistory.push({
     to: record.to,
     subject: record.subject,
     text: record.text,
@@ -146,6 +148,7 @@ async function deliverEmail(record: {
     rawToken: record.rawToken,
     sentAt: new Date(),
   });
+  if (sentEmailsHistory.length > 100) sentEmailsHistory.shift();
 
   const provider = (process.env.EMAIL_PROVIDER || "logger").toLowerCase();
 
@@ -168,15 +171,14 @@ async function deliverEmail(record: {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[email] Resend API delivery failure (${response.status}): ${errorText}`);
+        logger.error(`[email] Resend API delivery failure (${response.status})`);
         return { success: false, error: `Resend API failed: ${response.statusText}` };
       }
 
       const resData = (await response.json()) as { id?: string };
       return { success: true, messageId: resData.id };
     } catch (err: any) {
-      console.error("[email] Resend network error:", err.message);
+      logger.error("[email] Resend network error:", err.message);
       return { success: false, error: err.message };
     }
   }
@@ -184,16 +186,13 @@ async function deliverEmail(record: {
   // 2. SMTP Provider via standard HTTP / fetch or SMTP configuration
   if (provider === "smtp" && process.env.SMTP_HOST) {
     // In production without external SMTP package, log structured dispatch
-    console.log(`[email] SMTP dispatch configured for ${process.env.SMTP_HOST} to ${record.to}`);
-    return {
-      success: true,
-      messageId: `smtp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-    };
+    return { success: false, error: 'SMTP transport is not implemented. Configure a supported email provider.' };
   }
 
   // 3. Default Development / Test Logger Provider
+  if (isHostedEnvironment()) return { success: false, error: 'Transactional email provider is not configured.' };
   if (process.env.NODE_ENV !== "test") {
-    console.log(`[email] [${record.type.toUpperCase()}] Delivered to ${record.to} | Subject: "${record.subject}"`);
+    logger.info(`[email] [${record.type.toUpperCase()}] Delivered to ${record.to} | Subject: "${record.subject}"`);
   }
 
   return {

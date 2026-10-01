@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 // Fugluck Competition Economy — Phase 5 Automated Verification Suite
 // Tests all 40 requirements for the Sandbox Admin & Operations Console.
 // Run: npx tsx scripts/competition-phase5-admin-check.ts
@@ -103,9 +104,9 @@ async function runPhase5AdminChecks(): Promise<void> {
       ],
     );
 
-    const adminSessionToken = signSessionToken({ sub: adminUserId });
-    const modSessionToken = signSessionToken({ sub: modUserId });
-    const regularPlayerToken = signSessionToken({ sub: regularUserId });
+    const adminSessionToken = (await fixtureSession(adminUserId, 'admin'));
+    const modSessionToken = (await fixtureSession(modUserId, 'admin'));
+    const regularPlayerToken = (await fixtureSession(regularUserId, 'admin'));
 
     // Helper to run express middleware directly
     const runMiddleware = async (middlewareFn: Function, req: any): Promise<{ status: number; body?: any; nextCalled: boolean }> => {

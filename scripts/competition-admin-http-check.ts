@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 import './require-disposable-test-database';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -37,7 +38,7 @@ async function main(){
   await pool.query('DELETE FROM competition_templates WHERE id=$1',[uncertifiedId]);
  }
  const base=`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/templates/${id}`;
- const request=(method:string,suffix='',data?:unknown,user:string|null=owner)=>fetch(base+suffix,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:user})}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
+ const request=async(method:string,suffix='',data?:unknown,user:string|null=owner)=>fetch(base+suffix,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${(await fixtureSession(user, 'admin'))}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
   check('PUT template edit succeeds',(await request('PUT','',{title:'Edited through HTTP'})).status===200);
   check('edited title persisted',(await templateService.getTemplate(id))?.title==='Edited through HTTP');
   check('POST disable succeeds',(await request('POST','/disable')).status===200);
@@ -54,7 +55,7 @@ async function main(){
   check('edit enable disable audited exactly once',audit.length===3&&['ADMIN_COMPETITION_TEMPLATE_EDIT','ADMIN_COMPETITION_TEMPLATE_DISABLE','ADMIN_COMPETITION_TEMPLATE_ENABLE'].every(x=>audit.some(a=>a.action===x)));
   const source=readFileSync('packages/client/src/admin/AdminConsolePage.tsx','utf8');
   const adminBase=`http://127.0.0.1:${(server.address() as any).port}/api/admin`;
-  const adminRequest=(path:string,method='GET',data?:unknown,user:string|null=owner)=>fetch(adminBase+path,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:user})}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
+  const adminRequest=async(path:string,method='GET',data?:unknown,user:string|null=owner)=>fetch(adminBase+path,{method,headers:{'Content-Type':'application/json',...(user?{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${(await fixtureSession(user, 'admin'))}`}:{})},body:data===undefined?undefined:JSON.stringify(data)});
   check('operations status requires an admin session',(await adminRequest('/operations','GET',undefined,null)).status===401);
   check('operations status requires audit permission',(await adminRequest('/operations','GET',undefined,player)).status===403);
   const previousAppEnv=process.env.APP_ENV,previousNodeEnv=process.env.NODE_ENV;
@@ -66,7 +67,7 @@ async function main(){
   const operationsChecks = { status: opsResponse!.status === 200, backend: ops.backend?.healthy === true, database: ops.database?.healthy === true, revision: ops.frontend?.revision === frontendRevision, authority: Boolean(ops.authority?.sessions), competitions: Boolean(ops.competitions?.instances), accounting: ops.accounting?.reconciled === true, secretAbsent: !JSON.stringify(ops).includes('DATABASE_URL') };
   if (!Object.values(operationsChecks).every(Boolean)) console.error('Operations contract checks:', JSON.stringify(operationsChecks));
   check('owner can read operations health without secrets',Object.values(operationsChecks).every(Boolean));
-  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0013_knockout_tournaments'&&ops.database.migrations.expectedCount===14&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
+  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0014_security_boundaries'&&ops.database.migrations.expectedCount===15&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
   check('operations exposes a password-independent database fingerprint',/^[a-f0-9]{64}$/.test(ops.database?.identity?.fingerprint));
   check('operations shows all real-money operations disabled',ops.commercial?.moneyEnabled===false&&ops.commercial.deposits.allowed===false&&ops.commercial.withdrawals.allowed===false&&ops.commercial.competitions.allowed===false);
   check('operations reports mock commercial ledger without enabling money',ops.commercialFinance?.mode==='MOCK_CANDIDATE_ONLY'&&ops.commercialFinance.ledgerBalanced===true&&ops.commercial?.moneyEnabled===false);
@@ -102,7 +103,7 @@ async function main(){
   await instanceService.joinCompetitionQueue(id,player,accounting);
   for(const userId of [owner,player])await accounting.captureEntry({competitionInstanceId:joined.instanceId,userId,idempotencyKey:`${joined.instanceId}:${userId}`});
   await lifecycleEngine.settleCompetition(joined.instanceId,{systemVoid:true,voidReason:'HTTP_REFUND_REGRESSION'},accounting);
-  const detailResponse=await fetch(`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/instances/${joined.instanceId}`,{headers:{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:owner})}`}});
+  const detailResponse=await fetch(`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/instances/${joined.instanceId}`,{headers:{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${(await fixtureSession(owner, 'admin'))}`}});
   const detail=await detailResponse.json() as any;
   check('actual admin detail HTTP returns refund report',detailResponse.ok&&detail.reconciliation.totalRefundedMinor===1000);
   check('admin serialized refund discrepancy zero',detail.reconciliation.reconciled&&detail.reconciliation.discrepancyMinor===0);
@@ -110,7 +111,7 @@ async function main(){
   check('refund ledger double entry independently zero',(await pool.query('SELECT sum(amount_minor)::int n FROM sandbox_ledger_entries WHERE competition_instance_id=$1',[joined.instanceId])).rows[0].n===0);
   const modal=readFileSync('packages/client/src/admin/CompetitionAdminModals.tsx','utf8');
   check('admin report displays returned refund total',modal.includes('Entry Refunds:')&&modal.includes('reconciliation.totalRefundedMinor'));
-  const list=await fetch(`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/instances?templateId=${id}`,{headers:{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${signSessionToken({sub:owner})}`}}).then(r=>r.json()) as any;
+  const list=await fetch(`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/instances?templateId=${id}`,{headers:{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${(await fixtureSession(owner, 'admin'))}`}}).then(r=>r.json()) as any;
   check('instance list count follows actual HTTP contract',list.total===1&&list.instances.length===1&&source.includes('setCompInstanceTotal(res.total ?? 0)'));
  }finally{
   if(server)await new Promise<void>(r=>server!.close(()=>r()));

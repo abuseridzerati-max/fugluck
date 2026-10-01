@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { AuthorityRuntime, type AuthorityOptions } from '../competitions/authorityRuntime';
 import { AuthorityStore } from '../competitions/authorityStore';
 import type { CompetitionAccountingPort } from '../accounting/port';
@@ -29,13 +30,14 @@ import {
 } from "./matches";
 import { getOnlineSocket, registerPresence, unregisterPresence } from "./presence";
 import { enqueue, generateSeed, getPublicQueueState, isValidGameId, setOnQueueChange, tryPair } from "./queue";
-import { socketAuthMiddleware, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
+import { socketAuthMiddleware, guardSocketSession, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
 
 import { checkSocketRateLimit } from "../utils/rateLimiter";
-import { socketIoCorsOptions } from "../config/cors";
+import { socketIoCorsOptions, isOriginAllowed } from "../config/cors";
 import { instanceService, lifecycleEngine } from "../competitions";
 import { accountingForTemplate } from '../accounting/stagingMockRouter';
 import { allowedMockUser, isMockTemplate, stagingMockAction, validMockAuthorization } from '../config/stagingMockCommercial';
+import { playerCompetitionError } from '../competitions/playerError';
 
 export type MatchmakingServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, MatchmakingSocketData>;
 
@@ -55,6 +57,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
 
   const io: MatchmakingServer = new Server(httpServer, {
     cors: socketIoCorsOptions,
+    allowRequest: (request, done) => done(null, isOriginAllowed(request.headers.origin)),
     maxHttpBufferSize: 1 * 1024 * 1024, // 1MB payload buffer limit protection
   });
 
@@ -77,6 +80,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
   });
 
   io.on("connection", (socket: MatchmakingSocket) => {
+    guardSocketSession(socket);
     registerPresence(socket);
     authority.register(socket);
     handleReconnect(socket.data.userId, socket);
@@ -161,7 +165,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
           (template?.gameId === 'cyber-hopper' && template.rulesVersion === CYBER_HOPPER_AUTHORITY_VERSION);
         const tournament=template?.format==='TOURNAMENT_BRACKET'&&knockoutEnabled()?await readProduct(templateId):null;
         if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || (!tournament&&(template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2))) {
-          throw new Error('Competition gameplay is blocked pending live authority acceptance.');
+          throw Object.assign(new Error('Competition gameplay is blocked pending live authority acceptance.'), {code:'GAMEPLAY_BLOCKED'});
         }
         const joinResult = tournament?await new TournamentService(competitionAccounting(templateId)).join(templateId,socket.data.userId):await instanceService.joinCompetitionQueue(
           templateId,
@@ -184,10 +188,8 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
           await authority.create(joinResult.instanceId);
         }
       } catch (err: any) {
-        socket.emit("competition:error", {
-          code: err.code || "COMPETITION_JOIN_FAILED",
-          message: err.message || "Failed to join competition.",
-        });
+        logger.error('[competition] join failed',err);
+        socket.emit('competition:error', playerCompetitionError(err, 'COMPETITION_JOIN_FAILED'));
       }
     };
 
@@ -228,10 +230,8 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
           });
         }
       } catch (err: any) {
-        socket.emit("competition:error", {
-          code: err.code || "COMPETITION_CANCEL_FAILED",
-          message: err.message || "Failed to cancel competition entry.",
-        });
+        logger.error('[competition] cancellation failed',err);
+        socket.emit('competition:error', playerCompetitionError(err, 'COMPETITION_CANCEL_FAILED'));
       }
     };
 
@@ -296,7 +296,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
     socket.on("visibilityHidden", (payload) => {
       if (!checkSocketRateLimit(socket.id, "visibilityHidden", 5, 10_000)) return;
       if (!payload || typeof payload.matchId !== "string" || !isSocketInMatch(socket, payload.matchId)) return;
-      console.warn(`[matchmaking] visibility-hidden reported: match=${payload.matchId} user=${socket.data.username}`);
+      logger.warn(`[matchmaking] visibility-hidden reported: match=${payload.matchId} user=${socket.data.username}`);
     });
 
     socket.on("disconnect", () => {

@@ -37,6 +37,11 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const authSessionRevocations = pgTable('auth_session_revocations', {
+  sessionId: text('session_id').primaryKey(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, table => [index('auth_session_revocations_expiry').on(table.expiresAt)]);
+
 export const adminLockoutAttempts = pgTable("admin_lockout_attempts", {
   id: text("id").primaryKey(),
   ipAddress: varchar("ip_address", { length: 64 }).notNull().unique(),

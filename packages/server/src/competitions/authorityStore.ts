@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { randomInt, randomUUID, createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { Pool, type PoolClient } from 'pg';
@@ -17,7 +18,7 @@ export class AuthorityStore {
     const c = await pool.connect();
     const acquired=performance.now();
     try { await c.query('BEGIN'); const v = await fn(c); await c.query('COMMIT'); return v; }
-    catch(e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); console.info('[authority] database transaction metrics',JSON.stringify({stage,acquisitionMs:acquired-requested,transactionMs:performance.now()-acquired})); }
+    catch(e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); logger.info('[authority] database transaction metrics',JSON.stringify({stage,acquisitionMs:acquired-requested,transactionMs:performance.now()-acquired})); }
   }
   async lock(c: PoolClient, id: string, requireLease = true) {
     const r = (await c.query(`SELECT *, lease_until > clock_timestamp() AS healthy FROM competition_authority_runs WHERE id=$1 FOR UPDATE`, [id])).rows[0];
@@ -135,7 +136,7 @@ export class AuthorityStore {
       await c.query(`UPDATE competition_authority_runs SET status=$2,terminal_at=clock_timestamp(),fence=fence+1 WHERE id=$1`, [id,kind==='VOID'?'VOIDED':'COMPLETED']);
       await c.query(`UPDATE competition_authority_sessions SET status=CASE WHEN $3='READY_EXPIRED' THEN 'EXPIRED' WHEN user_id=$2 THEN 'FORFEITED' ELSE 'VOIDED' END,terminal_at=clock_timestamp() WHERE run_id=$1 AND status NOT IN ('COMPLETED','FORFEITED','VOIDED','EXPIRED')`, [id,forfeitUser??null,reason]);
     },'terminal_decision');
-    console.info('[authority] terminal persistence metrics',JSON.stringify({terminalWriteMs:performance.now()-began}));
+    logger.info('[authority] terminal persistence metrics',JSON.stringify({terminalWriteMs:performance.now()-began}));
     return this.apply(id);
   }
   async apply(id: string): Promise<AuthorityOutcome> {
@@ -168,7 +169,7 @@ export class AuthorityStore {
         await c.query(`UPDATE matches_history m SET status=$2,winner_id=$3,status_reason=$4,ended_at=now(),score_p1=COALESCE((SELECT score FROM competition_participants WHERE instance_id=$5 AND user_id=m.player1_id),0),score_p2=COALESCE((SELECT score FROM competition_participants WHERE instance_id=$5 AND user_id=m.player2_id),0) WHERE id=$1`, [d.match_id,d.winner_user_id?'COMPLETED':d.kind==='DRAW'?'DRAW':'VOIDED',d.winner_user_id,d.reason,d.instance_id]);
         await c.query('UPDATE competition_authority_decisions SET applied_at=COALESCE(applied_at,now()) WHERE run_id=$1', [id]);
       },'terminal_application');
-      console.info('[authority] accounting application metrics',JSON.stringify({instanceId:d.instance_id,decisionLookupMs,ledgerMs,lifecycleMs:performance.now()-lifecycleStarted,applicationMs:performance.now()-began}));
+      logger.info('[authority] accounting application metrics',JSON.stringify({instanceId:d.instance_id,decisionLookupMs,ledgerMs,lifecycleMs:performance.now()-lifecycleStarted,applicationMs:performance.now()-began}));
     }
     return {instanceId:d.instance_id,status,reason:d.reason,winnerUserId:d.winner_user_id};
   }

@@ -1,10 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "./jwt";
+import type { SessionTokenPayload } from './jwt';
+import { sessionUser } from './session';
+import type { User } from '../db/schema';
 
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      sessionPayload?: SessionTokenPayload;
+      sessionUser?: User;
+      sessionRestricted?: boolean;
     }
   }
 }
@@ -12,14 +18,20 @@ declare global {
 // Attaches req.userId when a valid session cookie is present; never blocks
 // the request. Use requireAuth for routes that must reject unauthenticated
 // requests outright.
-export function attachSession(req: Request, _res: Response, next: NextFunction) {
+export async function attachSession(req: Request, _res: Response, next: NextFunction) {
   const token = req.cookies?.[SESSION_COOKIE_NAME];
   const payload = token ? verifySessionToken(token) : null;
-  if (payload) req.userId = payload.sub;
+  if (payload?.sessionPurpose === 'user') {
+    const user = await sessionUser(payload);
+    if (user && user.status !== 'banned' && user.status !== 'suspended') {
+      req.userId = user.id; req.sessionPayload = payload; req.sessionUser = user;
+    } else if (user) req.sessionRestricted = true;
+  }
   next();
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (req.sessionRestricted) { res.status(403).json({ error: 'Account suspended or banned.' }); return; }
   if (!req.userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -92,7 +104,7 @@ export async function requireOwnerAdmin(req: Request, res: Response, next: NextF
   const adminToken = req.cookies?.[ADMIN_SESSION_COOKIE_NAME];
   const payload = adminToken ? verifySessionToken(adminToken) : null;
 
-  if (!payload || !payload.sub) {
+  if (!payload || !payload.sub || payload.sessionPurpose !== 'admin') {
     res.status(401).json({ error: "Not authenticated as administrator" });
     return;
   }
@@ -101,7 +113,7 @@ export async function requireOwnerAdmin(req: Request, res: Response, next: NextF
   const { users } = await import("../db/schema");
   const { eq } = await import("drizzle-orm");
 
-  const user = await db.query.users.findFirst({ where: eq(users.id, payload.sub) });
+  const user = await sessionUser(payload);
   if (!user || user.status === "banned" || user.status === "suspended") {
     res.status(403).json({ error: "Account access restricted." });
     return;
@@ -113,5 +125,7 @@ export async function requireOwnerAdmin(req: Request, res: Response, next: NextF
   }
 
   req.userId = user.id;
+  req.sessionPayload = payload;
+  req.sessionUser = user;
   next();
 }

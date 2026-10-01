@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 // Presentation scenarios plus the read-only canonical player API, on the guarded disposable DB.
 import './require-disposable-test-database.ts'
 import React from 'react'
@@ -116,7 +117,7 @@ async function main(){
     check('read projections do not write ledger',(await pool.query('SELECT count(*)::int n FROM sandbox_ledger_entries')).rows[0].n===before)
     const unauthorized=await fetch(`${url}/mine`)
     check('mine API requires auth',unauthorized.status===401)
-    const cookie=`${SESSION_COOKIE_NAME}=${signSessionToken({sub:id})}`
+    const cookie=`${SESSION_COOKIE_NAME}=${(await fixtureSession(id))}`
     const owned=await fetch(`${url}/mine`,{headers:{cookie}});const body=await owned.json() as any
     check('mine API session ownership and no cache',owned.status===200&&owned.headers.get('cache-control')==='no-store'&&body.instances.some((i:any)=>i.id===joined.instanceId))
     const publicCatalog=await fetch(`${url}/templates`);const catalog=await publicCatalog.json() as any

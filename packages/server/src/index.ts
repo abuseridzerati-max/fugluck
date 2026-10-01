@@ -21,19 +21,15 @@ import { isHostedEnvironment } from './config/deploymentIdentity';
 import { ensureUserSchema, pool } from "./db/client";
 import { closeTournamentLocks } from './competitions/tournamentPersistence';
 import { logger, requestLoggerMiddleware } from "./utils/safeLogger";
+import { httpSecurity } from './config/httpSecurity';
+import { createRateLimiterMiddleware } from './utils/rateLimiter';
 
 // Enforce mandatory configuration at boot
 enforceStartupConfig();
 
 const app = express();
 app.disable('x-powered-by');
-app.use((_req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  next();
-});
+app.use(httpSecurity);
 
 // Trust reverse proxies (Vercel, Render, Railway, Cloudflare) for accurate client IP & HTTPS detection
 const trustProxyValue = process.env.TRUST_PROXY;
@@ -52,6 +48,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(requestLoggerMiddleware);
+app.use('/api', createRateLimiterMiddleware({windowMs:60_000,maxRequests:500}));
 
 app.use("/api/auth", authRouter);
 app.use("/api/account", accountRouter);

@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 // Four real authenticated clients, unchanged live engines, normal controls and authoritative receipts.
 // No inserted result, supplied score, selected winner, or direct financial balance write.
 import { tournamentTestDatabase } from './tournament-test-database';
@@ -25,7 +26,7 @@ const bindings=new Map<string,AuthorityBinding>(),frames=new Map<string,Authorit
 let activeInstance:string|null=null;
 async function boot(){server=createServer();io=attachMatchmaking(server,{competitionAccounting:adapter,authorityOptions:{capTicks:240,countdownMs:1500,seedFactory:()=>127}});await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));url=`http://127.0.0.1:${(server.address() as any).port}`;}
 async function client(userId:string){
-  const s=connect(url,{transports:['websocket'],auth:{token:signSessionToken({sub:userId})},autoConnect:false,reconnection:false});sockets.push(s);let seq=0,hopped=false;
+  const s=connect(url,{transports:['websocket'],auth:{token:(await fixtureSession(userId))},autoConnect:false,reconnection:false});sockets.push(s);let seq=0,hopped=false;
   s.on('authority:probe',ack=>ack());
   s.on('authority:session',(b:AuthorityBinding)=>{bindings.set(userId,b);seenSessions.add(b.sessionId);frames.delete(userId);seq=0;hopped=false;s.emit('authority:ready',b)});
   s.on('authority:snapshot',(f:AuthoritySnapshot)=>{if(f.sessionId===bindings.get(userId)?.sessionId)frames.set(userId,f)});

@@ -20,38 +20,53 @@ const SENSITIVE_KEYS = new Set([
   "verification_token",
   "idempotencykey",
   "jwt",
+  "currentpassword", "newpassword", "resettoken", "rawtoken", "socketticket", "signature",
+  "databaseurl", "serviceRoleKey".toLowerCase(), "jwtsecret", "webhooksecret", "clientsecret",
+  "smtpPass".toLowerCase(), "stagingmockauthorization", "stagingmockproviderkey", "setcookie",
 ]);
 
-export function redactSensitiveData<T>(data: T): T {
+export function redactLogText(value: string): string {
+  let text = value.replace(/\bpostgres(?:ql)?:\/\/[^\s'"<>]+/gi, '[REDACTED_DATABASE_URL]')
+    .replace(/\$2[aby]\$\d\d\$[./A-Za-z0-9]{53}/g, '[REDACTED_PASSWORD_HASH]')
+    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[REDACTED_JWT]')
+    .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [REDACTED]');
+  for (const [key, secret] of Object.entries(process.env)) {
+    if (secret && secret.length >= 8 && /SECRET|PASSWORD|TOKEN|API_KEY|SERVICE_ROLE|DATABASE_URL|SMTP_PASS|STAGING_MOCK_AUTHORIZATION|STAGING_MOCK_PROVIDER_KEY/.test(key))
+      text = text.split(secret).join('[REDACTED]');
+  }
+  return text.length > 500 ? `${text.substring(0, 500)}... [TRUNCATED ${text.length} chars]` : text;
+}
+
+export function redactSensitiveData<T>(data: T, seen = new WeakSet<object>(), depth = 0): T {
   if (data === null || data === undefined) return data;
 
   if (typeof data === "string") {
-    if (data.length > 500) {
-      return `${data.substring(0, 500)}... [TRUNCATED ${data.length} chars]` as unknown as T;
-    }
-    return data;
+    return redactLogText(data) as T;
   }
 
   if (typeof data !== "object") return data;
+  if (depth > 8 || seen.has(data)) return '[OMITTED]' as T;
+  seen.add(data);
+  if (data instanceof Error) return redactSensitiveData({name:data.name,message:data.message},seen,depth+1) as T;
 
   if (Array.isArray(data)) {
     if (data.length > 20) {
-      const sliced = data.slice(0, 10).map(redactSensitiveData);
+      const sliced = data.slice(0, 10).map(value => redactSensitiveData(value, seen, depth+1));
       sliced.push(`[... ${data.length - 10} more items]` as unknown as T);
       return sliced as unknown as T;
     }
-    return data.map(redactSensitiveData) as unknown as T;
+    return data.map(value => redactSensitiveData(value, seen, depth+1)) as unknown as T;
   }
 
-  const redactedObj: Record<string, unknown> = {};
+  const redactedObj: Record<string, unknown> = Object.create(null);
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
     const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, "");
     if (SENSITIVE_KEYS.has(normalizedKey)) {
       redactedObj[key] = "[REDACTED]";
     } else if (value && typeof value === "object") {
-      redactedObj[key] = redactSensitiveData(value);
-    } else if (typeof value === "string" && value.length > 500) {
-      redactedObj[key] = `${value.substring(0, 500)}... [TRUNCATED ${value.length} chars]`;
+      redactedObj[key] = redactSensitiveData(value, seen, depth+1);
+    } else if (typeof value === "string") {
+      redactedObj[key] = redactLogText(value);
     } else {
       redactedObj[key] = value;
     }
@@ -62,25 +77,16 @@ export function redactSensitiveData<T>(data: T): T {
 
 export const logger = {
   info: (message: string, ...meta: unknown[]) => {
-    const sanitizedMeta = meta.map(redactSensitiveData);
-    console.log(`[INFO] ${message}`, ...sanitizedMeta);
+    const sanitizedMeta = meta.map(value => redactSensitiveData(value));
+    console.log(`[INFO] ${redactLogText(message)}`, ...sanitizedMeta);
   },
   warn: (message: string, ...meta: unknown[]) => {
-    const sanitizedMeta = meta.map(redactSensitiveData);
-    console.warn(`[WARN] ${message}`, ...sanitizedMeta);
+    const sanitizedMeta = meta.map(value => redactSensitiveData(value));
+    console.warn(`[WARN] ${redactLogText(message)}`, ...sanitizedMeta);
   },
   error: (message: string, ...meta: unknown[]) => {
-    const sanitizedMeta = meta.map((m) => {
-      if (m instanceof Error) {
-        return {
-          name: m.name,
-          message: m.message,
-          stack: m.stack ? m.stack.split("\n").slice(0, 4).join("\n") : undefined,
-        };
-      }
-      return redactSensitiveData(m);
-    });
-    console.error(`[ERROR] ${message}`, ...sanitizedMeta);
+    const sanitizedMeta = meta.map(value => redactSensitiveData(value));
+    console.error(`[ERROR] ${redactLogText(message)}`, ...sanitizedMeta);
   },
 };
 
@@ -96,8 +102,8 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
     // Do not log request bodies for authentication or secret sensitive endpoints
     const isSensitivePath = path.startsWith("/api/auth/login") || path.startsWith("/api/auth/signup") || path.startsWith("/api/admin/login");
 
-    const safeBody = isSensitivePath ? "[SENSITIVE_PATH_BODY_OMITTED]" : redactSensitiveData(req.body);
-    const safeQuery = redactSensitiveData(req.query);
+    const safeBody = isSensitivePath ? "[SENSITIVE_PATH_BODY_OMITTED]" : '[REQUEST_BODY_OMITTED]';
+    const safeQuery = '[QUERY_VALUES_OMITTED]';
 
     if (statusCode >= 400) {
       logger.warn(`HTTP ${method} ${path} ${statusCode} - ${duration}ms`, {

@@ -63,13 +63,17 @@ export type RateLimiterOptions = {
   message?: string;
   keyGenerator?: (req: Request) => string;
 };
+let nextLimiterId = 0;
 
 export function createRateLimiterMiddleware(options: RateLimiterOptions) {
   const { windowMs, maxRequests, message = "Too many requests. Please try again later.", keyGenerator } = options;
+  const limiterId = ++nextLimiterId;
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const clientKey = keyGenerator ? keyGenerator(req) : req.userId ? `usr:${req.userId}` : `ip:${req.ip || req.socket.remoteAddress || "unknown"}`;
-    const key = `${req.baseUrl}${req.path}:${clientKey}`;
+    // Parameters/query strings cannot allocate fresh buckets; middleware instances
+    // have separate counters even when they are mounted on the same route.
+    const key = `http:${limiterId}:${req.baseUrl}:${req.route?.path ?? 'router'}:${clientKey}`;
 
     const { allowed, retryAfterMs } = globalRateLimiter.checkRateLimit(key, maxRequests, windowMs);
 

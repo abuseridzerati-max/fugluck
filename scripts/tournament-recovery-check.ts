@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 // Isolated failure/recovery fixtures. Live game acceptance is tournament-authority-check.ts.
 import { tournamentTestDatabase } from './tournament-test-database';
 import { randomUUID } from 'node:crypto';
@@ -152,11 +153,11 @@ async function mockProvisioningChecks(){
     REAL_MONEY_ENABLED:'false',REAL_MONEY_DEPOSITS_ENABLED:'false',REAL_MONEY_WITHDRAWALS_ENABLED:'false',REAL_MONEY_COMPETITIONS_ENABLED:'false'});
   const app=express();app.use(express.json(),cookieParser());app.use('/mock',stagingMockCommercialRouter);
   const server=createServer(app);await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+(server.address() as any).port+'/mock/tournaments/ensure';
-  const headers={cookie:SESSION_COOKIE_NAME+'='+signSessionToken({sub:ids[0]}),origin:'https://staging.fugluck.com','content-type':'application/json','x-staging-mock-authorization':'a'.repeat(64)};
+  const headers={cookie:SESSION_COOKIE_NAME+'='+(await fixtureSession(ids[0])),origin:'https://staging.fugluck.com','content-type':'application/json','x-staging-mock-authorization':'a'.repeat(64)};
   const post=(h:Record<string,string>)=>fetch(url,{method:'POST',headers:h,body:JSON.stringify({capacity:16,prizeMinor:999999,provenance:'LIVE'})});
   try{
     check('mock provisioning requires a signed-in operator user',(await post({'content-type':'application/json'})).status===401);
-    check('mock provisioning rejects unlisted users',(await post({...headers,cookie:SESSION_COOKIE_NAME+'='+signSessionToken({sub:users[0]})})).status===403);
+    check('mock provisioning rejects unlisted users',(await post({...headers,cookie:SESSION_COOKIE_NAME+'='+(await fixtureSession(users[0]))})).status===403);
     check('mock provisioning requires operator authorization',(await post({...headers,'x-staging-mock-authorization':'c'.repeat(64)})).status===403);
     check('mock provisioning rejects another browser origin',(await post({...headers,origin:'https://www.fugluck.com'})).status===403);
     process.env.ENABLE_KNOCKOUT_TOURNAMENTS='false';check('mock provisioning respects tournament switch',(await post(headers)).status===403);process.env.ENABLE_KNOCKOUT_TOURNAMENTS='true';

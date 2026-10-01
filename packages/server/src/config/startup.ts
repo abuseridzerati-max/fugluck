@@ -41,7 +41,7 @@ export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): Sta
   if (!jwtSecret || jwtSecret.trim().length === 0) {
     errors.push("JWT_SECRET is required but not configured.");
   } else if (jwtSecret.length < 32 && env.NODE_ENV === "production") {
-    warnings.push("JWT_SECRET should be at least 32 characters long in production/staging environments.");
+    errors.push("JWT_SECRET must be at least 32 characters long in production/staging environments.");
   }
 
   // 3. Port Validation

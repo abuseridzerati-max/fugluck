@@ -38,9 +38,10 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0011_terminal_participant_status.sql",
     "0012_commercial_financial_core.sql",
     "0013_knockout_tournaments.sql",
+    "0014_security_boundaries.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0013) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0014) to disposable database...\n");
 
   const client = await pool.connect();
   try {

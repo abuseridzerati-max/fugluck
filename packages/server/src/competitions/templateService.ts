@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 // Competition Template Service (Fugluck Competition Economy — Phase 3)
 // Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT Sections 2 & 3
 // Server-authoritative template management, eligibility enforcement, and validation.
@@ -526,7 +527,7 @@ export class CompetitionTemplateService {
         if (prizes.length > 0) await tx.insert(competitionTemplatePrizes).values(prizes);
       });
     } catch (err) {
-      console.error("[templates] Failed to seed default competition templates:", err);
+      logger.error("[templates] Failed to seed default competition templates:", err);
       throw new Error("Failed to seed default competition templates.");
     }
   }

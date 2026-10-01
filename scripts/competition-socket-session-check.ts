@@ -19,7 +19,9 @@ async function main(){
   const {authRouter}=await import('../packages/server/src/routes/auth')
   let accountStatus='active'
   const originalFind=db.query.users.findFirst
-  db.query.users.findFirst=(async()=>({id:'socket_fixture',username:'Socket Fixture',status:accountStatus,isEmailVerified:true})) as typeof originalFind
+  const originalQuery=pool.query
+  pool.query=(async()=>({rows:[],rowCount:0})) as typeof originalQuery
+  db.query.users.findFirst=(async()=>({id:'socket_fixture',username:'Socket Fixture',passwordHash:'socket-fixture-only',status:accountStatus,isEmailVerified:true})) as typeof originalFind
   const app=express();app.use(cookieParser());app.use(express.json());app.use('/api/auth',authRouter)
   const http=createServer(app),io=new Server(http)
   io.use(socketAuthMiddleware)
@@ -35,7 +37,7 @@ async function main(){
     })
   }
   try{
-    const cookie=`${tokens.SESSION_COOKIE_NAME}=${tokens.signSessionToken({sub:'socket_fixture'})}`
+    const cookie=`${tokens.SESSION_COOKIE_NAME}=${tokens.signSessionToken({sub:'socket_fixture'},'socket-fixture-only')}`
     const anonymous=await fetch(`${url}/api/auth/socket-ticket`,{method:'POST'})
     check('anonymous HTTP cannot obtain socket proof',anonymous.status===401)
     const response=await fetch(`${url}/api/auth/socket-ticket`,{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({userId:'attacker'})})
@@ -71,6 +73,7 @@ async function main(){
     check('account status is rechecked when the ticket is used',bannedSocket.error==='account_suspended')
   }finally{
     db.query.users.findFirst=originalFind
+    pool.query=originalQuery
     await new Promise<void>(resolve=>io.close(()=>resolve()));await pool.end()
   }
   console.log(`Competition socket session: ${passes} PASS, ${failures} FAIL`)

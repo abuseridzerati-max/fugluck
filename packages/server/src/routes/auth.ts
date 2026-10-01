@@ -1,9 +1,12 @@
+import { logger } from '../utils/safeLogger';
 import { CURRENT_POLICY_VERSIONS, type PolicyType, type PublicUser } from "@fugluck/shared";
 import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, or } from "drizzle-orm";
 import { Router } from "express";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../auth/password";
-import { getClearCookieOptions, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken, signSocketTicket } from "../auth/jwt";
+import { getClearCookieOptions, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken, signSocketTicket, verifySessionToken } from "../auth/jwt";
+import { disconnectUserSessions, revokeSession } from '../auth/session';
+import { signGuestTicket } from '../auth/jwt';
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
 import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
@@ -27,7 +30,7 @@ async function toPublicUser(user: User): Promise<PublicUser> {
     sandboxGelMinor = sb.availableMinor;
     sandboxGelReservedMinor = sb.reservedMinor;
   } catch (err) {
-    console.error("[auth] Failed to retrieve sandbox balance:", err);
+    logger.error("[auth] Failed to retrieve sandbox balance:", err);
   }
   return {
     id: user.id,
@@ -46,8 +49,8 @@ async function toPublicUser(user: User): Promise<PublicUser> {
   };
 }
 
-function setSessionCookie(res: import("express").Response, userId: string) {
-  const token = signSessionToken({ sub: userId });
+function setSessionCookie(res: import("express").Response, user: User) {
+  const token = signSessionToken({ sub: user.id }, user.passwordHash);
   res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
 }
 
@@ -70,10 +73,15 @@ const forgotPasswordLimiter = createRateLimiterMiddleware({
 });
 
 export const authRouter = Router();
+authRouter.post('/guest-ticket', createRateLimiterMiddleware({windowMs:60_000,maxRequests:20}), (_req,res) => {
+  res.setHeader('Cache-Control','no-store');
+  res.json({token:signGuestTicket(),expiresInMs:SESSION_GUEST_LIFETIME_MS});
+});
+const SESSION_GUEST_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 authRouter.post('/socket-ticket', attachSession, requireAuth, (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ token: signSocketTicket(_req.userId!) });
+  res.json({ token: signSocketTicket(_req.userId!, _req.sessionPayload) });
 });
 
 authRouter.get("/policies/versions", (_req, res) => {
@@ -230,11 +238,11 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
   // Dispatch transactional verification email if email provided
   if (user.email) {
     await sendVerificationEmail(user.email, user.username, rawVerificationToken).catch((err) => {
-      console.error("[auth] Failed to dispatch verification email on signup:", err);
+      logger.error("[auth] Failed to dispatch verification email on signup:", err);
     });
   }
 
-  setSessionCookie(res, user.id);
+  setSessionCookie(res, user);
 
   const responsePayload: Record<string, unknown> = {
     user: await toPublicUser(user),
@@ -249,7 +257,7 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
   res.status(201).json(responsePayload);
 });
 
-authRouter.post("/verify-email", async (req, res) => {
+authRouter.post("/verify-email", authLimiter, async (req, res) => {
   const { token } = req.body ?? {};
   if (typeof token !== "string" || token.trim().length === 0) {
     res.status(400).json({ error: "Verification token is required." });
@@ -272,18 +280,16 @@ authRouter.post("/verify-email", async (req, res) => {
     return;
   }
 
-  // Update user as verified
-  const [updatedUser] = await db
-    .update(users)
-    .set({
-      isEmailVerified: true,
-      emailVerifiedAt: new Date(),
-    })
-    .where(eq(users.id, record.userId))
-    .returning();
-
-  // Delete used token (single-use enforcement)
-  await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, record.id));
+  const updatedUser = await db.transaction(async tx => {
+    const [consumed] = await tx.delete(emailVerificationTokens)
+      .where(and(eq(emailVerificationTokens.id, record.id), eq(emailVerificationTokens.tokenHash, tokenHash)))
+      .returning();
+    if (!consumed || consumed.expiresAt.getTime() <= Date.now()) return null;
+    const [updated] = await tx.update(users).set({ isEmailVerified: true, emailVerifiedAt: new Date() })
+      .where(eq(users.id, consumed.userId)).returning();
+    return updated;
+  });
+  if (!updatedUser) { res.status(400).json({ error: 'Invalid or expired verification token.' }); return; }
 
   res.json({
     message: "Email verified successfully.",
@@ -318,7 +324,7 @@ authRouter.post("/resend-verification", resendLimiter, attachSession, async (req
     });
 
     await sendVerificationEmail(user.email, user.username, rawVerificationToken).catch((err) => {
-      console.error("[auth] Failed to dispatch verification email on resend:", err);
+      logger.error("[auth] Failed to dispatch verification email on resend:", err);
     });
   }
 
@@ -361,7 +367,7 @@ authRouter.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
     });
 
     await sendPasswordResetEmail(user.email, user.username, rawResetToken).catch((err) => {
-      console.error("[auth] Failed to dispatch password reset email:", err);
+      logger.error("[auth] Failed to dispatch password reset email:", err);
     });
   }
 
@@ -416,15 +422,17 @@ authRouter.post("/reset-password", authLimiter, async (req, res) => {
 
   const newPasswordHash = await hashPassword(newPassword);
 
-  // Update password and delete used token in transaction
-  await db.transaction(async (tx) => {
-    await tx
-      .update(users)
-      .set({ passwordHash: newPasswordHash })
-      .where(eq(users.id, record.userId));
-
-    await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.id, record.id));
+  // Consume under a row lock before changing the password. Exactly one concurrent request wins.
+  const changed = await db.transaction(async (tx) => {
+    const [consumed] = await tx.delete(passwordResetTokens)
+      .where(and(eq(passwordResetTokens.id, record.id), eq(passwordResetTokens.tokenHash, tokenHash))).returning();
+    if (!consumed || consumed.expiresAt.getTime() <= Date.now()) return false;
+    const [updated] = await tx.update(users).set({ passwordHash: newPasswordHash })
+      .where(and(eq(users.id, consumed.userId), eq(users.status, 'active'))).returning();
+    return Boolean(updated);
   });
+  if (!changed) { res.status(400).json({ error: 'Invalid or expired password reset link.' }); return; }
+  disconnectUserSessions(record.userId);
 
   // Clear any existing session cookie so user must authenticate with new password
   res.clearCookie(SESSION_COOKIE_NAME, getClearCookieOptions());
@@ -452,11 +460,12 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
-  setSessionCookie(res, user.id);
+  setSessionCookie(res, user);
   res.json({ user: await toPublicUser(user) });
 });
 
-authRouter.post("/logout", (_req, res) => {
+authRouter.post("/logout", async (_req, res) => {
+  await revokeSession(verifySessionToken(_req.cookies?.[SESSION_COOKIE_NAME]));
   res.clearCookie(SESSION_COOKIE_NAME, getClearCookieOptions());
   res.status(204).end();
 });

@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 // Competition Instance Service & Factory (Fugluck Competition Economy — Phase 3)
 // Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT Sections 4, 5, 6, 7
 // Manages continuous queueing, atomic registration, snapshotting, and final-seat concurrency.
@@ -354,7 +355,7 @@ export class CompetitionInstanceService {
               idempotencyKey: `comp_comp_release_${targetInstanceId}_${userId}`,
             });
           } catch (relErr) {
-            console.error(`[competition] Compensation release failed:`, relErr);
+            logger.error(`[competition] Compensation release failed:`, relErr);
           }
         }
         throw dbErr;

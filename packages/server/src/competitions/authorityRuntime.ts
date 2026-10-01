@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine';
@@ -92,14 +93,14 @@ export class AuthorityRuntime {
         const elapsed=performance.now()-sent;
         this.metrics.maxLeaseRoundtripMs=Math.max(this.metrics.maxLeaseRoundtripMs,elapsed);
         runs.forEach((r,i)=>{const key=phases[i];r.metrics[key]=Math.max(r.metrics[key],elapsed);});
-        console.warn('[authority] heartbeat failed',JSON.stringify({durationMs:elapsed,runCount:runs.length}));
+        logger.warn('[authority] heartbeat failed',JSON.stringify({durationMs:elapsed,runCount:runs.length}));
         for(const r of runs)void this.finish(r,'LEASE_LOST',undefined,true);
       }).finally(()=>{this.renewing=false});
     },500);this.leaseTimer.unref();
     this.recoveryTimer=setInterval(()=>{
       if(this.recovering)return;this.recovering=true;
       void store.recover().then(()=>this.pumpTournaments()).then(()=>{this.recoveryFailed=false}).catch(()=>{
-        if(!this.recoveryFailed)console.warn('[authority] Recovery delayed; durable outcomes are preserved and will retry.');
+        if(!this.recoveryFailed)logger.warn('[authority] Recovery delayed; durable outcomes are preserved and will retry.');
         this.recoveryFailed=true;
       }).finally(()=>{this.recovering=false;});
     },1000);
@@ -150,7 +151,7 @@ export class AuthorityRuntime {
       try {
       const admission=await measureAdmission(socket);
       recordAdmission(r.instanceId,r.gameId,admission);
-      console.info('[authority] admission metrics',JSON.stringify({instanceId:r.instanceId,...admission}));
+      logger.info('[authority] admission metrics',JSON.stringify({instanceId:r.instanceId,...admission}));
       // Reauthenticate after the asynchronous measurement so a replaced controller
       // cannot void or ready its successor's run.
       this.authenticate(socket,p);
@@ -277,7 +278,7 @@ export class AuthorityRuntime {
   tick(r:Run) {
     if(r.stopped)return;
     const now=performance.now();
-    if(now-r.leaseConfirmed>1900) { console.warn('[authority] lease acknowledgement age ms',Math.round(now-r.leaseConfirmed)); void this.finish(r,'LEASE_UNCERTAIN',undefined,true); return; }
+    if(now-r.leaseConfirmed>1900) { logger.warn('[authority] lease acknowledgement age ms',Math.round(now-r.leaseConfirmed)); void this.finish(r,'LEASE_UNCERTAIN',undefined,true); return; }
     if(r.startMono===null) {
       if(now-r.created>(r.bracketMatchId?r.readyMs:(this.options.readyMs??30000))&&!r.starting){
         const ready=r.players.filter(p=>p.state==='READY'&&p.socket?.connected);
@@ -327,7 +328,7 @@ export class AuthorityRuntime {
   }
   async finish(r:Run,reason:string,forfeitUser?:string,systemVoid=false) {
     if(r.stopped)return;
-    console.info('[authority] terminal reason:',reason);
+    logger.info('[authority] terminal reason:',reason);
     const finished=performance.now();
     let receiptWaitMs=0, decisionAndApplyMs=0, notificationEmitMs=0;
     r.stopped=true; clearInterval(r.timer);
@@ -352,14 +353,14 @@ export class AuthorityRuntime {
       r.players.forEach(p=>p.socket?.emit('authority:error',{code:'RESULT_PENDING_RECOVERY'}));
     } finally {
       // Bounded operational evidence; never includes controls, session nonces or account identifiers.
-      console.info('[authority] run metrics',JSON.stringify({instanceId:r.instanceId,reason,ticks:r.ticks,activeMs:r.startMono===null?0:Math.max(0,finished-r.startMono),settlementMs:performance.now()-finished,receiptWaitMs,decisionAndApplyMs,notificationEmitMs,...r.metrics,delivery:r.delivery}));
+      logger.info('[authority] run metrics',JSON.stringify({instanceId:r.instanceId,reason,ticks:r.ticks,activeMs:r.startMono===null?0:Math.max(0,finished-r.startMono),settlementMs:performance.now()-finished,receiptWaitMs,decisionAndApplyMs,notificationEmitMs,...r.metrics,delivery:r.delivery}));
       this.runs.delete(r.bracketMatchId?r.matchId:r.instanceId);
     }
   }
   private closed=false;
   close() {
     if(this.closed)return;this.closed=true;
-    console.info('[authority] runtime metrics',JSON.stringify({...this.metrics,averageRunTickMs:this.metrics.ticks?this.metrics.tickMs/this.metrics.ticks:0}));
+    logger.info('[authority] runtime metrics',JSON.stringify({...this.metrics,averageRunTickMs:this.metrics.ticks?this.metrics.tickMs/this.metrics.ticks:0}));
     clearInterval(this.recoveryTimer);clearInterval(this.leaseTimer);
     for(const r of this.runs.values()){r.stopped=true;clearInterval(r.timer);}
     this.runs.clear();void this.store.close().catch(()=>{});

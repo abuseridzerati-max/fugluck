@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 import './require-disposable-test-database.ts';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -51,7 +52,7 @@ async function main(){
   // A fixed server seed makes the first asteroid intersect the legal firing lane.
   // Both players still run the unchanged live engine; no scores/hits are injected.
   server=createServer();io=attachMatchmaking(server,{authorityOptions:{capTicks:120,countdownMs:3000,readyMs:15000,reconnectMs:1000,seedFactory:()=>127}});await new Promise<void>(r=>server!.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${(server.address() as any).port}`;
-  async function socket(user:string){const s=connect(url,{auth:{token:signSessionToken({sub:user})},transports:['websocket'],autoConnect:false,reconnection:false});sockets.push(s);s.on('authority:probe',ack=>ack());
+  async function socket(user:string){const s=connect(url,{auth:{token:(await fixtureSession(user))},transports:['websocket'],autoConnect:false,reconnection:false});sockets.push(s);s.on('authority:probe',ack=>ack());
     let current:AuthorityBinding|undefined,last:AuthoritySnapshot|undefined,sequence=0;
     s.on('authority:session',p=>{current=p;sequence=0});s.on('authority:snapshot',p=>{last=p});
     const heartbeat=setInterval(()=>{if(s.connected&&current&&last?.state==='ACTIVE'&&last.startAt!==null&&last.serverTime>last.startAt)s.volatile.emit('authority:controls',{...current,seq:++sequence,snapshot:last.seq,left:false,right:false,up:false,down:false,fire:firing.has(user)})},100);

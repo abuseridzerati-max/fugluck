@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 // Competition Lifecycle Engine (Fugluck Competition Economy — Phase 3)
 // Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT Sections 8, 13, 14, 15, 16, 17, 18, 19
 // Coordinates match creation, authority decisions, snapshotted prize settlement,
@@ -130,7 +131,7 @@ export class CompetitionLifecycleEngine {
         });
 
         if (!capResult.success) {
-          console.error(`[lifecycle] Capture failed for user ${p.user_id} in instance ${instanceId}:`, capResult);
+          logger.error(`[lifecycle] Capture failed for user ${p.user_id} in instance ${instanceId}:`, capResult);
           await accountingPort.refundCompetition({
             competitionInstanceId: instanceId,
             reason: `CAPTURE_FAILURE_${p.user_id}`,
@@ -343,7 +344,7 @@ export class CompetitionLifecycleEngine {
           recoveredActive++;
         }
       } catch (err) {
-        console.error(`[lifecycle] Failed to recover orphan competition ${inst.id}:`, err);
+        logger.error(`[lifecycle] Failed to recover orphan competition ${inst.id}:`, err);
       }
     }
 

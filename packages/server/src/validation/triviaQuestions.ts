@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { createSeededRandom } from "@fugluck/shared";
 
 export type SeededTriviaQuestion = {
@@ -55,7 +56,7 @@ export function getSeededQuestions(seed: number | string, count = 10, totalCount
 
   const elapsedMs = performance.now() - startTime;
   if (elapsedMs > 5.0) {
-    console.warn(`[getSeededQuestions] Selection exceeded 5ms threshold: ${elapsedMs.toFixed(2)}ms`);
+    logger.warn(`[getSeededQuestions] Selection exceeded 5ms threshold: ${elapsedMs.toFixed(2)}ms`);
   }
 
   return questions;

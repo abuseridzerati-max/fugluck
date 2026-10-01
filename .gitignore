@@ -43,6 +43,7 @@ coverage/
 .env.production
 .env.production.local
 .env.*.local
+.env.*
 *.pem
 *.key
 *.p12
@@ -54,6 +55,7 @@ id_ed25519
 
 # Preserve explicit environment template examples
 !.env.example
+!.env.*.example
 !packages/client/.env.example
 !packages/server/.env.example
 

@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { randomInt } from "node:crypto";
 import { gameRegistry } from "@fugluck/games";
 import type { QueueStateEntry } from "@fugluck/shared";
@@ -29,7 +30,7 @@ function notifyQueueChange(): void {
     try {
       queueChangeListener();
     } catch (err) {
-      console.error("[queue] Error in queue change listener:", err);
+      logger.error("[queue] Error in queue change listener:", err);
     }
   }
 }

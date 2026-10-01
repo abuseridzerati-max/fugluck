@@ -103,7 +103,7 @@ const handleGetDashboard = async (_req: any, res: any) => {
       isSandbox: true,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load competition dashboard metrics." });
+    res.status(500).json({ error: "Failed to load competition dashboard metrics." });
   }
 };
 
@@ -140,7 +140,7 @@ competitionAdminRouter.get("/templates", requirePermission("COMPETITIONS_VIEW"),
 
     res.json({ templates: enrichedTemplates });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load templates." });
+    res.status(500).json({ error: "Failed to load templates." });
   }
 });
 
@@ -239,7 +239,7 @@ competitionAdminRouter.post("/templates", requirePermission("COMPETITIONS_MANAGE
     res.status(201).json({ template, auditLogId });
   } catch (err: any) {
     const status = err.name === "GameEligibilityError" || err.name === "TemplateValidationError" ? 400 : 500;
-    res.status(status).json({ error: err.message || "Failed to create template." });
+    res.status(status).json({ error: status === 400 ? err.message : "Failed to create template." });
   }
 });
 
@@ -303,7 +303,7 @@ competitionAdminRouter.put("/templates/:id", requirePermission("COMPETITIONS_MAN
     res.json({ template, auditLogId });
   } catch (err: any) {
     const status = err.name === "TemplateValidationError" ? 400 : 500;
-    res.status(status).json({ error: err.message || "Failed to update template." });
+    res.status(status).json({ error: status === 400 ? err.message : "Failed to update template." });
   }
 });
 
@@ -325,7 +325,7 @@ competitionAdminRouter.post("/templates/:id/enable", requirePermission("COMPETIT
 
     res.json({ template, auditLogId });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to enable template." });
+    res.status(500).json({ error: "Failed to enable template." });
   }
 });
 
@@ -347,7 +347,7 @@ competitionAdminRouter.post("/templates/:id/disable", requirePermission("COMPETI
 
     res.json({ template, auditLogId });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to disable template." });
+    res.status(500).json({ error: "Failed to disable template." });
   }
 });
 
@@ -368,7 +368,7 @@ competitionAdminRouter.get("/instances", requirePermission("COMPETITIONS_VIEW"),
 
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to list competition instances." });
+    res.status(500).json({ error: "Failed to list competition instances." });
   }
 });
 
@@ -383,7 +383,7 @@ competitionAdminRouter.get("/instances/:id", requirePermission("COMPETITIONS_VIE
 
     res.json(detail);
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load instance detail." });
+    res.status(500).json({ error: "Failed to load instance detail." });
   }
 });
 
@@ -448,7 +448,7 @@ competitionAdminRouter.post("/instances/:id/cancel", requirePermission("COMPETIT
 
     res.json({ success: true, instanceId, status: "CANCELLED", auditLogId });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to cancel competition instance." });
+    res.status(500).json({ error: "Failed to cancel competition instance." });
   }
 });
 
@@ -517,7 +517,7 @@ competitionAdminRouter.post("/instances/:id/void", requirePermission("COMPETITIO
 
     res.json({ success: true, instanceId, status: settleRes.status, auditLogId });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to void competition instance." });
+    res.status(500).json({ error: "Failed to void competition instance." });
   }
 });
 
@@ -530,7 +530,7 @@ competitionAdminRouter.get("/accounting/summary", requirePermission("COMPETITION
     const summary = await sandboxAccountingAdapter.getSandboxAccountingSummary();
     res.json({ summary, isSandbox: true, currency: "GEL" });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load sandbox accounting summary." });
+    res.status(500).json({ error: "Failed to load sandbox accounting summary." });
   }
 });
 
@@ -547,7 +547,7 @@ competitionAdminRouter.get("/accounting/ledger", requirePermission("COMPETITIONS
 
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to list sandbox ledger entries." });
+    res.status(500).json({ error: "Failed to list sandbox ledger entries." });
   }
 });
 
@@ -581,7 +581,7 @@ competitionAdminRouter.get("/accounting/grants", requirePermission("WALLET_VIEW"
     );
     res.json({ grants: rows.rows, page, limit, total: Number(countResult.rows[0]?.total ?? 0) });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load test funding history." });
+    res.status(500).json({ error: "Failed to load test funding history." });
   }
 });
 
@@ -632,7 +632,7 @@ const handleGrantTestFunds = async (req: any, res: any) => {
       auditLogId: balance.auditLogId,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to grant test funds." });
+    res.status(500).json({ error: "Failed to grant test funds." });
   }
 };
 
@@ -678,6 +678,6 @@ competitionAdminRouter.get("/eligibility", requirePermission("COMPETITIONS_VIEW"
       scopeLimitedToSpaceBlasterAndCyberHopper: eligibleCount === 2 && registry.filter((r) => r.testGelEligible).every((r) => r.gameId === "space-blaster" || r.gameId === "cyber-hopper"),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to load game eligibility registry." });
+    res.status(500).json({ error: "Failed to load game eligibility registry." });
   }
 });

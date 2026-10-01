@@ -1,0 +1,748 @@
+{
+  "checkedAt": "2026-10-01T15:41:36.757Z",
+  "result": "PASS WITH REMAINING MANUAL ACTIONS",
+  "scope": "Local source remediation; no hosted state changes or production certification",
+  "refs": {
+    "branch": "codex/competition-restructure",
+    "head": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+    "main": "91ca7533c8d4d3e78bc090031d69097731b03d8b",
+    "originMain": "91ca7533c8d4d3e78bc090031d69097731b03d8b"
+  },
+  "severity": {
+    "critical": 0,
+    "high": 2,
+    "medium": 9,
+    "low": 6,
+    "fixed": 15,
+    "partial": 2,
+    "manualTasks": 8
+  },
+  "suite": {
+    "checkedAt": "2026-10-01T15:31:57.3139125Z",
+    "scriptsExecuted": 52,
+    "totalPassed": 2270,
+    "totalFailed": 0,
+    "exitFailures": 0,
+    "countMismatches": 0,
+    "scripts": [
+      {
+        "file": "admin-console-check.ts",
+        "passed": 49,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 49
+      },
+      {
+        "file": "admin-reset-recovery-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "admin-security-check.ts",
+        "passed": 8,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 8
+      },
+      {
+        "file": "atomic-wager-lifecycle-check.ts",
+        "passed": 38,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 38
+      },
+      {
+        "file": "auth-account-lifecycle-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "authority-presentation-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "canvas-render-check.ts",
+        "passed": 21,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 21
+      },
+      {
+        "file": "commercial-financial-check.ts",
+        "passed": 76,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 76
+      },
+      {
+        "file": "competition-admin-http-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-authority-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "competition-authority-latency-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "competition-phase1-domain-check.ts",
+        "passed": 41,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 41
+      },
+      {
+        "file": "competition-phase2-accounting-check.ts",
+        "passed": 54,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 54
+      },
+      {
+        "file": "competition-phase3-lifecycle-check.ts",
+        "passed": 45,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 45
+      },
+      {
+        "file": "competition-phase4-ui-check.ts",
+        "passed": 44,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 44
+      },
+      {
+        "file": "competition-phase5-admin-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "competition-player-ux-check.ts",
+        "passed": 110,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 110
+      },
+      {
+        "file": "competition-socket-session-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "cors-audit-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "cyber-hopper-authority-check.ts",
+        "passed": 42,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 42
+      },
+      {
+        "file": "determinism-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "environment-safety-check.ts",
+        "passed": 89,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 89
+      },
+      {
+        "file": "file-upload-audit-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "financial-reconnection-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      },
+      {
+        "file": "i18n-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "input-validation-check.ts",
+        "passed": 20,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 20
+      },
+      {
+        "file": "legal-policy-help-check.ts",
+        "passed": 86,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 86
+      },
+      {
+        "file": "match-lifecycle-durability-check.ts",
+        "passed": 26,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 26
+      },
+      {
+        "file": "matchmaking-check.ts",
+        "passed": 65,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 65
+      },
+      {
+        "file": "migration-schema-parity-check.ts",
+        "passed": 338,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 338
+      },
+      {
+        "file": "owner-admin-lockout-check.ts",
+        "passed": 10,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 10
+      },
+      {
+        "file": "password-policy-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "password-security-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "rate-limit-check.ts",
+        "passed": 11,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 11
+      },
+      {
+        "file": "registration-verification-check.ts",
+        "passed": 9,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 9
+      },
+      {
+        "file": "request-logging-audit-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "score-validation-check.ts",
+        "passed": 12,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 12
+      },
+      {
+        "file": "security-boundary-check.ts",
+        "passed": 75,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 75
+      },
+      {
+        "file": "seed-admin-check.ts",
+        "passed": 7,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 7
+      },
+      {
+        "file": "shutdown-lifecycle-check.ts",
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 4
+      },
+      {
+        "file": "sql-injection-check.ts",
+        "passed": 19,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 19
+      },
+      {
+        "file": "staging-mock-commercial-check.ts",
+        "passed": 13,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 13
+      },
+      {
+        "file": "staging-readiness-check.ts",
+        "passed": 40,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 40
+      },
+      {
+        "file": "test-database-safety-check.ts",
+        "passed": 18,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 18
+      },
+      {
+        "file": "tournament-authority-check.ts",
+        "passed": 34,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 34
+      },
+      {
+        "file": "tournament-domain-check.ts",
+        "passed": 97,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 97
+      },
+      {
+        "file": "tournament-recovery-check.ts",
+        "passed": 52,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 52
+      },
+      {
+        "file": "tournament-rules-check.ts",
+        "passed": 180,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 180
+      },
+      {
+        "file": "wallet-friends-check.ts",
+        "passed": 48,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 48
+      },
+      {
+        "file": "wallet-settlement-concurrency-check.ts",
+        "passed": 16,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 16
+      },
+      {
+        "file": "wallet-settlement-integrity-check.ts",
+        "passed": 24,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 24
+      },
+      {
+        "file": "xss-audit-check.ts",
+        "passed": 17,
+        "failed": 0,
+        "exitCode": 0,
+        "expectedPassed": 17
+      }
+    ]
+  },
+  "builds": {
+    "typecheck": 0,
+    "clientBuild": 0,
+    "serverBuild": 0
+  },
+  "dependencies": {
+    "before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 1,
+      "critical": 0,
+      "total": 5
+    },
+    "after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 0,
+      "critical": 0,
+      "total": 4
+    },
+    "production": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "patchedEngineIo": "6.6.11",
+    "remainingAdvisory": "GHSA-67mh-4wv8-2f99; four development tool packages"
+  },
+  "secrets": {
+    "trackedFiles": 442,
+    "reachableHistoryBlobs": 1628,
+    "confirmedPrivateLeaks": 0,
+    "historicalPublicAnonKey": true,
+    "exactLocalConfigurationComparison": {
+      "checkedAt": "2026-10-01T15:32:19.418Z",
+      "localEnvFiles": [
+        ".env.staging-eu.local",
+        ".env.staging.local",
+        "packages/server/.env"
+      ],
+      "localSecretCount": 3,
+      "gitMatches": [],
+      "bundleMatches": [],
+      "assetCount": 20,
+      "publicSourceMaps": 0,
+      "limitation": "Only environment credentials currently present locally can be matched exactly; heuristics cover additional credential types. Hosted secrets/objects unreachable from local refs were not accessed."
+    },
+    "rotationRequired": false,
+    "limitations": "Heuristics and exact local values only; no external credentials tested, inaccessible remote objects/provider secrets not inspected"
+  },
+  "publicReadOnly": {
+    "initial": {
+      "checkedAt": "2026-10-01T15:12:52.659Z",
+      "scope": "Unauthenticated read-only HTTPS requests; no login, database credentials, or state changes",
+      "results": [
+        {
+          "url": "https://staging.fugluck.com/",
+          "status": 200,
+          "tlsVerified": true,
+          "headers": {
+            "strict-transport-security": "max-age=63072000",
+            "content-security-policy": null,
+            "content-security-policy-report-only": null,
+            "x-frame-options": "DENY",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "cache-control": "public, max-age=0, must-revalidate",
+            "access-control-allow-origin": "*",
+            "access-control-allow-credentials": null
+          },
+          "bodySha256": "358b243442e0e08212f734f98337c2f18ee3e5e09e4916ccd024323990d46faf",
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "url": "https://staging.fugluck.com/deployment.json",
+          "status": 200,
+          "tlsVerified": true,
+          "headers": {
+            "strict-transport-security": "max-age=63072000",
+            "content-security-policy": null,
+            "content-security-policy-report-only": null,
+            "x-frame-options": "DENY",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "cache-control": "public, max-age=0, must-revalidate",
+            "access-control-allow-origin": "*",
+            "access-control-allow-credentials": null
+          },
+          "identity": {
+            "environment": "staging",
+            "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+            "apiOrigin": "https://api-staging.fugluck.com",
+            "commercialMoneyEnabled": false
+          },
+          "bodySha256": "973f45b3ccd4f34518ec1a6e4bfbd6651a4ac8a0ab0ece7e4c5e2ebd5bd0d35a",
+          "contentType": "application/json; charset=utf-8"
+        },
+        {
+          "url": "https://api-staging.fugluck.com/api/health",
+          "error": "TimeoutError"
+        },
+        {
+          "url": "https://fugluck.com/",
+          "error": "TypeError"
+        },
+        {
+          "url": "https://fugluck.com/deployment.json",
+          "error": "TypeError"
+        },
+        {
+          "url": "https://staging.fugluck.com/.env",
+          "status": 200,
+          "tlsVerified": true,
+          "headers": {
+            "strict-transport-security": "max-age=63072000",
+            "content-security-policy": null,
+            "content-security-policy-report-only": null,
+            "x-frame-options": "DENY",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "cache-control": "public, max-age=0, must-revalidate",
+            "access-control-allow-origin": "*",
+            "access-control-allow-credentials": null
+          },
+          "bodySha256": "358b243442e0e08212f734f98337c2f18ee3e5e09e4916ccd024323990d46faf",
+          "contentType": "text/html; charset=utf-8",
+          "envProbe": {
+            "looksLikeEnv": false,
+            "spaFallback": true
+          }
+        },
+        {
+          "url": "https://fugluck.com/.env",
+          "error": "TypeError"
+        }
+      ]
+    },
+    "followup": {
+      "checkedAt": "2026-10-01T15:25:46.870Z",
+      "results": [
+        {
+          "url": "https://api-staging.fugluck.com/api/health",
+          "status": 200,
+          "tlsVerified": true,
+          "identity": {
+            "environment": "staging",
+            "revision": "c8dd9176b78c03a7dee8f76fd5fa7bd99959d675",
+            "database": "connected",
+            "migrations": "match",
+            "commercial": {
+              "implementation": "unavailable",
+              "moneyEnabled": false,
+              "deposits": {
+                "allowed": false,
+                "reason": "MONEY_DISABLED"
+              },
+              "withdrawals": {
+                "allowed": false,
+                "reason": "MONEY_DISABLED"
+              },
+              "competitions": {
+                "allowed": false,
+                "reason": "MONEY_DISABLED"
+              }
+            }
+          },
+          "contentType": "application/json; charset=utf-8",
+          "csp": null,
+          "cacheControl": null
+        },
+        {
+          "url": "https://www.fugluck.com/deployment.json",
+          "error": "TypeError"
+        },
+        {
+          "url": "https://www.fugluck.com/",
+          "error": "TypeError"
+        },
+        {
+          "url": "https://www.fugluck.com/.env",
+          "error": "TypeError"
+        }
+      ]
+    }
+  },
+  "database": {
+    "host": "127.0.0.1",
+    "port": 55439,
+    "database": "fugluck_security_test",
+    "dataDirectory": "Temp/competition-restructure/pgdata",
+    "migrations": 15,
+    "head": "0014_security_boundaries",
+    "freshTestSchemas": true,
+    "hostedDatabaseTouched": false
+  },
+  "initialRun": {
+    "scripts": 52,
+    "passed": 2258,
+    "failed": 3,
+    "exitFailures": 1,
+    "countMismatches": 1,
+    "reason": "Public error sanitization lost expected gameplay blocked text; explicit GAMEPLAY_BLOCKED mapping restored and entire suite repeated"
+  },
+  "changedFiles": [
+    ".gitignore",
+    "PROGRESS.md",
+    "docs/SECURITY_AUDIT.md",
+    "docs/evidence/security-audit-20261001.json",
+    "package-lock.json",
+    "package.json",
+    "packages/client/src/lib/guestId.ts",
+    "packages/client/src/matchmaking/useMatchSocket.ts",
+    "packages/client/vercel.json",
+    "packages/server/drizzle/0014_security_boundaries.sql",
+    "packages/server/drizzle/meta/_journal.json",
+    "packages/server/src/auth/jwt.ts",
+    "packages/server/src/auth/middleware.ts",
+    "packages/server/src/auth/password.ts",
+    "packages/server/src/auth/session.ts",
+    "packages/server/src/competitions/authorityRuntime.ts",
+    "packages/server/src/competitions/authorityStore.ts",
+    "packages/server/src/competitions/instanceService.ts",
+    "packages/server/src/competitions/lifecycleEngine.ts",
+    "packages/server/src/competitions/playerError.ts",
+    "packages/server/src/competitions/templateService.ts",
+    "packages/server/src/competitions/tournamentService.ts",
+    "packages/server/src/config/httpSecurity.ts",
+    "packages/server/src/config/startup.ts",
+    "packages/server/src/db/client.ts",
+    "packages/server/src/db/schema.ts",
+    "packages/server/src/email/emailService.ts",
+    "packages/server/src/index.ts",
+    "packages/server/src/matchmaking/index.ts",
+    "packages/server/src/matchmaking/matches.ts",
+    "packages/server/src/matchmaking/queue.ts",
+    "packages/server/src/matchmaking/socketAuth.ts",
+    "packages/server/src/routes/account.ts",
+    "packages/server/src/routes/admin.ts",
+    "packages/server/src/routes/adminCompetitions.ts",
+    "packages/server/src/routes/auth.ts",
+    "packages/server/src/routes/competitions.ts",
+    "packages/server/src/utils/rateLimiter.ts",
+    "packages/server/src/utils/safeLogger.ts",
+    "packages/server/src/validation/triviaQuestions.ts",
+    "packages/server/src/wallet/ledger.ts",
+    "scripts/competition-admin-http-check.ts",
+    "scripts/competition-authority-check.ts",
+    "scripts/competition-phase5-admin-check.ts",
+    "scripts/competition-player-ux-check.ts",
+    "scripts/competition-socket-session-check.ts",
+    "scripts/cyber-hopper-authority-check.ts",
+    "scripts/migration-schema-parity-check.ts",
+    "scripts/security-boundary-check.ts",
+    "scripts/security-test-session.ts",
+    "scripts/tournament-authority-check.ts",
+    "scripts/tournament-recovery-check.ts"
+  ],
+  "sourceHashes": {
+    ".gitignore": "69df401828e5351cec80ddb40ca730ae9e70009459c391debd1da7c22d9997fb",
+    "package-lock.json": "843b5f0a5e6286c2fd89d111b3ef29a0356c188517d7e24d0c5af18a7a2c4f07",
+    "package.json": "c69c2772a647260234a3becca4db4b01f4391b541fba621a48788105c7b1251b",
+    "packages/client/src/lib/guestId.ts": "7f8c706236e886333084cbd35711077ea9eb45d5b820ca3cb9efc16bf98ee05b",
+    "packages/client/src/matchmaking/useMatchSocket.ts": "d99e502268d9e1ce3a23fbabacfd3ac0b342ec0c518b556810a87d5eb745c35e",
+    "packages/client/vercel.json": "8cd88da3185a6eb3cc38026de190df17913982f6557019100c9866187ce6ebea",
+    "packages/server/drizzle/0014_security_boundaries.sql": "04554bb41ab1eb7e96fdb5cc539ddfb57a573a385113ef87bc4b3e548724e7fe",
+    "packages/server/drizzle/meta/_journal.json": "102c0625605f5a479e8982f3d50271c3ff7f92a6927ee9784904ca64813d2940",
+    "packages/server/src/auth/jwt.ts": "f0c48876a3129696131baf1262b8f41c2c6149771d0e0a2c747895fb1a95221e",
+    "packages/server/src/auth/middleware.ts": "a2bcf1eae01cfac34f828d2ca13454a5c8745de7d4fac07990732cd6f67191ae",
+    "packages/server/src/auth/password.ts": "a81bff60a0a13dd1b52d2cdb99842d8efdbde69a7f5ce2c7e4e440511133a27d",
+    "packages/server/src/auth/session.ts": "47d51179e019411f694ea48da92e816559a04315f3314dadbb4ecef499c60456",
+    "packages/server/src/competitions/authorityRuntime.ts": "ff94278ab1faedea249a51757a6eb763e272a2d2d53496344087b209eee65840",
+    "packages/server/src/competitions/authorityStore.ts": "b19bc7a8c9f6f5c44c4ef989dc2cba641292e99f1eeb055224b81c45d20c11ee",
+    "packages/server/src/competitions/instanceService.ts": "2e7fbae908108144bdbf7172921a176112bf75cd011c3d6a6168c943c759c779",
+    "packages/server/src/competitions/lifecycleEngine.ts": "124806b646335b2e69646e0489b80f24ffb03df98814311a2b6e5e80b6836070",
+    "packages/server/src/competitions/playerError.ts": "d1fc47642ee4f658fc2235c0433f4f0fd66b0b140bebb3df136220350e2e1883",
+    "packages/server/src/competitions/templateService.ts": "a55d5aca268994ac418d7dacee79b4ebe9582687cd843954481fd44e984b16a2",
+    "packages/server/src/competitions/tournamentService.ts": "faf74ab5d663000102930641e31c7c9f14951414033528a51931fd783b9d72d0",
+    "packages/server/src/config/httpSecurity.ts": "cd91fa2d07b03589fd66faa59484f01387dd69e9b196f82cfd2808cb0f40be63",
+    "packages/server/src/config/startup.ts": "870ae537af100d776b8af8240de82e979a2e92d8187368ec34e466c7184ddbcc",
+    "packages/server/src/db/client.ts": "87bff02f3e1f55e5a6ffa3a2e68dff4473e73b96c8a2492ef36dab9163c4fe9a",
+    "packages/server/src/db/schema.ts": "e9763155a6c4811ce14ca0474595e4f46739954fa98b1e8099604e834c55e512",
+    "packages/server/src/email/emailService.ts": "02c7b4af30fd51ad9042b7d56ac81efbe8c17df2f778530b600590e4da6be973",
+    "packages/server/src/index.ts": "67cccfdf600d5dd338ed5ec87bc201a319041ada6b7c65bf65ef8058de8c807a",
+    "packages/server/src/matchmaking/index.ts": "c6ede7aae1a8cc2a2d4e7bf6d923d2931a7488d48a56f2b0de7cc24c10f9c3b7",
+    "packages/server/src/matchmaking/matches.ts": "28c9310b4572f4b4e059d1adcf721741bc8020b9d3a35158324bbc4c22b0d20d",
+    "packages/server/src/matchmaking/queue.ts": "8bed3cbe6ad6c772f2287e0203766070013c82ba31522deabae9e2d28a2b86da",
+    "packages/server/src/matchmaking/socketAuth.ts": "ef969119ba1dddb3a4453070d3f03f07fd8a063d8db4b2b5c1db76590c270fe0",
+    "packages/server/src/routes/account.ts": "a574ff24b6e172f023b6ecf221cffee77337b7dac6c3e3f7107022d869a6d106",
+    "packages/server/src/routes/admin.ts": "3fb34a84b12d1ccb79c92224ed58b24046aa02dcebb1eafa4cb991b5dc49846c",
+    "packages/server/src/routes/adminCompetitions.ts": "28ded12d8eec5b43d5ef269a8a38ed76bec826df1e280dd26122c7ee58dfcbdc",
+    "packages/server/src/routes/auth.ts": "b8e7c85e2c49dbf2b6b2bfc47f52289eaf2914fab69dc6d2b380f085f008dd80",
+    "packages/server/src/routes/competitions.ts": "a636bd84861f1dc1c30179d774e8c42c45c1619f46c9929ca122f5191a571389",
+    "packages/server/src/utils/rateLimiter.ts": "02b12ea4a8d2bddd417e9429b383387a236a4ede13d1535e50cf4311ee885ba3",
+    "packages/server/src/utils/safeLogger.ts": "bb6181d0c9b123074a648a7b32169b083df3c5a81e661d84dd6a57fe4bff435c",
+    "packages/server/src/validation/triviaQuestions.ts": "a46cb9186e62c83d0f6f6dff87fce0ae242a105d3191d9e6df2022c5ecfbe27e",
+    "packages/server/src/wallet/ledger.ts": "ffdc0ba0e2c5abbfd2e42655825b16850486f2f133338dd67c50b5d59de6f2f7",
+    "scripts/competition-admin-http-check.ts": "36eb14f4cd1a7a51842f0cb3dcb0381cff2b20539fb2cc2d8acccd96f96fbe14",
+    "scripts/competition-authority-check.ts": "221246ba1007e2b24a56ce365d69a0d003aa629015f50304ee62ac0962ec3bac",
+    "scripts/competition-phase5-admin-check.ts": "48bf3175d2a764dfe73afe23cee0a243c2fe9c78540c1f164a6aa6c931e2e4e2",
+    "scripts/competition-player-ux-check.ts": "e650b8912afc14c90d068cee5534af208775920524b35faf540a87e1126c7b5e",
+    "scripts/competition-socket-session-check.ts": "9023bb50bb123051748ac0601d0019b9ec19098f33e7257aceb0f1f68b7fc75f",
+    "scripts/cyber-hopper-authority-check.ts": "1c8fb77c4ce84177dd80823a5d67e790cb499e86b467ec5efa6a0867bf6d9125",
+    "scripts/migration-schema-parity-check.ts": "c72cc05911b908c6b56e7e52d157448ef22646a7e46475ab0c92c2f00f3876cf",
+    "scripts/security-boundary-check.ts": "0bdf9efab852070fafd2d0d1c93742ea2dd474aa38cabf7c82f3f189def317ba",
+    "scripts/security-test-session.ts": "4ef6af15ee48a4af421199e114094c0040dcb5d9bbfcc5b032f105d0bfda9fe3",
+    "scripts/tournament-authority-check.ts": "64d4e15b71fca417ce188631972f6a24a7e99b2a5f3ffa4ecdbb0fed2c924830",
+    "scripts/tournament-recovery-check.ts": "ab814b8db0fe25e4626598525766d2221d326255e7e63c854ce5f46c1f1eaac9"
+  },
+  "preservedUnrelatedFiles": [
+    "AGENTS.md",
+    "DEPLOYMENT.md",
+    "docs/COMPETITION_RESTRUCTURE_REPORT.md",
+    "docs/COMPETITION_RESTRUCTURE_ROLLOUT.md",
+    "docs/COMPETITION_SOCKET_SESSION.md",
+    "docs/PHASE_7A_BASELINE.md",
+    "docs/evidence/competition-restructure-staging-20260929.json",
+    "docs/evidence/competition-socket-session-20260930.json"
+  ],
+  "actions": {
+    "push": false,
+    "commit": false,
+    "merge": false,
+    "deploy": false,
+    "dns": false,
+    "providerSettings": false,
+    "credentialRotation": false,
+    "realMoneyEnabled": false
+  },
+  "limitations": [
+    "Hosted ACL/RLS/storage/IAM not inspected",
+    "Legacy raw bcrypt long-password suffix risk remains",
+    "Full CSP still Report-Only",
+    "No interactive browser or external mail-delivery verification",
+    "Production HTTPS attempts failed; earlier production-to-staging isolation finding not freshly resolved",
+    "No fresh backup/restore rehearsal",
+    "Process-local abuse controls and telemetry",
+    "Phase 7A/Competition Restructure acceptance not changed"
+  ],
+  "cleanup": {
+    "identityMatched": true,
+    "checkpoint": true,
+    "nativeProcessStop": true,
+    "gracefulShutdownClaim": false,
+    "listenersOn55439_4000_5173": 0
+  },
+  "diffCheck": "PASS"
+}

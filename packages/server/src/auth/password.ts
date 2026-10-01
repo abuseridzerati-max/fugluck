@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { createHash } from 'node:crypto';
 
 const SALT_ROUNDS = 10;
 
@@ -75,9 +76,20 @@ export function validatePasswordPolicy(password: string): PasswordPolicyResult {
 }
 
 export function hashPassword(password: string): Promise<string> {
+  // Bcrypt truncates at 72 UTF-8 bytes. Version only the long-password format;
+  // existing bcrypt records remain readable and ordinary passwords keep their format.
+  if (Buffer.byteLength(password, 'utf8') > 72) {
+    const digest = createHash('sha256').update('fugluck-password-v1\0').update(password).digest('base64');
+    return bcrypt.hash(digest, SALT_ROUNDS).then(hash => `bcrypt-sha256-v1:${hash}`);
+  }
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
 export function verifyPassword(password: string, hash: string): Promise<boolean> {
+  if (typeof password !== 'string' || password.length > 128 || typeof hash !== 'string') return Promise.resolve(false);
+  if (hash.startsWith('bcrypt-sha256-v1:')) {
+    const digest = createHash('sha256').update('fugluck-password-v1\0').update(password).digest('base64');
+    return bcrypt.compare(digest, hash.slice('bcrypt-sha256-v1:'.length));
+  }
   return bcrypt.compare(password, hash);
 }

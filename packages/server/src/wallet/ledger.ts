@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { SIGNUP_COIN_GRANT, type Currency, type WalletBalances } from "@fugluck/shared";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
@@ -272,7 +273,7 @@ export async function payoutWinnerInTransaction(
   });
 
   if (existingSettlement) {
-    console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
+    logger.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
     if (
       existingSettlement.status !== "PAYOUT" ||
       existingSettlement.winnerId !== winnerUserId ||
@@ -363,7 +364,7 @@ export async function refundMatchSettlementInTransaction(
   });
 
   if (existingSettlement) {
-    console.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
+    logger.warn(`[ledger] IDEMPOTENT NO-OP: Match ${matchId} has already been settled or voided in database.`);
     if (
       existingSettlement.status !== status ||
       existingSettlement.currency !== currency ||

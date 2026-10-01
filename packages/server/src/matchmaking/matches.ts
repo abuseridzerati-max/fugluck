@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { randomUUID } from "node:crypto";
 import type { PlayerResult, SubmitScorePayload } from "@fugluck/shared";
 import { asc, eq, or, sql } from "drizzle-orm";
@@ -343,7 +344,7 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
     const retryable = isRetryableTerminalResolutionError(err);
     const exhausted = match.resolutionAttempts >= MAX_TERMINAL_RESOLUTION_ATTEMPTS;
     if (!retryable || exhausted) {
-      console.error(
+      logger.error(
         `[matches] Durable resolution stopped for match ${match.id} after ${match.resolutionAttempts} attempt(s): ${sanitizedError(err)}`,
       );
       endMatch(match.id);
@@ -351,7 +352,7 @@ async function emitResolved(match: MatchState, disconnectedPlayer?: MatchPlayer)
     }
 
     const delayMs = terminalResolutionRetryDelayMs(match.resolutionAttempts);
-    console.error(
+    logger.error(
       `[matches] Durable resolution attempt ${match.resolutionAttempts} failed for match ${match.id}; ` +
         `retrying in ${delayMs}ms: ${sanitizedError(err)}`,
     );
@@ -395,7 +396,7 @@ export async function createMatch(
   const currency = isGuestMatch ? "COINS" : (a.currency ?? "COINS");
   const stake = isGuestMatch ? 0 : (a.stake ?? 0);
 
-  console.log(
+  logger.info(
     `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch} currency=${currency} stake=${stake}`,
   );
 
@@ -455,7 +456,7 @@ export async function createMatch(
     b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
     return matchId;
   } catch (err) {
-    console.error(`[matches] Match creation/escrow failed for ${matchId}:`, err);
+    logger.error(`[matches] Match creation/escrow failed for ${matchId}:`, err);
     const message = err instanceof Error && err.message.includes("insufficient")
       ? "A player no longer has enough balance for this wager."
       : "Could not reserve both wagers. No match was started.";
@@ -587,7 +588,7 @@ export async function recoverOrphanMatches(): Promise<number> {
 
   if (!activeMatches || activeMatches.length === 0) return 0;
 
-  console.log(`[matches] Found ${activeMatches.length} orphan active match(es) from previous server run. Recovering...`);
+  logger.info(`[matches] Found ${activeMatches.length} orphan active match(es) from previous server run. Recovering...`);
 
   let recoveredCount = 0;
   for (const m of activeMatches) {
@@ -619,7 +620,7 @@ export async function recoverOrphanMatches(): Promise<number> {
       endMatch(m.id);
       recoveredCount++;
     } catch (err) {
-      console.error(`[matches] Failed to recover orphan match ${m.id}; continuing: ${sanitizedError(err)}`);
+      logger.error(`[matches] Failed to recover orphan match ${m.id}; continuing: ${sanitizedError(err)}`);
     }
   }
   return recoveredCount;

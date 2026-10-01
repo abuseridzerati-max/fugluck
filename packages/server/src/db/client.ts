@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import "dotenv/config";
 import dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -90,6 +91,6 @@ export async function ensureUserSchema() {
     `);
     schemaEnsured = true;
   } catch (err) {
-    console.warn("[db] ensureUserSchema notice:", err);
+    logger.warn("[db] ensureUserSchema notice:", err);
   }
 }

@@ -11,7 +11,7 @@ import type {
 import { io, type Socket } from 'socket.io-client'
 import { API_URL } from '../lib/api'
 import { getStoredAuthToken } from '../auth/AuthContext'
-import { getOrCreateGuestId } from '../lib/guestId'
+import { getGuestProof } from '../lib/guestId'
 
 export type MatchmakingConnectionState = 'connecting' | 'queued' | 'matched' | 'reconnecting' | 'closed'
 
@@ -83,7 +83,6 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       auth: {
         token: token || undefined,
         isGuest: !token,
-        guestId: getOrCreateGuestId(),
       },
       reconnection: true,
       reconnectionAttempts: 8,
@@ -272,7 +271,15 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     // Reconnect can emit `matched` immediately during the server connection
     // callback. Attach every listener before opening the transport so that
     // authoritative resume payload cannot be missed.
-    socket.connect()
+    void getGuestProof().then(guestTicket => {
+      if (intentionalDisconnectRef.current) return;
+      socket.auth={...(socket.auth as Record<string,unknown>),guestTicket};
+      socket.connect();
+    }).catch(() => {
+      if (intentionalDisconnectRef.current) return;
+      setError('Could not establish a guest connection. Please retry.');
+      setConnectionState('closed');
+    });
 
     return () => {
       intentionalDisconnectRef.current = true

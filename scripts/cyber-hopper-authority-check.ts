@@ -1,3 +1,4 @@
+import { fixtureSession } from './security-test-session';
 import './require-disposable-test-database.ts';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -237,7 +238,7 @@ async function main() {
 
   const hopping = new Set<string>();
   async function createSocket(user: string) {
-    const s = connect(url, { auth: { token: signSessionToken({ sub: user }) }, transports: ['websocket'], autoConnect: false, reconnection: false });
+    const s = connect(url, { auth: { token: (await fixtureSession(user)) }, transports: ['websocket'], autoConnect: false, reconnection: false });
     sockets.push(s);
     s.on('authority:probe', ack => ack());
     let current: AuthorityBinding | undefined, last: AuthoritySnapshot | undefined, sequence = 0;

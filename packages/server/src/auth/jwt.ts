@@ -1,6 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { createHmac, randomUUID } from 'node:crypto';
 import { getAppEnvironment } from '../config/environment';
 
 if (!process.env.JWT_SECRET) {
@@ -28,16 +29,29 @@ const sessionScope = () => {
 
 export type SessionTokenPayload = {
   sub: string; // user id
+  credentialVersion?: string;
+  jti?: string;
+  exp?: number;
+  sessionPurpose?: 'user' | 'admin';
 };
 
-export function signSessionToken(payload: SessionTokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: EXPIRES_IN, ...sessionScope() });
+export function credentialVersion(passwordHash: string): string {
+  return createHmac('sha256', JWT_SECRET).update(`credential:${passwordHash}`).digest('hex');
+}
+
+export function signSessionToken(payload: SessionTokenPayload, passwordHash?: string): string {
+  return jwt.sign({ ...payload, jti: randomUUID(), sessionPurpose: payload.sessionPurpose ?? 'user',
+    ...(passwordHash ? { credentialVersion: credentialVersion(passwordHash) } : {}) }, JWT_SECRET,
+    { expiresIn: EXPIRES_IN, ...sessionScope() });
 }
 
 export function verifySessionToken(token: string): SessionTokenPayload | null {
   try {
     const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], ...sessionScope() }) as jwt.JwtPayload;
-    return typeof payload.sub === 'string' && !payload.purpose ? { sub: payload.sub } : null;
+    return typeof payload.sub === 'string' && !payload.purpose && typeof payload.exp === 'number' &&
+      typeof payload.jti === 'string' && ['user', 'admin'].includes(payload.sessionPurpose)
+      ? { sub: payload.sub, credentialVersion: payload.credentialVersion, jti: payload.jti,
+          exp: payload.exp, sessionPurpose: payload.sessionPurpose } : null;
   } catch {
     return null;
   }
@@ -45,9 +59,10 @@ export function verifySessionToken(token: string): SessionTokenPayload | null {
 
 // Transport-only proof issued through the authenticated HTTP session. Never
 // usable as an HTTP session cookie, and never stored by the browser.
-export function signSocketTicket(userId: string): string {
+export function signSocketTicket(userId: string, session?: SessionTokenPayload): string {
   const environment = getAppEnvironment();
-  return jwt.sign({ sub: userId, purpose: 'socket' }, JWT_SECRET, {
+  return jwt.sign({ sub: userId, purpose: 'socket', credentialVersion: session?.credentialVersion,
+    jti: session?.jti, sessionPurpose: session?.sessionPurpose, sessionExpiresAt: session?.exp }, JWT_SECRET, {
     expiresIn: '60s', issuer: `fugluck:${environment}`, audience: `fugluck:${environment}:socket`,
   });
 }
@@ -59,11 +74,29 @@ export function verifySocketTicket(token: unknown): SessionTokenPayload | null {
     const payload = jwt.verify(token, JWT_SECRET, {
       algorithms: ['HS256'], issuer: `fugluck:${environment}`, audience: `fugluck:${environment}:socket`,
     }) as jwt.JwtPayload;
-    return typeof payload.sub === 'string' && payload.purpose === 'socket' ? { sub: payload.sub } : null;
+    return typeof payload.sub === 'string' && payload.purpose === 'socket' && typeof payload.exp === 'number' &&
+      typeof payload.sessionExpiresAt === 'number' && payload.sessionExpiresAt > Date.now() / 1000 &&
+      typeof payload.jti === 'string' && payload.sessionPurpose === 'user'
+      ? { sub: payload.sub, credentialVersion: payload.credentialVersion, jti: payload.jti,
+          exp: payload.sessionExpiresAt, sessionPurpose: 'user' } : null;
   } catch { return null; }
 }
 
 export const SESSION_COOKIE_NAME = "ac_session";
+export function signGuestTicket(): string {
+  return jwt.sign({sub:`guest_${randomUUID()}`,purpose:'guest'},JWT_SECRET,{
+    expiresIn:EXPIRES_IN,issuer:`fugluck:${getAppEnvironment()}`,audience:`fugluck:${getAppEnvironment()}:guest`,
+  });
+}
+export function verifyGuestTicket(token: unknown): string | null {
+  if(typeof token !== 'string') return null;
+  try {
+    const payload=jwt.verify(token,JWT_SECRET,{algorithms:['HS256'],issuer:`fugluck:${getAppEnvironment()}`,
+      audience:`fugluck:${getAppEnvironment()}:guest`}) as jwt.JwtPayload;
+    return payload.purpose==='guest' && typeof payload.exp==='number' && typeof payload.sub==='string' &&
+      /^guest_[a-f0-9-]{36}$/.test(payload.sub) ? payload.sub : null;
+  } catch { return null; }
+}
 export const SESSION_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, matches EXPIRES_IN
 
 export type SessionCookieOptions = {

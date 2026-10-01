@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 import { createHash, randomUUID } from 'node:crypto';
 import { createMoney, type AuthorityOutcome, type TournamentTerms } from '@fugluck/shared';
 import { pool } from '../db/client';
@@ -196,7 +197,7 @@ export class TournamentService {
     },true);
     const roots=(await pool.query(`SELECT instance_id FROM competition_tournaments WHERE state NOT IN ('SETTLED','VOIDED','CANCELLED') OR completion_processed_at IS NULL ORDER BY created_at LIMIT 100`)).rows;
     for(const root of roots)try{await this.process(root.instance_id,now);recoveryWarnings.delete(root.instance_id);}
-      catch{if(!recoveryWarnings.has(root.instance_id)){console.warn('[tournament] Recovery pending for',root.instance_id);recoveryWarnings.add(root.instance_id);}}
+      catch{if(!recoveryWarnings.has(root.instance_id)){logger.warn('[tournament] Recovery pending for',root.instance_id);recoveryWarnings.add(root.instance_id);}}
   }
   async applyDecision(runId:string):Promise<AuthorityOutcome>{
     const instanceId=await tournamentTx(async c=>{

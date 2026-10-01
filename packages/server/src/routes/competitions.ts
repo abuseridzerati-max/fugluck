@@ -1,3 +1,4 @@
+import { logger } from '../utils/safeLogger';
 // Competition HTTP Routes (Fugluck Competition Economy — Phase 3)
 // Implements FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT Sections 20 & 21
 // Public read endpoints for templates and instances, and RBAC-protected administrative endpoints.
@@ -53,7 +54,7 @@ competitionsRouter.get("/templates", attachSession, async (req, res) => {
     res.json({ templates:selected, rooms:await readCatalogRooms(selected.map(t=>t.id),req.userId),
       playerMode:'sandbox', joiningAvailable:process.env.ENABLE_COMPETITION_AUTHORITY==='true' });
   } catch (err: any) {
-    console.error("[competitions] Failed to load public competition templates:", err);
+    logger.error("[competitions] Failed to load public competition templates:", err);
     res.status(500).json({ error: "Competition catalog is temporarily unavailable. Please retry." });
   }
 });
@@ -73,7 +74,7 @@ competitionsRouter.get("/balance", attachSession, requireAuth, async (req, res) 
       isSandbox: true,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to fetch sandbox balance." });
+    res.status(500).json({ error: "Failed to fetch sandbox balance." });
   }
 });
 
@@ -91,7 +92,10 @@ competitionsRouter.get('/mine', attachSession, requireAuth, async (req,res) => {
 competitionsRouter.post("/sandbox-faucet", attachSession, requireAuth, async (req, res) => {
   try {
     const { amountMinor } = req.body ?? {};
-    const grantAmount = typeof amountMinor === "number" && amountMinor > 0 ? Math.min(amountMinor, 50_000) : 5_000;
+    if (amountMinor !== undefined && (!Number.isSafeInteger(amountMinor) || amountMinor <= 0 || amountMinor > 50_000)) {
+      res.status(400).json({error:'amountMinor must be a positive integer up to 50,000.'}); return;
+    }
+    const grantAmount = amountMinor ?? 5_000;
     const adapter = new SandboxAccountingAdapter();
     const balance = await adapter.grantSandboxTestFunds(req.userId!, grantAmount);
     res.json({
@@ -104,7 +108,7 @@ competitionsRouter.post("/sandbox-faucet", attachSession, requireAuth, async (re
       message: "Simulated sandbox test funds granted. No real money is charged or withdrawable.",
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to grant sandbox test funds." });
+    res.status(500).json({ error: "Failed to grant sandbox test funds." });
   }
 });
 
@@ -140,7 +144,7 @@ competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, asy
       availableMinor: balance.availableMinor,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to cancel competition entry." });
+    res.status(500).json({ error: "Failed to cancel competition entry." });
   }
 });
 
@@ -157,7 +161,7 @@ competitionsRouter.get("/templates/:id", async (req, res) => {
     }
     res.json({ template });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to fetch template." });
+    res.status(500).json({ error: "Failed to fetch template." });
   }
 });
 
@@ -176,7 +180,7 @@ competitionsRouter.get("/instances/:id", attachSession, async (req, res) => {
     }
     res.json({ instance });
   } catch (err: any) {
-    console.error('[competitions] Failed to load player instance:',err);
+    logger.error('[competitions] Failed to load player instance:',err);
     res.status(500).json({ error: "Competition status is temporarily unavailable. Please retry." });
   }
 });
@@ -227,7 +231,7 @@ competitionsRouter.post(
       res.status(201).json({ template });
     } catch (err: any) {
       const status = err.name === "GameEligibilityError" || err.name === "TemplateValidationError" ? 400 : 500;
-      res.status(status).json({ error: err.message || "Failed to create template." });
+      res.status(status).json({ error: status === 400 ? err.message : "Failed to create template." });
     }
   },
 );
@@ -256,7 +260,7 @@ competitionsRouter.put(
       res.json({ template });
     } catch (err: any) {
       const status = err.name === "TemplateValidationError" ? 400 : 500;
-      res.status(status).json({ error: err.message || "Failed to update template." });
+      res.status(status).json({ error: status === 400 ? err.message : "Failed to update template." });
     }
   },
 );
@@ -275,7 +279,7 @@ competitionsRouter.post(
       const template = await templateService.enableTemplate(String(req.params.id));
       res.json({ template });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || "Failed to enable template." });
+      res.status(500).json({ error: "Failed to enable template." });
     }
   },
 );
@@ -294,7 +298,7 @@ competitionsRouter.post(
       const template = await templateService.disableTemplate(String(req.params.id));
       res.json({ template });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || "Failed to disable template." });
+      res.status(500).json({ error: "Failed to disable template." });
     }
   },
 );

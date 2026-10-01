@@ -1,10 +1,12 @@
+import { logger } from '../utils/safeLogger';
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { and, count, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { ADMIN_SESSION_COOKIE_NAME, attachSession, requireAuth, requireOwnerAdmin } from "../auth/middleware";
 import { requirePermission } from "../auth/permissions";
 import { verifyPassword } from "../auth/password";
-import { signSessionToken, getSessionCookieOptions, getClearCookieOptions } from "../auth/jwt";
+import { signSessionToken, verifySessionToken, getSessionCookieOptions, getClearCookieOptions } from "../auth/jwt";
+import { revokeSession } from '../auth/session';
 import { checkAdminLockout, recordFailedAdminLogin, resetAdminLockout } from "../auth/adminLockout";
 import { db, pool } from "../db/client";
 import { sandboxAccountingAdapter } from "../accounting/sandboxAdapter";
@@ -59,7 +61,7 @@ adminRouter.post("/login", adminLoginLimiter, async (req, res) => {
   const isValidPassword = user ? await verifyPassword(password, user.passwordHash) : false;
   const isOwnerAdmin = user && (user.role === "OWNER" || user.role === "SUPER_ADMIN" || user.role === "ADMIN");
 
-  if (!user || !isValidPassword || !isOwnerAdmin) {
+  if (!user || !isValidPassword || !isOwnerAdmin || user.status !== 'active') {
     // Record failed login attempt (5th attempt triggers 1-hour lockout)
     const newLockoutState = await recordFailedAdminLogin(clientIp);
     if (newLockoutState.isLocked) {
@@ -74,7 +76,7 @@ adminRouter.post("/login", adminLoginLimiter, async (req, res) => {
   await resetAdminLockout(clientIp);
 
   // Set HTTP-only admin session cookie
-  const adminToken = signSessionToken({ sub: user.id });
+  const adminToken = signSessionToken({ sub: user.id, sessionPurpose: 'admin' }, user.passwordHash);
   res.cookie(ADMIN_SESSION_COOKIE_NAME, adminToken, getSessionCookieOptions());
 
   res.json({
@@ -87,7 +89,8 @@ adminRouter.post("/login", adminLoginLimiter, async (req, res) => {
   });
 });
 
-adminRouter.post("/logout", (_req, res) => {
+adminRouter.post("/logout", async (_req, res) => {
+  await revokeSession(verifySessionToken(_req.cookies?.[ADMIN_SESSION_COOKIE_NAME]));
   res.clearCookie(ADMIN_SESSION_COOKIE_NAME, getClearCookieOptions());
   res.status(204).end();
 });
@@ -598,7 +601,7 @@ adminRouter.post("/matches/:id/void", requirePermission("MATCHES_VOID"), async (
 
     res.status(result.status).json(result.body);
   } catch (err: any) {
-    console.error("[admin] Void match error:", err);
+    logger.error("[admin] Void match error:", err);
     res.status(500).json({ error: "Failed to void match due to an internal error." });
   }
 });
@@ -699,7 +702,7 @@ adminRouter.post("/wallet/grant-coins", requirePermission("WALLET_GRANT_COINS"),
 
     res.status(result.status).json(result.body);
   } catch (err: any) {
-    console.error("[admin] Grant coins error:", err);
+    logger.error("[admin] Grant coins error:", err);
     res.status(500).json({ error: "Failed to grant coins due to an internal error." });
   }
 });
@@ -829,7 +832,7 @@ adminRouter.post("/wallet/reverse", requirePermission("WALLET_REVERSE_TRANSACTIO
 
     res.status(result.status).json(result.body);
   } catch (err: any) {
-    console.error("[admin] Reverse ledger entry error:", err);
+    logger.error("[admin] Reverse ledger entry error:", err);
     res.status(500).json({ error: "Failed to reverse ledger entry due to an internal error." });
   }
 });
