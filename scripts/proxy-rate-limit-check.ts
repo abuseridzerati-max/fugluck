@@ -6,8 +6,18 @@ import { globalRateLimiter } from '../packages/server/src/utils/rateLimiter';
 let passed = 0, failed = 0;
 function check(label: string, ok: unknown) { console.log(`${ok ? 'PASS' : 'FAIL'} ${label}`); ok ? passed++ : failed++; }
 const chain = (client: string, i = 0) => `${client}, ${i % 2 ? '172.71.144.123' : '162.158.229.130'}, 10.196.${i % 3}.78`;
+function trustsSubnet(subnet: string, address: string): boolean {
+  const app = express();
+  app.set('trust proxy', subnet);
+  const trust: (ip: string) => boolean = app.get('trust proxy fn');
+  return trust(address);
+}
 
 async function main() {
+  check('malformed mapped trust prefix cannot trust arbitrary IPv4', !trustsSubnet('::ffff:10.0.0.0/8', '203.0.113.7'));
+  check('generic IPv6 prefix cannot trust arbitrary IPv4', !trustsSubnet('::/1', '203.0.113.7'));
+  check('valid mapped subnet still trusts its IPv4 block', trustsSubnet('::ffff:10.0.0.0/104', '10.2.3.4'));
+  check('valid mapped subnet rejects unrelated IPv4', !trustsSubnet('::ffff:10.0.0.0/104', '203.0.113.7'));
   check('direct traffic is the default', getTrustProxy({}) === false);
   check('false disables forwarded trust', getTrustProxy({ TRUST_PROXY: 'false' }) === false);
   check('zero does not become one-hop trust', getTrustProxy({ TRUST_PROXY: '0' }) === false);

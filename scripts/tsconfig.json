@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "allowJs": true
+  },
+  "include": [
+    "run-regression.mjs",
+    "regression-runner-check.ts",
+    "game-module-lifecycle-check.ts",
+    "proxy-rate-limit-check.ts",
+    "test-database-safety.ts",
+    "test-database-safety-check.ts"
+  ]
+}

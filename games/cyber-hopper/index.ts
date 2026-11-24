@@ -116,7 +116,7 @@ export class CyberHopperModule extends EventTarget implements GameModule {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.engine.resize(width, height);
+          this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
         }
       }
     });

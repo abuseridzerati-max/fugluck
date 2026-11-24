@@ -76,6 +76,9 @@ expectRejected(
 expectRejected("normal-looking fugluck database name", "postgresql://test-host/fugluck", production);
 expectRejected("postgres database name", "postgresql://test-host/postgres", production);
 expectRejected("generic test database name", "postgresql://test-host/integration_test", production);
+for (const key of ['host', 'hostaddr', 'port', 'database', 'dbname', 'service', 'servicefile']) {
+  expectRejected(`query routing override ${key}`, `postgresql://localhost/fugluck_test?${key}=secret`, production);
+}
 
 expectAccepted(
   "isolated fugluck_atomic_test database",

@@ -99,7 +99,8 @@ export function tryPair(
   const entries = queues.get(key);
   if (!entries || entries.length < 2) return null;
   const [a, b, ...rest] = entries;
-  queues.set(key, rest);
+  if (rest.length) queues.set(key, rest);
+  else queues.delete(key);
   notifyQueueChange();
   return [a, b];
 }
@@ -109,7 +110,8 @@ export function removeFromQueue(socket: MatchmakingSocket): void {
   for (const [key, entries] of queues) {
     const next = entries.filter((e) => e.socket !== socket);
     if (next.length !== entries.length) {
-      queues.set(key, next);
+      if (next.length) queues.set(key, next);
+      else queues.delete(key);
       changed = true;
     }
   }

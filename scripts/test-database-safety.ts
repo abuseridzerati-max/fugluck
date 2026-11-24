@@ -29,6 +29,11 @@ export function normalizePostgreSqlDestination(value: string | undefined, variab
     throw refusal(`${variableName} must use the postgres or postgresql protocol.`);
   }
   if (!parsed.hostname) throw refusal(`${variableName} has no hostname.`);
+  // pg-connection-string lets query parameters override URI routing fields.
+  // Comparing only the authority/path would otherwise approve a different DB.
+  for (const key of ['host', 'hostaddr', 'port', 'database', 'dbname', 'service', 'servicefile']) {
+    if (parsed.searchParams.has(key)) throw refusal(`${variableName} contains a routing override.`);
+  }
 
   let databaseName: string;
   try {
