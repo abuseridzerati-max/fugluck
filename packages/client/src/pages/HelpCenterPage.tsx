@@ -34,7 +34,7 @@ export default function HelpCenterPage({ onNavigate, mode = 'help' }: HelpCenter
   }, [selectedCategory, searchQuery])
 
   return <div className="public-page">
-    <Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} />
+    <Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} onNavigateCompetitions={() => onNavigate('/competitions')} />
     <main className="public-page__main">
       <nav className="public-breadcrumb" aria-label="Breadcrumb"><a href="/" onClick={(e) => { e.preventDefault(); onNavigate('/') }}>Home</a><span aria-hidden="true">/</span><span aria-current="page">{isFaq ? 'FAQ' : 'Help Center'}</span></nav>
       <header className="public-doc__header">

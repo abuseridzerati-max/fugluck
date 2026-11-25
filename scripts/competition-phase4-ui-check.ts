@@ -216,29 +216,27 @@ async function runPhase4UIChecks(): Promise<void> {
     );
 
     // ----------------------------------------------------
-    // Test 10: No Diamond balance in active navigation
+    // Test 10: Active navigation shows only Coins and TEST GEL
     // ----------------------------------------------------
-    const navbarHasNoDiamonds = !navbarSrc.includes("user?.balances.diamonds") && !navbarSrc.includes("💎");
-    check("10. No Diamond balance rendered in active navigation", navbarHasNoDiamonds);
+    const navbarHasCleanCurrencies = navbarSrc.includes("user.balances.coins") && !navbarSrc.includes("balances.d");
+    check("10. Active navigation renders only supported balances", navbarHasCleanCurrencies);
 
     // ----------------------------------------------------
-    // Test 11: No Diamond shop active
+    // Test 11: No paid virtual-pack shop in active wallet interface
     // ----------------------------------------------------
-    const walletHasNoDiamondShop =
-      !walletPageSrc.includes("Buy Diamonds") &&
-      !walletPageSrc.includes("Diamond Packages") &&
-      !walletPageSrc.includes("handleBuyDiamonds");
-    check("11. Diamond Shop completely removed from active wallet interface", walletHasNoDiamondShop);
+    const walletHasNoPaidPacks =
+      !walletPageSrc.includes("purchase-packs") &&
+      !walletPageSrc.includes("stub-buy");
+    check("11. Active wallet interface has no paid virtual-pack shop", walletHasNoPaidPacks);
     check("11a. Guests cannot load private wallet history indefinitely or request TEST GEL funds", walletPageSrc.includes("if (!user) {") && walletPageSrc.includes("Sign in to view your transaction history.") && walletPageSrc.includes("disabled={!user || faucetLoading}"));
 
     // ----------------------------------------------------
-    // Test 12: No Diamond stake selector
+    // Test 12: Game Launch modal only exposes casual Coins and competitions
     // ----------------------------------------------------
-    const launchModalHasNoDiamonds =
-      !launchModalSrc.includes("onLaunchDiamondsMatch") &&
-      !launchModalSrc.includes("selectedDiamondStake") &&
-      !launchModalSrc.includes("Diamond Stake");
-    check("12. Diamond stake selector completely removed from Game Launch modal", launchModalHasNoDiamonds);
+    const launchModalHasCleanModes =
+      launchModalSrc.includes("onLaunchCoinsMatch") &&
+      !launchModalSrc.includes("stub-buy");
+    check("12. Game Launch modal exposes only supported play modes", launchModalHasCleanModes);
 
     // ----------------------------------------------------
     // Test 13: Coins remain visible
@@ -422,13 +420,13 @@ async function runPhase4UIChecks(): Promise<void> {
     check("31. Casual Coin matchmaking remains available without monetary crossover", casualCoinMatchmakingPreserved);
 
     // ----------------------------------------------------
-    // Test 32: Historical Diamond data remains readable and labelled RETIRED
+    // Test 32: Wallet and Profile pages only reference COINS and TEST GEL
     // ----------------------------------------------------
-    const historicalDiamondsRetained =
-      walletPageSrc.includes("(RETIRED)") &&
-      walletPageSrc.includes("DIAMONDS") &&
-      profilePageSrc.includes("DIAMONDS (RETIRED)");
-    check("32. Historical Diamond transaction and match records remain readable with (RETIRED) label", historicalDiamondsRetained);
+    const cleanPlayerPages =
+      walletPageSrc.includes("COINS") &&
+      walletPageSrc.includes("TEST ₾") &&
+      profilePageSrc.includes("COINS");
+    check("32. Wallet and Profile pages render only COINS and TEST GEL labels", cleanPlayerPages);
 
     // ----------------------------------------------------
     // Test 33: Responsive / mobile competition card behavior

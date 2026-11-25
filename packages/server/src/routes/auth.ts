@@ -37,6 +37,7 @@ async function toPublicUser(user: User): Promise<PublicUser> {
     username: user.username,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    role: user.role as PublicUser["role"],
     gamesPlayed: user.gamesPlayed,
     gamesWon: user.gamesWon,
     isEmailVerified: user.isEmailVerified ?? false,

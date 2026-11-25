@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
+import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
 import { navFilters } from '../mock/homeData'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
@@ -32,6 +33,7 @@ export default function Navbar({
 }: NavbarProps) {
   const { t } = useTranslation()
   const { user, logOut } = useAuth()
+  const showSandboxGel = canViewSandboxGelUi(user)
   const [menuOpen, setMenuOpen] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
 
@@ -158,24 +160,26 @@ export default function Navbar({
               <span style={{ color: 'var(--color-secondary, #fbbf24)', fontWeight: 'bold' }}>{user.balances.coins.toLocaleString()}</span>{' '}
               {t('common.coins').toLowerCase()}
             </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'rgba(16, 185, 129, 0.12)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-full, 9999px)',
-                color: '#10b981',
-                fontWeight: 'bold',
-                fontSize: '11px',
-              }}
-              title="TEST / SANDBOX GEL — Simulated test funds, no real money used"
-            >
-              <span style={{ opacity: 0.85, marginRight: '4px' }}>TEST / SANDBOX GEL:</span>
-              TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
-            </span>
+            {showSandboxGel && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-full, 9999px)',
+                  color: '#10b981',
+                  fontWeight: 'bold',
+                  fontSize: '11px',
+                }}
+                title="TEST / SANDBOX GEL — Simulated test funds, no real money used"
+              >
+                <span style={{ opacity: 0.85, marginRight: '4px' }}>TEST / SANDBOX GEL:</span>
+                TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
+              </span>
+            )}
           </div>
         )}
 

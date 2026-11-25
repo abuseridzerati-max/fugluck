@@ -38,16 +38,3 @@ export async function copyTextToClipboard(text: string, inputEl?: HTMLInputEleme
 export function canNativeShare(): boolean {
   return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 }
-
-export async function shareOrCopy(url: string, title: string, inputEl?: HTMLInputElement | null): Promise<'shared' | 'copied' | 'failed'> {
-  if (canNativeShare()) {
-    try {
-      await navigator.share({ title, url })
-      return 'shared'
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return 'failed'
-    }
-  }
-  const copied = await copyTextToClipboard(url, inputEl)
-  return copied ? 'copied' : 'failed'
-}

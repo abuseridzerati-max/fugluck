@@ -184,7 +184,7 @@ export default function WalletPage({
                 title={!user ? 'Sign in to access sandbox test funds.' : undefined}
                 style={{ fontSize: '11px', padding: '4px 12px', whiteSpace: 'nowrap' }}
               >
-                {faucetLoading ? 'Adding…' : user ? '[ ADD TEST FUNDS ]' : 'SIGN IN TO ACCESS TEST FUNDS'}
+                {faucetLoading ? 'Adding…' : user ? 'Add Test Funds' : 'Sign in to access test funds'}
               </button>
               <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
                 {user ? 'Adds simulated sandbox funds. No real money is charged.' : 'Sign in to view balances, history, and test-fund options.'}
@@ -267,10 +267,6 @@ export default function WalletPage({
                         <td style={{ padding: 'var(--space-3) var(--space-2)' }}>
                           {tx.currency === 'COINS' ? (
                             '🪙 COINS'
-                          ) : tx.currency === 'DIAMONDS' ? (
-                            <span style={{ color: 'var(--color-text-muted)' }}>
-                              💎 DIAMONDS <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.06)', padding: '1px 4px', borderRadius: '3px' }}>(RETIRED)</span>
-                            </span>
                           ) : (
                             <span style={{ color: '#10b981' }}>TEST ₾ (SANDBOX)</span>
                           )}

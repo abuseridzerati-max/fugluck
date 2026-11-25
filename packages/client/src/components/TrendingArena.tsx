@@ -6,7 +6,7 @@ import { TrendingIcon } from './icons'
 
 type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
-  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
   onLaunchGuestInvite?: (id: string, title: string) => void
   onOpenCompetitions?: (id: string, title: string) => void
   loadingGameId: string | null
@@ -47,7 +47,7 @@ export default function TrendingArena({
   })
 
   return (
-    <section style={{ margin: '0 var(--space-6) var(--space-8)' }}>
+    <section style={{ margin: '0 0 var(--space-8)' }}>
       <div
         style={{
           display: 'flex',
@@ -103,7 +103,7 @@ export default function TrendingArena({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
             gap: 'var(--space-5)',
           }}
         >

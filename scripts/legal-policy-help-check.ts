@@ -40,7 +40,6 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
     "PRIVACY",
     "COOKIES",
     "RULES",
-    "DIAMONDS",
     "WITHDRAWALS",
     "REFUNDS",
     "RESPONSIBLE_PLAY",
@@ -86,11 +85,11 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   const internalChecklist = fs.readFileSync(internalChecklistPath, "utf-8");
   check("Internal checklist retains missing operator, legal, privacy and filing inputs", ["entity name", "registration or identification number", "support, legal/regulatory and privacy contact", "retention periods", "Revenue Service filing", "Georgian and Russian"].every((item) => internalChecklist.toLowerCase().includes(item.toLowerCase())));
   check("Draft legal pages do not invent an effective date", policyContent.includes("do not claim an approved effective date"));
-  const requiredPolicySlugs = ["about", "how-it-works", "competition-model", "entry-fees-prizes", "games-and-skill", "coins", "test-gel", "sandbox-notice", "terms", "privacy", "rules", "fair-play", "diamonds", "contact", "legal"];
+  const requiredPolicySlugs = ["about", "how-it-works", "competition-model", "entry-fees-prizes", "games-and-skill", "coins", "test-gel", "sandbox-notice", "terms", "privacy", "rules", "fair-play", "contact", "legal"];
   for (const slug of requiredPolicySlugs) check(`Policy data defines document for '${slug}'`, policyContent.includes(`slug: '${slug}'`));
   check("Freeroll entry is explicitly labeled FREE", policyContent.includes("Entry Fee: FREE"));
   check("Standard and promotional examples separate entry from prize", policyContent.includes("Entry Fee: TEST ₾5 each") && policyContent.includes("Predetermined Prize: TEST ₾20"));
-  check("Historical Diamond information is labeled retired / legacy", policyContent.includes("DIAMONDS — RETIRED / LEGACY"));
+  check("Policy content only documents Coins and TEST GEL", policyContent.includes("Coins") && policyContent.includes("TEST / SANDBOX GEL"));
 
   // -------------------------------------------------------------------------
   // 3. Client Help Center FAQ Manifest
@@ -106,7 +105,7 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   for (const cat of expectedFaqCategories) {
     check(`FAQ data defines category '${cat}'`, faqContent.includes(`id: '${cat}'`));
   }
-  check("FAQ answers explain sandbox value and retired Diamonds", faqContent.includes("zero real-world value") && faqContent.includes("retired from active use"));
+  check("FAQ answers explain sandbox zero-value and Coins", faqContent.includes("zero real-world value") && faqContent.includes("What are Coins?"));
 
   const appRoutes = fs.readFileSync(path.resolve(process.cwd(), "packages/client/src/App.tsx"), "utf-8");
   for (const slug of requiredPolicySlugs) check(`Application route is registered for '/${slug}'`, appRoutes.includes(`'${slug}'`));
@@ -173,13 +172,13 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   const privacyRecord = persistedAcceptances.find((a) => a.policyType === "PRIVACY");
   check("Privacy acceptance record has correct version", privacyRecord?.policyVersion === CURRENT_POLICY_VERSIONS.PRIVACY);
 
-  // Subsequent policy acceptance (e.g. user action accepting DIAMOND terms)
-  const diamondAcceptanceId = `pa_dia_${runId}`;
+  // Subsequent policy acceptance (e.g. user action accepting competition RULES)
+  const rulesAcceptanceId = `pa_rules_${runId}`;
   await db.insert(policyAcceptances).values({
-    id: diamondAcceptanceId,
+    id: rulesAcceptanceId,
     userId: testUserId,
-    policyType: "DIAMONDS",
-    policyVersion: CURRENT_POLICY_VERSIONS.DIAMONDS,
+    policyType: "RULES",
+    policyVersion: CURRENT_POLICY_VERSIONS.RULES,
     source: "user_action",
     ipAddress: "192.168.1.100",
     userAgent: "Custom Client 1.0",
@@ -188,7 +187,7 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   const updatedAcceptances = await db.query.policyAcceptances.findMany({
     where: eq(policyAcceptances.userId, testUserId),
   });
-  check("User has 3 recorded policy acceptances after diamond terms acceptance", updatedAcceptances.length === 3);
+  check("User has 3 recorded policy acceptances after competition rules acceptance", updatedAcceptances.length === 3);
 
   // Foreign key cascade delete test: deleting user cascades and deletes policy acceptances
   await db.delete(users).where(eq(users.id, testUserId));

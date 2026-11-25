@@ -13,7 +13,7 @@ export type PolicyDocument = {
   title: string
   subtitle: string
   version?: string
-  status: 'INFORMATIONAL' | 'DRAFT_LEGAL_REVIEW' | 'DRAFT_IMPLEMENTATION_REVIEW' | 'PRODUCT_ALIGNED_DRAFT' | 'HISTORICAL'
+  status: 'INFORMATIONAL' | 'DRAFT_LEGAL_REVIEW' | 'DRAFT_IMPLEMENTATION_REVIEW' | 'PRODUCT_ALIGNED_DRAFT'
   statusText: string
   summary: string
   sections: PolicySection[]
@@ -131,17 +131,16 @@ export const POLICIES: Record<string, PolicyDocument> = {
       section('rematches', '13. Rematches', 'A rematch is a new Competition Instance with a new participation decision, new authority session and new accounting lifecycle. It does not carry forward the previous competition’s entry or settlement.'),
       section('coins', '14. Coins', 'Coins are free non-monetary virtual points. They are not redeemable, withdrawable or convertible into GEL, and do not represent money held for the user.'),
       section('test-gel', '15. TEST / Sandbox GEL', 'TEST GEL is simulated value with zero real-world monetary value. It cannot be deposited as real money, withdrawn, redeemed, transferred to a bank account or treated as a claim for actual GEL.'),
-      section('retired-diamonds', '16. Retired Diamonds', 'Diamonds are retired from active product use. Historical Diamond records may remain in account or audit history as legacy information, but active Diamond purchasing, staking or competition entry is not part of the current target service.'),
-      section('prohibited-conduct', '17. Prohibited conduct', 'Users must not cheat, automate play through unauthorized bots, tamper with the client or network protocol, attempt to submit fabricated results, interfere with another participant, abuse reconnect or session mechanisms, exploit vulnerabilities, evade account restrictions, access another person’s account, attack service infrastructure or otherwise undermine fair competition.'),
-      section('multiple-accounts', '18. Multiple accounts and collusion', 'Final multi-account and collusion rules require operator approval. At minimum, users may not use multiple accounts, coordinated behavior or account sharing to manipulate competition outcomes or evade restrictions.'),
-      section('availability', '19. Service availability and technical limitations', 'Online services can experience latency, outages, device incompatibility, software defects or third-party infrastructure issues. Fugluck may delay, reject, cancel or void a competition when required to protect integrity. No technical system can guarantee uninterrupted availability.'),
-      section('suspension', '20. Suspension and termination', 'The operator may restrict or terminate access for security, abuse, Terms violations, legal requirements or operational reasons, subject to the final account policy and applicable law.'),
-      section('intellectual-property', '21. Intellectual property', 'Fugluck software, branding, game assets and platform content are protected by the rights held by the operator or applicable licensors. Users receive only the limited permission needed to use the service under these Terms.'),
-      section('user-content', '22. User content and communications', 'If the service permits profile content, messages, reports or other user submissions, users must not submit unlawful, abusive, infringing or malicious material. Exact moderation and content-licence language should be finalized based on the actual social features enabled at launch.'),
-      section('privacy', '23. Privacy', 'Use of personal information is described in the Privacy Policy. These Terms should link to the current policy version.'),
-      section('changes', '24. Changes to the service and Terms', 'The operator may update the service and these Terms. Material changes should use the product’s existing versioning and acceptance mechanism where required.'),
-      section('governing-law', '25. Governing law and disputes', 'Governing law, jurisdiction and dispute-resolution terms have not been finalized for this review build. Approved terms will be published after the operating entity and applicable legal requirements are confirmed.'),
-      section('terms-contact', '26. Contact', 'Verified operator identity and support/legal contact details will be published before commercial launch. See Contact / Who We Are for the current publication status.'),
+      section('prohibited-conduct', '16. Prohibited conduct', 'Users must not cheat, automate play through unauthorized bots, tamper with the client or network protocol, attempt to submit fabricated results, interfere with another participant, abuse reconnect or session mechanisms, exploit vulnerabilities, evade account restrictions, access another person’s account, attack service infrastructure or otherwise undermine fair competition.'),
+      section('multiple-accounts', '17. Multiple accounts and collusion', 'Final multi-account and collusion rules require operator approval. At minimum, users may not use multiple accounts, coordinated behavior or account sharing to manipulate competition outcomes or evade restrictions.'),
+      section('availability', '18. Service availability and technical limitations', 'Online services can experience latency, outages, device incompatibility, software defects or third-party infrastructure issues. Fugluck may delay, reject, cancel or void a competition when required to protect integrity. No technical system can guarantee uninterrupted availability.'),
+      section('suspension', '19. Suspension and termination', 'The operator may restrict or terminate access for security, abuse, Terms violations, legal requirements or operational reasons, subject to the final account policy and applicable law.'),
+      section('intellectual-property', '20. Intellectual property', 'Fugluck software, branding, game assets and platform content are protected by the rights held by the operator or applicable licensors. Users receive only the limited permission needed to use the service under these Terms.'),
+      section('user-content', '21. User content and communications', 'If the service permits profile content, messages, reports or other user submissions, users must not submit unlawful, abusive, infringing or malicious material. Exact moderation and content-licence language should be finalized based on the actual social features enabled at launch.'),
+      section('privacy', '22. Privacy', 'Use of personal information is described in the Privacy Policy. These Terms should link to the current policy version.'),
+      section('changes', '23. Changes to the service and Terms', 'The operator may update the service and these Terms. Material changes should use the product’s existing versioning and acceptance mechanism where required.'),
+      section('governing-law', '24. Governing law and disputes', 'Governing law, jurisdiction and dispute-resolution terms have not been finalized for this review build. Approved terms will be published after the operating entity and applicable legal requirements are confirmed.'),
+      section('terms-contact', '25. Contact', 'Verified operator identity and support/legal contact details will be published before commercial launch. See Contact / Who We Are for the current publication status.'),
     ], relatedSlugs: ['privacy', 'rules', 'fair-play', 'sandbox-notice', 'contact'],
   },
   privacy: {
@@ -201,16 +200,6 @@ export const POLICIES: Record<string, PolicyDocument> = {
       section('limits', 'What server authority does not guarantee', 'Server authority is an integrity control, not a claim that abuse is impossible. Bots, collusion, account sharing, network advantages and other forms of misconduct can require additional detection, enforcement and operational controls. Fugluck describes its protections accurately and does not claim that cheating is impossible.'),
     ], relatedSlugs: ['rules', 'games-and-skill', 'terms', 'contact'],
   },
-  diamonds: {
-    type: 'DIAMONDS', slug: 'diamonds', title: 'Historical Diamond Records', subtitle: 'Legacy information retained to interpret historical account and audit records.',
-    version: CURRENT_POLICY_VERSIONS.DIAMONDS, status: 'HISTORICAL', statusText: 'DIAMONDS — RETIRED / LEGACY',
-    summary: 'Diamonds are not part of Fugluck’s current active product model. Historical records created under earlier development architecture may remain available for auditability and historical accuracy.',
-    sections: [
-      section('historical-records', 'Historical records', 'Historical Diamond balances, ledger entries, match history, settlements and audit records may remain available for account history, audit and historical accuracy. Those records are not deleted or rewritten merely to simplify the current interface.'),
-      section('retired-activity', 'Retired activity', 'There are no new Diamond purchases, Diamond competition entry, staking, active Diamond packs, active Diamond grants or active Diamond shop. DIAMONDS — RETIRED / LEGACY is a historical label, not an offer or current balance feature.'),
-      section('current-sandbox', 'Current sandbox competitions', 'Current TEST GEL competitions are separate simulated accounting records. TEST GEL is not a replacement payment balance and has zero real-world value.'),
-    ], relatedSlugs: ['wallet', 'test-gel', 'legal'],
-  },
   contact: {
     type: 'CONTACT', slug: 'contact', title: 'Contact / Who We Are', subtitle: 'Operator identity and support channels are pending verified operator information.',
     version: CURRENT_POLICY_VERSIONS.CONTACT, status: 'DRAFT_IMPLEMENTATION_REVIEW', statusText: 'INFORMATION PENDING FINAL OPERATOR / LEGAL CONFIRMATION',
@@ -226,7 +215,7 @@ export const POLICIES: Record<string, PolicyDocument> = {
     status: 'DRAFT_IMPLEMENTATION_REVIEW', statusText: 'REVIEW REGISTER · NO REGULATORY APPROVAL CLAIMED',
     summary: 'These documents describe the current product and review draft. No document on this index is evidence of a licence, legal classification or Revenue Service decision. Effective dates are not assigned until the operator approves them.',
     sections: [
-      section('legal-documents', 'Documents', 'Terms of Service — Draft; legal review required.', 'Privacy Policy — Draft; implementation and legal review required.', 'General Competition Rules — Product-aligned draft.', 'Sandbox / Test Money Notice — Product-aligned draft.', 'Fair Competition and Server Authority — Product-aligned draft; enforcement and appeals require operator review.', 'Contact / Operator Information — Blocked on verified operator data.', 'Historical Diamond Records — Retired/legacy informational record.'),
+      section('legal-documents', 'Documents', 'Terms of Service — Draft; legal review required.', 'Privacy Policy — Draft; implementation and legal review required.', 'General Competition Rules — Product-aligned draft.', 'Sandbox / Test Money Notice — Product-aligned draft.', 'Fair Competition and Server Authority — Product-aligned draft; enforcement and appeals require operator review.', 'Contact / Operator Information — Blocked on verified operator data.'),
       section('policy-status', 'Version and effective-date status', 'Policy pages display draft version identifiers where the existing version system requires them. The current drafts do not claim an approved effective date. Final Terms and Privacy versions and dates must be supplied or approved by the operator/legal adviser. Translations of the same approved policy must use matching identifiers and effective dates.'),
       section('pending-review', 'Information pending review', 'Terms and Privacy remain drafts and are not final or effective. Verified operator/contact information, applicable eligibility and territory rules, policy dates, data-handling disclosures, rights/contact procedures, dispute terms, and reviewed translations remain pending human or legal review. No legal classification, licence, regulator approval or Revenue Service decision is claimed.'),
       section('legal-status', 'Legal status', 'This site content is a product-information and review draft, not a legal opinion. It does not claim Revenue Service approval, gambling classification, licence, legal status or regulatory clearance.'),

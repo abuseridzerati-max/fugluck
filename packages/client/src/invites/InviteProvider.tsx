@@ -1,23 +1,14 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
-import type { ClientToServerEvents, InviteReceivedPayload, ServerToClientEvents } from '@fugluck/shared'
+import { getGameTitle, type ClientToServerEvents, type InviteReceivedPayload, type ServerToClientEvents } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
-import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'
-
-type InviteContextValue = {
-  incoming: InviteReceivedPayload | null
-  declineIncoming: () => void
-}
-
-const InviteContext = createContext<InviteContextValue | null>(null)
 
 type InviteProviderProps = {
   children: ReactNode
@@ -31,21 +22,20 @@ type InviteProviderProps = {
 // even when the user isn't already in MatchLoader.
 export function InviteProvider({ children, onAcceptInvite, enabled = true }: InviteProviderProps) {
   const { user } = useAuth()
+  const userId = user?.id ?? null
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
   const [incoming, setIncoming] = useState<InviteReceivedPayload | null>(null)
 
   useEffect(() => {
-    if (!user || !enabled) {
+    if (!userId || !enabled) {
       socketRef.current?.disconnect()
       socketRef.current = null
-      if (!user) setIncoming(null)
+      if (!userId) setIncoming(null)
       return
     }
 
-    const token = getStoredAuthToken()
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
       withCredentials: true,
-      auth: { token: token || undefined },
     })
     socketRef.current = socket
 
@@ -60,7 +50,7 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
       socket.disconnect()
       socketRef.current = null
     }
-  }, [user, enabled])
+  }, [userId, enabled])
 
   const declineIncoming = useCallback(() => {
     if (!incoming) return
@@ -76,7 +66,7 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
   }, [incoming, onAcceptInvite])
 
   return (
-    <InviteContext.Provider value={{ incoming, declineIncoming }}>
+    <>
       {children}
       {incoming && (
         <div
@@ -94,7 +84,7 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
             </h3>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
               <strong style={{ color: 'var(--color-text)' }}>{incoming.fromUsername}</strong> invited you to
-              play <strong style={{ color: 'var(--color-text)' }}>{incoming.gameId}</strong>.
+              play <strong style={{ color: 'var(--color-text)' }}>{getGameTitle(incoming.gameId)}</strong>.
             </p>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               <button type="button" className="ac-btn ac-btn--primary" onClick={acceptIncoming} style={{ flex: 1 }}>
@@ -107,12 +97,6 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
           </div>
         </div>
       )}
-    </InviteContext.Provider>
+    </>
   )
-}
-
-export function useInvites(): InviteContextValue {
-  const ctx = useContext(InviteContext)
-  if (!ctx) throw new Error('useInvites must be used within InviteProvider')
-  return ctx
 }

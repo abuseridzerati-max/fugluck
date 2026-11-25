@@ -8,7 +8,7 @@ import TrendingArena from '../components/TrendingArena'
 
 type HomePageProps = {
   onPlayGame: (id: string, title: string) => void
-  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
   onLaunchGuestInvite?: (id: string, title: string) => void
   onOpenCompetitions?: (id: string, title: string) => void
   loadingGameId: string | null

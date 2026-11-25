@@ -28,21 +28,29 @@ function ContentBlocks({ lines }: { lines: string[] }) {
   })}</>
 }
 
+const EXTRA_RELATED_LINKS: Record<string, { slug: string; title: string }> = {
+  competitions: { slug: 'competitions', title: 'Competitions' },
+  wallet: { slug: 'wallet', title: 'Wallet & Balances' },
+  help: { slug: 'help', title: 'Help Center & FAQ' },
+}
+
 export default function PolicyPage({ policySlug, onNavigate }: PolicyPageProps) {
   const doc: PolicyDocument | undefined = POLICIES[policySlug]
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [policySlug])
 
   if (!doc) {
-    return <div className="public-page"><Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} /><main className="public-page__main"><h1>Page not found</h1><p>This public information page could not be found.</p><button className="ac-btn ac-btn--primary" onClick={() => onNavigate('/help')}>Visit Help Center</button></main><Footer onNavigate={onNavigate} /></div>
+    return <div className="public-page"><Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} onNavigateCompetitions={() => onNavigate('/competitions')} /><main className="public-page__main"><h1>Page not found</h1><p>This public information page could not be found.</p><button className="ac-btn ac-btn--primary" onClick={() => onNavigate('/help')}>Visit Help Center</button></main><Footer onNavigate={onNavigate} /></div>
   }
 
-  const relatedDocs = doc.relatedSlugs.map((slug) => POLICIES[slug]).filter(Boolean) as PolicyDocument[]
+  const relatedDocs = doc.relatedSlugs
+    .map((slug) => POLICIES[slug] ?? EXTRA_RELATED_LINKS[slug])
+    .filter(Boolean) as Array<{ slug: string; title: string }>
   const isLegalDraft = doc.status === 'DRAFT_LEGAL_REVIEW' || doc.status === 'DRAFT_IMPLEMENTATION_REVIEW' || doc.status === 'PRODUCT_ALIGNED_DRAFT'
 
   return (
     <div className="public-page">
-      <Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} />
+      <Navbar onNavigateHome={() => onNavigate('/')} onNavigateFriends={() => onNavigate('/friends')} onNavigateProfile={() => onNavigate('/profile')} onNavigateWallet={() => onNavigate('/wallet')} onNavigateCompetitions={() => onNavigate('/competitions')} />
       <main className="public-page__main">
         <nav className="public-breadcrumb" aria-label="Breadcrumb">
           <a href="/" onClick={(e) => { e.preventDefault(); onNavigate('/') }}>Home</a><span aria-hidden="true">/</span>
@@ -56,7 +64,6 @@ export default function PolicyPage({ policySlug, onNavigate }: PolicyPageProps) 
           <p className="public-doc__subtitle">{doc.subtitle}</p>
           {doc.version && <div className="public-doc__metadata">Draft version {doc.version} · Effective date: not assigned</div>}
           {isLegalDraft && <p className="public-doc__review-note">This English draft is not final or legally approved. Georgian and Russian legal translations have not been reviewed and are not presented as complete.</p>}
-          {doc.status === 'HISTORICAL' && <p className="public-doc__review-note">Historical information only. This page does not offer or authorize active Diamond activity.</p>}
         </header>
 
         <div className="public-doc__layout">

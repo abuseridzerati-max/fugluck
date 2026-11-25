@@ -10,7 +10,6 @@ import type {
 } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
 import { API_URL } from '../lib/api'
-import { getStoredAuthToken } from '../auth/AuthContext'
 import { getGuestProof } from '../lib/guestId'
 
 export type MatchmakingConnectionState = 'connecting' | 'queued' | 'matched' | 'reconnecting' | 'closed'
@@ -25,7 +24,7 @@ export type CompetitionWaitingState = {
 }
 
 export type MatchSocketMode =
-  | { kind: 'queue'; stake?: number; currency?: 'COINS' | 'DIAMONDS' }
+  | { kind: 'queue'; stake?: number; currency?: 'COINS' }
   | { kind: 'competition'; templateId: string; template?: CompetitionTemplate }
   | { kind: 'sendInvite'; friendUserId: string }
   | { kind: 'acceptInvite'; inviteId: string }
@@ -77,13 +76,8 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
   const [competitionWaiting, setCompetitionWaiting] = useState<CompetitionWaitingState | null>(null)
 
   useEffect(() => {
-    const token = getStoredAuthToken()
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
       withCredentials: true,
-      auth: {
-        token: token || undefined,
-        isGuest: !token,
-      },
       reconnection: true,
       reconnectionAttempts: 8,
       reconnectionDelay: 500,

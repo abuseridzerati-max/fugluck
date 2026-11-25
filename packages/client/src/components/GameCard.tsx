@@ -10,7 +10,7 @@ type GameCardProps = {
   engine: GameEngine
   tagline?: string
   onPlay?: () => void
-  onFindOpponent?: (stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onFindOpponent?: (stake?: number, currency?: 'COINS') => void
   onLaunchGuestInvite?: () => void
   onOpenCompetitions?: () => void
   loading?: boolean

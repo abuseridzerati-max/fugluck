@@ -5,10 +5,6 @@ import { apiFetch, ApiError } from '../lib/api'
 const AUTH_STORAGE_KEY = 'fugluck_auth_user'
 const LEGACY_AUTH_STORAGE_KEY = 'arcadeclash_auth_user'
 
-export function getStoredAuthToken(): string | null {
-  return null
-}
-
 type AuthContextValue = {
   user: PublicUser | null
   loading: boolean

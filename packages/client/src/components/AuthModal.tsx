@@ -183,9 +183,20 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
           </div>
         ) : (
           <div>
-            <h2 style={{ margin: '0 0 var(--space-5)' }}>
-              {mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
+              <h2 style={{ margin: 0 }}>
+                {mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
+              </h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('common.close', { defaultValue: 'Close' })}
+                className="ac-btn ac-btn--ghost"
+                style={{ padding: '4px 10px', minWidth: 36, minHeight: 36 }}
+              >
+                ×
+              </button>
+            </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -193,6 +204,8 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   {t('auth.username')}
                 </span>
                 <input
+                  name="username"
+                  autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -231,6 +244,8 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 </div>
                 <input
                   id={passwordFieldId}
+                  name="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -305,6 +320,10 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 type="submit"
                 className="ac-btn ac-btn--primary"
                 disabled={submitting || (mode === 'signup' && !agreeToTerms)}
+                style={{
+                  opacity: submitting || (mode === 'signup' && !agreeToTerms) ? 0.45 : 1,
+                  cursor: submitting || (mode === 'signup' && !agreeToTerms) ? 'not-allowed' : 'pointer',
+                }}
               >
                 {submitting
                   ? t('common.pleaseWait')

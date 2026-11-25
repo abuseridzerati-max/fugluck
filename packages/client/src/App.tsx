@@ -1,27 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getGameTitle, type GameModuleFactory, type InviteReceivedPayload } from '@fugluck/shared'
+import { getGameTitle, type CompetitionTemplate, type GameModuleFactory, type InviteReceivedPayload } from '@fugluck/shared'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import AuthModal from './components/AuthModal'
-import GameLoader from './game-loader/GameLoader'
 import { gameFactories } from './game-loader/gameFactories'
-import MatchLoader from './game-loader/MatchLoader'
 import { InviteProvider } from './invites/InviteProvider'
 import InviteLanding from './invites/InviteLanding'
 import type { MatchSocketMode } from './matchmaking/useMatchSocket'
-import AdminConsolePage from './admin/AdminConsolePage'
-import type { CompetitionTemplate } from '@fugluck/shared'
-import CompetitionsPage from './pages/CompetitionsPage'
-import FriendsPage from './pages/FriendsPage'
-import HelpCenterPage from './pages/HelpCenterPage'
 import HomePage from './pages/HomePage'
-import NotFoundPage from './pages/NotFoundPage'
-import PolicyPage from './pages/PolicyPage'
-import ProfilePage from './pages/ProfilePage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import VerifyEmailPage from './pages/VerifyEmailPage'
-import WalletPage from './pages/WalletPage'
 import { apiFetch, ApiError } from './lib/api'
+
+const GameLoader = lazy(() => import('./game-loader/GameLoader'))
+const MatchLoader = lazy(() => import('./game-loader/MatchLoader'))
+const AdminConsolePage = lazy(() => import('./admin/AdminConsolePage'))
+const CompetitionsPage = lazy(() => import('./pages/CompetitionsPage'))
+const FriendsPage = lazy(() => import('./pages/FriendsPage'))
+const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const PolicyPage = lazy(() => import('./pages/PolicyPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
+const WalletPage = lazy(() => import('./pages/WalletPage'))
 
 type ActiveGame = {
   id: string
@@ -35,7 +35,6 @@ const POLICY_SLUGS = [
   'terms',
   'privacy',
   'rules',
-  'diamonds',
   'sandbox-notice',
   'fair-play',
   'about',
@@ -228,9 +227,10 @@ function AppShell() {
     }
   }, [])
 
-  // If unauthenticated and navigating to protected views, show login modal and remember destination
+  // If unauthenticated and navigating to protected player views, show login modal and remember destination.
+  // /admin owns its separate operator login and must never be obscured by the player AuthModal.
   useEffect(() => {
-    const protectedViews: View[] = ['profile', 'friends', 'wallet', 'admin']
+    const protectedViews: View[] = ['profile', 'friends', 'wallet']
     if (!user && protectedViews.includes(view)) {
       setPendingRedirectView(view)
       setAuthModalMode('login')
@@ -238,6 +238,8 @@ function AppShell() {
       navigateTo(pendingRedirectView)
       setPendingRedirectView(null)
       setAuthModalMode(null)
+    } else if (user && (view === 'login' || view === 'signup')) {
+      navigateTo('home')
     }
   }, [user, view])
 
@@ -371,7 +373,7 @@ function AppShell() {
     return loadGame(id, title, 'practice')
   }
 
-  function handleFindOpponent(id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') {
+  function handleFindOpponent(id: string, title: string, stake?: number, currency?: 'COINS') {
     storeActiveMatch({ id, title })
     return loadGame(id, title, 'match', { kind: 'queue', stake, currency })
   }
@@ -411,6 +413,7 @@ function AppShell() {
       onAcceptInvite={handleAcceptInvite}
       enabled={!restoringActiveMatch && (!activeGame || activeGame.mode === 'practice')}
     >
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', color: 'var(--color-text-muted)' }}>Loading…</div>}>
       {activeGame?.mode === 'practice' ? (
         <GameLoader
           key={activeGame.id}
@@ -476,6 +479,7 @@ function AppShell() {
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
           onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'wallet' ? (
         <WalletPage
@@ -483,6 +487,7 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'admin' ? (
         <AdminConsolePage onNavigateHome={() => navigateTo('home')} />
@@ -492,6 +497,7 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateWallet={() => navigateTo('wallet')}
           onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           onInviteFriend={handleInviteFriend}
         />
       ) : view === 'verify-email' ? (
@@ -535,9 +541,12 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
           onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
+          onLaunchGuestInvite={handleLaunchGuestInvite}
         />
       ) : (
         <HomePage
@@ -554,6 +563,7 @@ function AppShell() {
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
         />
       )}
+      </Suspense>
 
       {authModalMode && (
         <AuthModal

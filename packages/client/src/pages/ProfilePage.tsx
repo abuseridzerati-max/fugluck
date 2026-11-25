@@ -26,6 +26,7 @@ type ProfilePageProps = {
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
+  onNavigatePolicy?: (path: string) => void
 }
 
 export default function ProfilePage({
@@ -33,6 +34,7 @@ export default function ProfilePage({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateCompetitions,
+  onNavigatePolicy,
 }: ProfilePageProps) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
@@ -206,9 +208,7 @@ export default function ProfilePage({
                 const isLoss = m.outcome === 'loss'
                 const outcomeColor = isWin ? '#22c55e' : isLoss ? '#f87171' : '#fbbf24'
 
-                const stakeDisplay = m.currency === 'DIAMONDS'
-                  ? `${m.stake} DIAMONDS (RETIRED)`
-                  : m.currency === 'GEL'
+                const stakeDisplay = m.currency === 'GEL'
                   ? `TEST ₾${(m.stake / 100).toFixed(2)} (SANDBOX)`
                   : m.stake > 0
                   ? `${m.stake} COINS`
@@ -273,7 +273,7 @@ export default function ProfilePage({
           onClose={() => setIsChangePasswordOpen(false)}
         />
       </main>
-      <Footer onNavigate={onNavigateHome} />
+      <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
     </>
   )
 }

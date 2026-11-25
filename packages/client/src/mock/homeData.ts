@@ -16,8 +16,6 @@ export const activeGames: CatalogGame[] = [
   { id: 'tf-sprint', title: 'True / False Sprint', engine: 'quiz', tagline: 'Rapid-fire True or False trivia clash' },
 ]
 
-export const trendingGames = activeGames
-
 export const navFilters: Array<{ label: string; engine: GameEngine | 'all' }> = [
   { label: 'All', engine: 'all' },
   { label: 'Runner', engine: 'runner' },

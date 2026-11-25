@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getGameTitle, type QueueStateEntry, type ServerToClientEvents, type ClientToServerEvents } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
-import { getStoredAuthToken, useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/AuthContext'
 import { API_URL } from '../lib/api'
 
 type LiveQueueListProps = {
-  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
 }
 
 export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
@@ -17,10 +17,8 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = getStoredAuthToken()
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
       withCredentials: true,
-      auth: { token: token || undefined },
     })
 
     socket.on('queueStateUpdate', (payload) => {
@@ -30,14 +28,15 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
     return () => {
       socket.disconnect()
     }
-  }, [user])
+  }, [user?.id])
 
   useEffect(() => {
+    if (entries.length === 0) return
     const interval = setInterval(() => {
       setNow(Date.now())
     }, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [entries.length])
 
   function formatTime(queuedAt: number): string {
     const elapsedSec = Math.max(0, Math.floor((now - queuedAt) / 1000))
@@ -64,7 +63,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
 
     // Balance check
     if (user && entry.stake > 0) {
-      const userBalance = entry.currency === 'COINS' ? user.balances.coins : user.balances.diamonds
+      const userBalance = user.balances.coins
       if (userBalance < entry.stake) {
         setError(
           t('lobby.insufficientBalance', {
@@ -86,8 +85,8 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
       className="ac-panel"
       aria-label={t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
       style={{
-        padding: 'var(--space-6)',
-        marginBottom: 'var(--space-8)',
+        padding: entries.length === 0 ? 'var(--space-4) var(--space-5)' : 'var(--space-6)',
+        marginBottom: 'var(--space-6)',
         background: 'linear-gradient(180deg, rgba(26, 26, 35, 0.6) 0%, var(--color-surface, #121218) 100%)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-lg, 20px)',
@@ -103,7 +102,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-5)',
+          marginBottom: entries.length === 0 && !error ? 0 : 'var(--space-5)',
           userSelect: 'none',
         }}
       >
@@ -224,64 +223,8 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
         </div>
       )}
 
-      {/* Lobby Content: Empty State vs Cards */}
-      {entries.length === 0 ? (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'var(--space-8) var(--space-4)',
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md, 12px)',
-            textAlign: 'center',
-            userSelect: 'none',
-          }}
-        >
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.04)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: 'var(--space-3)',
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            🎮
-          </div>
-          <h3
-            style={{
-              margin: '0 0 var(--space-2) 0',
-              fontSize: 'var(--font-size-base, 1rem)',
-              fontWeight: 'var(--font-weight-bold, 700)',
-              color: 'var(--color-text, #f5f5f7)',
-            }}
-          >
-            {t('lobby.emptyTitle', { defaultValue: 'No Active Queues' })}
-          </h3>
-          <p
-            style={{
-              margin: 0,
-              maxWidth: '520px',
-              fontSize: 'var(--font-size-sm, 0.875rem)',
-              color: 'var(--color-text-muted, #9a9aa8)',
-              lineHeight: 1.5,
-            }}
-          >
-            {t('lobby.emptyMessage', {
-              defaultValue:
-                'No players are currently waiting in the public queue. Select any game below to start playing or create an open match!',
-            })}
-          </p>
-        </div>
-      ) : (
+      {/* Lobby Content: Compact idle state vs live queue cards */}
+      {entries.length === 0 ? null : (
         <div
           style={{
             display: 'grid',
@@ -406,18 +349,12 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
                       color:
                         entry.stake === 0
                           ? '#94a3b8'
-                          : entry.currency === 'COINS'
-                          ? 'var(--color-secondary, #fbbf24)'
-                          : '#38bdf8',
+                          : 'var(--color-secondary, #fbbf24)',
                     }}
                   >
                     {entry.stake === 0
                       ? t('lobby.freePlay', { defaultValue: 'Free Play' })
-                      : `${entry.stake} ${
-                          entry.currency === 'COINS'
-                            ? t('common.coins', { defaultValue: 'Coins' })
-                            : t('common.diamonds', { defaultValue: 'Diamonds' })
-                        }`}
+                      : `${entry.stake} ${t('common.coins', { defaultValue: 'Coins' })}`}
                   </span>
 
                   {!isSelf ? (

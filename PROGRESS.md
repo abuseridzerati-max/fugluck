@@ -1,5 +1,33 @@
 # Fugluck — Progress Log
 
+## Session 114 (2026-11-24): In-game Coins Knockout Tournaments (Option A — Space Blaster & Cyber Hopper)
+
+- **BUILT / pushed earlier this session (verified by Git refs & `git ls-remote`):** committed Session 113 stabilization (`0adf6b3`) and handoff/report docs (`9882c03`) on `main` and pushed `main` → `origin/main` (`9882c038dac1716d802b7ed494e4dd3cdfff553a`), preserving the Vercel `main` auto-deploy guard (`packages/client/vercel.json`) and local exclusions (`AGENTS.md`, `.agents/`, `how --stat --oneline HEAD`). `codex/competition-restructure` left untouched at `3a24ea0`.
+- **BUILT locally (verified by source, migration 0015, typecheck/builds/lint, and full 56-script regression):** added **In-Game Coins Knockout Tournaments** for certified Level 3 authority games (`Space Blaster` and `Cyber Hopper`) across **2 / 4 / 8 / 16** player STANDARD brackets (**100 Coins entry, 0% rake, 100% pot to champion: 200 / 400 / 800 / 1,600 Coins**), with **no promotional (Promo/Gift) tournaments or qualification tracks** for Coins.
+  - **Schema (`0015_coin_tournaments.sql`, 16/16 migrations, 43 public tables):** widened competition `currency` columns to `varchar(8)`; extended `provenance` CHECK constraints to allow `'COINS'` with DB-level constraints forbidding `PROMO`/`GIFT` and `cycle_id` for `COINS`; added isolated `coin_tournament_reservations` and `coin_tournament_settlements` tables with `PUBLIC`/`anon`/`authenticated` grants revoked. Verified on fresh `template0` loopback DB (`fugluck_coin_tournaments_20261124_test`): `migrationIdentity` = `match`, `appliedCount = 16`, `expectedHead = 0015_coin_tournaments`.
+  - **Isolated Coins accounting (`packages/server/src/accounting/coinTournamentAdapter.ts`):** operates strictly on `ledger_entries` (`currency = 'COINS'`) + `coin_tournament_reservations` + `coin_tournament_settlements` under the existing per-user wallet advisory lock; never touches `sandbox_*`/`commercial_*` tables and never represents `COINS` as `MoneyAmount`. Enforces Final-only settlement, 0% rake pot conservation, idempotent reserve/release/capture/settle/refund, and zero spillover into GEL Promo/Gift qualification.
+  - **Backend catalog/service/routes/sockets:** added `freezeCoinTournamentTerms`, `ensureCoinTournamentCatalog`, `coinTournamentsEnabled` (`ENABLE_COMPETITION_AUTHORITY=true` and `ENABLE_COIN_TOURNAMENTS !== 'false'`), `readCoinTournamentCatalog`, `GET /api/competitions/templates?currency=COINS`, Coin balance cancel response, and `TournamentService` / `AuthorityRuntime` / `matchmaking` wiring. Default `GET /api/competitions/templates` (GEL) remains strictly isolated from Coins templates.
+  - **Frontend UI & EN/KA/RU localization:** added **Coins Tournaments (default) | Test GEL** mode toggle on `CompetitionsPage.tsx`, live Coins balance banner and Coins-only catalog mode in `CompetitionCatalog.tsx`, whole-integer `moneyLabel(..., 'COINS')`, zero Promo/Gift/qualification markup for Coin cards in `CompetitionUI.tsx`, currency badge in `MyCompetitions.tsx`, and full EN/KA/RU key parity.
+- **VERIFIED by complete fresh execution (`npm test`, builds, lint):**
+  - `npm run typecheck` (all workspaces + tooling + client production build), `npm run build:server`, and `npm --workspace=@fugluck/client run lint` (0 errors, 17 existing warnings) all **PASS** (exit 0).
+  - **All 56 scripts / 2,470 passing assertions / 0 failures / 0 skips / 0 unsuccessful exits** on isolated loopback PostgreSQL 17.11 (`127.0.0.1:55439`, `fugluck_coin_tournaments_20261124_test`): `coin-tournaments-check.ts` **59/59**, `migration-schema-parity-check.ts` **340/340**, `i18n-check.ts` **65/65**, `competition-phase4-ui-check.ts` **44/44**, `competition-player-ux-check.ts` **110/110**, `competition-admin-http-check.ts` **44/44**, `tournament-domain-check.ts` **97/97**, `tournament-rules-check.ts` **180/180**, `tournament-recovery-check.ts` **52/52**, `tournament-authority-check.ts` **34/34**, `competition-authority-check.ts` **65/65**, `cyber-hopper-authority-check.ts` **42/42**, plus all remaining 44 suites at exact prior counts. Evidence: ignored `Temp/regression/2026-11-24T11-01-07-749Z/summary.json`.
+- **BUILT locally — Full-repo audit cleanup (verified by code, `npm run typecheck`, `oxlint`, and full 56-script / 2,470-assertion rerun):**
+  - **Deleted clutter & dead code:** removed 35 untracked root `.*.log` files, stray `how --stat --oneline HEAD`, empty root `drizzle/`, stale `packages/server/tsconfig.tsbuildinfo`, stray pnpm `games/tf-sprint/package.json`, orphaned `packages/client/src/registry.ts`, orphaned `packages/server/src/validation/triviaQuestions.ts`, orphaned `games/sky-dodge/index.ts` (+ `"./sky-dodge"` export), session-21 Neon Runner `DIAGNOSTIC` `console.log` blocks, dead `getStoredAuthToken()` + callers, unused `useInvites` / `BellIcon` / `PlayIcon` / `formatPlays` / `shareOrCopy` / `getOrCreateGuestId` / `trendingGames` exports.
+  - **Fixed real bugs & SEO:** wired `onNavigatePolicy` to `<Footer>` on Profile/Friends/Wallet/404 pages; fixed dropped `relatedSlugs` (`competitions`/`wallet`/`help`) on `PolicyPage`; added Competitions button on Policy/Help navbars; fixed `NotFoundPage` invite link callback + 6-game list + footer; rendered `getGameTitle(incoming.gameId)` in `InviteProvider`; wrapped `<App />` in new `ErrorBoundary`; removed stale "legacy tokens" copy from `packages/client/index.html` meta/OG/Twitter descriptions; added `/api/competitions` to server root `/` endpoints list.
+  - **Performance & UI density:** split secondary routes + `AdminConsolePage` + game loaders via `React.lazy`/`Suspense` (initial JS bundle cut **736.4 kB → 261.9 kB**, −64%, zero Vite chunk-size warnings); collapsed `LiveQueueList`'s idle empty state into a compact bar and gated its 1s timer on `entries.length > 0`; aligned `TrendingArena` margins; fixed N+1 queries in `GET /api/matches/history` and `GET /api/admin/users`; memoized `expectedMigrations()` for `/api/health`; deduplicated `routes/friends.ts` cancel handler; reused singleton `SandboxAccountingAdapter` in `routes/competitions.ts`.
+  - **VERIFIED live Chrome visual audit & fixes (34 initial screenshots across all 23 routes desktop + mobile 390×844, plus 5 before/after verification screenshots):** fixed `/admin` double-login overlay bug (removed `'admin'` from player `protectedViews`), fixed post-login/signup stuck URL (`/signup` → `/`), fixed ~150px right-indented header/section alignment across all 16 editorial/FAQ/help/policy pages (`public-content.css`), fixed mobile 390px `/competitions` `Test GEL` right-edge clipping + stretched `Standard · N` pills + wrapped `COINS`/`GEL` amounts + staggered `Join` button baselines (`competition.css`), balanced Home (`TrendingArena.tsx`) and 404 (`NotFoundPage.tsx`) 6-game grids to 3×2 with zero orphan card or truncated titles, added `×` close button + disabled visual styling + autocomplete attributes in `AuthModal.tsx`, and cleaned `[ ADD TEST FUNDS ]` label in `WalletPage.tsx`. All 5/5 targeted re-screenshots visually verified PASS in Chrome.
+  - **VERIFIED final checks:** `npm run typecheck` PASS (`261.96 kB` main chunk, 0 Vite warnings), `oxlint` 0 errors / 15 warnings; final 56-script run passed 55/56 scripts immediately (`2,467/2,470`) with 1 transient 20-session wall-clock spike in `competition-authority-latency-check.ts` (`23/26`) while Chrome was active; clean standalone rerun of `competition-authority-latency-check.ts` passed **26/26** (`0` failures), matching the prior uninterrupted **56/56 / 2,470** baseline on identical backend/DB code.
+- **BUILT locally — Full legacy-token removal & DB constraint tightening (Option A, verified by `git grep`, migration `0016`, `npm run typecheck`, `oxlint`, and fresh 56/56 `npm test`):**
+  - Added migration `0016_restrict_currency_coins_gel.sql` (`17/17`, `status: match`) tightening `matches_history_currency_check` and `match_settlements_currency_check` (`convalidated=true`) to `('COINS', 'GEL')` only, and updated `packages/server/src/db/schema.ts`, `_journal.json`, all client/server/shared/locale/config/test files, `AGENTS.md`, `LEGAL_REVIEW_REQUIRED.md`, `DEPLOYMENT.md`, `GAMES.md`, `CLAUDE.md`, `REPO-STATE.md`, `PROGRESS.md`, and `docs/`. Only immutable applied SQL migrations `0004`/`0008` and the carbon-atoms science question in `games/tf-sprint/questions.ts` remain untouched.
+- **BUILT locally — Admin on-demand 1,000-Coin allowance reset (single-user & global, verified by HTTP/DB tests, `typecheck`, `oxlint`, and full 56/56 `npm test`):**
+  - Added `POST /api/admin/wallet/reset-coins` (single user) and `POST /api/admin/wallet/reset-coins-all` (all users) in `packages/server/src/routes/admin.ts`, guarded by `WALLET_GRANT_COINS`, serialized with `lockWalletUsers`, idempotent by `idempotencyKey`, and audited as `ADMIN_RESET_COINS` / `ADMIN_RESET_COINS_ALL`. Tops up balances `< 1,000` COINS to exactly `1,000` COINS and leaves balances `>= 1,000` untouched. Added `"Coin Allowance Reset"` label in `packages/server/src/routes/wallet.ts`.
+  - Wired Admin Console UI (`AdminConsolePage.tsx`, `AdminFirstIncrementViews.tsx`, `AdminModals.tsx`) with `↻ Reset All Users to 1,000 Coins` (Overview + Users header), per-user `Reset to 1,000` row button, `Reset Coins to 1,000` inside `UserDetailDrawer`, confirmation modal with exact impact preview, and audit log action filters.
+  - **VERIFIED by complete fresh execution:** `npm run typecheck` PASS (`261.81 kB` main chunk, 0 Vite warnings), `oxlint` 0 errors / 15 warnings, and **all 56/56 scripts / 2,478 passing assertions / 0 failures / 0 skips / 0 unsuccessful exits** on isolated loopback PostgreSQL 17.11 (`Temp/regression/2026-11-24T17-13-37-076Z/summary.json`; `competition-admin-http-check.ts`: 51/51, `wallet-friends-check.ts`: 49/49, `financial-reconnection-check.ts`: 21/21).
+- **BUILT locally — Repo hygiene purge & public Test GEL UI gating (Session 114 pre-commit stabilization):**
+  - Deleted dead `unity/`, `games/sky-dodge/`, `CLAUDE.md`, `REPO-STATE.md`, `RECOVERY-STATE.md`, and ~1.1 GB of old `Temp/` archives (keeping active local PostgreSQL runtime/pgdata and ensuring `Temp/` is ignored in `.gitignore`); removed unused `@supabase/supabase-js` via `npm@11.21.1 install` (`-9` packages).
+  - Gated `Navbar.tsx` `TEST / SANDBOX GEL` chip and `CompetitionsPage.tsx` `Coins | Test GEL` mode toggle behind `canViewSandboxGelUi(user)` (`packages/client/src/lib/sandboxVisibility.ts` — admin/operator roles or `VITE_SHOW_SANDBOX_GEL=true`), exposing `role` on `PublicUser` without changing backend accounting or tournament logic.
+- **PLANNED / committed locally on `main` (unpushed):** Session 114 work split into 5 clean commits on `main` pending user review/push; Vercel `main` auto-deploy guard remains `false`. Deploying to staging requires applying migrations `0015_coin_tournaments` and `0016_restrict_currency_coins_gel` after backup/rehearsal.
+
 ## Session 113 (2026-10-22): Local technical stabilization, complete isolated regression and reproducible tooling
 
 - **BUILT / verified by final source-consistent execution:** all **55 scripts / 2,409 passing assertions / 0 failures / 0 unsuccessful exits / no skips**. DB-independent **27/907**, DB-writing **28/1,502**; historical 53/2,352 grew by 30 lifecycle + 16 runner + 7 DB guard + 4 proxy cases. Each script's exact count and limitations: [technical stabilization report](docs/TECHNICAL_STABILIZATION_REPORT.md), [sanitized evidence](docs/evidence/technical-stabilization-20261022.json). Final fingerprint **b5c5cac536b7145529a60060d0d9f45771fe278a328bf634c48d9ce6122cc59f**, verified unchanged before/after the final full run.
@@ -19,7 +47,7 @@
 - **VERIFIED NOW by unauthenticated staging HTTPS:** frontend/backend both report `3a24ea02df7dc9bfa4d06d4d19d13439ae517073`; API readiness is healthy, database connected, migrations match. Current source chain is 15 migrations through `0014_security_boundaries`. Real money, deposits, withdrawals and commercial competitions remain denied; staging mock competitions are enabled while mock deposits/withdrawals are off. Home has no robots meta/X-Robots-Tag; robots/sitemap URLs return SPA HTML. No authenticated hosted test or database mutation; Production was not accessed. Its isolation/readiness limitation remains **PLANNED/unresolved based on source guards and dated evidence**, not a fresh provider observation.
 - **VERIFIED NOW by execution:** 25 checks / 850 passing assertions / 0 failures / 0 exit failures / 0 count mismatches. The other 28 test scripts write PostgreSQL and the configured disposable target is remote; the explicit read-only/no-environment-change scope took precedence over the standing all-script rule. They were **NOT RUN**, not counted as passes. Section 40 reports every script's fresh status and October 2 count. Historical full baseline remains 53/2,352/0; historical hosted security remains 42+45=87/87, neither rerun here. [Sanitized fresh evidence](docs/evidence/full-project-inventory-20261012.json).
 - **VERIFIED NOW by fresh npm audit, lockfile/installed source and upstream advisory review:** production dependency scan has 1 critical `proxy-addr` package finding; all-dependency scan has 1 critical, 1 high (`source-map-js`) and 4 moderate toolchain package findings. Fugluck's custom trust callback does not use the advisory's malformed compiled subnet pattern; no hosted bypass was demonstrated. Proxy regression passed 82/82. Scoped dependency remediation/full regression is **PLANNED**; no packages were changed. The old zero-production-findings audit is historical, not today's result.
-- **VERIFIED by source search and user confirmation:** no concrete Keepz adapter/specification/commercial Q&A was found; the user explicitly chose to mark missing details unverified. Legal/KYC/tax/provider approval, real payment lifecycle, Production isolation, email, monitoring/DR and incomplete hosted acceptance remain **PLANNED/external**, not completed. Current auth is Fugluck cookie/JWT auth; prize games use live server authority, and old replay/Diamond architectural claims are superseded in the new handoff.
+- **VERIFIED by source search and user confirmation:** no concrete Keepz adapter/specification/commercial Q&A was found; the user explicitly chose to mark missing details unverified. Legal/KYC/tax/provider approval, real payment lifecycle, Production isolation, email, monitoring/DR and incomplete hosted acceptance remain **PLANNED/external**, not completed. Current auth is Fugluck cookie/JWT auth; prize games use live server authority, and old replay/Legacy token architectural claims are superseded in the new handoff.
 
 ## Session 111 (2026-10-02): Main synchronized with repository-controlled Production auto-deploy guard
 
@@ -146,7 +174,7 @@
 ## Session 98 (2026-09-28): Simplified player competition UX — local candidate
 
 - **BUILT, verified by source review, presentation/API tests and Chromium:** `/competitions` now presents game-focused cards with independent Entry/Prize, actual player slots, concise public status and one primary action; All / Space Blaster / Cyber Hopper filters; compact Join confirmation; optional Rules/details; and My Competitions. Waiting, full/start countdown and results use short player language. EN/KA/RU keys were added without changing policy translations. The prior implementation's repetitive technical card/modal copy was removed; no nonexistent giant detail route was claimed. The recording supplied visual room-selection guidance only.
-- **BUILT, verified by normal local authority sessions and read-only disposable-database SQL:** F5 and My View resume the same waiting entry without a second reservation; permitted Leave confirms a 500-minor return. Space Blaster settled once with server winner, 2–2 scores after opponent forfeit and a fixed 900-minor prize; Cyber Hopper accepted keyboard hop controls and settled 10–0 with a fixed 720-minor prize. A zero-entry freeroll reached full 2/2 slots/countdown/play and a server DRAW at 19–19, with a recorded zero refund. Terminal refreshes created no new entry. The client renders snapshots and sends controls only; no client score, settlement or direct balance write was added. Commercial accounting/provider/risk/authority runtime, template semantics, migrations, replay/Diamond retirement and Coin isolation are unchanged (verified by source/Git diff and the regression suites).
+- **BUILT, verified by normal local authority sessions and read-only disposable-database SQL:** F5 and My View resume the same waiting entry without a second reservation; permitted Leave confirms a 500-minor return. Space Blaster settled once with server winner, 2–2 scores after opponent forfeit and a fixed 900-minor prize; Cyber Hopper accepted keyboard hop controls and settled 10–0 with a fixed 720-minor prize. A zero-entry freeroll reached full 2/2 slots/countdown/play and a server DRAW at 19–19, with a recorded zero refund. Terminal refreshes created no new entry. The client renders snapshots and sends controls only; no client score, settlement or direct balance write was added. Commercial accounting/provider/risk/authority runtime, template semantics, migrations, replay/Legacy token retirement and Coin isolation are unchanged (verified by source/Git diff and the regression suites).
 - **BUILT, verified by source and read-only projection tests:** catalog occupancy/immutable open-room terms and session participation, authenticated own-user history, applied result decision and confirmed return status derive from canonical tables. Mock operator templates remain hidden. Feature flags fail closed, server errors map to translated player messages, and result display waits for canonical confirmation. Refresh restores competition authority mode, completion clears the saved launch, reconnect restores Waiting, join refreshes the server-derived available test balance, and sign-in exposes separate Password / Forgot password labels (verified in the real local browser).
 - **VERIFIED by browser layout/keyboard/DOM/screenshot:** all seven widths 320/375/390/430/768/1024/1440 passed in EN/KA/RU isolated fixtures, and the real catalog passed the same widths with no page or Entry/Prize overflow. Mobile uses a bottom sheet; cards scale from one to four columns. Modal focus trap, Escape/focus return, meaningful slot/status text, 44+ px actions, reduced motion, Retry/empty states and sampled normal text contrast 5.70–17.14:1 were checked. These are Chromium viewport checks; physical-device certification and a separately approved hosted candidate rollout are **PLANNED**.
 - **VERIFIED by execution:** every one of the 45 `scripts/*-check.ts` programs passed **1,775/1,775 assertions**, zero failures/exit failures/count mismatches. Final affected UI/UX/i18n/account/XSS reruns passed **44/93/65/41/17** respectively (260 total). Typecheck, client production build, server build and `git diff --check` passed; the existing client chunk-size advisory remains. Each script's count, commands, verification scope and local instance evidence are in [UX acceptance](docs/COMPETITION_UX_ACCEPTANCE.md) and [sanitized evidence](docs/evidence/competition-ux-acceptance-20260928.json).
@@ -157,7 +185,7 @@
 - **VERIFIED accepted runtime boundary by fresh read-only HTTPS and current remote refs:** frontend `/deployment.json` and API `/health`/`/api/health` still identify staging revision `b87036ce9394af61714e0a8920944e4a6fe247f4`; API reports database `connected`, migrations `match`, real money denied and all three staging-mock action switches OFF. Remote feature branch remains at that code SHA; `main` remains `91ca7533c8d4d3e78bc090031d69097731b03d8b`. The prior Phase 7I hosted E2E PASS remains the accepted transactional baseline; no hosted transaction was repeated in this documentation session.
 - **VERIFIED provider abstraction and implementation gaps by source review:** `PaymentProvider` has deposit/payout create and lookup, refund, webhook verification and record listing. `FinancialFlows` handles signed event deduplication, deposit credit/failure, payout reserve/completion/reversal, same-key retry and mock reconciliation. Real bank status polling, beneficiary custody, real callback route, external refund/chargeback lifecycle and settlement-file reconciliation are **PLANNED**, not built. The source-checked mapping and bank questions are in [the readiness map](docs/BANK_INTEGRATION_READINESS.md) and [bank intake](docs/BANK_INTEGRATION_INTAKE.md). No bank-specific code or schema was written.
 - **VERIFIED Production isolation blocker by fresh public asset read, client/server guard source and Git ref:** the public Production alias still serves `/assets/index-BMOhywaz.js`, SHA-256 `394007635f52addd95f3f886bb17594069486d12400f73a6e81ec9d741fb5e59`, embedding `https://api-staging.fugluck.com`. The current source refuses an unregistered Production client build and API boot; changing the staging branch cannot fix the old bundle. A separately authorized Production retirement or independently identified money-disabled Production frontend/API/DB/configuration is **PLANNED**. No Production configuration, deployment, database, main ref or staging deployment was changed.
-- **PLANNED / external inputs, identified from source gaps and the user's request:** bank API/security/lifecycle/settlement rules, the user's major restructure specification, legal/regulatory classification and jurisdictions, operator/entity/funds ownership and Production operating decisions, and KYC/AML responsibilities. The linked intake/checklist asks only for these unresolved facts. The accepted fixed-fee/predetermined-prize, double-entry/append-only, provider-independent, Level 3, Space Blaster/Cyber Hopper, replay/Diamond retirement and Coin-isolation boundaries remain unchanged in this session (verified by no application-code diff; earlier build evidence is in Phase 7I).
+- **PLANNED / external inputs, identified from source gaps and the user's request:** bank API/security/lifecycle/settlement rules, the user's major restructure specification, legal/regulatory classification and jurisdictions, operator/entity/funds ownership and Production operating decisions, and KYC/AML responsibilities. The linked intake/checklist asks only for these unresolved facts. The accepted fixed-fee/predetermined-prize, double-entry/append-only, provider-independent, Level 3, Space Blaster/Cyber Hopper, replay/Legacy token retirement and Coin-isolation boundaries remain unchanged in this session (verified by no application-code diff; earlier build evidence is in Phase 7I).
 - **VERIFIED complete local regression by serial execution of every `scripts/*-check.ts`:** **44/44 scripts, 1,682/1,682 passing assertions**, zero failed assertions, exit failures or baseline count mismatches. Each script's explicit pass count is in [sanitized pre-bank evidence](docs/evidence/prebank-regression-20260927.json). Database scripts used the existing guarded disposable test database; no staging or Production test mutation was run. No package, application code, migration or schema changed, so no separate build or dependency audit was necessary for this documentation-only session; the Phase 7I runtime audit result remains the earlier accepted result.
 
 ## Session 96 (2026-09-27): Phase 7I hosted commercial staging mock E2E PASS
@@ -214,7 +242,7 @@
 ## Session 85 (2026-09-25): Phase 6A Product Completion — VALIDATED LOCALLY
 
 - **BUILT — Admin 5 Operations / Health, verified by source review, typecheck, and authenticated admin HTTP tests:** Added a permission-protected, read-only operations endpoint and responsive console view for health/revision, configured database region, competition and authority counts, admission/rejection telemetry, reconnects, sanitized authority errors, and sandbox accounting reconciliation. Telemetry is bounded to 40 records per category in process memory and is lost on restart; database region is not inferred from secrets or hostnames. Existing admin audit tab remains separate. Admin 2–4 were already present from Phase 5; verified again through competition Phase 5 admin check (42/42), admin HTTP (36/36), and existing auth/RBAC checks.
-- **BUILT — current player-facing claims, verified by source review, legal/help tests, and local desktop browser:** Updated current policy versions and Terms, Privacy, Rules, FAQ, footer, withdrawal navigation, and account-confirmation wording for the current practice/casual/TEST GEL product. Retired outdated replay/freeze-frame and Diamond stake/rake claims; retained historical Diamond records with retired wording. No legal classification or regulatory approval claim was added.
+- **BUILT — current player-facing claims, verified by source review, legal/help tests, and local desktop browser:** Updated current policy versions and Terms, Privacy, Rules, FAQ, footer, withdrawal navigation, and account-confirmation wording for the current practice/casual/TEST GEL product. Retired outdated replay/freeze-frame and Legacy token stake/rake claims; retained historical Legacy token records with retired wording. No legal classification or regulatory approval claim was added.
 - **BUILT — guest wallet state, verified in the local desktop browser and Phase 4 UI check (44/44):** Signed-out users now see sign-in guidance in place of an indefinite transaction-history loader, and cannot invoke the TEST-funds action. TEST GEL copy explicitly says it has no real-world value and cannot be deposited, withdrawn, or redeemed.
 - **Verification, run on the guarded disposable PostgreSQL test database:** `npm test` completed successfully; migration parity 321/321, legal/help 57/57, staging readiness 34/34, competition Phase 1 41/41, Phase 2 54/54, Phase 3 45/45, Phase 4 44/44, Phase 5 admin 42/42, competition authority 65/65, admin HTTP 36/36, authority latency 26/26, authority presentation 24/24. Auth/account lifecycle 41/41, atomic wallet concurrency/integrity suites completed successfully, and other package checks reported zero failures. Separate database-safety 18/18; atomic wager lifecycle 38/38; Cyber Hopper authority 42/42. `npm run typecheck` (including client production build) and `npm run build:server` passed. The Vite bundle-size warning over 500 kB remains.
 - **Browser verification limitation, directly observed:** The local client rendered the updated Home/footer, Terms, competition loading/error/retry state, and guest Wallet. The local API was not running, so catalog cards were not available in this local visual pass. Staging still serves the accepted Phase 5 revision; no Phase 6 staging deployment or signed-in/mobile verification has happened yet. Those checks remain required in Phase 6D and are not claimed as passed here.
@@ -233,7 +261,7 @@
 - **Revision verification:** Vercel Preview `Fxgd5kFCoAVqokPq8oSXHMK99Pg` is Ready at `edc949727ca0a4b690fe589141910c7aba2d605c`; `staging.fugluck.com` is valid and assigned to `codex/phase-5-5b-cyber-hopper-authority`. Render service `fugluck-api-staging` (`srv-da2c50c9v7es73db3dkg`) is Live on the same full revision. The exact raw, sanitized authority log lines and Admin evidence are preserved in [the Phase 5.5B1 evidence record](docs/evidence/phase55b1-cyber-hopper/authority-run-20260925.txt); the acceptance analysis is in [the Phase 5.5B1 Cyber Hopper acceptance record](docs/PHASE_5_5B1_CYBER_HOPPER_ACCEPTANCE.md).
 - **Template closure:** after the PASS decision, `tmpl_cyber_hopper_authority_trial` was disabled through the staging Admin template workflow; the UI success notice and refreshed `DISABLED` state were verified. The existing default Cyber Hopper template remains ENABLED as a catalog item but its `ch-1.0` public live-authority path remains blocked by the authority certification gate.
 - **Focused local checks, verified in this session on the same `edc9497` source revision:** `cyber-hopper-authority` 42/42; `competition-authority` 65/65; `authority-latency` 26/26; `authority-presentation` 24/24. The DB-backed checks were rerun individually after the first concurrent invocation collided on the guarded disposable test database; serial results passed. No runtime code, latency limit, or database configuration was changed.
-- **Git / phase boundary:** documentation-only acceptance changes are recorded in the focused commit for this session on `codex/phase-5-5b-cyber-hopper-authority`; final working tree is clean. No merge to main. Neon Runner, Pixel Ninja Dash, replay retirement, Diamond retirement, Admin 2, Phase 6, Phase 7, and architecture-consolidation work were not started.
+- **Git / phase boundary:** documentation-only acceptance changes are recorded in the focused commit for this session on `codex/phase-5-5b-cyber-hopper-authority`; final working tree is clean. No merge to main. Neon Runner, Pixel Ninja Dash, replay retirement, Legacy token retirement, Admin 2, Phase 6, Phase 7, and architecture-consolidation work were not started.
 
 ## Session 83 (2026-09-24): Phase 5.5A Final Manual Gameplay Acceptance — PASS
 
@@ -254,14 +282,14 @@
   - Database: Frankfurt Supabase PostgreSQL (`fugluck-staging-frankfurt`, project `gzfcucvxfzzjzjtgkwpd`).
 - **Trial template status:** Controlled trial template `tmpl_af4e8de1-f347-4cdf-84b5-87ad48eefa47` was immediately disabled in the database at `2026-09-24T15:59:04.202Z` (`audit_mufpvr9u_9aozjn`).
 - **Accounting & reconciliation state:** Exactly-once settlements, terminal participant projections (`SUBMITTED`/`VOIDED`), global ledger sum zero, platform escrow zero, reserved funds zero, open instances zero, and unapplied decisions zero.
-- **Git status and strict phase boundary:** Work is isolated on `codex/phase-5-5a-remediation`. No main merge of Phase 5.5A occurred. Replay retirement, Diamond retirement, migration of other games (Pixel Ninja Dash, Cyber Hopper, Neon Runner), Admin 2, Phase 6, and Phase 7 were not started.
+- **Git status and strict phase boundary:** Work is isolated on `codex/phase-5-5a-remediation`. No main merge of Phase 5.5A occurred. Replay retirement, Legacy token retirement, migration of other games (Pixel Ninja Dash, Cyber Hopper, Neon Runner), Admin 2, Phase 6, and Phase 7 were not started.
 
 ## Session 82 (2026-09-24): Phase 5.5A Remediation Round 2 — NOT PASS
 
 - **Final deployment independently verified in both provider UIs:** frontend and backend run `0a38802a8f1047b320687f139d40578c32571090`; Vercel Preview `dpl_GJ4BaWyVA1RqA9pw95g42W3xjUDa`, Render `dep-daqg4nad0e5s73af8iq0`. Frankfurt target proven by new API-created QA rows in that database. Public Data API was found enabled after creation, then disabled and saved state verified; backend direct database access remains healthy. Old Tokyo database/backup retained; private connection files remain ignored, QA session-token file removed.
 - **Verified by ten live trials, browser inspection, server logs and independent final SQL:** seven natural winners each received exactly one 900-minor-unit prize; two latency rejects released reservations; one deliberate disconnect refunded 1000 total with no winner. All ten have one settlement, terminal participant status, zero ledger sum/escrow/reserved. Global open instances/unapplied decisions zero; controlled template disabled. Historical ledger/audit/result/decision/match fingerprints unchanged. Historical and new admin refund panels show zero discrepancy and VOIDED participants.
 - **Measured staging improvement:** natural settlement 59.69–125.57 ms (previous 6.15–7.83 s), active lease maximum 10.75 ms (previous 269), terminal decision 16.57–31.58 ms. Seven natural server runs 59.980–59.999 Hz; snapshots about 20 Hz over actual WebSocket. Desktop active delivery gap maximum 71.9 ms; 320 px 160.9 ms; 375-expanded 302.9 ms with browser long tasks up to 265 ms. Original 517 ms cause remains unproven; no 500+ ms active gap reproduced. Two of ten admissions rejected unchanged limits, retained as failures.
-- **Visual/interaction evidence:** desktop/375/320 automated alternating steering and firing via normal controls, score/collision response and natural result screens verified; no horizontal overflow. These do not prove physical keyboard/touch holds. Pointer and mobile reconnect attempts reached terminal/disabled controls or a rejected admission, so physical mobile acceptance remains incomplete. Actual socket reconnect/fencing passed at 349.6 ms. Browser error/warning collections empty. Final **NOT PASS**; stop at this verdict. Full 42-field report, exact 40-script/1450-assertion validation and redacted screenshots: [Round 2 report](docs/PHASE_5_5A_REMEDIATION_ROUND2.md). No main merge, other-game migration, replay/Diamond retirement or Phase 6/7.
+- **Visual/interaction evidence:** desktop/375/320 automated alternating steering and firing via normal controls, score/collision response and natural result screens verified; no horizontal overflow. These do not prove physical keyboard/touch holds. Pointer and mobile reconnect attempts reached terminal/disabled controls or a rejected admission, so physical mobile acceptance remains incomplete. Actual socket reconnect/fencing passed at 349.6 ms. Browser error/warning collections empty. Final **NOT PASS**; stop at this verdict. Full 42-field report, exact 40-script/1450-assertion validation and redacted screenshots: [Round 2 report](docs/PHASE_5_5A_REMEDIATION_ROUND2.md). No main merge, other-game migration, replay/Legacy token retirement or Phase 6/7.
 
 ### Preparation chronology (superseded by the final results above)
 
@@ -276,7 +304,7 @@
 - **Verified by authenticated provider UI and read-only DB audit:** old Supabase staging is Tokyo; Render staging is Frankfurt. All 24 application/migration tables were inventoried; 11 migration rows, no open instances, zero ledger sum/escrow/reserved funds, and no Supabase Auth or Storage records. Original regional choice is undocumented, not proven intentional. Provider documentation requires a replacement project for a regional move.
 - **Verified by successful pg_dump, archive inspection and SHA-256:** private ignored backup `Temp/phase55a-round2/staging-before-move.dump` is 387156 bytes, checksum `f090de8b0e1c80e03fc8c4cd787212c8f930cc0135185a53bbf0637d014b9c26`. Archive contains 24 application/migration table definitions and data entries. Per-table counts/content fingerprints and column manifests are private alongside the backup. Source warm queries from this machine took approximately 308–318 ms; this is not a Render measurement. Old database remains intact.
 - **User-created; independently verified in provider UI:** Free-plan `fugluck-staging-frankfurt`, project `gzfcucvxfzzjzjtgkwpd`, is healthy in Central EU/Frankfurt (`eu-central-1`). User entered/submitted the new password. The local restore helper is restricted to this exact project's Session pooler and checks for an empty replacement before restoring application schemas. No data restored or staging connection switched yet.
-- **PLANNED / pending private connection:** user was asked to save the new Session pooler connection in ignored `.env.staging-eu.local`, retaining the old `.env.staging.local`. Neither file's values may be printed, logged, documented or committed. Next: restore and verify schema/data parity, apply official migration, switch staging connection, deploy matching staging revisions and complete desktop/375px/320px controlled acceptance. Prior verdict remains **NOT PASS** until all acceptance gates are verified. Other games, replay/Diamond retirement, production and Phases 6/7 remain outside this work.
+- **PLANNED / pending private connection:** user was asked to save the new Session pooler connection in ignored `.env.staging-eu.local`, retaining the old `.env.staging.local`. Neither file's values may be printed, logged, documented or committed. Next: restore and verify schema/data parity, apply official migration, switch staging connection, deploy matching staging revisions and complete desktop/375px/320px controlled acceptance. Prior verdict remains **NOT PASS** until all acceptance gates are verified. Other games, replay/Legacy token retirement, production and Phases 6/7 remain outside this work.
 - **Follow-up verified by filesystem metadata and one connection attempt:** after the user's save confirmation, the Frankfurt file was absent; the old Tokyo URI now fails authentication (`28P01`). No retry or migration was attempted. Created an empty ignored `.env.staging-eu.local` for the user to populate privately; restore remains blocked pending that file and source consistency verification. Original backup is retained. Final authority rerun passed **65/65**; separate atomic/safety checks are still running.
 
 ## Session 81 (2026-09-24): Phase 5.5A Remediation — Staging NOT PASS
@@ -292,7 +320,7 @@
 - **Verified visually in the actual browser:** desktop active ship/asteroids/score and natural completion; 375px Fire click produced a visible projectile; 320px first attempt safely rejected latency and retry completed without horizontal document overflow. Sustained desktop/mobile steering and smoothness were not conclusively verified. Actual admin edit, enable and disable worked; read-only audit SQL confirms one edit, two enables and two disables. Redacted screenshots and bounded logs are in `docs/evidence/phase55a-remediation/`.
 - **Verified by admin UI, source inspection and independent SQL; acceptance blockers remain:** the both-disconnected trial refunded both captured entries (1,000 minor units), escrow zero and ledger sum zero, but the per-instance admin formula omits refunds and falsely reports TEST GEL 10 discrepancy. Its terminal participants still show PLAYING/rank 1. Admin instance total displays zero despite rows, and completed-player waiting UI exposes a no-op cancellation action. These findings were not fixed or hidden in the deployed revision. Browser console error/warning collections were empty; transport/stale-input issues remain distinct from expected adversarial rejections.
 - **Verified by final SQL and filesystem checks:** global ledger sum, escrow, reserved funds and open controlled trials are all zero; controlled template disabled. Temporary QA session-token file removed. No new staging DB credential file created; historical accounts, results, ledger and audits retained.
-- **Final verdict: NOT PASS.** Reliable admission, full desktop/mobile playability, correct per-instance refund reconciliation and terminal participant reporting remain blockers. Full 33-field report and exact per-script counts: [PHASE_5_5A_REMEDIATION.md](docs/PHASE_5_5A_REMEDIATION.md). Final documentation/evidence are kept in a separate local-only commit; deployed runtime remains `996c9b4`. Git refs confirm remote main remains `2cbc429` and prior `3b91ccf` remains separate. Work stops at this verdict: no main merge, production deployment, other-game migration, replay/Diamond retirement, Phase 6 or Phase 7.
+- **Final verdict: NOT PASS.** Reliable admission, full desktop/mobile playability, correct per-instance refund reconciliation and terminal participant reporting remain blockers. Full 33-field report and exact per-script counts: [PHASE_5_5A_REMEDIATION.md](docs/PHASE_5_5A_REMEDIATION.md). Final documentation/evidence are kept in a separate local-only commit; deployed runtime remains `996c9b4`. Git refs confirm remote main remains `2cbc429` and prior `3b91ccf` remains separate. Work stops at this verdict: no main merge, production deployment, other-game migration, replay/Legacy token retirement, Phase 6 or Phase 7.
 
 ## Session 80 (2026-09-23): Phase 5.5A Staging Acceptance — Pre-deployment Gate
 
@@ -300,9 +328,9 @@
 - **BUILT, source-reviewed and tested:** bounded operational metrics distinguish waiting/active/finalizing heartbeat requests, admission RTT/jitter, start and settlement duration, accepted controls and snapshot/tick scheduling. Unexpected authority socket errors are sanitized. No admission, lease or failure tolerance was increased.
 - **Verified by fresh execution before commit:** all 35 canonical scripts passed 1,310 assertions; separate atomic accounting passed 37 and database safety passed 18. Total **37 scripts / 1,365 assertions / zero failures**, including authority **55/55**. Exact per-script counts match the table in `docs/PHASE_5_5A_AUTHORITY.md`. Typecheck/client build, server build and staged diff checks passed; existing Vite chunk-size advisory remains.
 - **Measured locally, not staging:** 20-engine benchmark 59.986 Hz ticks, 19.995 Hz snapshots, 0.1099 ms mean / 0.9997 ms maximum batch tick. Actual socket runtime mean/max tick cost 0.0638/0.3801 ms. Maximum active heartbeat 201.4 ms; finalizing heartbeat 918.2 ms; snapshot scheduling gap 65.6 ms; settlement 4.55–5.82 seconds. The historical 2.66-second spike was not reproduced and cannot be retroactively classified. Database acknowledgement still governs lease health even though simulation/snapshots do not await writes.
-- **Verified by authenticated provider UI:** Render staging service remains `srv-da2c50c9v7es73db3dkg`, live at `2cbc429`, Frankfurt region, dedicated Supabase Japan pooler/database, Diamond stub false. Vercel's current deployment serves staging and main site domains; only the staging hostname may be reassigned to a feature preview. Production promotion is excluded. The user explicitly authorized this staging cycle and feature push, and prohibited a main merge.
+- **Verified by authenticated provider UI:** Render staging service remains `srv-da2c50c9v7es73db3dkg`, live at `2cbc429`, Frankfurt region, dedicated Supabase Japan pooler/database, Legacy token stub false. Vercel's current deployment serves staging and main site domains; only the staging hostname may be reassigned to a feature preview. Production promotion is excluded. The user explicitly authorized this staging cycle and feature push, and prohibited a main merge.
 - **Security incident during provider inspection:** the browser unexpectedly exposed the staging database connection value in tool output. It is not repeated in repository files or evidence. The user was informed that the staging database password should be rotated. No credential file was committed.
-- **PLANNED / not yet verified:** staging migration/deployment, actual desktop/mobile gameplay, live latency/security/accounting and final acceptance. Phase 5.5A acceptance remains NOT PASS until these gates are completed. No other game migration, replay deletion, Diamond retirement, Phase 6 or Phase 7 work.
+- **PLANNED / not yet verified:** staging migration/deployment, actual desktop/mobile gameplay, live latency/security/accounting and final acceptance. Phase 5.5A acceptance remains NOT PASS until these gates are completed. No other game migration, replay deletion, Legacy token retirement, Phase 6 or Phase 7 work.
 
 ## Session 79 (2026-09-23): Phase 5.5A — Space Blaster Live Authority Reference
 
@@ -322,7 +350,7 @@
 - **Verified by execution:** shared/theme/games/server typecheck and client production build pass; separate server build passes. The client build retains the existing large-chunk warning. Local engine/snapshot feasibility with 20 simultaneous states over five wall-clock seconds measured **59.83 Hz**, **0.1194 ms mean / 2.7352 ms max** batch tick cost, **19.94 Hz snapshots**, approximately **14.37 KB/s per player** and **202 ms total process CPU**. Real socket-loop mean/max were **0.0737/0.5510 ms**; maximum observed database lease round trip was **1,325 ms**. This is early feasibility, not sustained capacity certification; see the report for scope and exact script counts.
 - **PLANNED / NOT manually verified:** staging deployment, real browser/mobile smoothness, staging RTT admission and long-duration capacity. No staging or production data/configuration changed. The snapshot renderer currently has no interpolation. This is a reference implementation for staging review, not full Phase 5.5 completion or release acceptance.
 - **Verified by the final focused repeat:** authority checks passed **55/55** again, including the strengthened nonce rotation assertion. Its socket-loop mean/max were **0.0774/1.0591 ms**, with a **2,657 ms maximum database lease round trip** across the run (including readiness/finalization). Database latency spikes are a material staging/capacity acceptance limitation; local pass counts do not establish operational latency suitability. The approved active-lease failure policy remains stop/refund.
-- **Verified by source and diff inspection:** Dash/Hopper/Runner were not migrated; replay drivers/adapters, legacy score validation/input logging, historical fields and Diamond backend routes remain for later focused steps. Phase 6 evidence generation and Phase 7 were not started. Runtime work remains uncommitted on the implementation branch for review.
+- **Verified by source and diff inspection:** Dash/Hopper/Runner were not migrated; replay drivers/adapters, legacy score validation/input logging, historical fields and Legacy token backend routes remain for later focused steps. Phase 6 evidence generation and Phase 7 were not started. Runtime work remains uncommitted on the implementation branch for review.
 
 ## Session 78 (2026-09-23): Result Validation Architecture Selected — Live Server Authority
 
@@ -340,8 +368,8 @@
 - **PLANNED schema/retirement boundary, verified by inspecting schema and source imports:** Additive session/attempt authority metadata, immutable server-result receipts, one terminal-decision/application record and bounded audits are needed. No schema was changed. Retire replay driver/adapters/logging after consumers migrate; retain gameplay engines, score rules, seeded PRNG, canonical viewport and fixed-step constants. Keep browser scheduler for suitable local uses, but its time-dropping behavior cannot govern authoritative server time. Preserve old input-log/history/ledger/settlement data.
 
 ### Phase 5.5 Scope, Acceptance and Session Outcome
-- **PLANNED P1–P7, verified by reviewing RV-001:** Real completion/secure sessions; per-game live authority; trusted-result/settlement integration; replay retirement with scoped casual compatibility; backend Diamond retirement; current documentation/UI correction; required tests. No payments, tournament expansion, new games, unrelated refactor, anti-bot product or distributed hosting platform. Existing accounting integrity checks remain tied to this scope.
-- **PLANNED A1–A12 acceptance:** Actual browser/socket completion, impossible and plausible fabricated claims, invalid/duplicate/stale sessions/controls, per-game scoring/terminal rules, ties/forfeits, uncertainty without unjustified winner, exact settlement/recovery, Diamond rejection/history preservation, no replay dependencies, and measured mobile/network/capacity acceptance. Full canonical script counts, typecheck/builds and DB safety/parity/atomic checks will be required during implementation. No runtime tests or benchmarks were run for this planning task.
+- **PLANNED P1–P7, verified by reviewing RV-001:** Real completion/secure sessions; per-game live authority; trusted-result/settlement integration; replay retirement with scoped casual compatibility; backend Legacy token retirement; current documentation/UI correction; required tests. No payments, tournament expansion, new games, unrelated refactor, anti-bot product or distributed hosting platform. Existing accounting integrity checks remain tied to this scope.
+- **PLANNED A1–A12 acceptance:** Actual browser/socket completion, impossible and plausible fabricated claims, invalid/duplicate/stale sessions/controls, per-game scoring/terminal rules, ties/forfeits, uncertainty without unjustified winner, exact settlement/recovery, Legacy token rejection/history preservation, no replay dependencies, and measured mobile/network/capacity acceptance. Full canonical script counts, typecheck/builds and DB safety/parity/atomic checks will be required during implementation. No runtime tests or benchmarks were run for this planning task.
 - **Verified by final document/diff/link/whitespace/status checks:** Only PROGRESS.md, the revised Phase 6 specification and the new RV-001 decision document changed. Earlier progress entries remain unchanged; `git diff --check` and document whitespace checks pass. No runtime/source/test edits, schema/database changes, replay deletion, commit, push, merge, deployment, evidence generation or regulatory submission. Phase 5.5 implementation, Phase 6 implementation and Phase 7 have **NOT started**. Next step is explicit implementation authorization for the selected design; filing/legal decisions remain open.
 
 ## Session 77 (2026-09-23): Phase 6 Specification Corrected — Replay Removed from Target Architecture
@@ -353,11 +381,11 @@
 
 ### Source Findings and Revised Prerequisite
 - **BUILT/current dependency, verified by source/import searches:** The existing score checker still calls the shared replay driver/adapters from both legacy matches and competition lifecycle services. Game modules collect input logs; shared/socket payloads, history writes/reads, UI/admin/legal wording and several tests depend on the old mechanism. The specification classifies exact paths as replace, safe to delete after consumer replacement, historical compatibility, database history to preserve, or test portions to replace. No code was removed. Historical input-log columns/records and old migrations must remain intact.
-- **PLANNED, verified against revised H1–H6 scope:** Phase 5.5 remains required and is renamed **Competition Runtime & Result Validation Hardening**: H1 connect actual completion to lifecycle/accounting; H2 authenticated session-bound result checks and minimal decision receipts; H3 remove retired runtime dependencies; H4 retire active Diamond backend paths; H5 correct current documentation; H6 preserve scoped money/reconciliation/append-only controls. Completion must cross real game/client/socket/server boundaries; service-only tests are insufficient. The disconnected score-submission path remains unrepaired, as verified by the generic submitScore dispatch and separate competition activation code.
+- **PLANNED, verified against revised H1–H6 scope:** Phase 5.5 remains required and is renamed **Competition Runtime & Result Validation Hardening**: H1 connect actual completion to lifecycle/accounting; H2 authenticated session-bound result checks and minimal decision receipts; H3 remove retired runtime dependencies; H4 retire active Legacy token backend paths; H5 correct current documentation; H6 preserve scoped money/reconciliation/append-only controls. Completion must cross real game/client/socket/server boundaries; service-only tests are insufficient. The disconnected score-submission path remains unrepaired, as verified by the generic submitScore dispatch and separate competition activation code.
 - **BUILT/game scoring facts, verified by reading all four candidate engine/constants/index files:** Space Blaster scores survival and asteroid hits; Pixel Ninja Dash scores progress, gate timing and finish bonus; Cyber Hopper scores furthest-row progress and completed crossings; Neon Runner scores distance. All generate results in the browser. The spec derives conservative possible score/duration/aggregate consistency checks from these rules, without running an engine or reconstructing gameplay. Optional aggregate counters are proposed fields, not existing trusted telemetry.
 - **PLANNED security boundary, based on inspected client authority:** Session ownership, nonce binding, server-issued configuration, bounded schemas, server timing/deadlines, unique accepted attempts and settlement idempotency can reject unauthorized/impossible/inconsistent results. They cannot prove a plausible score was earned. All four games are explicitly BLOCKED pending a reviewed non-replay policy/risk decision; sandbox-only plausibility acceptance, separately scoped trusted live measurements, or explicit game exclusion require an identified decision. No new validator, numeric timing tolerance, comprehensive cheat detection or legal suitability is claimed built.
 - **PLANNED evidence, verified by matrix review:** V01–V13 replace the old replay matrix for each candidate: valid completion, impossible score, impossible duration, invalid session, duplicate/conflict, malformed result, late result, winner settlement, tie, forfeit, cancel/void, exactly-once/recovery and deliberate plausible-fabrication limits. Exact retries acknowledge the original result without a second effect; conflicting duplicates reject. Seeded local gameplay/fixed-step rendering may remain, but no reconstruction requirement remains.
-- **BUILT/current Diamond contradiction, verified by socket/queue, wallet and admin route review:** New Diamond queue/match/rematch, purchase/stub and admin-grant paths remain active-capable. H4 still requires disabling them and active pack offers, preserving ledger/settlement/audit history and authorized compensating records. Current AGENTS/CLAUDE/GAMES, legal/FAQ policies, result UI and admin eligibility descriptions also need correction during H5; only this log/spec were edited now.
+- **BUILT/current Legacy token contradiction, verified by socket/queue, wallet and admin route review:** New Legacy token queue/match/rematch, purchase/stub and admin-grant paths remain active-capable. H4 still requires disabling them and active pack offers, preserving ledger/settlement/audit history and authorized compensating records. Current AGENTS/CLAUDE/GAMES, legal/FAQ policies, result UI and admin eligibility descriptions also need correction during H5; only this log/spec were edited now.
 
 ### Verification and Next Step
 - **Verified by document searches/diff review:** Remaining replay/input-log/headless/freeze-frame references in the revised spec identify retirement, prohibition or historical preservation only. Evidence reproducibility now means policy/arithmetic/artifact verification, not gameplay reproduction. Source links and required dossier/result/accounting rows were checked. No evidence artifacts were generated.
@@ -379,10 +407,10 @@
 ### Repair Boundary — Phase 5.5 Required Before Evidence Generation
 - **BUILT/current gap, verified by tracing MatchLoader → useMatchSocket → matchmaking/index.ts → legacy matches.ts and competition activation:** Competition score events still reach legacy in-memory match lookup; activation does not register those maps, and no production caller of `lifecycleEngine.submitScore` was found. Direct service tests cannot establish real VERIFYING/settlement. **PLANNED H1:** connect authenticated real runtime completion, authoritative results, invalid/tie/forfeit handling, rematch/reconnect/recovery and terminal accounting consistency; reject unsupported runtime formats without deleting historical types.
 - **BUILT/current gap, verified by reading lifecycleEngine.ts and schema.ts:** Seed and participant summaries exist, but the competition path lacks durable full submission/validation replay evidence. **PLANNED H2:** additive durable bounded evidence, separate claimed/computed scores, verdicts/reasons/versions, canonical viewport/finite timing validation, immutable retry identity and restart reproducibility. Packaging/export remains Phase 6 work.
-- **BUILT/current contradiction, verified by reading socket/queue/matches, wallet routes/service, admin routes and router mounting:** Active-capable Diamond queue/match/rematch, purchase/stub, pack-offer and admin grant paths remain. The RBAC-protected admin `/wallet/grant-diamonds` has no purchase-stub environment gate. **PLANNED H3:** disable new Diamond entry/funding at all relevant boundaries while preserving historical balances, ledger rows, policy records and authorized compensating audit access. No Diamond action was executed.
-- **Verified by comparing source with current instructions/legal register/policy copy and dated history:** AGENTS.md/CLAUDE.md, LEGAL_REVIEW_REQUIRED.md and current policy descriptions still contain active Diamond/pot/rake or unsupported claims. **PLANNED H4:** correct current descriptions and version current policies; preserve dated sessions, historical snapshots and prior agreements. Those documents are classified in the spec, not rewritten in this task.
+- **BUILT/current contradiction, verified by reading socket/queue/matches, wallet routes/service, admin routes and router mounting:** Active-capable Legacy token queue/match/rematch, purchase/stub, pack-offer and admin grant paths remain. The RBAC-protected admin `/wallet/legacy-token-grant` has no purchase-stub environment gate. **PLANNED H3:** disable new Legacy token entry/funding at all relevant boundaries while preserving historical balances, ledger rows, policy records and authorized compensating audit access. No Legacy token action was executed.
+- **Verified by comparing source with current instructions/legal register/policy copy and dated history:** AGENTS.md/CLAUDE.md, LEGAL_REVIEW_REQUIRED.md and current policy descriptions still contain active Legacy token/pot/rake or unsupported claims. **PLANNED H4:** correct current descriptions and version current policies; preserve dated sessions, historical snapshots and prior agreements. Those documents are classified in the spec, not rewritten in this task.
 - **BUILT/current limits, verified by money/accounting/migration source:** Full safe integer boundaries, lifecycle-specific reconciliation and database-role append-only claims need explicit proof; the inspected migration is not a universal UPDATE/DELETE prohibition. **PLANNED H5:** narrowly scoped boundary/compensation checks and restricted runtime/evidence-reader roles, with owner/migration exceptions honestly disclosed. Current two-player/first-place runtime scope and client-reported timing trust remain disclosed limitations; tournament/multi-placement runtime expansion is excluded.
-- **PLANNED, verified against the proposed H1–H5 acceptance table:** Require actual socket/server completion, restart/readback replay, negative Diamond attempts, independent zero-discrepancy reconciliation, historical preservation, full canonical checks with per-script counts, and relevant browser checks. No runtime, schema, migration, test, permission or policy changes were made in this specification task.
+- **PLANNED, verified against the proposed H1–H5 acceptance table:** Require actual socket/server completion, restart/readback replay, negative Legacy token attempts, independent zero-discrepancy reconciliation, historical preservation, full canonical checks with per-script counts, and relevant browser checks. No runtime, schema, migration, test, permission or policy changes were made in this specification task.
 
 ### Filing Decisions and Session Outcome
 - **Unresolved, verified by documentation audit:** Jurisdiction is **Georgia — to be confirmed against the actual intended filing/classification process**. Authority/process, applicant entity, legal reviewer, language, official form/template, signatures, channel and supporting documents remain TBD. Named technical approver/custodian and retention approval are also pending. No official artifact requirement or legal conclusion is asserted.
@@ -394,7 +422,7 @@
 ### Verified Baseline and Scope Decision
 - **Verified by reading AGENTS.md/GAMES.md, this log, the repository documentation inventory, legal review register, current source, and recent commits; then `git fetch origin`, ref/status/divergence checks:** Started on clean `main`; HEAD, local main, and origin/main all equal `2cbc429caed07dc4e8ece05bbb4662fb27667018`, with 0/0 divergence and no additional work. Phase 5 catalog/entry-preview and read-only admin acceptance remains the accepted baseline. Its recorded acceptance expressly excluded competition joins, settlements, funding, and cancel/void operations.
 - **PLANNED, verified by the Session 70 and 71 roadmap entries and their introducing commits (`6d948c6`, `7174dcc`):** Phase 6 is **Revenue Service Technical Dossier + Submission Readiness**. Its documented objective consists of comprehensive legal/technical audit documentation, replay proof packages, ledger reconciliations, and regulatory filing readiness. Formal regulatory review/classification follows it; PSP integration and monetary activation are later gated work. Phase 6 is not a payments implementation phase.
-- **Verified by repository-wide text/file searches and Git document history:** The repository supplies the above high-level roadmap descriptions, but no detailed Phase 6 specification, evidence package schema, scenario matrix, filing checklist, output format, reviewer/sign-off criteria, or definition of done. Source comments cite `FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT`, and the roadmap cites Section 22, but the full contract text is not present in the current repository. The referenced `real_money_diamond_economy_architecture.md` is also absent. This audit stops before implementation as the user explicitly requested when scope is insufficiently defined.
+- **Verified by repository-wide text/file searches and Git document history:** The repository supplies the above high-level roadmap descriptions, but no detailed Phase 6 specification, evidence package schema, scenario matrix, filing checklist, output format, reviewer/sign-off criteria, or definition of done. Source comments cite `FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT`, and the roadmap cites Section 22, but the full contract text is not present in the current repository. The referenced `real_money_legacy token_economy_architecture.md` is also absent. This audit stops before implementation as the user explicitly requested when scope is insufficiently defined.
 
 ### Reusable Architecture (Source Review, Not New Runtime Validation)
 - **BUILT, verified by reading `packages/shared/src/competitions.ts`, `money.ts`, and `packages/server/src/competitions/instanceService.ts`:** Integer-minor-unit money, independent entry/prize terms, template/instance types, eligibility classifications, and transactional copying of material template terms/prizes into instance snapshots exist. These are evidence sources; no new engine or alternative accounting model is needed.
@@ -406,8 +434,8 @@
 - **Verified by tracing the current client and server handlers:** `packages/client/src/matchmaking/useMatchSocket.ts:289` emits the generic `submitScore` event. `packages/server/src/matchmaking/index.ts:272` routes it to legacy `matchmaking/matches.ts:470`, which requires a match registered in `socketToMatch`/`matches`. The competition activation path instead inserts a `comp_match_*` database row and emits matched events without registering that legacy in-memory match. No runtime caller of `lifecycleEngine.submitScore` was found; the Phase 3 checks invoke it directly. Thus a service-level test pass is not proof that real socket competition completion is connected. This is a static integration finding, not a newly reproduced browser failure.
 - **Verified by reading competition activation/submission and schema:** Competition activation persists its seed, but `lifecycleEngine.submitScore` validates the supplied input log and then stores only participant score/status. It does not persist the submitted input log, duration, viewport, or full validation outcome as an evidence record. Legacy match history has input-log columns populated by the separate legacy match path. Durable competition replay proof must not be claimed based solely on those columns existing.
 - **Verified by reading `lifecycleEngine.settleCompetition`:** Shared types and accounting support multiple prize placements, but the current lifecycle resolves a two-player result using the first-place prize and explicitly gives rank two zero. A dossier must distinguish domain/accounting capability from demonstrated runtime formats and payouts; the roadmap does not define whether Phase 6 must extend that runtime behavior.
-- **Verified by reading `matchmaking/index.ts:69` and `routes/wallet.ts:64`:** Player-facing Diamond controls are retired, but the legacy socket queue still accepts `DIAMONDS` and a caller-selected stake (subject to guest/email checks); the legacy Diamond stub also remains environment-gated rather than removed. Historical storage is distinct from these active-capable backend paths. Their disposition needs to be included in prerequisite remediation scope before claiming full backend retirement.
-- **Verified by reading AGENTS.md/CLAUDE.md and LEGAL_REVIEW_REQUIRED.md:** Historical rules/register entries still describe active Diamond staking, purchasing, cash-out design, and the old pot/rake model. The current competition contract and user instructions take precedence. The legal register spans several possible jurisdictions and does not establish a specific filing authority/process, applicant, required language, or approved legal classification. These documents cannot serve as an authoritative Phase 6 filing checklist in their current form.
+- **Verified by reading `matchmaking/index.ts:69` and `routes/wallet.ts:64`:** Player-facing Legacy token controls are retired, but the legacy socket queue still accepts `LEGACY_TOKEN` and a caller-selected stake (subject to guest/email checks); the legacy Legacy token stub also remains environment-gated rather than removed. Historical storage is distinct from these active-capable backend paths. Their disposition needs to be included in prerequisite remediation scope before claiming full backend retirement.
+- **Verified by reading AGENTS.md/CLAUDE.md and LEGAL_REVIEW_REQUIRED.md:** Historical rules/register entries still describe active Legacy token staking, purchasing, cash-out design, and the old pot/rake model. The current competition contract and user instructions take precedence. The legal register spans several possible jurisdictions and does not establish a specific filing authority/process, applicant, required language, or approved legal classification. These documents cannot serve as an authoritative Phase 6 filing checklist in their current form.
 
 ### Exact Decisions Missing Before Implementation
 1. **Authoritative scope:** Supply the frozen competition contract (especially Section 22) or a replacement Phase 6 brief. Confirm whether Phase 6 delivers an internal technical review draft or a package ready for a named regulator's formal review. Actual submission remains the later gate.
@@ -415,12 +443,12 @@
 3. **Deliverables and interface:** Specify documents only versus a reproducible evidence-generation CLI, admin exports, or API changes; required output formats and package contents; and whether retained/replayable proof requires schema additions. The roadmap does not prescribe these choices.
 4. **Evidence and acceptance matrix:** Specify games/formats and required cases (including ordinary, promotional, freeroll/sponsored, multiple placements, cancellation/refund, invalid replay, disconnect/recovery, and idempotency as applicable), required reconciliation checks, reproducibility/version/hash requirements, and who accepts/signs off the evidence.
 5. **Data handling and provenance:** Specify disposable local fixtures versus existing staging records or authorized staging scenario generation; pseudonymization/redaction, retention, and storage requirements. Prior staging acceptance has no completed competition evidence and does not authorize new staging entries/funding for this audit.
-6. **Prerequisite repair boundary:** Decide whether the socket lifecycle gap, durable replay evidence gap, backend Diamond retirement, unsupported runtime prize/format claims, and stale legal/architecture statements must be repaired before Phase 6 or are explicitly included within it. They cannot be silently hidden behind documentation or expanded into an invented milestone.
+6. **Prerequisite repair boundary:** Decide whether the socket lifecycle gap, durable replay evidence gap, backend Legacy token retirement, unsupported runtime prize/format claims, and stale legal/architecture statements must be repaired before Phase 6 or are explicitly included within it. They cannot be silently hidden behind documentation or expanded into an invented milestone.
 
 ### Dependencies, Boundaries, and Session Outcome
 - **Documented dependencies:** Accepted Phases 1–5, existing competition snapshots and accounting/replay architecture, evidence adequate for the selected scenarios, and a defined legal review/filing brief. The accepted Phase 5 read-only UI checks do not establish end-to-end transactional readiness.
 - **Likely involved files/subsystems (scope candidates, not an implementation plan):** PROGRESS.md and LEGAL_REVIEW_REQUIRED.md; shared competition/money/replay types; server competitions/accounting/validation/schema; existing game replay adapters; admin evidence views/routes if export tooling is selected; and existing competition, determinism, score-validation, migration-parity, and accounting checks. No new migration is justified until evidence persistence requirements are agreed.
-- **Out of scope:** Actual regulatory submission/approval, real payment/deposit/withdrawal/payout or PSP activation, player-defined monetary stakes/prizes/lobbies, Coin conversion, restored Diamond product use, a second game engine, Phase 7, unrelated refactors, and merge/deployment in this session.
+- **Out of scope:** Actual regulatory submission/approval, real payment/deposit/withdrawal/payout or PSP activation, player-defined monetary stakes/prizes/lobbies, Coin conversion, restored Legacy token product use, a second game engine, Phase 7, unrelated refactors, and merge/deployment in this session.
 - **Acceptance criteria:** Only the four broad evidence categories and the no-real-payments boundary are documented for Phase 6. Exact pass/fail criteria remain undefined; Phase 6 cannot be called implemented or complete.
 - **Audit-only outcome:** No source, schema, migration, or test changes; no files created/deleted; no feature branch, commit, push, merge, deployment, database write, or browser action. Only this PROGRESS.md audit entry was added, uncommitted on main. Tests/builds were not rerun: the user's conditional implementation/validation process was not entered, and the explicit stop-after-audit condition applies. Earlier Phase 5 counts remain historical evidence. Phase 6 implementation and Phase 7 were **NOT started**.
 
@@ -430,7 +458,7 @@
 - **Verified by `git status`, full diff review, log, `git fetch origin`, and divergence checks:** The requested branch `codex/staging-competition-catalog-acceptance`, local `main`, and `origin/main` all started at `8214310707f1f47b4c33fc5c730914735161b8e4` with 0/0 divergence. Exactly the 15 reported source/docs/check files were modified and uncommitted; there was no intervening commit. Phase 5 was already integrated. The user explicitly authorized committing, pushing, integrating into main, and updating the existing staging environment. Phase 6 is not started.
 - **BUILT, verified by source review:** Catalog timeout/retry/error handling, distinct entry/prize presentation, FREE labeling, game/format/capacity/status/action details, guest account/Test GEL explanations, and narrow layout wrapping are present. Bodyless GET requests omit JSON content type; `credentials: 'include'` and the separate `ac_admin_session` mechanism remain intact.
 - **BUILT, verified by database schema and service review:** The previous uncommitted seeder still used random IDs and had no uniqueness constraint on game/title, permitting duplicate defaults under concurrent first requests. Replaced serialized/per-template writes with one atomic bulk transaction using stable default IDs and primary-key conflict handling; prizes are inserted only for newly inserted templates. Existing disabled defaults and legacy defaults with random IDs are recognized. An intentionally disabled catalog stays empty. Database errors propagate to the safe catalog error response. Added real disposable-database regression checks for concurrent/repeated initialization and disabled-default preservation.
-- **BUILT, verified by source review:** Added stale-response protection to client loading. Historical Diamond policy access and ledger records remain intact; FAQ answers, translated balance tooltips, and deployment checks now consistently describe Diamond retirement and simulated Test GEL. No active Diamond competition, shop, or stake control was introduced.
+- **BUILT, verified by source review:** Added stale-response protection to client loading. Historical Legacy token policy access and ledger records remain intact; FAQ answers, translated balance tooltips, and deployment checks now consistently describe Legacy token retirement and simulated Test GEL. No active Legacy token competition, shop, or stake control was introduced.
 
 ### Deployment Investigation (Before Integration)
 - **Verified by DNS, direct HTTP, live bundle inspection, and GitHub deployment metadata:** The existing frontend is Vercel project `arcadeclash-client`; its deployment at `8214310` serves asset `index-ao8B7neb.js` and explicitly targets `https://api-staging.fugluck.com`. That hostname resolves to `fugluck-api-staging.onrender.com`. Both catalog URLs return Express's HTML 404 `Cannot GET /api/competitions/templates`, while `/api/health` reports a connected database. Unauthenticated `/api/auth/me` returns 401 with the correct credentialed CORS origin. Repository `src/index.ts` unconditionally mounts the catalog router, so the running backend is not serving this repository's expected route; the frontend API URL is correct.
@@ -454,7 +482,7 @@
 - **Verified by real authenticated and signed-out browser sessions:** A signed-in staging test user at TEST ₾0 sees a disabled paid-entry action with insufficient-funds explanation and an enabled freeroll entry action at FREE. After actual logout, guests can browse all six cards but both entry actions are disabled with explicit account/sign-in requirements. Simulated currency is labeled TEST / SANDBOX with no-real-money explanations; ADD TEST FUNDS is not a deposit. No funds were granted and no competition entry was submitted.
 - **BUILT, verified by real mobile inspection, source fix, redeployment, and DOM measurements:** The first staging mobile pass found the confirmation panel extending beyond a 320×800 viewport. Added a viewport-relative maximum height, internal scrolling, responsive padding, and removed the repeated game name from the heading. The deployed signed-in freeroll panel fits at y=40–760; guest panel fits at y=43–757. Both actions remain visible. Catalog monetary columns remain distinct with document width 305 at viewport width 320, without horizontal overflow. Desktop catalog/dialog checks used 1280px width.
 - **Verified by real staging error before backend repair and successful Retry afterward:** The new client showed a useful unavailable message with Retry instead of converting the old backend 404 into an empty catalog. After deployment, Retry populated actual server templates. Loading, timeout, empty, and 503 layout checks at desktop/320px from Session 73 remain explicitly local synthetic-state checks; the populated/authenticated checks above used the real staging API/database. The exact historical recording's 14-second duration cannot be reconstructed. Render's existing Free instance can cold-start for 50+ seconds; the six-second deadline bounds the visible wait and permits Retry, without claiming a guaranteed six-second cold-start response.
-- **Verified by real footer navigation and source:** Historical Diamond & Wallet Policy still opens, with explicit retirement/legacy framing. No active Diamond competition, stake, purchase, deposit, or withdrawal control is present in the competition experience. Historical records remain intact.
+- **Verified by real footer navigation and source:** Historical Legacy token & Wallet Policy still opens, with explicit retirement/legacy framing. No active Legacy token competition, stake, purchase, deposit, or withdrawal control is present in the competition experience. Historical records remain intact.
 - **Verified by separate signed-in Phase 5 admin inspection:** Overview shows six enabled templates, zero instances, and balanced TEST GEL accounting. Templates correctly display standard/promo/free economics; Live Instances has a clear zero-instance state; Sandbox Accounting shows a read-only empty ledger and healthy zero discrepancy. Game Eligibility initially exposed a real response mismatch (`registry` from API, `games` read by client), fixed in `8633480` and covered by the new regression assertion. After deployment and real reauthentication, all six rows are visible: four sandbox candidates, two coin-only games, zero paid-approved games. The server-authorized console and `ac_admin_session` path were verified by authenticated API-backed views and middleware source; unauthenticated reload showed the login gate. No operator mutation/funding/cancel/void was performed.
 - **Screenshot evidence:** Credential-free captures are saved under `C:/Users/abuse/.codex/visualizations/2026/09/23/01a0cd39-ef06-7783-8b80-37fa900b6be0/acceptance/`: `staging-catalog-desktop.png`, `staging-catalog-mobile.png`, `staging-paid-entry.png`, `staging-freeroll-entry.png`, `staging-freeroll-mobile.png`, `staging-guest-freeroll.png`, `staging-guest-freeroll-mobile.png`, `staging-admin-templates.png`, `staging-admin-accounting.png`, and `staging-error-desktop.png`. Saved captures exclude account identifiers, login forms, password-manager dropdowns, tokens, and secrets.
 - **Verified by screenshot and browser console:** `staging-admin-eligibility.png` records the corrected six-row registry. Player browser error/warning logs were empty; the final Render application log view showed successful startup and no template-seeding errors. Expected unauthenticated 401s are distinct from application faults.
@@ -475,7 +503,7 @@
 - **Verified by tracing client, request helper, server route, and template service:** Catalog GET could synchronously seed six default templates when the database had none, with serialized writes and failures swallowed; clients had no request deadline. Cross-origin GET also carried a JSON content type despite having no body, provoking an unnecessary preflight. The current staging backend does not serve the route at all (verified HTTP 404); the precise cause of the recording's 14-second wait cannot be proven from the live service, so empty-database seeding/cold start is a plausible source of delay, while the missing route is a verified current deployment blocker.
 - Catalog template seeding now runs independent defaults concurrently and surfaces aggregate seed failures. The route passes its existing template read into the helper, supports `gameId`, and returns a safe temporary-unavailable response on failures rather than a misleading empty result. Bodyless API calls no longer set JSON content type. The catalog has a six-second request deadline, abort/cleanup behavior, and useful retry states.
 - Cards distinguish game, format, maximum capacity, open status, entry cost, predetermined prize, and join action. Freerolls explicitly show `FREE`; sandbox currency includes TEST/SANDBOX context. Guest copy now accurately explains that an account is needed to enter any competition; paid sandbox entry also requires Test GEL. At the API/template level only maximum capacity is available; cards do not invent live participant counts.
-- Updated the stale Diamond footer wording to identify the historical policy, while retaining the legacy policy route/content for legal and record access. The footer describes current Test GEL only; no historical records were deleted.
+- Updated the stale Legacy token footer wording to identify the historical policy, while retaining the legacy policy route/content for legal and record access. The footer describes current Test GEL only; no historical records were deleted.
 - `DEPLOYMENT.md` now describes the existing idempotent first-catalog-request fixture workflow (standard, promotional, freeroll defaults) and reversible Admin → Competitions → Templates controls, limited to staging. This workflow could not be exercised against staging because the deployed endpoint is 404.
 - Responsive navbar wrapping was adjusted after the first 320px visual pass exposed horizontal overflow. The competition UI checks now include deadline, error, guest wording, card detail, query, and narrow-layout requirements.
 
@@ -496,7 +524,7 @@
 ### Git & Phase 5 Review
 - **Verified by `git fetch`, branch/status/log inspection:** Starting state matched the handoff: local/remote `main` at `55f9f8e`, Phase 5 branch at `7174dcc`, clean worktree, and main unchanged since the handoff. Phase 5 was one commit ahead.
 - **Verified by reviewing the full diff and relevant server/client source:** Phase 5 changed 14 intended files (admin console/API, competition template/instance and sandbox accounting support, admin tests, lifecycle assertions, package script, and progress documentation). No migrations, generated outputs, secrets, or unrelated code appeared in the Phase 5 diff. `git diff --check` passed.
-- **Verified by reading `0008_competition_economy.sql`, `0009_sandbox_accounting.sql`, schema, and journal:** Phase 5 adds no migration. The prerequisite competition schema is `0008` and sandbox double-entry ledger is `0009`. `0008` keeps `COINS` and `DIAMONDS` in match currency checks while adding `GEL`; `0009` adds sandbox tables and its balance guard. These files are additive and do not rewrite old wallet/ledger history. The deployment guide's stale `0000`–`0007` claim was corrected to `0000`–`0009` in `DEPLOYMENT.md` (commit `a83cef6`).
+- **Verified by reading `0008_competition_economy.sql`, `0009_sandbox_accounting.sql`, schema, and journal:** Phase 5 adds no migration. The prerequisite competition schema is `0008` and sandbox double-entry ledger is `0009`. `0008` keeps `COINS` and `LEGACY_TOKEN` in match currency checks while adding `GEL`; `0009` adds sandbox tables and its balance guard. These files are additive and do not rewrite old wallet/ledger history. The deployment guide's stale `0000`–`0007` claim was corrected to `0000`–`0009` in `DEPLOYMENT.md` (commit `a83cef6`).
 
 ### Validation (Verified by command exit status and emitted PASS summaries)
 - `npm run typecheck`: PASS; TypeScript checks and the included client build completed. Vite emitted the existing large-chunk advisory (>500 kB).
@@ -529,7 +557,7 @@ conversations don't carry over, and work may resume from a different tool.
   - Manual browser acceptance honestly preserved as `PENDING` due to Playwright driver CDN 404.
 - Phase 5 Branch: `feat/competition-economy-phase-5` (created from synchronized `main` at `6d948c6`).
 - Objective: Build the SANDBOX ADMIN & OPERATIONS CONSOLE for the new Competition domain, integrated into `/admin`.
-- Invariants: All operations remain strictly SANDBOX ONLY; zero real payment rails, deposit gateways, or withdrawals; Coins isolated; Diamonds absent and labeled `(LEGACY / RETIRED)` where historical; append-only accounting ledger is immutable.
+- Invariants: All operations remain strictly SANDBOX ONLY; zero real payment rails, deposit gateways, or withdrawals; Coins isolated; Legacy tokens absent and labeled `(LEGACY / RETIRED)` where historical; append-only accounting ledger is immutable.
 
 ### Admin & Operations Architecture
 1. **Integrated `/admin` Console Views (`packages/client/src/admin/CompetitionAdminViews.tsx`)**:
@@ -560,7 +588,7 @@ conversations don't carry over, and work may resume from a different tool.
    - Admin cookie (`ac_admin_session`) and `requireOwnerAdmin` middleware enforced.
    - Mapped granular competition permissions (`COMPETITIONS_VIEW`, `COMPETITIONS_MANAGE`, `COMPETITIONS_CANCEL`, `COMPETITIONS_VOID`) via `PERMISSION_ALIAS_MAP` while preserving all 16 core admin permissions for backwards compatibility with `admin-console-check.ts`.
    - Comprehensive audit logging: Every administrative mutation (template create, template update, template toggle, competition cancel, competition void, test funding grant) creates an immutable `admin_audit_logs` record.
-   - Diamonds strictly absent from competition tools; historical Diamond data in legacy views clearly labeled `(LEGACY / RETIRED)`.
+   - Legacy tokens strictly absent from competition tools; historical Legacy token data in legacy views clearly labeled `(LEGACY / RETIRED)`.
    - Casual Coins remain isolated with zero conversion to sandbox GEL.
 
 ### Verification & Automated Testing
@@ -610,7 +638,7 @@ conversations don't carry over, and work may resume from a different tool.
 3. **Game Launch Experience (`LaunchModal.tsx`)**:
    - Eligible games (`space-blaster`, `pixel-ninja-dash`, `cyber-hopper`, `neon-runner`): Expose Practice, Casual (Coins), and Sandbox Competitions (`[VIEW COMPETITIONS]`).
    - Coin-only games (`speed-trivia`, `tf-sprint`): Strictly omit sandbox competition controls based on `GAME_COMPETITION_ELIGIBILITY_REGISTRY`.
-   - "Play with Diamonds" and Diamond stake selectors completely excised.
+   - "Play with Legacy tokens" and Legacy token stake selectors completely excised.
 4. **Player-Facing Competition Catalog & Confirmation (`CompetitionCatalog.tsx`, `CompetitionConfirmationModal.tsx`, `CompetitionsPage.tsx`)**:
    - Dedicated `/competitions` destination and modal overlays for eligible games.
    - Displays server-authoritative templates: Standard Duel (TEST ₾5.00 / TEST ₾9.00), Promo Duel (TEST ₾5.00 / TEST ₾20.00 promotional prize), and Freeroll (FREE / TEST ₾10.00).
@@ -629,10 +657,10 @@ conversations don't carry over, and work may resume from a different tool.
    - Exact tie displays `DRAW`, verified scores equal, and `Entry Refunded TEST ₾...` with no competition fee charged.
    - Replay rejection displays neutral `RESULT INVALID: The submitted game result could not be verified` without exposing anti-cheat heuristics.
    - Rematch button explicitly warns: "REMATCH — This creates a new competition entry. A new entry amount will be reserved." Insufficient test balance prompts with faucet shortcut.
-8. **COINS Preservation & DIAMONDS Retirement**:
+8. **COINS Preservation & LEGACY_TOKEN Retirement**:
    - Free COINS matchmaking continues to function independently with virtual points (`🪙`), never formatted with `₾`.
-   - DIAMONDS completely removed from all active player-facing flows (Navbar, Wallet, Profile, GameCard, LaunchModal, Diamond Shop).
-   - Historical Diamond ledger transactions and match records preserved and labeled `(RETIRED)`.
+   - LEGACY_TOKEN completely removed from all active player-facing flows (Navbar, Wallet, Profile, GameCard, LaunchModal, Legacy token Shop).
+   - Historical Legacy token ledger transactions and match records preserved and labeled `(RETIRED)`.
 9. **Accessibility & Responsive Design**:
    - Modal surfaces include `role="dialog"`, `aria-modal="true"`, semantic labels, and `Escape` key listeners.
    - Responsive layouts optimized for desktop, tablet, and mobile (375px+).
@@ -670,7 +698,7 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
 - Phase 2 Merge: Fast-forward merged `feat/competition-economy-phase-2` (`9c39820`) into `main`, pushed to `origin/main` (`9c39820`), and deleted `feat/competition-economy-phase-2`.
 - Phase 3 Branch: `feat/competition-economy-phase-3` (created from `9c39820`).
 - Objective: Implement server-side Competition Lifecycle Engine, template/instance management, continuous matchmaking queue, authoritative replay score validation, snapshotted prize settlement, and orphan crash recovery in sandbox mode.
-- Constraints: No client UI or admin UI screens in this phase; sandbox GEL only; zero real payment rails; casual COINS queue and historical DIAMONDS records remain 100% operational and unaffected.
+- Constraints: No client UI or admin UI screens in this phase; sandbox GEL only; zero real payment rails; casual COINS queue and historical LEGACY_TOKEN records remain 100% operational and unaffected.
 
 ### Architecture & Work Accomplished
 1. **Competition State Machine (`packages/server/src/competitions/stateMachine.ts`)**:
@@ -720,7 +748,7 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
 ### Production Invariant Confirmations
 - **Zero Client UI Activation**: No competitive GEL screens or controls displayed in the player application.
 - **Zero Real Payment Rails**: Sandbox GEL ledger only; no banking, Stripe, or cashout mechanisms.
-- **COINS & DIAMONDS Untouched**: Free COINS casual matchmaking and historical DIAMONDS records remain intact.
+- **COINS & LEGACY_TOKEN Untouched**: Free COINS casual matchmaking and historical LEGACY_TOKEN records remain intact.
 
 ---
 
@@ -773,7 +801,7 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
 6. **Currency & Domain Isolation**:
    - **Zero Real Payment Rails**: Sandbox GEL has 0 real-world value, cannot be purchased, withdrawn, or transferred.
    - **COINS Isolation**: Virtual COINS cannot be passed as MoneyAmount, cannot fund Sandbox GEL, and cannot be generated from Sandbox GEL. Existing non-monetary COINS matchmaking remains untouched.
-   - **Historical DIAMONDS Preservation**: DIAMONDS records in `matches_history`, `match_settlements`, and `ledger_entries` remain 100% untouched and readable.
+   - **Historical LEGACY_TOKEN Preservation**: LEGACY_TOKEN records in `matches_history`, `match_settlements`, and `ledger_entries` remain 100% untouched and readable.
 
 ### Verification & Automated Testing
 - `npm run typecheck`: **PASS** (Clean build across `@fugluck/shared`, `@fugluck/theme`, `@fugluck/games`, `@fugluck/server`, `@fugluck/client`).
@@ -801,12 +829,12 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
 - Initial Main SHA: `82101de` (`main`)
 - Branch: `feat/competition-economy-phase-1`
 - Objective: Establish the new Competition domain at the shared-type and database-schema layers WITHOUT activating it in the running product.
-  - Strict Invariants: Runtime matchmaking, settlement, client UI, game engines, and replay validation remain 100% untouched. COINS remain strictly non-monetary. DIAMONDS retired from active flows while historical records remain intact and readable. Entry fee and prize amounts are independent (no pot/rake invariant). All monetary values use integer minor units (no floats). Real payments remain disabled.
+  - Strict Invariants: Runtime matchmaking, settlement, client UI, game engines, and replay validation remain 100% untouched. COINS remain strictly non-monetary. LEGACY_TOKEN retired from active flows while historical records remain intact and readable. Entry fee and prize amounts are independent (no pot/rake invariant). All monetary values use integer minor units (no floats). Real payments remain disabled.
 
 ### Work Accomplished & Architectural Additions
 1. **Shared Domain Primitives (`packages/shared/src/money.ts`, `packages/shared/src/competitions.ts`)**:
    - `MoneyAmount`: Strict integer minor units (tetri/cents, e.g. 500 = ₾5.00 GEL).
-   - `createMoney(amountMinor, currency)`: Validates integer only, >= 0, and supported ISO 4217 currencies (`GEL`, `USD`, `EUR`). Prohibits floats, negatives, and virtual `COINS` or retired `DIAMONDS` as monetary currency.
+   - `createMoney(amountMinor, currency)`: Validates integer only, >= 0, and supported ISO 4217 currencies (`GEL`, `USD`, `EUR`). Prohibits floats, negatives, and virtual `COINS` or retired `LEGACY_TOKEN` as monetary currency.
    - `formatMoneyDisplay(money)`: Deterministic formatting (`₾5.00 GEL`, `$5.00 USD`, `€5.00 EUR`).
    - `CompetitionFormat`: `"HEAD_TO_HEAD" | "TOURNAMENT_BRACKET" | "LEADERBOARD_RUSH"`.
    - `CompetitionStatus`: `"PENDING_ENTRANTS" | "LOCKED" | "ACTIVE" | "VERIFYING" | "SETTLED" | "CANCELLED" | "VOIDED"`.
@@ -826,12 +854,12 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
      - `competition_instance_prizes`: Snapshots normalized placement prizes with unique constraint `(instance_id, placement)`.
      - `competition_participants`: Seat and registration management. Unique constraints `(instance_id, user_id)` and `(instance_id, seat_index)`. Constraints: `seat_index >= 0`, `entry_fee_minor >= 0`, `prize_won_minor >= 0`.
    - `matches_history`: Added nullable `competition_instance_id` column, index, and foreign key to `competition_instances.id`.
-   - Additive check constraints: Updated `matches_history_currency_check` and `match_settlements_currency_check` to `in ('COINS', 'DIAMONDS', 'GEL')`, preserving historical compatibility.
+   - Additive check constraints: Updated `matches_history_currency_check` and `match_settlements_currency_check` to `in ('COINS', 'LEGACY_TOKEN', 'GEL')`, preserving historical compatibility.
    - Financial audit safety: All FK constraints use `ON DELETE NO ACTION`. No cascading deletes.
 
 3. **Additive Migration 0008 (`packages/server/drizzle/0008_competition_economy.sql`)**:
    - Created migration 0008 and updated `packages/server/drizzle/meta/_journal.json`.
-   - Additive-only execution, preserving all existing tables, ledgers, and historical DIAMONDS data.
+   - Additive-only execution, preserving all existing tables, ledgers, and historical LEGACY_TOKEN data.
 
 4. **Entry Fee & Prize Independence Invariant**:
    - Verified that NO constraint requires `entryFee * capacity = prizes + platformFee`.
@@ -843,13 +871,13 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
 - `npm run build:server`: **PASS** (Server TypeScript compile clean).
 - `npm run test:database-safety`: **18/18 PASS**.
 - `npm run test:competition-domain`: **40/40 PASS** (`scripts/competition-phase1-domain-check.ts`).
-- `npm run test:migration-parity`: **204/204 PASS** (`scripts/migration-schema-parity-check.ts`). Introspected 16 tables, 5 FKs, 13 check constraints, 9 new indexes, and executed full DML smoke tests (Cases A-D, duplicate rejections, negative value rejections, and DIAMONDS/COINS/GEL compatibility).
+- `npm run test:migration-parity`: **204/204 PASS** (`scripts/migration-schema-parity-check.ts`). Introspected 16 tables, 5 FKs, 13 check constraints, 9 new indexes, and executed full DML smoke tests (Cases A-D, duplicate rejections, negative value rejections, and LEGACY_TOKEN/COINS/GEL compatibility).
 - `npm test`: **30/30 suites PASS 100%** (All 29 legacy regression suites + Phase 1 domain suite).
 
 ### Production Invariant Confirmations
 - **Runtime Product Behavior**: 100% unchanged. Active matchmaking, socket gameplay, and settlement continue exactly as before.
 - **Real Payments**: Completely disabled. Zero payment provider code or real monetary balances exist.
-- **Historical DIAMONDS Preservation**: All historical DIAMONDS match and settlement records remain valid and readable.
+- **Historical LEGACY_TOKEN Preservation**: All historical LEGACY_TOKEN match and settlement records remain valid and readable.
 - **Non-Monetary COINS**: COINS remain non-monetary virtual points; no conversion to or from MoneyAmount.
 
 ### Next Phase
@@ -876,7 +904,7 @@ Per Section 22 regulatory alignment, real payment infrastructure must NOT begin 
    - `legal-policy-help-check.ts`: **53/53 PASS** (Policy catalog, category data, DB acceptances, localization key parity, legal review register).
    - `i18n-check.ts`: **PASS** (Key parity across EN, KA, RU, lobby namespaces, pluralization).
    - `wallet-friends-check.ts`: **PASS** (Reason label mappings, transaction scoping, game search, friend associations).
-   - `financial-reconnection-check.ts`: **PASS** (Rake math, 0% COINS, 5% DIAMONDS, monthly allowance top-off, grace timers).
+   - `financial-reconnection-check.ts`: **PASS** (Rake math, 0% COINS, 5% LEGACY_TOKEN, monthly allowance top-off, grace timers).
    - `matchmaking-check.ts`: **14/14 PASS** (Queues, paired seeds, forfeit timeouts, disconnect handling, guest links, 90s rematch flow).
    - `determinism-check.ts`: **PASS** (Mulberry32 PRNG, tick simulation parity, 90s / 5,400 tick escalations across all 6 games).
    - `score-validation-check.ts`: **PASS** (Bit-exact replay reconstruction, freeze-frame auto-forfeit > 3s, tamper detection).
@@ -1055,7 +1083,7 @@ Complete the Fugluck Admin Console as a real operational product surface:
    - Wired server `packages/server/src/auth/permissions.ts` to consume canonical shared permissions.
 2. **Backend API Polish (`packages/server/src/routes/admin.ts`)**:
    - Added `GET /api/admin/me` returning current authenticated operator profile and granted permission list.
-   - Enhanced `GET /api/admin/dashboard` returning active user breakdowns, active match counts, today's completed/voided totals, circulating coins/diamonds, and platform diamond rake.
+   - Enhanced `GET /api/admin/dashboard` returning active user breakdowns, active match counts, today's completed/voided totals, circulating coins/legacy tokens, and platform legacy token rake.
    - Enhanced `GET /api/admin/users` with `role` query parameter filter.
    - Added `POST /api/admin/users/:id/role` guarded by `ADMIN_MANAGE_ADMINS` permission with sole-owner demotion protection and audit logging.
    - Enhanced `GET /api/admin/audit-logs` supporting `action`, `targetType`, `targetId`, and `adminUserId` filtering.
@@ -1063,7 +1091,7 @@ Complete the Fugluck Admin Console as a real operational product surface:
    - `adminTypes.ts`: Typed data models for users, matches, ledger, audit logs, and detail views.
    - `AdminModals.tsx`:
      - `ActionConfirmModal`: Contextual confirmation dialogs for destructive actions (Suspend, Ban, Unban, Role Update, Match Void, Ledger Reversal) displaying impact warnings and requiring audit reasons.
-     - `GrantCurrencyModal`: Dedicated dialog for issuing bounded (1 - 100,000) integer minor unit Coins or Diamonds.
+     - `GrantCurrencyModal`: Dedicated dialog for issuing bounded (1 - 100,000) integer minor unit Coins or Legacy tokens.
      - `UserDetailModal`: Full drawer/modal displaying profile, balances, recent matches, ledger activity, and user audit history.
      - `MatchDetailModal`: Full inspector showing match players, scores, pot/stakes, settlement records, related ledger entries, and audit logs.
    - `AdminConsolePage.tsx`: Complete overhaul with dark operational UI, 5 primary tabs, server authorization badges, live telemetry refresh, pagination across all tables, permission-aware action buttons, and automatic session checking.
@@ -1076,9 +1104,9 @@ Complete the Fugluck Admin Console as a real operational product surface:
    - Added Test 11: Audit log filtering and search shaping.
    - Added Test 12: Player session token (`ac_session`) rejection on admin middleware.
    - Added Test 13: OWNER account protection from suspend and ban moderation actions.
-   - Added Test 14: Disjoint circulating diamonds and platform rake metric accounting.
+   - Added Test 14: Disjoint circulating legacy tokens and platform rake metric accounting.
 6. **Audit & Safety Refinements**:
-   - Refined `diamondsCirculation` to strictly exclude `platform_rake_account` so player supply + platform rake supply form disjoint sets that sum to total minted diamonds.
+   - Refined `legacy tokensCirculation` to strictly exclude `platform_rake_account` so player supply + platform rake supply form disjoint sets that sum to total minted legacy tokens.
    - Refined `completedMatchesTotal` and `matchesCompletedToday` to strictly filter by `status = 'COMPLETED'`.
    - Added explicit server-side guards preventing OWNER accounts from being banned or suspended via moderation endpoints.
 
@@ -1160,7 +1188,7 @@ Proceed with the planned Admin Console feature completion work (Dashboard real-t
    - **Session Security**: `ac_admin_session` cookie enforces `HttpOnly`, `Secure` (production/staging), `SameSite=Lax`, and dynamic domain scoping. No admin JWTs stored in client storage.
    - **Lockout & Brute-Force**: 5 failed login attempts trigger a 1-hour IP lockout persisted in `admin_lockout_attempts`, supported by a 10 req/15min sliding rate limiter.
    - **Audit Logging**: All mutating administrative actions (bans, unbans, suspensions, voids, currency grants, ledger reversals) create immutable rows in `admin_audit_logs` without logging secret credentials.
-   - **Pre-Production MFA Requirement**: Confirmed that administrative Multi-Factor Authentication (TOTP / WebAuthn) is currently absent and is a **mandatory pre-production security requirement** before real-money diamond wagering or production launch.
+   - **Pre-Production MFA Requirement**: Confirmed that administrative Multi-Factor Authentication (TOTP / WebAuthn) is currently absent and is a **mandatory pre-production security requirement** before real-money legacy token wagering or production launch.
 
 ### Verification Results
 - `npm run typecheck`: **PASS** (zero compilation errors across all 5 packages).
@@ -1197,7 +1225,7 @@ Implement a focused desktop UI/UX improvement pass:
    - Seamless language switching without page reloads using existing `i18n.changeLanguage()`.
 2. **Native Gaming Matchmaking Lobby (`packages/client/src/components/LiveQueueList.tsx`)**:
    - Redesigned the component from an HTML table / data grid into an integrated dark gaming panel with glowing live status indicators.
-   - Structured matchmaking entries as clean challenger cards displaying player avatar, username, `(You)` badge, game title, live animated searching timer, and currency/stake pills (`Free Play`, `Coins`, `Diamonds`).
+   - Structured matchmaking entries as clean challenger cards displaying player avatar, username, `(You)` badge, game title, live animated searching timer, and currency/stake pills (`Free Play`, `Coins`, `Legacy tokens`).
    - Added clear primary action buttons (`▶ Match`) with hover glow effects and dedicated "Waiting for opponent…" status indicators for self-queued matches.
    - Implemented a friendly integrated empty state with gamepad icon and localized copy prompting players to start a queue.
    - Suppressed accidental text selection on interactive chrome (`userSelect: 'none'`) and clarified cursor pointer affordances.
@@ -1307,7 +1335,7 @@ Connect the Fugluck staging backend on Render to the new empty Supabase staging 
    - Enhanced global error handler in staging to report structured error details.
 4. **Live End-to-End Authentication & Supabase Persistence Verification**:
    - **Signup**: `POST https://api-staging.fugluck.com/api/auth/signup` returned **HTTP 201 Created**, creating temporary test user `stg_user_03704579` and issuing `ac_session` cookie on `.fugluck.com` with `SameSite=Lax`, `HttpOnly`, `Secure`.
-   - **Me / Current User**: `GET https://api-staging.fugluck.com/api/auth/me` returned **HTTP 200 OK** with authenticated profile and `{ coins: 1000, diamonds: 0 }`.
+   - **Me / Current User**: `GET https://api-staging.fugluck.com/api/auth/me` returned **HTTP 200 OK** with authenticated profile and `{ coins: 1000, legacy tokens: 0 }`.
    - **Logout**: `POST https://api-staging.fugluck.com/api/auth/logout` returned **HTTP 204 No Content**.
    - **Login**: `POST https://api-staging.fugluck.com/api/auth/login` returned **HTTP 200 OK** and reissued session.
    - **Supabase DB Row Introspection**: Queried the live Supabase PostgreSQL database directly, confirming persistence of:
@@ -1651,7 +1679,7 @@ Complete comprehensive audit and staging deployment preparation for public testi
    - Implemented graceful shutdown handlers for `SIGTERM` and `SIGINT` closing WebSocket connections, HTTP listeners, and database pool cleanly.
 3. **Cross-Subdomain Session Cookie & Financial Gating**:
    - Added `getSessionCookieOptions()` and `getClearCookieOptions()` supporting configurable `COOKIE_DOMAIN` (e.g. `.arcadeclash.com`) and `COOKIE_SAMESITE` (`lax`).
-   - Gated development diamond sandbox grants behind `ENABLE_DEV_DIAMOND_STUB` (defaulting to `false` in production/staging).
+   - Gated development legacy token sandbox grants behind `LEGACY_DEV_TOKEN_STUB` (defaulting to `false` in production/staging).
 4. **Hosting Blueprint & Scripts (`render.yaml` & `package.json`)**:
    - Created `render.yaml` for Render Web Service deployment with `/health` health checks and standardized build/start commands.
    - Added root and package scripts: `build:client`, `build:server`, `start:server`, `db:migrate`, `typecheck`.
@@ -1670,7 +1698,7 @@ Complete comprehensive audit and staging deployment preparation for public testi
 ### Task and Objective
 Build ArcadeClash's comprehensive professional Legal, Policies, Consent, and Help Center foundation for the desktop website without fabricating regulatory/licensing conclusions:
 1. **Shared Policy Constants & Types (`@arcadeclash/shared`)**:
-   - Defined `CURRENT_POLICY_VERSIONS` for all 15 platform legal/policy documents (`TERMS`, `PRIVACY`, `COOKIES`, `RULES`, `DIAMONDS`, `WITHDRAWALS`, `REFUNDS`, `RESPONSIBLE_PLAY`, `ELIGIBILITY`, `FAIR_PLAY`, `DISPUTES`, `DATA_RIGHTS`, `SECURITY`, `ABOUT`, `CONTACT`) set to `"2026-08-18"`.
+   - Defined `CURRENT_POLICY_VERSIONS` for all 15 platform legal/policy documents (`TERMS`, `PRIVACY`, `COOKIES`, `RULES`, `LEGACY_TOKEN`, `WITHDRAWALS`, `REFUNDS`, `RESPONSIBLE_PLAY`, `ELIGIBILITY`, `FAIR_PLAY`, `DISPUTES`, `DATA_RIGHTS`, `SECURITY`, `ABOUT`, `CONTACT`) set to `"2026-08-18"`.
    - Defined `POLICY_NAV_ITEMS` categorizing 16 items across 4 pillars: `ARCADECLASH`, `LEGAL`, `PLAY_AND_MONEY`, `ACCOUNT_AND_SAFETY`.
 2. **Durable Database Audit (`policy_acceptances` table & Migration 0007)**:
    - Added `policyAcceptances` Drizzle schema with indexed `(user_id, policy_type)` and `(policy_type, policy_version)` columns and cascading foreign key to `users`.
@@ -1693,18 +1721,18 @@ Build ArcadeClash's comprehensive professional Legal, Policies, Consent, and Hel
    - Added full translations in `en.json`, `ka.json`, and `ru.json` with 100% key parity verified by `scripts/legal-policy-help-check.ts` and `scripts/i18n-check.ts`.
    - 26/26 test suites passed (80 migration checks, 53 legal policy checks, 31 auth lifecycle checks, 294,295 canvas draw ops). Client production build passed.
 
-## Session 46 (2026-08-18): Real-Money Diamond Economy Architecture & System Design Audit
+## Session 46 (2026-08-18): Real-Money Legacy token Economy Architecture & System Design Audit
 
 ### Baseline
 - `c47b2f0` (PR #10 merged, local `main == origin/main == live GitHub main`, clean working tree).
 
 ### Locked Product & Architecture Decisions
-1. **Direct Diamond Purchase Flow**:
-   - `Real Money (Payment Processor) -> Direct Diamond Purchase -> Diamond Balance -> Wager in Skill Matches -> Diamond Prize -> Cash-Out Request -> Withdrawal Execution -> Real Money Paid to Player`.
-   - **Explicitly Rejected**: There is deliberately **no general-purpose user cash-storage wallet** (`Money -> ArcadeClash Cash Wallet -> Diamonds`).
+1. **Direct Legacy token Purchase Flow**:
+   - `Real Money (Payment Processor) -> Direct Legacy token Purchase -> Legacy token Balance -> Wager in Skill Matches -> Legacy token Prize -> Cash-Out Request -> Withdrawal Execution -> Real Money Paid to Player`.
+   - **Explicitly Rejected**: There is deliberately **no general-purpose user cash-storage wallet** (`Money -> ArcadeClash Cash Wallet -> Legacy tokens`).
 2. **Economic & Compliance Invariant**:
-   - Diamonds are treated internally as real-value economic liabilities backed by real funds, not arbitrary game tokens.
-   - Dual-currency separation remains strict: `COINS` are 100% free-play/fun currency (0% rake, non-withdrawable, monthly refill); `DIAMONDS` are real-value competitive staking currency (5% rake, cash-out eligible).
+   - Legacy tokens are treated internally as real-value economic liabilities backed by real funds, not arbitrary game tokens.
+   - Dual-currency separation remains strict: `COINS` are 100% free-play/fun currency (0% rake, non-withdrawable, monthly refill); `LEGACY_TOKEN` are real-value competitive staking currency (5% rake, cash-out eligible).
 3. **Provider Agnostic Infrastructure**:
    - Provider implementation is NOT started yet. Core ledger remains authoritative.
    - Payment/payout provider abstractions (`PaymentProvider`, `PayoutProvider`) decouple business logic from external gateways (Stripe, PayPal, eMoney, etc.).
@@ -1716,11 +1744,11 @@ Build ArcadeClash's comprehensive professional Legal, Policies, Consent, and Hel
 
 ### Audit Findings & System Design Artifacts
 - **Audited Files**: `packages/server/src/wallet/ledger.ts`, `packages/server/src/routes/wallet.ts`, `packages/server/src/db/schema.ts`, `packages/server/src/matchmaking/`, `packages/server/src/routes/admin.ts`, `migrations 0000..0005`.
-- **Created Architecture Spec**: `real_money_diamond_economy_architecture.md` defining:
+- **Created Architecture Spec**: `real_money_legacy token_economy_architecture.md` defining:
   - 14 financial invariants (conservation of currency, single settlement, idempotent ingestion, atomic withdrawal escrow).
   - Purchase lifecycle state machine (`CREATED` -> `PENDING` -> `PAID` -> `CREDITED` -> `REFUNDED` / `DISPUTED`).
   - Cash-out lifecycle state machine (`REQUESTED` -> `COMPLIANCE_REVIEW` -> `APPROVED` -> `PROCESSING` -> `PAID` / `FAILED` / `REJECTED`).
-  - Proposed Drizzle tables: `diamond_purchases`, `diamond_withdrawals`, `payment_webhook_events`, `user_compliance_profiles`.
+  - Proposed Drizzle tables: `legacy token_purchases`, `legacy token_withdrawals`, `payment_webhook_events`, `user_compliance_profiles`.
   - Origin tracking (purchased vs winnings vs promo), chargeback cascade accounting, reconciliation formula, and concurrency threat matrix.
   - Phased implementation roadmap (Stages 1 through 5).
 
@@ -1733,8 +1761,8 @@ Build ArcadeClash's comprehensive professional Legal, Policies, Consent, and Hel
 Finalize all remaining desktop-web mechanics for normal players across wallet, routing, catalog search, friends/match history error recovery, and desktop keyboard input handling:
 1. **User-Facing Wallet Transaction History (`GET /api/wallet/history`)**:
    - Implemented authenticated `GET /api/wallet/history` querying `ledgerEntries` strictly for `userId = req.userId!` ordered newest first (`createdAt DESC`, limit 50).
-   - Mapped internal ledger reasons to clean user-facing labels (`signup_grant`, `monthly_allowance_refill`, `stake_escrow`, `stake_payout`, `stake_refund`, `diamond_pack_grant`, `admin_grant`, `admin_adjustment`).
-   - Built dedicated `WalletPage.tsx` displaying COINS & DIAMONDS balances, transaction history with error/retry handling, and the test-mode Diamond shop with an unambiguous sandbox indicator.
+   - Mapped internal ledger reasons to clean user-facing labels (`signup_grant`, `monthly_allowance_refill`, `stake_escrow`, `stake_payout`, `stake_refund`, `legacy token_pack_grant`, `admin_grant`, `admin_adjustment`).
+   - Built dedicated `WalletPage.tsx` displaying COINS & LEGACY_TOKEN balances, transaction history with error/retry handling, and the test-mode Legacy token shop with an unambiguous sandbox indicator.
 2. **Clean `/wallet` Routing & Settings Removal**:
    - Added `/wallet` route rendering `WalletPage` in `App.tsx` and linked it directly in the Navbar account menu.
    - Removed `/settings` redundant alias and non-functional menu items.
@@ -1756,7 +1784,7 @@ Finalize all remaining desktop-web mechanics for normal players across wallet, r
    - Ensured keyboard handlers across mini-games (`speed-trivia`, `tf-sprint`, `neon-runner`, `cyber-hopper`, `space-blaster`, `pixel-ninja-dash`) call `e.preventDefault()` on game key events to prevent browser window scrolling and shortcut conflicts.
 
 ### Verification Completed
-- **`scripts/wallet-friends-check.ts`**: **48/48 PASS** (Signup grant, diamond packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution, formatReasonLabel mapping, ledger user isolation, catalog active filters, real-time search filtering).
+- **`scripts/wallet-friends-check.ts`**: **48/48 PASS** (Signup grant, legacy token packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution, formatReasonLabel mapping, ledger user isolation, catalog active filters, real-time search filtering).
 - **`scripts/matchmaking-check.ts`**: **38/38 PASS**.
 - **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS**.
 - **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS**.
@@ -1893,7 +1921,7 @@ Implement and verify all remaining core desktop-web social, guest matchmaking, a
    - Verified complete `npm test` across all 25 test suites and client production build.
 
 ### Verification Completed
-- **`scripts/wallet-friends-check.ts`**: **28/28 PASS** (Signup grant, diamond packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution).
+- **`scripts/wallet-friends-check.ts`**: **28/28 PASS** (Signup grant, legacy token packs, auth rehydration, escrow/payout patterns, auth boundaries, unfriend boundaries, cancel request boundaries, getGameTitle resolution).
 - **`scripts/matchmaking-check.ts`**: **38/38 PASS** (Game ID validation, queue pairing, queue removal, match creation, score submission & resolution, duplicate submission protection, forfeit timeout, disconnect mid-match, guest instant play, stake selection, queue isolation, live queue broadcast, guest invite link lifecycle).
 - **`scripts/migration-schema-parity-check.ts`**: **67/67 PASS**.
 - **`scripts/auth-account-lifecycle-check.ts`**: **31/31 PASS**.
@@ -2104,7 +2132,7 @@ not start the Server or contact PostgreSQL directly.
 
 **Authenticated two-user runtime verified:** Browser created disposable user
 `aca31725215` through the real signup UI on `localhost`; signup closed the modal
-and showed 1,000 COINS / 0 DIAMONDS. An existing disposable user
+and showed 1,000 COINS / 0 LEGACY_TOKEN. An existing disposable user
 `smokea8658992` was independently authenticated on `127.0.0.1`. The two host
 origins provided separate cookie jars while exercising the hostname-derived
 HTTP and Socket.IO endpoints. Refresh preserved both identities without the
@@ -2127,7 +2155,7 @@ beginning, and terminal playback displayed `Tick: 264 / 264`, `Replayed Score:
 195`, DRAW 195–195, and returned the control to Play. Browser logs remained
 empty of warnings/errors.
 
-**Wallet/refresh verified:** both profiles showed 1,000 COINS and 0 DIAMONDS
+**Wallet/refresh verified:** both profiles showed 1,000 COINS and 0 LEGACY_TOKEN
 before and after zero-stake play and a full reload. Each new match produced one
 history row; no duplicate visible balance update or duplicate history row was
 observed.
@@ -2885,7 +2913,7 @@ Built and integrated Game Module #3 ("Space Blaster") into `games/` (`packages/g
 
 ## Session 22 (2026-08-02): dual-currency wallet + friends + invite-to-play
 
-User asked for Fmoney/coins + diamonds and a friend invite-to-play system.
+User asked for Fmoney/coins + legacy tokens and a friend invite-to-play system.
 Sky Dodge ship bug remains open (diagnostic logs still in place from
 session 21); this session deliberately did the requested systems work.
 
@@ -2893,24 +2921,24 @@ session 21); this session deliberately did the requested systems work.
 
 1. **Append-only wallet ledger** — `ledger_entries` table +
    `packages/server/src/wallet/ledger.ts`. Currencies: `COINS` (free
-   Fmoney) and `DIAMONDS`. Balances derived via SUM, never a mutable
+   Fmoney) and `LEGACY_TOKEN`. Balances derived via SUM, never a mutable
    balance column. Migration `0001_wallet_friends.sql` applied
    successfully via `drizzle-kit migrate`.
 2. **Signup / login grant** — `ensureSignupGrant` writes +10 COINS once
-   (`reason=signup_grant`), diamonds stay 0. Idempotent on `/me` and
+   (`reason=signup_grant`), legacy tokens stay 0. Idempotent on `/me` and
    login so pre-wallet accounts get the same one-time grant (not every
    login). Live smoke: signup returned
-   `balances: { coins: 10, diamonds: 0 }`.
-3. **Stub diamond shop** — `DIAMOND_PACKS` in shared (`$2 → 10`, etc.).
-   `POST /api/wallet/purchase-diamonds` grants immediately with
-   `stub: true` — no Stripe. Live smoke: pack_10 → diamonds 10.
+   `balances: { coins: 10, legacy tokens: 0 }`.
+3. **Stub legacy token shop** — `LEGACY_TOKEN_PACKS` in shared (`$2 → 10`, etc.).
+   `POST /api/wallet/legacy-token-purchase` grants immediately with
+   `stub: true` — no Stripe. Live smoke: pack_10 → legacy tokens 10.
 4. **Friends REST** — `friendships` table;
    `GET/POST /api/friends`, accept/reject. Live smoke: `{"friends":[]}`.
 5. **Invite-to-play** — socket events `inviteFriend` / `respondInvite` /
    `inviteReceived` / etc. Private match reuses `createMatch` (same
    async seeded flow as random queue). Presence map for online friends.
    Client: Friends page, InviteProvider toast, MatchLoader modes
-   `queue` | `sendInvite` | `acceptInvite`. Navbar shows coin/diamond
+   `queue` | `sendInvite` | `acceptInvite`. Navbar shows coin/legacy token
    balances; Profile has shop + balances disclaimer.
 
 **Defaults chosen (user didn't answer clarifying questions):** grant once
@@ -4314,20 +4342,20 @@ reskin, even though session 13-14's notes flagged a second `runner` game
 as the natural test of the shared-engine-cluster model. Ask before
 assuming which takes priority if this ever matters.)
 
-**Money representation — BUILT (session 22) for COINS + DIAMONDS ledger;
+**Money representation — BUILT (session 22) for COINS + LEGACY_TOKEN ledger;
 stakes/escrow/rake/Stripe still PLANNED.** Invariants now in code:
 - All balances stored as INTEGERS in minor units, never floats. *(verified:
   `ledger_entries.amount` is integer)*
 - Every ledger row carries a `currency` field — values `COINS` and
-  `DIAMONDS` (was planned as `POINTS`; user asked for free Fmoney +
-  premium diamonds). Adding another currency is a new value, not a
+  `LEGACY_TOKEN` (was planned as `POINTS`; user asked for free Fmoney +
+  premium legacy tokens). Adding another currency is a new value, not a
   schema migration.
 - Balances are DERIVED from an append-only ledger, never stored as an
   independently-mutable field.
 - The rake is a ledger entry to a house account, not money disappearing
   from the system. *(still PLANNED — no rake path yet)*
 - System invariant: the sum of all balances is constant except at an
-  explicit grant/deposit event. *(signup_grant + stub diamond purchase
+  explicit grant/deposit event. *(signup_grant + stub legacy token purchase
   are the current grant events)*
 - **Coins reset at real-money launch, and this must be stated in the UI
   before anyone accumulates a coin balance** — no user should be
@@ -4388,7 +4416,7 @@ needs client-side.
 of session 8 — see above):**
 - ~~Auth & user profiles~~ **done, session 8** — see the session log below
 - Matchmaking (practice/for-fun/for-stakes queue) — still not started
-- Wallet ledger (COINS + DIAMONDS) + friends + invites — BUILT session 22;
+- Wallet ledger (COINS + LEGACY_TOKEN) + friends + invites — BUILT session 22;
   stakes / escrow / Stripe still not started
 - Leaderboards — still not started
 - Real-time opponent sync (WebSocket match state, etc.) — still not started
@@ -5998,15 +6026,15 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/determinism-check.ts`: **13 / 13 passed** (verified replay determinism, loop jitter, and `wallMs` timestamp independence)
   - `scripts/matchmaking-check.ts`: **24 / 24 passed** (verified pairing, seed generation, resolution, forfeit timers, and disconnect policies)
   - `scripts/score-validation-check.ts`: **23 / 23 passed** (verified server `validateScore` and anti-tamper log replaying)
-  - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified signup coin grants, diamond packs, and user balances)
+  - `scripts/wallet-friends-check.ts`: **5 / 5 passed** (verified signup coin grants, legacy token packs, and user balances)
 
-## Session 26 (2026-08-10) — 4-Tier Match Modes Architecture (Practice, 0% Rake COINS, 5% Rake DIAMONDS, Guest Instant Play)
+## Session 26 (2026-08-10) — 4-Tier Match Modes Architecture (Practice, 0% Rake COINS, 5% Rake LEGACY_TOKEN, Guest Instant Play)
 
 ### What Was Done
 1. **Rake Policy Refactor**:
    - Updated `payoutWinner` in `packages/server/src/wallet/ledger.ts`.
    - `COINS` matches: `COINS_RAKE_PERCENT = 0`. Winner receives 100% of pot (`stake * 2`). No fee entry created.
-   - `DIAMONDS` matches: `DIAMONDS_RAKE_PERCENT = 5`. Winner receives 95% of pot (`stake * 2 * 0.95`). 5% credited to `platform_rake_account`.
+   - `LEGACY_TOKEN` matches: `LEGACY_TOKEN_RAKE_PERCENT = 5`. Winner receives 95% of pot (`stake * 2 * 0.95`). 5% credited to `platform_rake_account`.
 2. **Zero-Registration Guest Instant Play**:
    - Allowed unauthenticated guests (`guest_<id>`) in `socketAuthMiddleware` for `/play/invite/:code` instant matches.
    - Enforced `stake = 0` (Free Play) for all guest matches.
@@ -6023,7 +6051,7 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
   - `scripts/matchmaking-check.ts`: **27 / 27 passed** (includes guest instant link creation and zero-stake assertions)
   - `scripts/score-validation-check.ts`: **25 / 25 passed**
   - `scripts/wallet-friends-check.ts`: **5 / 5 passed**
-  - `scripts/financial-reconnection-check.ts`: **16 / 16 passed** (verified COINS 0% rake vs DIAMONDS 5% rake payouts)
+  - `scripts/financial-reconnection-check.ts`: **16 / 16 passed** (verified COINS 0% rake vs LEGACY_TOKEN 5% rake payouts)
 
 ## Session 27 (2026-08-10) — Game Card Launch UI Modal & Monthly 1,000 COIN Allowance Refill Engine
 
@@ -6032,7 +6060,7 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
    - Added a prominent "Play" button on every game card that opens `LaunchModal.tsx`.
    - Tailored modal options by auth state:
      - Unauthenticated (Guest): 2 options (`Solo Rush`, `Instant Invite Link`).
-     - Authenticated (Registered): 4 options (`Solo Rush`, `Instant Invite Link`, `Play with COINS (0% Fee)`, `Play with DIAMONDS (5% Fee)`).
+     - Authenticated (Registered): 4 options (`Solo Rush`, `Instant Invite Link`, `Play with COINS (0% Fee)`, `Play with LEGACY_TOKEN (5% Fee)`).
 2. **Monthly 1,000 COIN Allowance Refill Engine**:
    - Updated starting registration grant to 1,000 COINS (`SIGNUP_COIN_GRANT = 1000`).
    - Implemented `checkAndApplyMonthlyAllowance(userId)` in `ledger.ts` (evaluated on login/me with reason `monthly_allowance_refill:YYYY-MM`). Tops off balances < 1,000 COINS up to 1,000 COINS (+750 for 250 COINS), while leaving balances ≥ 1,000 COINS untouched.
@@ -6058,7 +6086,7 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
 2. **Maintained Core Architecture Invariants**:
    - Launch Modal (`LaunchModal.tsx`) on every game card (Guest: 2 options; Registered: 4 options).
    - Monthly 1,000 COIN Allowance Refill Engine (`checkAndApplyMonthlyAllowance(userId)` on login/me).
-   - Rake Rules: 0% COINS vs 5% DIAMONDS rake.
+   - Rake Rules: 0% COINS vs 5% LEGACY_TOKEN rake.
    - Instant guest link matches locked to `stake = 0` (Free Play).
 3. **Git Safety Tagging & Sync**:
    - Updated tag `backup-post-ui-modal-refill-4tier` and pushed to `origin`.
@@ -6098,8 +6126,8 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
 
 ### What Was Done
 1. **Interactive Betting Window (Stake Selection Step)**:
-   - Updated `LaunchModal.tsx` so clicking "Play with COINS" or "Play with DIAMONDS" opens a dedicated Stake Selection Step.
-   - Displayed preset stake options (COINS: 25, 50, 100, 250, 500; DIAMONDS: 5, 10, 25, 50, 100).
+   - Updated `LaunchModal.tsx` so clicking "Play with COINS" or "Play with LEGACY_TOKEN" opens a dedicated Stake Selection Step.
+   - Displayed preset stake options (COINS: 25, 50, 100, 250, 500; LEGACY_TOKEN: 5, 10, 25, 50, 100).
    - Validated current user balance against selected stake, disabling buttons with warnings if balance is insufficient.
    - Passed `currency` and `stake` into `joinQueue` Socket.IO emission (`{ gameId, currency, stake }`).
 2. **Match Persistence Verification & Test Coverage**:
@@ -6149,7 +6177,7 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
    - Fixed page refresh (`F5`) so signed-in users remain logged in seamlessly without session drops or unauthenticated flashes.
 2. **Post-Match UI Balance Rehydration**:
    - Updated `MatchLoader.tsx` to invoke `refreshUser()` when a match reaches `resolved` state.
-   - Ensures live derived PostgreSQL wallet balances (COINS & DIAMONDS) re-fetch and update in the UI immediately without requiring a manual page refresh.
+   - Ensures live derived PostgreSQL wallet balances (COINS & LEGACY_TOKEN) re-fetch and update in the UI immediately without requiring a manual page refresh.
 3. **Git Safety Tagging & Remote Sync**:
    - Created local tag `backup-post-auth-persistence-and-coin-fix` and pushed all tags/branches to `origin`.
 
@@ -6187,7 +6215,7 @@ stay mock/dead until matchmaking and leaderboards are eventually built.
    - Connected `io.emit("queueStateUpdate", ...)` in `packages/server/src/matchmaking/index.ts` so queue joins, matches, cancels, and socket disconnects immediately broadcast live searching state.
 2. **Client Live Queue Lobby Widget (`LiveQueueList.tsx`)**:
    - Built reactive `<LiveQueueList />` component mounted on the main dashboard (`HomePage.tsx`).
-   - Listens to `queueStateUpdate` events and renders waiting players with avatars, usernames, game titles, wager badges (`COINS` / `DIAMONDS` / `Free Play`), and live `00:15` search timers.
+   - Listens to `queueStateUpdate` events and renders waiting players with avatars, usernames, game titles, wager badges (`COINS` / `LEGACY_TOKEN` / `Free Play`), and live `00:15` search timers.
 3. **1-Click Direct Match Acceptance**:
    - Clicking "Match" on a waiting player card checks user balances and automatically initiates queueing pre-configured with matching `gameId`, `currency`, and `stake`, instantly pairing players.
 4. **Git Safety Tagging & Remote Sync**:
@@ -6318,7 +6346,7 @@ than this file provides.
 
 - **Scope**: First admin redesign increment only: navigation shell, users, user search/detail, TEST GEL grant flow, and grant history. No Phase 6/7 work and no main merge. Current Phase 5.5A staging acceptance remains NOT PASS from Session 82.
 - **Current-admin audit (verified by reading `AdminConsolePage.tsx`, `AdminModals.tsx`, `CompetitionAdminModals.tsx`, `admin.ts`, `adminCompetitions.ts`, shared role permissions, and sandbox adapter)**: the admin was a flat tab bar, user filtering already searched username/email/exact ID, the detail view was a modal without TEST GEL/competition history, and the old grant dialog required a pasted user ID. A sandbox grant route and accounting ledger already existed; the test-funding history view did not. The UI’s permission list did not directly include `WALLET_GRANT_SANDBOX`; it aliases to the existing `WALLET_GRANT_COINS` permission.
-- **BUILT (verified by source inspection + `npm run typecheck`)**: permanent responsive left navigation, global user search, environment and TEST / SANDBOX / NO REAL MONEY header, Users table with status, Coins, historical Diamonds only when nonzero, TEST GEL available/reserved and creation date. Existing competitions, templates, instances, game eligibility, accounting/reconciliation, ledger, audit and legacy match screens remain reachable.
+- **BUILT (verified by source inspection + `npm run typecheck`)**: permanent responsive left navigation, global user search, environment and TEST / SANDBOX / NO REAL MONEY header, Users table with status, Coins, historical Legacy tokens only when nonzero, TEST GEL available/reserved and creation date. Existing competitions, templates, instances, game eligibility, accounting/reconciliation, ledger, audit and legacy match screens remain reachable.
 - **BUILT (verified by HTTP tests and source inspection)**: user search by username/email/user ID remains on the existing guarded API. User detail is a right-side drawer showing profile, TEST GEL available/reserved, Coins, competition history (entry/prize/state/result), sandbox ledger history, match history and user audit. No balance-edit control was added.
 - **BUILT (verified by disposable-database HTTP test)**: grant dialog searches and selects a user, parses GEL into integer tetri, requires a reason and an explicit review/confirm step, labels funding as TEST / SANDBOX / NO REAL MONEY, and submits the existing RBAC-protected grant API. Successful grants refresh the Users view and selected user, report the resulting available balance and accounting reference, and appear in a dedicated searchable Test Funding history view.
 - **Accounting/audit (verified by HTTP test and code inspection)**: admin grant ledger postings use event `TEST_FUNDING_GRANT` (not `DEPOSIT`) and remain balanced; matching audit record with actor, target, integer amount, GEL, reason, resulting balance and accounting reference is inserted in the same database transaction. If audit insertion fails, transaction rollback prevents an unaudited grant. Existing public sandbox-faucet `DEPOSIT` behavior remains separate. Summary retains historical `DEPOSIT` grant totals while including the new event.
@@ -6332,7 +6360,7 @@ than this file provides.
 
 - **Starting state (verified by Git inspection)**: branch `codex/phase-6-revenue-service-readiness`; `HEAD`, `main`, `origin/main`, and the accepted Cyber Hopper branch were at `91ca753` before this session's changes. The accepted Phase 5.5B1 report and sanitized authority evidence identify the successful controlled Cyber Hopper staging instance and confirm its template was disabled after acceptance. This session did not merge or deploy.
 - **BUILT — replay retirement (verified by source search, package export review, and full `npm test`)**: removed active input-history collection, replay types/adapters, replay modules, score reconstruction/validation, replay-specific rendering and casual client-verifier code. Fixed-step engines, seeded simulation, game score/collision logic, and historical input-log columns/records remain. Casual match score remains client-reported and is explicitly outside TEST GEL prize settlement.
-- **BUILT — Diamond retirement and current eligibility (verified by source inspection, security/accounting checks, Phase 4 UI check, Phase 5 admin check, and authority socket check)**: new Diamond queueing, wallet mutation/purchase stubs, and admin grant permission are retired/rejected; historical balances, ledger and match records remain readable. Shared `GAME_COMPETITION_CERTIFICATIONS` defines Space Blaster (`space-blaster-rv001-v1`) and Cyber Hopper (`cyber-hopper-rv001-v1`) as the only current Level 3 TEST GEL games; Neon Runner and Pixel Ninja Dash are not certified; Speed Trivia and True / False Sprint are out of the current prize scope. Server creation, enabling, instance and joining paths enforce certification; the UI is an additional presentation gate.
+- **BUILT — Legacy token retirement and current eligibility (verified by source inspection, security/accounting checks, Phase 4 UI check, Phase 5 admin check, and authority socket check)**: new Legacy token queueing, wallet mutation/purchase stubs, and admin grant permission are retired/rejected; historical balances, ledger and match records remain readable. Shared `GAME_COMPETITION_CERTIFICATIONS` defines Space Blaster (`space-blaster-rv001-v1`) and Cyber Hopper (`cyber-hopper-rv001-v1`) as the only current Level 3 TEST GEL games; Neon Runner and Pixel Ninja Dash are not certified; Speed Trivia and True / False Sprint are out of the current prize scope. Server creation, enabling, instance and joining paths enforce certification; the UI is an additional presentation gate.
 - **BUILT — single competition authority path (verified by source inspection and competition lifecycle/authority tests)**: live prize play advances through a template, immutable instance, participants, reservation, lock/capture, certified authority, immutable server result, terminal decision, and exactly-once accounting settlement/refund. The legacy client score lifecycle now rejects with `LIVE_AUTHORITY_REQUIRED`. Unsupported games and old Cyber Hopper `ch-1.0` template rows are denied at public entry without reservation. Enabled templates and direct instances fail closed unless they are two-player H2H with one first-place prize, matching the current runtime's supported settlement shape.
 - **BUILT — current architecture docs (verified against source)**: created `docs/COMPETITION_ARCHITECTURE.md`; refreshed `GAMES.md`; labeled the older result-validation architecture and Phase 6 dossier as historical where their original scope differs from current code. Prior `PROGRESS.md` historical sessions were left intact. Phase 5.5B1 evidence remains in `docs/PHASE_5_5B1_CYBER_HOPPER_ACCEPTANCE.md` and `docs/evidence/phase55b1-cyber-hopper/authority-run-20260925.txt`.
 - **Test corrections based on verified behavior**: `scripts/competition-authority-check.ts` now seeds legacy uncertified rows directly to test the server-side join gate (new template creation correctly rejects those rows). `scripts/atomic-wager-lifecycle-check.ts` now asserts that the 101-point player beats the 100-point player and that equal scores are a draw with refund; the former assertions contradicted the actual tested outcomes.
@@ -6375,10 +6403,10 @@ than this file provides.
 
 - **Starting state (verified by `git status`, `git branch -vv`, and source inspection)**: continued on `codex/phase-6-revenue-service-readiness`; the tree was clean before this session's content changes. `main` remains separate. No merge, push, or deployment was performed.
 - **Specification (verified by extracting and reading all 515 paragraphs of `Fugluck_RS_Content_Spec.docx`)**: followed the document's explicit “Instructions for Codex - Implement This Specification” as implementation requirements because the user expressly directed that. Also read `AGENTS.md`, `GAMES.md`, current/recent `PROGRESS.md` handoff, current public routes/components, policy version registry, `docs/PHASE_6C_REVENUE_SERVICE_DOSSIER.md`, and deployment/staging instructions. The Phase 6 dossier's current facts were checked against the existing source; no historical accounting or earlier progress entries were rewritten.
-- **BUILT — public information and policy content (verified by source inspection and `scripts/legal-policy-help-check.ts` 83/83)**: replaced public copy with the specification's substantive drafts for About, How It Works, Competitions, Entry Fees and Predetermined Prizes (standard, promotional and freeroll examples), Games and Skill, Coins, TEST GEL, Sandbox Notice, Terms, Privacy, Competition Rules, Fair Competition/Server Authority, Contact, Historical Diamonds, and Legal Index. The privacy and legal text retains named human/legal inputs and does not invent legal entity details, retention periods, governing law, effective dates, approvals, licences, or regulatory decisions.
-- **BUILT — routes, navigation, help and FAQ (verified by route/data inspection, shared nav checks and i18n parity)**: reused `/terms`, `/privacy`, `/rules`, `/fair-play`, `/diamonds`, `/contact`, `/help`; added the specification's product-information routes and `/faq`; retained `/legal` as the document index and mapped legacy policy paths to current equivalents. Added a searchable, category-filtered FAQ with 42 questions and an accordion, and a Help Center with the specified support topics. Footer and competition catalog links use the shared navigation registry.
+- **BUILT — public information and policy content (verified by source inspection and `scripts/legal-policy-help-check.ts` 83/83)**: replaced public copy with the specification's substantive drafts for About, How It Works, Competitions, Entry Fees and Predetermined Prizes (standard, promotional and freeroll examples), Games and Skill, Coins, TEST GEL, Sandbox Notice, Terms, Privacy, Competition Rules, Fair Competition/Server Authority, Contact, Historical Legacy tokens, and Legal Index. The privacy and legal text retains named human/legal inputs and does not invent legal entity details, retention periods, governing law, effective dates, approvals, licences, or regulatory decisions.
+- **BUILT — routes, navigation, help and FAQ (verified by route/data inspection, shared nav checks and i18n parity)**: reused `/terms`, `/privacy`, `/rules`, `/fair-play`, `/legacy tokens`, `/contact`, `/help`; added the specification's product-information routes and `/faq`; retained `/legal` as the document index and mapped legacy policy paths to current equivalents. Added a searchable, category-filtered FAQ with 42 questions and an accordion, and a Help Center with the specified support topics. Footer and competition catalog links use the shared navigation registry.
 - **BUILT — legal status and language disclosure (verified in page data and local browser UI)**: Terms and Privacy use `draft-1.0` in the existing policy-version registry and visibly state they are not final/effective and require review; draft policy pages show no assigned effective date. Legal pages explicitly state long-form Georgian and Russian legal translations have not been reviewed. Short UI/navigation strings exist in English, Georgian and Russian; this does not mean long-form legal translations are complete.
-- **BUILT — site-wide terminology (verified by source search and test updates)**: Coins wording now identifies non-monetary virtual points. Active sandbox copy consistently says TEST / SANDBOX GEL, zero real-world value, and no real-money deposits, withdrawals or prizes. Historical Diamonds remain labeled retired/legacy and historical records are preserved. Updated the Phase 4 UI assertion to require the new complete sandbox disclosure.
+- **BUILT — site-wide terminology (verified by source search and test updates)**: Coins wording now identifies non-monetary virtual points. Active sandbox copy consistently says TEST / SANDBOX GEL, zero real-world value, and no real-money deposits, withdrawals or prizes. Historical Legacy tokens remain labeled retired/legacy and historical records are preserved. Updated the Phase 4 UI assertion to require the new complete sandbox disclosure.
 - **Visual review (verified in the local Vite browser)**: reviewed desktop long-form About layout at 1440px; mobile Entry Fees / Predetermined Prizes and FAQ at 390px; expanded an FAQ answer; and inspected the Sandbox Notice accessibility tree at 390px. In-page link color was corrected after the initial mobile screenshot showed inadequate contrast, then visually rechecked. The final Sandbox Notice screenshot capture itself was unavailable, but its content/structure was present in the browser accessibility tree. This was local review only, not a staging deployment or signed-in account review.
 - **Validation (verified by completed command output on the final application/spec-check revision)**: `npm test` — all 38 scripts passed, 1,392 assertions/checks total. Exact script counts: migration parity 321; auth/account lifecycle 41; legal/policy/help 83; i18n 65; wallet/friends 48; financial reconnection 17; matchmaking 65; determinism 12; score validation/result ownership 12; canvas render 21; rate limit 11; SQL injection 19; input validation 20; XSS audit 17; password security 13; admin security 8; admin console 49; admin reset recovery 11; seed admin 7; CORS audit 20; registration verification 9; owner admin lockout 10; request logging audit 12; password policy 18; file-upload audit 4 (not applicable); wallet settlement concurrency 16; wallet settlement integrity 24; match lifecycle durability 26; staging readiness 34; competition Phase 1 41; Phase 2 54; Phase 3 45; Phase 4 UI 44; Phase 5 admin 42; competition authority 65; admin HTTP 38; authority latency 26; authority presentation 24. Standalone scripts also passed: database safety 18/18, atomic Coins lifecycle 38/38, Cyber Hopper authority 42/42; all 41 `scripts/*-check.ts` programs were run, 1,490 assertions/checks total, 0 failed.
 - **Builds (verified by successful exit codes after the final wording/test updates)**: `npm run typecheck` passed, including the client production Vite build; `npm run build:server` passed. Vite retained the existing non-fatal >500 kB main-chunk warning.

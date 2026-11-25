@@ -1,35 +1,38 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import LaunchModal from '../components/LaunchModal'
+import { activeGames } from '../mock/homeData'
 
 type NotFoundPageProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateFriends: () => void
+  onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
+  onNavigatePolicy?: (path: string) => void
   onPlayGame?: (id: string, title: string) => void
-  onFindOpponent?: (id: string, title: string, stake?: number, currency?: 'COINS' | 'DIAMONDS') => void
+  onFindOpponent?: (id: string, title: string, stake?: number, currency?: 'COINS') => void
+  onLaunchGuestInvite?: (id: string, title: string) => void
 }
 
 export default function NotFoundPage({
   onNavigateHome,
   onNavigateProfile,
   onNavigateFriends,
+  onNavigateWallet,
   onNavigateCompetitions,
+  onNavigatePolicy,
   onPlayGame,
   onFindOpponent,
+  onLaunchGuestInvite,
 }: NotFoundPageProps) {
   const { t } = useTranslation()
   const [selectedGame, setSelectedGame] = useState<{ id: string; title: string } | null>(null)
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
 
-  const quickGames = [
-    { id: 'neon-runner', title: 'Neon Runner', engine: 'Runner' },
-    { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'Reflex Timing' },
-    { id: 'space-blaster', title: 'Space Blaster', engine: 'Arena Shooter' },
-    { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'Reflex Timing' },
-  ]
+  const quickGames = activeGames
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--color-bg)' }}>
@@ -37,6 +40,7 @@ export default function NotFoundPage({
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
+        onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
       />
 
@@ -179,7 +183,7 @@ export default function NotFoundPage({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
                 gap: 'var(--space-3)',
               }}
             >
@@ -239,7 +243,7 @@ export default function NotFoundPage({
           onLaunchInviteLink={() => {
             const game = selectedGame
             setSelectedGame(null)
-            onFindOpponent?.(game.id, game.title)
+            onLaunchGuestInvite?.(game.id, game.title)
           }}
           onLaunchCoinsMatch={(stake: number) => {
             const game = selectedGame
@@ -252,6 +256,7 @@ export default function NotFoundPage({
           }}
         />
       )}
+      <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
     </div>
   )
 }
