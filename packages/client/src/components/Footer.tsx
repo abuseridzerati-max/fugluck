@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { POLICY_NAV_ITEMS } from '@fugluck/shared'
+import { BrandMarkIcon } from './icons'
 
 type FooterProps = { onNavigate: (path: string) => void }
 
@@ -21,7 +22,12 @@ export default function Footer({ onNavigate }: FooterProps) {
     <footer className="site-footer">
       <div className="site-footer__columns">
         <div className="site-footer__brand">
-          <a className="site-footer__logo" href="/" onClick={(e) => handleLinkClick(e, '/')}>Fugluck</a>
+          <a className="site-footer__logo" href="/" onClick={(e) => handleLinkClick(e, '/')}>
+            <span className="ac-nav__brand-mark" aria-hidden="true">
+              <BrandMarkIcon size={15} />
+            </span>
+            <span>Fugluck</span>
+          </a>
           <p>Competitive skill games, practice and platform-defined competitions.</p>
         </div>
         {columns.map((column) => <nav key={column.id} aria-label={column.heading}>

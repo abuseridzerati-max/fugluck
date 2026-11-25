@@ -7,9 +7,10 @@
 }
 
 .public-page__main {
-  width: min(100% - 2rem, 1120px);
+  width: 100%;
+  max-width: var(--container-max, 1280px);
   margin: 0 auto;
-  padding: clamp(1.25rem, 4vw, 3rem) 0 4rem;
+  padding: clamp(1.25rem, 3.5vw, 2.5rem) var(--container-gutter, clamp(1rem, 3vw, 2rem)) 4rem;
   box-sizing: border-box;
   flex: 1;
 }

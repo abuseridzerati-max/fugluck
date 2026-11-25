@@ -1,12 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
-import { navFilters } from '../mock/homeData'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
 import LanguageSwitcher from './LanguageSwitcher'
-import { SearchIcon } from './icons'
+import { BrandMarkIcon, CoinIcon, GamepadIcon, TrophyIcon } from './icons'
 
 type NavbarProps = {
   onNavigateHome: () => void
@@ -14,10 +13,7 @@ type NavbarProps = {
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
-  selectedCategory?: string
-  onSelectCategory?: (category: string) => void
-  searchQuery?: string
-  onSearchChange?: (query: string) => void
+  activePage?: 'home' | 'competitions' | 'wallet' | 'profile' | 'friends'
 }
 
 export default function Navbar({
@@ -26,265 +22,202 @@ export default function Navbar({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateCompetitions,
-  selectedCategory = 'all',
-  onSelectCategory,
-  searchQuery = '',
-  onSearchChange,
+  activePage,
 }: NavbarProps) {
   const { t } = useTranslation()
   const { user, logOut } = useAuth()
   const showSandboxGel = canViewSandboxGelUi(user)
   const [menuOpen, setMenuOpen] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleOutside(e: MouseEvent | TouchEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOpen])
 
   return (
-    <nav
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: 'var(--space-4)',
-        padding: 'var(--space-4) clamp(var(--space-4), 2vw, var(--space-6))',
-        borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-bg)',
-      }}
-    >
-      <button
-        type="button"
-        onClick={onNavigateHome}
-        style={{
-          fontSize: 'var(--font-size-lg)',
-          fontWeight: 'var(--font-weight-bold)',
-          color: 'var(--color-primary)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0,
-        }}
-      >
-        Fugluck
-      </button>
+    <header className="ac-nav">
+      <nav className="ac-nav__inner" aria-label="Primary navigation">
+        <div className="ac-nav__left">
+          <button type="button" className="ac-nav__brand" onClick={onNavigateHome}>
+            <span className="ac-nav__brand-mark" aria-hidden="true">
+              <BrandMarkIcon size={16} />
+            </span>
+            <span>Fugluck</span>
+          </button>
 
-      {onNavigateCompetitions && (
-        <button
-          type="button"
-          onClick={onNavigateCompetitions}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: 'var(--radius-full, 9999px)',
-            color: '#10b981',
-            padding: '4px 12px',
-            fontSize: 'var(--font-size-xs)',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-          }}
-        >
-          🏆 {t('competition.title')}
-        </button>
-      )}
-
-      {onSearchChange && (
-        <label className="ac-search" style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
-          <SearchIcon />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t('common.search', { defaultValue: 'Search games…' })}
-            style={{ paddingRight: searchQuery ? '32px' : undefined }}
-          />
-          {searchQuery && (
+          <div className="ac-nav__links">
             <button
               type="button"
-              onClick={() => onSearchChange('')}
-              style={{
-                position: 'absolute',
-                right: '8px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-text-muted)',
-                cursor: 'pointer',
-                fontSize: '12px',
-                padding: '4px',
-              }}
-              title={t('common.clearSearch', { defaultValue: 'Clear search' })}
-              aria-label={t('common.clearSearch', { defaultValue: 'Clear search' })}
+              className={`ac-nav__link${activePage === 'home' ? ' ac-nav__link--active' : ''}`}
+              onClick={onNavigateHome}
             >
-              ✕
+              <GamepadIcon size={15} />
+              <span>{t('navigation.home')}</span>
+            </button>
+
+            {onNavigateCompetitions && (
+              <button
+                type="button"
+                className={`ac-nav__link ac-nav__link--accent${activePage === 'competitions' ? ' ac-nav__link--active' : ''}`}
+                onClick={onNavigateCompetitions}
+              >
+                <TrophyIcon size={15} />
+                <span>{t('competition.title')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="ac-nav__right">
+          {user && (
+            <button
+              type="button"
+              className="ac-nav__balances"
+              onClick={onNavigateWallet}
+              disabled={!onNavigateWallet}
+              title={t('navigation.coinsTooltip')}
+            >
+              <span className="ac-nav__balance-chip">
+                <CoinIcon size={14} />
+                <span>{user.balances.coins.toLocaleString()}</span>
+                <span className="ac-nav__balance-unit">{t('common.coins').toLowerCase()}</span>
+              </span>
+
+              {showSandboxGel && (
+                <span
+                  className="ac-nav__sandbox-chip"
+                  title="TEST / SANDBOX GEL — Simulated test funds, no real money used"
+                  aria-label={`TEST / SANDBOX GEL: TEST ₾${((user.balances.sandboxGelMinor ?? 0) / 100).toFixed(2)}`}
+                >
+                  TEST ₾{((user.balances.sandboxGelMinor ?? 0) / 100).toFixed(2)}
+                </span>
+              )}
             </button>
           )}
-        </label>
-      )}
 
-      {onSelectCategory && (
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-          {navFilters.map((f) => {
-            const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
-            return (
+          <LanguageSwitcher />
+
+          {user ? (
+            <div ref={menuRef} style={{ position: 'relative' }}>
               <button
-                key={f.label}
                 type="button"
-                className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
-                onClick={() => onSelectCategory(f.engine)}
+                className="ac-nav__avatar-btn"
+                aria-label={t('navigation.accountMenu')}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                onClick={() => setMenuOpen((open) => !open)}
               >
-                {f.label}
+                <Avatar username={user.username} size={34} />
               </button>
-            )
-          })}
+
+              {menuOpen && (
+                <div className="ac-nav__dropdown" role="menu">
+                  <div className="ac-nav__dropdown-header">
+                    <div className="ac-nav__dropdown-name">{user.username}</div>
+                  </div>
+                  <MenuItem
+                    label={t('navigation.profile')}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onNavigateProfile()
+                    }}
+                  />
+                  {onNavigateWallet && (
+                    <MenuItem
+                      label={t('navigation.wallet', { defaultValue: 'Wallet & Sandbox' })}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onNavigateWallet()
+                      }}
+                    />
+                  )}
+                  {onNavigateCompetitions && (
+                    <MenuItem
+                      label={t('competition.title')}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onNavigateCompetitions()
+                      }}
+                    />
+                  )}
+                  {onNavigateFriends && (
+                    <MenuItem
+                      label={t('navigation.friends')}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onNavigateFriends()
+                      }}
+                    />
+                  )}
+                  <MenuItem
+                    label={t('navigation.logout')}
+                    danger
+                    onClick={() => {
+                      setMenuOpen(false)
+                      logOut()
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="ac-nav__auth">
+              <button
+                type="button"
+                className="ac-btn ac-btn--ghost ac-btn--sm"
+                onClick={() => setAuthModalMode('login')}
+              >
+                {t('navigation.login')}
+              </button>
+              <button
+                type="button"
+                className="ac-btn ac-btn--primary ac-btn--sm"
+                onClick={() => setAuthModalMode('signup')}
+              >
+                {t('navigation.signup')}
+              </button>
+            </div>
+          )}
         </div>
-      )}
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-3)', marginLeft: 'auto', maxWidth: '100%' }}>
-        <LanguageSwitcher />
-
-        {user && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-3)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-muted)',
-              cursor: onNavigateWallet ? 'pointer' : 'default',
-            }}
-            onClick={onNavigateWallet}
-            title={t('navigation.coinsTooltip')}
-          >
-            <span>
-              <span style={{ color: 'var(--color-secondary, #fbbf24)', fontWeight: 'bold' }}>{user.balances.coins.toLocaleString()}</span>{' '}
-              {t('common.coins').toLowerCase()}
-            </span>
-            {showSandboxGel && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-full, 9999px)',
-                  color: '#10b981',
-                  fontWeight: 'bold',
-                  fontSize: '11px',
-                }}
-                title="TEST / SANDBOX GEL — Simulated test funds, no real money used"
-              >
-                <span style={{ opacity: 0.85, marginRight: '4px' }}>TEST / SANDBOX GEL:</span>
-                TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
-              </span>
-            )}
-          </div>
-        )}
-
-        {user ? (
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              aria-label={t('navigation.accountMenu')}
-              onClick={() => setMenuOpen((open) => !open)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-            >
-              <Avatar username={user.username} />
-            </button>
-            {menuOpen && (
-              <div
-                className="ac-panel"
-                style={{
-                  position: 'absolute',
-                  top: '44px',
-                  right: 0,
-                  padding: 'var(--space-2)',
-                  minWidth: 160,
-                  zIndex: 20,
-                }}
-              >
-                <MenuItem
-                  label={t('navigation.profile')}
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onNavigateProfile()
-                  }}
-                />
-                {onNavigateWallet && (
-                  <MenuItem
-                    label={t('navigation.wallet', { defaultValue: 'Wallet & Sandbox' })}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      onNavigateWallet()
-                    }}
-                  />
-                )}
-                {onNavigateCompetitions && (
-                  <MenuItem
-                    label={t('competition.title')}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      onNavigateCompetitions()
-                    }}
-                  />
-                )}
-                {onNavigateFriends && (
-                  <MenuItem
-                    label={t('navigation.friends')}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      onNavigateFriends()
-                    }}
-                  />
-                )}
-                <MenuItem
-                  label={t('navigation.logout')}
-                  onClick={() => {
-                    setMenuOpen(false)
-                    logOut()
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button type="button" className="ac-pill" onClick={() => setAuthModalMode('login')}>
-              {t('navigation.login')}
-            </button>
-            <button type="button" className="ac-pill ac-pill--active" onClick={() => setAuthModalMode('signup')}>
-              {t('navigation.signup')}
-            </button>
-          </div>
-        )}
-      </div>
+      </nav>
 
       {authModalMode && <AuthModal initialMode={authModalMode} onClose={() => setAuthModalMode(null)} />}
-    </nav>
+    </header>
   )
 }
 
-function MenuItem({ label, onClick }: { label: string; onClick: () => void }) {
+function MenuItem({
+  label,
+  onClick,
+  danger = false,
+}: {
+  label: string
+  onClick: () => void
+  danger?: boolean
+}) {
   return (
     <button
       type="button"
+      role="menuitem"
+      className={`ac-nav__menu-item${danger ? ' ac-nav__menu-item--danger' : ''}`}
       onClick={onClick}
-      style={{
-        display: 'block',
-        width: '100%',
-        textAlign: 'left',
-        background: 'none',
-        border: 'none',
-        color: 'var(--color-text)',
-        padding: 'var(--space-2) var(--space-3)',
-        borderRadius: 'var(--radius-sm)',
-        cursor: 'pointer',
-        fontSize: 'var(--font-size-sm)',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-raised)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
     >
       {label}
     </button>

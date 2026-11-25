@@ -35,7 +35,7 @@ export default function NotFoundPage({
   const quickGames = activeGames
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--color-bg)' }}>
+    <div className="ac-shell">
       <Navbar
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
@@ -45,12 +45,11 @@ export default function NotFoundPage({
       />
 
       <main
+        className="ac-main"
         style={{
-          flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 'var(--space-8) var(--space-4)',
         }}
       >
         <div

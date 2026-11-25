@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { gameFactories } from '../game-loader/gameFactories'
-import { activeGames } from '../mock/homeData'
+import { activeGames, navFilters } from '../mock/homeData'
 import GameCard from './GameCard'
-import { TrendingIcon } from './icons'
+import { SearchIcon, TrendingIcon } from './icons'
 
 type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
@@ -11,7 +12,9 @@ type TrendingArenaProps = {
   onOpenCompetitions?: (id: string, title: string) => void
   loadingGameId: string | null
   selectedCategory?: string
+  onSelectCategory?: (category: string) => void
   searchQuery?: string
+  onSearchChange?: (query: string) => void
   onClearSearch?: () => void
 }
 
@@ -22,20 +25,23 @@ export default function TrendingArena({
   onOpenCompetitions,
   loadingGameId,
   selectedCategory = 'all',
+  onSelectCategory,
   searchQuery = '',
+  onSearchChange,
   onClearSearch,
 }: TrendingArenaProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
 
   const trimmedQuery = searchQuery.trim().toLowerCase()
 
   const filteredGames = activeGames.filter((game) => {
-    // 1. Category match
     const categoryMatches =
-      !selectedCategory || selectedCategory.toLowerCase() === 'all' || game.engine.toLowerCase() === selectedCategory.toLowerCase()
+      !selectedCategory ||
+      selectedCategory.toLowerCase() === 'all' ||
+      game.engine.toLowerCase() === selectedCategory.toLowerCase()
     if (!categoryMatches) return false
 
-    // 2. Search query match
     if (trimmedQuery) {
       const titleMatches = game.title.toLowerCase().includes(trimmedQuery)
       const engineMatches = game.engine.toLowerCase().includes(trimmedQuery)
@@ -53,7 +59,8 @@ export default function TrendingArena({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 'var(--space-5)',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -65,22 +72,68 @@ export default function TrendingArena({
         {trimmedQuery && onClearSearch && (
           <button
             type="button"
-            className="ac-btn ac-btn--ghost"
+            className="ac-btn ac-btn--ghost ac-btn--sm"
             onClick={onClearSearch}
-            style={{ fontSize: 'var(--font-size-xs)' }}
           >
             Clear Search
           </button>
         )}
       </div>
 
+      {(onSelectCategory || onSearchChange) && (
+        <div className="ac-arena-toolbar" role="region" aria-label="Filter and search games">
+          {onSelectCategory && (
+            <div className="ac-arena-toolbar__filters" role="group" aria-label="Game genres">
+              {navFilters.map((f) => {
+                const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
+                return (
+                  <button
+                    key={f.label}
+                    type="button"
+                    aria-pressed={isActive}
+                    className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
+                    onClick={() => onSelectCategory(f.engine)}
+                  >
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {onSearchChange && (
+            <label className="ac-search ac-arena-toolbar__search">
+              <SearchIcon size={15} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={t('common.search', { defaultValue: 'Search games…' })}
+                style={{ paddingRight: searchQuery ? '28px' : undefined }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="ac-arena-toolbar__clear"
+                  onClick={() => onSearchChange('')}
+                  title={t('common.clearSearch', { defaultValue: 'Clear search' })}
+                  aria-label={t('common.clearSearch', { defaultValue: 'Clear search' })}
+                >
+                  ✕
+                </button>
+              )}
+            </label>
+          )}
+        </div>
+      )}
+
       {filteredGames.length === 0 ? (
         <div
           style={{
             textAlign: 'center',
             padding: 'var(--space-8)',
-            background: 'var(--color-bg-subtle)',
-            border: '1px dashed var(--color-border)',
+            background: 'var(--color-surface)',
+            border: '1px dashed var(--color-border-strong)',
             borderRadius: 'var(--radius-lg)',
             color: 'var(--color-text-muted)',
             fontSize: 'var(--font-size-md)',

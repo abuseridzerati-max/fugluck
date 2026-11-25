@@ -43,8 +43,9 @@ export default function HomePage({
   }, [user])
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="ac-shell">
       <Navbar
+        activePage="home"
         onNavigateHome={() => {
           setSelectedCategory('all')
           setSearchQuery('')
@@ -53,12 +54,8 @@ export default function HomePage({
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
       />
-      <main style={{ flex: 1, maxWidth: 1400, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
+      <main className="ac-main">
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}
@@ -67,7 +64,9 @@ export default function HomePage({
           onOpenCompetitions={onOpenCompetitions}
           loadingGameId={loadingGameId}
           selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
           searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           onClearSearch={() => setSearchQuery('')}
         />
       </main>
@@ -76,4 +75,3 @@ export default function HomePage({
     </div>
   )
 }
-

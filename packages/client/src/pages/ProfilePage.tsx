@@ -66,33 +66,36 @@ export default function ProfilePage({
 
   if (!user) {
     return (
-      <>
+      <div className="ac-shell">
         <Navbar
+          activePage="profile"
           onNavigateHome={onNavigateHome}
           onNavigateProfile={() => {}}
           onNavigateFriends={onNavigateFriends}
           onNavigateWallet={onNavigateWallet}
           onNavigateCompetitions={onNavigateCompetitions}
         />
-        <main style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
+        <main className="ac-main ac-main--narrow">
           <p className="ac-text-muted">{t('auth.notLoggedIn')}</p>
         </main>
-      </>
+        <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
+      </div>
     )
   }
 
   const winRate = user.gamesPlayed > 0 ? `${Math.round((user.gamesWon / user.gamesPlayed) * 100)}%` : '—'
 
   return (
-    <>
+    <div className="ac-shell">
       <Navbar
+        activePage="profile"
         onNavigateHome={onNavigateHome}
         onNavigateProfile={() => {}}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
       />
-      <main style={{ maxWidth: 680, margin: '0 auto', padding: 'var(--space-8) var(--space-5)' }}>
+      <main className="ac-main ac-main--narrow">
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-8)' }}>
           <Avatar username={user.username} size={72} />
           <div>
@@ -274,6 +277,6 @@ export default function ProfilePage({
         />
       </main>
       <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
-    </>
+    </div>
   )
 }

@@ -98,14 +98,15 @@ export default function WalletPage({
   const userReservedMinor = user?.balances.sandboxGelReservedMinor ?? 0
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="ac-shell">
       <Navbar
+        activePage="wallet"
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile ?? onNavigateHome}
         onNavigateFriends={onNavigateFriends}
         onNavigateCompetitions={onNavigateCompetitions}
       />
-      <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: 'var(--space-6) var(--space-4)', boxSizing: 'border-box' }}>
+      <main className="ac-main">
         <h1 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
           Wallet & Balances
         </h1>

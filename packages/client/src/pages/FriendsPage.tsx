@@ -107,15 +107,16 @@ export default function FriendsPage({
   const outgoing = friends.filter((f) => f.direction === 'outgoing' && f.status === 'pending')
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="ac-shell">
       <Navbar
+        activePage="friends"
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
         onNavigateFriends={() => {}}
       />
-      <main style={{ flex: 1, maxWidth: 720, width: '100%', margin: '0 auto', padding: 'var(--space-8) var(--space-5)', boxSizing: 'border-box' }}>
+      <main className="ac-main ac-main--narrow">
         <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-3xl)' }}>{t('friends.title')}</h1>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-6)' }}>
           {t('friends.tagline')}

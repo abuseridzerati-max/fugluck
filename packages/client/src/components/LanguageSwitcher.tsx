@@ -109,20 +109,20 @@ export default function LanguageSwitcher() {
           gap: '6px',
           height: '32px',
           padding: '0 8px',
-          background: isOpen ? 'var(--color-surface-raised, #1a1a23)' : 'rgba(255, 255, 255, 0.04)',
+          background: isOpen ? 'var(--color-surface-raised)' : 'rgba(255, 255, 255, 0.04)',
           border: isOpen ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
           borderRadius: 'var(--radius-full, 9999px)',
           color: 'var(--color-text)',
           cursor: 'pointer',
           transition: 'all 0.15s ease',
           outline: 'none',
-          boxShadow: isOpen ? 'var(--glow-primary, 0 0 0 2px rgba(124, 58, 237, 0.35))' : 'none',
+          boxShadow: isOpen ? 'var(--focus-ring)' : 'none',
           userSelect: 'none',
         }}
         onMouseEnter={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.borderColor = 'var(--color-primary-hover, #8b5cf6)'
-            e.currentTarget.style.background = 'var(--color-surface-raised, #1a1a23)'
+            e.currentTarget.style.borderColor = 'var(--color-border-strong)'
+            e.currentTarget.style.background = 'var(--color-surface-raised)'
           }
         }}
         onMouseLeave={(e) => {
@@ -132,7 +132,7 @@ export default function LanguageSwitcher() {
           }
         }}
         onFocus={(e) => {
-          e.currentTarget.style.boxShadow = 'var(--focus-ring, 0 0 0 3px rgba(124, 58, 237, 0.45))'
+          e.currentTarget.style.boxShadow = 'var(--focus-ring)'
         }}
         onBlur={(e) => {
           if (!isOpen) {
@@ -201,11 +201,11 @@ export default function LanguageSwitcher() {
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-xs, 12px)',
                   fontWeight: isSelected ? 'var(--font-weight-bold, 700)' : 'var(--font-weight-medium, 500)',
-                  color: isSelected ? '#ffffff' : 'var(--color-text)',
+                  color: isSelected ? 'var(--color-on-accent)' : 'var(--color-text)',
                   background: isSelected
-                    ? 'var(--color-primary, #7c3aed)'
+                    ? 'var(--color-primary)'
                     : isFocused
-                    ? 'var(--color-surface-raised, #1a1a23)'
+                    ? 'var(--color-surface-raised)'
                     : 'transparent',
                   transition: 'background 0.12s ease, color 0.12s ease',
                   userSelect: 'none',
@@ -217,7 +217,7 @@ export default function LanguageSwitcher() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path
                       d="M20 6L9 17L4 12"
-                      stroke="#ffffff"
+                      stroke="currentColor"
                       strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"

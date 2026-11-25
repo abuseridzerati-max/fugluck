@@ -16,9 +16,9 @@ export default function CompetitionsPage({onNavigateHome,onNavigateProfile,onNav
 }) {
   const {t,i18n}=useTranslation();const {user,refreshUser}=useAuth();const showSandboxGel=canViewSandboxGelUi(user);const [mode,setMode]=useState<'COINS'|'GEL'>('COINS');const activeMode:'COINS'|'GEL'=showSandboxGel?mode:'COINS';const [game,setGame]=useState('all');const [funding,setFunding]=useState(false);const [fundingError,setFundingError]=useState(false)
   async function addTestFunds(){setFunding(true);setFundingError(false);try{await apiFetch('/api/competitions/sandbox-faucet',{method:'POST',body:JSON.stringify({amountMinor:10000})});await refreshUser()}catch{setFundingError(true)}finally{setFunding(false)}}
-  return <div className="competition-ux" lang={i18n.resolvedLanguage} style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-    <Navbar onNavigateHome={onNavigateHome} onNavigateProfile={onNavigateProfile} onNavigateFriends={onNavigateFriends} onNavigateWallet={onNavigateWallet} onNavigateCompetitions={()=>setGame('all')}/>
-    <main className="competition-page" style={{flex:1}}><header className="competition-heading"><div><h1>{t('competition.title')}</h1><p>{t('competition.tagline')}</p></div>
+  return <div className="competition-ux ac-shell" lang={i18n.resolvedLanguage}>
+    <Navbar activePage="competitions" onNavigateHome={onNavigateHome} onNavigateProfile={onNavigateProfile} onNavigateFriends={onNavigateFriends} onNavigateWallet={onNavigateWallet} onNavigateCompetitions={()=>setGame('all')}/>
+    <main className="competition-page ac-main"><header className="competition-heading"><div><h1>{t('competition.title')}</h1><p>{t('competition.tagline')}</p></div>
       {showSandboxGel&&<div className="competition-filters" role="group" aria-label={t('competition.modeLabel')}>{(['COINS','GEL'] as const).map(next=><button key={next} type="button" aria-pressed={activeMode===next} className={`ac-pill${activeMode===next?' ac-pill--active':''}`} onClick={()=>setMode(next)}>{t(`competition.modes.${next}`)}</button>)}</div>}
     </header>
       {activeMode==='COINS'?<aside className="competition-notice is-coins"><div><strong>{t('competition.coinsLabel')}</strong><p>{t('competition.coinsNotice')}</p></div>{user&&<span className="competition-coins-balance">{t('competition.coinsBalance',{count:user.balances.coins})}</span>}</aside>
