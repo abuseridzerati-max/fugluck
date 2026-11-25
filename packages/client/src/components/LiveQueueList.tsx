@@ -85,11 +85,11 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
       className="ac-panel"
       aria-label={t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
       style={{
-        padding: entries.length === 0 ? 'var(--space-4) var(--space-5)' : 'var(--space-6)',
-        marginBottom: 'var(--space-6)',
-        background: 'linear-gradient(180deg, rgba(26, 26, 35, 0.6) 0%, var(--color-surface, #121218) 100%)',
+        padding: entries.length === 0 ? 'var(--space-3) var(--space-5)' : 'var(--space-5)',
+        marginBottom: 'var(--space-5)',
+        background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg, 20px)',
+        borderRadius: 'var(--radius-lg)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -111,14 +111,14 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
             style={{
               width: '36px',
               height: '36px',
-              borderRadius: 'var(--radius-md, 12px)',
-              background: 'rgba(124, 58, 237, 0.15)',
-              border: '1px solid rgba(124, 58, 237, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-primary-subtle)',
+              border: '1px solid var(--color-primary-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
-              color: 'var(--color-primary, #7c3aed)',
+              fontSize: '16px',
+              color: 'var(--color-primary-hover)',
               flexShrink: 0,
             }}
           >

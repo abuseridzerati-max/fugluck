@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
+import { CoinIcon, GamepadIcon, TrophyIcon } from './icons'
 
 type LaunchModalProps = {
   gameId: string
@@ -55,11 +56,12 @@ export default function LaunchModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'color-mix(in srgb, var(--color-bg) 80%, transparent)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(4, 7, 12, 0.8)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 'var(--space-4)',
         zIndex: 50,
       }}
       onClick={onClose}
@@ -67,26 +69,24 @@ export default function LaunchModal({
       <div
         className="ac-panel"
         style={{
-          width: '90%',
-          maxWidth: 480,
+          width: '100%',
+          maxWidth: 500,
           padding: 'var(--space-6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg, 12px)',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+          border: '1px solid var(--color-border-strong)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-elevate-hover)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-            {showCoinsLobby
-              ? `Casual Coins — ${gameTitle}`
-              : gameTitle}
+            {showCoinsLobby ? `Casual Coins — ${gameTitle}` : gameTitle}
           </h2>
           <button
             type="button"
-            className="ac-btn ac-btn--ghost"
+            className="ac-btn ac-btn--ghost ac-btn--sm"
             onClick={onClose}
-            style={{ padding: 'var(--space-1) var(--space-2)' }}
+            style={{ minWidth: 36, padding: 0 }}
             aria-label="Close"
           >
             ✕
@@ -94,16 +94,16 @@ export default function LaunchModal({
         </div>
 
         {showCoinsLobby ? (
-          /* Casual Coins Matchmaking Step */
           <div>
-            <p className="ac-text-muted" style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
-              Play casual multiplayer matches with virtual COINS.
+            <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
+              Play casual multiplayer matches with free virtual COINS.
             </p>
 
             <div
               style={{
-                background: 'var(--color-surface-raised, #1e293b)',
-                padding: 'var(--space-3)',
+                background: 'var(--color-surface-raised)',
+                border: '1px solid var(--color-border)',
+                padding: 'var(--space-3) var(--space-4)',
                 borderRadius: 'var(--radius-sm)',
                 marginBottom: 'var(--space-4)',
                 display: 'flex',
@@ -111,11 +111,21 @@ export default function LaunchModal({
                 justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                 Available COINS Balance:
               </span>
-              <strong style={{ color: '#fbbf24' }}>
-                🪙 {currentCoinBalance.toLocaleString()}
+              <strong
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: 'var(--color-secondary-hover)',
+                  fontFamily: 'var(--font-mono)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <CoinIcon size={15} />
+                {currentCoinBalance.toLocaleString()} COINS
               </strong>
             </div>
 
@@ -135,29 +145,29 @@ export default function LaunchModal({
                     }}
                     className={`ac-btn ${isSelected ? 'ac-btn--primary' : 'ac-btn--ghost'}`}
                     style={{
-                      justifyContent: 'center',
-                      display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'center',
+                      gap: 2,
                       padding: 'var(--space-2)',
-                      border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                      opacity: canAfford ? 1 : 0.4,
-                      cursor: canAfford ? 'pointer' : 'not-allowed',
+                      minHeight: 44,
+                      fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    <span>{amount === 0 ? 'Free (0)' : `${amount} 🪙`}</span>
-                    {!canAfford && <span style={{ fontSize: '9px', color: '#f87171' }}>Too low</span>}
+                    <span>{amount === 0 ? 'Free (0)' : `${amount.toLocaleString()}`}</span>
+                    {!canAfford && <span style={{ fontSize: '10px', color: 'var(--color-danger)' }}>Too low</span>}
                   </button>
                 )
               })}
             </div>
 
-            {/* Custom Amount Input Field */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
-              <label style={{ fontSize: 'var(--font-size-xs)', display: 'block', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                Custom COINS Amount:
+              <label
+                htmlFor="custom-coins-input"
+                style={{ fontSize: 'var(--font-size-xs)', display: 'block', color: 'var(--color-text-muted)', marginBottom: 6 }}
+              >
+                Custom COINS Amount
               </label>
               <input
+                id="custom-coins-input"
                 type="number"
                 min={0}
                 max={currentCoinBalance}
@@ -174,17 +184,18 @@ export default function LaunchModal({
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  padding: 'var(--space-2) var(--space-3)',
+                  padding: '0.625rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--color-bg)',
-                  border: isCustomExceeding ? '1px solid #f87171' : '1px solid var(--color-border)',
+                  border: isCustomExceeding ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
                   color: 'var(--color-text)',
                   fontSize: 'var(--font-size-sm)',
+                  fontFamily: 'var(--font-mono)',
                 }}
               />
               {isCustomExceeding && (
-                <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginTop: 4 }}>
-                  Amount exceeds your current balance of {currentCoinBalance} COINS.
+                <span style={{ fontSize: '12px', color: 'var(--color-danger)', display: 'block', marginTop: 6 }}>
+                  Amount exceeds your current balance of {currentCoinBalance.toLocaleString()} COINS.
                 </span>
               )}
             </div>
@@ -210,15 +221,16 @@ export default function LaunchModal({
                   onLaunchCoinsMatch?.(selectedCoinStake)
                   onClose()
                 }}
-                style={{ flex: 2, fontWeight: 'bold', opacity: canSubmit ? 1 : 0.4 }}
+                style={{ flex: 2 }}
               >
-                {selectedCoinStake === 0 ? 'Enter Free Queue' : `Queue for ${selectedCoinStake} Coins`}
+                {selectedCoinStake === 0
+                  ? 'Enter Free Queue'
+                  : `Queue for ${selectedCoinStake.toLocaleString()} COINS`}
               </button>
             </div>
           </div>
         ) : (
-          /* Redesigned 3-Mode Selection Step per Section 3 */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {/* Mode A: PRACTICE */}
             <div
               style={{
@@ -229,24 +241,27 @@ export default function LaunchModal({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                gap: 'var(--space-3)',
+                flexWrap: 'wrap',
               }}
             >
-              <div>
-                <strong style={{ fontSize: 'var(--font-size-base)', display: 'block' }}>
-                  🕹️ PRACTICE
+              <div style={{ flex: '1 1 200px' }}>
+                <strong style={{ fontSize: 'var(--font-size-base)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <GamepadIcon size={15} />
+                  <span>PRACTICE</span>
                 </strong>
-                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>
-                  Play solo rush. No opponent or test funds needed.
+                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
+                  Play solo rush. No opponent or funds needed.
                 </span>
               </div>
               <button
                 type="button"
-                className="ac-btn ac-btn--secondary"
+                className="ac-btn ac-btn--ghost"
                 onClick={() => {
                   onLaunchPractice()
                   onClose()
                 }}
-                style={{ minWidth: 90, justifyContent: 'center' }}
+                style={{ minWidth: 112 }}
               >
                 PLAY
               </button>
@@ -262,76 +277,70 @@ export default function LaunchModal({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                gap: 'var(--space-3)',
+                flexWrap: 'wrap',
               }}
             >
-              <div>
-                <strong style={{ fontSize: 'var(--font-size-base)', display: 'block' }}>
-                  🪙 CASUAL
+              <div style={{ flex: '1 1 200px' }}>
+                <strong style={{ fontSize: 'var(--font-size-base)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <CoinIcon size={15} />
+                  <span>CASUAL</span>
                 </strong>
-                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>
-                  Play with free virtual COINS or invite a friend.
+                <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
+                  1v1 matchmaking with free virtual COINS or friend invites.
                 </span>
               </div>
               <button
                 type="button"
                 className="ac-btn ac-btn--secondary"
                 onClick={() => setShowCoinsLobby(true)}
-                style={{ minWidth: 120, justifyContent: 'center' }}
+                style={{ minWidth: 132 }}
               >
                 PLAY CASUAL
               </button>
             </div>
 
             {/* Friend Invite Shortcut */}
-            <div style={{ textAlign: 'center' }}>
-              <button
-                type="button"
-                className="ac-btn ac-btn--ghost"
-                onClick={() => {
-                  onLaunchInviteLink()
-                  onClose()
-                }}
-                style={{ fontSize: 'var(--font-size-xs)', width: '100%', border: '1px dashed var(--color-border)' }}
-              >
-                🔗 Create Instant Friend Challenge Link
-              </button>
-            </div>
+            <button
+              type="button"
+              className="ac-btn ac-btn--ghost"
+              onClick={() => {
+                onLaunchInviteLink()
+                onClose()
+              }}
+              style={{ fontSize: 'var(--font-size-xs)', width: '100%', borderStyle: 'dashed' }}
+            >
+              Create Instant Friend Challenge Link
+            </button>
 
-            {/* Mode C: SANDBOX COMPETITIONS (Candidate Games Only) */}
+            {/* Mode C: COMPETITIONS (Level 3 Certified Games Only) */}
             {isEligibleForSandboxCompetitions && (
               <div
                 style={{
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(14, 20, 32, 0.96) 100%)',
+                  border: '1px solid var(--color-primary-border)',
                   borderRadius: 'var(--radius-md)',
                   padding: 'var(--space-4)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 'var(--space-3)',
+                  flexWrap: 'wrap',
+                  marginTop: 'var(--space-1)',
                 }}
               >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <span
-                      style={{
-                        background: '#10b981',
-                        color: '#000',
-                        fontSize: '9px',
-                        fontWeight: 'bold',
-                        padding: '1px 5px',
-                        borderRadius: '3px',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      TEST GEL
+                <div style={{ flex: '1 1 210px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <span className="ac-certified-badge">
+                      <TrophyIcon size={11} />
+                      <span>COINS KNOCKOUT</span>
                     </span>
                     <strong style={{ fontSize: 'var(--font-size-base)' }}>
-                      SANDBOX COMPETITIONS
+                      COMPETITIONS
                     </strong>
                   </div>
-                  <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block' }}>
-                    Fixed entry fees & predetermined prizes. No real money.
+                  <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
+                    Coins Knockout Tournaments with server-authoritative brackets &amp; predetermined prizes. No real money.
                   </span>
                 </div>
                 <button
@@ -342,12 +351,9 @@ export default function LaunchModal({
                     onClose()
                   }}
                   style={{
-                    background: '#10b981',
-                    borderColor: '#10b981',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    minWidth: 160,
-                    justifyContent: 'center',
+                    minWidth: 170,
+                    padding: '0 1rem',
+                    minHeight: 42,
                     whiteSpace: 'nowrap',
                   }}
                 >

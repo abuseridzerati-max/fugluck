@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { CoinIcon } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
+import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
 
 export type LedgerHistoryItem = {
   id: string
@@ -31,6 +33,7 @@ export default function WalletPage({
 }: WalletPageProps) {
   const { t, i18n } = useTranslation()
   const { user, refreshUser } = useAuth()
+  const showSandboxGel = canViewSandboxGelUi(user)
   const [history, setHistory] = useState<LedgerHistoryItem[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
   const [historyError, setHistoryError] = useState<string | null>(null)
@@ -88,7 +91,7 @@ export default function WalletPage({
       const d = new Date(iso)
       const dateStr = d.toLocaleDateString(currentLang, { month: 'short', day: 'numeric', year: 'numeric' })
       const timeStr = d.toLocaleTimeString(currentLang, { hour: '2-digit', minute: '2-digit' })
-      return `${dateStr} • ${timeStr}`
+      return `${dateStr} · ${timeStr}`
     } catch {
       return iso
     }
@@ -107,107 +110,101 @@ export default function WalletPage({
         onNavigateCompetitions={onNavigateCompetitions}
       />
       <main className="ac-main">
-        <h1 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
-          Wallet & Balances
-        </h1>
+        <header style={{ marginBottom: 'var(--space-5)' }}>
+          <h1 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-2xl)' }}>
+            Wallet &amp; Balances
+          </h1>
+          <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
+            Track your virtual COINS balance, monthly top-up schedule, and ledger history.
+          </p>
+        </header>
 
         {/* Live Balance Summary Cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 'var(--space-4)',
-            marginBottom: 'var(--space-6)',
-          }}
-        >
-          {/* Virtual COINS Card */}
-          <div className="ac-card" style={{ padding: 'var(--space-5)' }}>
-            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
-              {t('wallet.coinsLabel', { defaultValue: 'COINS Balance' })}
-            </div>
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--color-secondary, #fbbf24)' }}>
-              🪙 {user?.balances.coins.toLocaleString() ?? '0'}
-            </div>
-            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-              Free virtual tokens for casual play and social friend matches.
-            </div>
-          </div>
-
-          {/* SANDBOX TEST GEL Card */}
-          <div
-            className="ac-card"
-            style={{
-              padding: 'var(--space-5)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, var(--color-surface) 100%)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
-              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                SANDBOX TEST BALANCE
-              </div>
-              <span
-                style={{
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#10b981',
-                  border: '1px solid #10b981',
-                  borderRadius: '4px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  padding: '2px 6px',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                TEST ONLY
+        <div className="ac-wallet-grid">
+          {/* Virtual COINS Hero Card */}
+          <section className="ac-wallet-hero" aria-label="COINS balance">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-muted)' }}>
+                {t('wallet.coinsLabel', { defaultValue: 'COINS Balance' })}
+              </span>
+              <span className="ac-badge ac-badge--coins">
+                <CoinIcon size={12} />
+                <span>FREE VIRTUAL POINTS</span>
               </span>
             </div>
 
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: '#10b981' }}>
-              TEST ₾{(userBalanceMinor / 100).toFixed(2)}
+            <div className="ac-wallet-amount" style={{ color: 'var(--color-secondary-hover)' }}>
+              {(user?.balances.coins ?? 0).toLocaleString()} <span style={{ fontSize: '0.5em', color: 'var(--color-text-secondary)' }}>COINS</span>
             </div>
 
-          {userReservedMinor > 0 && (
-              <div style={{ fontSize: 'var(--font-size-xs)', color: '#fbbf24', marginTop: 4 }}>
-                (TEST ₾{(userReservedMinor / 100).toFixed(2)} reserved in active queue)
-              </div>
-            )}
+            <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+              Use COINS for casual 1v1 matches, friend challenges, and Coins Knockout Tournaments.
+            </p>
 
-            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)', lineHeight: 1.4 }}>
-              TEST GEL is simulated, has no real-world value, and cannot be deposited, withdrawn, or redeemed.
-            </div>
-
-            <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <button
-                type="button"
-                className="ac-btn ac-btn--secondary"
-                disabled={!user || faucetLoading}
-                onClick={handleAddTestFunds}
-                title={!user ? 'Sign in to access sandbox test funds.' : undefined}
-                style={{ fontSize: '11px', padding: '4px 12px', whiteSpace: 'nowrap' }}
-              >
-                {faucetLoading ? 'Adding…' : user ? 'Add Test Funds' : 'Sign in to access test funds'}
-              </button>
-              <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                {user ? 'Adds simulated sandbox funds. No real money is charged.' : 'Sign in to view balances, history, and test-fund options.'}
+            <div className="ac-wallet-refill-note">
+              <strong style={{ color: 'var(--color-secondary-hover)', whiteSpace: 'nowrap' }}>Monthly Top-Up:</strong>
+              <span>
+                Accounts below <strong>1,000 COINS</strong> automatically refill back to <strong>1,000 COINS</strong> on the 1st of every month at <strong>00:00 Asia/Tbilisi</strong>. Balances of 1,000+ remain untouched.
               </span>
             </div>
+          </section>
 
-            {faucetMessage && (
-              <div style={{ marginTop: 'var(--space-2)', fontSize: '11px', color: '#10b981' }}>
-                {faucetMessage}
+          {/* SANDBOX TEST GEL Card (Admin / Operator Sandbox View) */}
+          {showSandboxGel && (
+            <section className="ac-wallet-sandbox" aria-label="Sandbox Test GEL balance">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-muted)' }}>
+                  SANDBOX TEST BALANCE
+                </span>
+                <span className="ac-badge ac-badge--sandbox">TEST ONLY</span>
               </div>
-            )}
-            {faucetError && (
-              <div style={{ marginTop: 'var(--space-2)', fontSize: '11px', color: '#f87171' }}>
-                {faucetError}
+
+              <div className="ac-wallet-amount" style={{ color: 'var(--color-primary-hover)' }}>
+                TEST ₾{(userBalanceMinor / 100).toFixed(2)}
               </div>
-            )}
-          </div>
+
+              {userReservedMinor > 0 && (
+                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-secondary-hover)', fontFamily: 'var(--font-mono)' }}>
+                  (TEST ₾{(userReservedMinor / 100).toFixed(2)} reserved in active queue)
+                </div>
+              )}
+
+              <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                TEST GEL is simulated, has no real-world value, and cannot be deposited, withdrawn, or redeemed.
+              </p>
+
+              <div style={{ marginTop: 'auto', paddingTop: 'var(--space-2)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <button
+                  type="button"
+                  className="ac-btn ac-btn--primary ac-btn--sm"
+                  disabled={!user || faucetLoading}
+                  onClick={handleAddTestFunds}
+                  title={!user ? 'Sign in to access sandbox test funds.' : undefined}
+                >
+                  {faucetLoading ? 'Adding…' : user ? 'Add Test Funds' : 'Sign in to access test funds'}
+                </button>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                  {user ? 'Adds +TEST ₾100.00 simulated sandbox funds.' : 'Sign in to view balances, history, and test-fund options.'}
+                </span>
+              </div>
+
+              {faucetMessage && (
+                <div style={{ fontSize: '12px', color: 'var(--color-primary-hover)' }}>
+                  {faucetMessage}
+                </div>
+              )}
+              {faucetError && (
+                <div style={{ fontSize: '12px', color: 'var(--color-danger)' }}>
+                  {faucetError}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Ledger Transaction History Section */}
-        <section className="ac-card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <section className="ac-panel" style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <h2 style={{ fontSize: 'var(--font-size-lg)', margin: 0 }}>
               {t('wallet.historyTitle', { defaultValue: 'Transaction History' })}
             </h2>
@@ -215,41 +212,40 @@ export default function WalletPage({
               type="button"
               onClick={loadHistory}
               disabled={loadingHistory}
-              className="ac-btn ac-btn--ghost"
-              style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--space-1) var(--space-3)' }}
+              className="ac-btn ac-btn--ghost ac-btn--sm"
             >
-              🔄 {t('common.refresh', { defaultValue: 'Refresh' })}
+              {t('common.refresh', { defaultValue: 'Refresh' })}
             </button>
           </div>
 
           {!user ? (
-            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0', margin: 0 }}>
               Sign in to view your transaction history.
             </p>
           ) : loadingHistory ? (
-            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0', margin: 0 }}>
               {t('wallet.loadingHistory', { defaultValue: 'Loading transaction ledger…' })}
             </p>
           ) : historyError ? (
-            <div style={{ padding: 'var(--space-4) 0', color: 'var(--color-danger, #f87171)' }}>
+            <div style={{ padding: 'var(--space-4) 0', color: 'var(--color-danger)' }}>
               <p style={{ margin: '0 0 var(--space-3)' }}>{historyError}</p>
-              <button type="button" onClick={loadHistory} className="ac-btn ac-btn--primary">
-                🔄 {t('common.retry', { defaultValue: 'Retry' })}
+              <button type="button" onClick={loadHistory} className="ac-btn ac-btn--primary ac-btn--sm">
+                {t('common.retry', { defaultValue: 'Retry' })}
               </button>
             </div>
           ) : history.length === 0 ? (
-            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0' }}>
+            <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0', margin: 0 }}>
               {t('wallet.noHistory', { defaultValue: 'No transactions recorded yet.' })}
             </p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 'var(--font-size-sm)' }}>
+            <div className="ac-table-wrap">
+              <table className="ac-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Type / Description</th>
-                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Amount</th>
-                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Currency</th>
-                    <th style={{ padding: 'var(--space-3) var(--space-2)' }}>Date & Time</th>
+                  <tr>
+                    <th>Type / Description</th>
+                    <th>Amount</th>
+                    <th>Currency</th>
+                    <th>Date &amp; Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,22 +253,26 @@ export default function WalletPage({
                     const isCredit = tx.amount > 0
                     const isZero = tx.amount === 0
                     const sign = isCredit ? '+' : ''
-                    const amountColor = isZero ? 'var(--color-text-muted)' : isCredit ? '#22c55e' : '#f87171'
+                    const amountColor = isZero
+                      ? 'var(--color-text-muted)'
+                      : isCredit
+                      ? 'var(--color-success)'
+                      : 'var(--color-danger)'
 
                     return (
-                      <tr key={tx.id} style={{ borderBottom: '1px solid color-mix(in srgb, var(--color-border) 40%, transparent)' }}>
-                        <td style={{ padding: 'var(--space-3) var(--space-2)', fontWeight: 500 }}>{tx.label}</td>
-                        <td style={{ padding: 'var(--space-3) var(--space-2)', color: amountColor, fontWeight: 'bold' }}>
+                      <tr key={tx.id}>
+                        <td style={{ fontWeight: 500, color: 'var(--color-text)' }}>{tx.label}</td>
+                        <td className="ac-table__mono" style={{ color: amountColor, fontWeight: 700 }}>
                           {sign}{tx.amount.toLocaleString()}
                         </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-2)' }}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           {tx.currency === 'COINS' ? (
-                            '🪙 COINS'
+                            <span className="ac-badge ac-badge--coins">COINS</span>
                           ) : (
-                            <span style={{ color: '#10b981' }}>TEST ₾ (SANDBOX)</span>
+                            <span className="ac-badge ac-badge--sandbox">TEST ₾</span>
                           )}
                         </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-2)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
+                        <td className="ac-table__mono" style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
                           {formatTimestamp(tx.createdAt)}
                         </td>
                       </tr>

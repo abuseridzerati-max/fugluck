@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
+import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { gameFactories } from '../game-loader/gameFactories'
 import { activeGames, navFilters } from '../mock/homeData'
 import GameCard from './GameCard'
-import { SearchIcon, TrendingIcon } from './icons'
+import { GamepadIcon, SearchIcon, TrophyIcon } from './icons'
 
 type TrendingArenaProps = {
   onPlayGame: (id: string, title: string) => void
@@ -52,34 +53,15 @@ export default function TrendingArena({
     return true
   })
 
-  return (
-    <section style={{ margin: '0 0 var(--space-8)' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <TrendingIcon className="ac-text-muted" />
-          <h2 style={{ fontSize: 'var(--font-size-xl)', margin: 0 }}>
-            {trimmedQuery ? `Search Results: "${searchQuery}"` : 'Active Arena Games'}
-          </h2>
-        </div>
-        {trimmedQuery && onClearSearch && (
-          <button
-            type="button"
-            className="ac-btn ac-btn--ghost ac-btn--sm"
-            onClick={onClearSearch}
-          >
-            Clear Search
-          </button>
-        )}
-      </div>
+  const certifiedGames = filteredGames.filter(
+    (game) => GAME_COMPETITION_CERTIFICATIONS[game.id]?.testGelCompetition === 'LEVEL_3_CERTIFIED',
+  )
+  const casualGames = filteredGames.filter(
+    (game) => GAME_COMPETITION_CERTIFICATIONS[game.id]?.testGelCompetition !== 'LEVEL_3_CERTIFIED',
+  )
 
+  return (
+    <section id="arena-games" style={{ margin: '0 0 var(--space-8)' }}>
       {(onSelectCategory || onSearchChange) && (
         <div className="ac-arena-toolbar" role="region" aria-label="Filter and search games">
           {onSelectCategory && (
@@ -127,6 +109,17 @@ export default function TrendingArena({
         </div>
       )}
 
+      {trimmedQuery && (
+        <div className="ac-section-head">
+          <h2 className="ac-section-title">Search Results: "{searchQuery}"</h2>
+          {onClearSearch && (
+            <button type="button" className="ac-btn ac-btn--ghost ac-btn--sm" onClick={onClearSearch}>
+              Clear Search
+            </button>
+          )}
+        </div>
+      )}
+
       {filteredGames.length === 0 ? (
         <div
           style={{
@@ -153,38 +146,91 @@ export default function TrendingArena({
           )}
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
-            gap: 'var(--space-5)',
-          }}
-        >
-          {filteredGames.map((game) => (
-            <GameCard
-              key={game.id}
-              gameId={game.id}
-              title={game.title}
-              engine={game.engine}
-              tagline={game.tagline}
-              loading={loadingGameId === game.id}
-              onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
-              onFindOpponent={
-                user && game.id in gameFactories
-                  ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
-                  : undefined
-              }
-              onLaunchGuestInvite={
-                game.id in gameFactories
-                  ? () => onLaunchGuestInvite?.(game.id, game.title)
-                  : undefined
-              }
-              onOpenCompetitions={
-                onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
-              }
-            />
-          ))}
-        </div>
+        <>
+          {certifiedGames.length > 0 && (
+            <div style={{ marginBottom: casualGames.length > 0 ? 'var(--space-8)' : 0 }}>
+              <div className="ac-section-head">
+                <div className="ac-section-title-group">
+                  <TrophyIcon size={18} />
+                  <h2 className="ac-section-title">Tournament Certified</h2>
+                  <span className="ac-badge ac-badge--sandbox">Server-Authoritative</span>
+                </div>
+                <p className="ac-section-sub">
+                  Eligible for Coins Knockout Tournaments &amp; live bracket competitions
+                </p>
+              </div>
+
+              <div className="ac-spotlight-grid">
+                {certifiedGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    gameId={game.id}
+                    title={game.title}
+                    engine={game.engine}
+                    tagline={game.tagline}
+                    certified
+                    loading={loadingGameId === game.id}
+                    onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
+                    onFindOpponent={
+                      user && game.id in gameFactories
+                        ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                        : undefined
+                    }
+                    onLaunchGuestInvite={
+                      game.id in gameFactories
+                        ? () => onLaunchGuestInvite?.(game.id, game.title)
+                        : undefined
+                    }
+                    onOpenCompetitions={
+                      onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {casualGames.length > 0 && (
+            <div>
+              <div className="ac-section-head">
+                <div className="ac-section-title-group">
+                  <GamepadIcon size={18} />
+                  <h2 className="ac-section-title">Practice &amp; Casual</h2>
+                </div>
+                <p className="ac-section-sub">
+                  Solo practice, instant friend links, and casual Coins matchmaking
+                </p>
+              </div>
+
+              <div className="ac-casual-grid">
+                {casualGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    gameId={game.id}
+                    title={game.title}
+                    engine={game.engine}
+                    tagline={game.tagline}
+                    loading={loadingGameId === game.id}
+                    onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
+                    onFindOpponent={
+                      user && game.id in gameFactories
+                        ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                        : undefined
+                    }
+                    onLaunchGuestInvite={
+                      game.id in gameFactories
+                        ? () => onLaunchGuestInvite?.(game.id, game.title)
+                        : undefined
+                    }
+                    onOpenCompetitions={
+                      onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   )

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import AuthModal from '../components/AuthModal'
 import Footer from '../components/Footer'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
 import TrendingArena from '../components/TrendingArena'
+import { TrophyIcon } from '../components/icons'
 
 type HomePageProps = {
   onPlayGame: (id: string, title: string) => void
@@ -33,6 +35,7 @@ export default function HomePage({
   onNavigatePolicy,
   initialAuthModalMode,
 }: HomePageProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -56,6 +59,31 @@ export default function HomePage({
         onNavigateCompetitions={onNavigateCompetitions}
       />
       <main className="ac-main">
+        <section className="ac-hero" aria-label="Fugluck Arena overview">
+          <div className="ac-hero__content">
+            <span className="ac-hero__eyebrow">Skill-Based Competitive Arena</span>
+            <h1 className="ac-hero__title">Play Fast. Outscore Everyone.</h1>
+            <p className="ac-hero__subtitle">
+              Jump into server-authoritative Coins Knockout Tournaments or sharpen your reflexes in instant 1v1 and solo practice games.
+            </p>
+          </div>
+          <div className="ac-hero__actions">
+            {onNavigateCompetitions && (
+              <button
+                type="button"
+                className="ac-btn ac-btn--primary"
+                onClick={onNavigateCompetitions}
+              >
+                <TrophyIcon size={15} />
+                <span>{t('competition.title')}</span>
+              </button>
+            )}
+            <a href="#arena-games" className="ac-btn ac-btn--ghost" style={{ textDecoration: 'none' }}>
+              Browse Games
+            </a>
+          </div>
+        </section>
+
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}
