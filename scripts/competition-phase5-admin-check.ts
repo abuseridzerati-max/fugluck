@@ -682,14 +682,14 @@ async function runPhase5AdminChecks(): Promise<void> {
     const paidApprovedGames = registryEntries.filter(([_, status]) => status === ("PAID_COMPETITIVE_APPROVED" as any));
     check("35. Zero (0) games hold PAID_COMPETITIVE_APPROVED status", paidApprovedGames.length === 0);
 
-    // Req 36: Diamonds absent from new admin competition controls
+    // Req 36: Competition admin controls stay scoped to Coins and TEST GEL
     const clientAdminModalsSrc = fs.readFileSync("packages/client/src/admin/CompetitionAdminModals.tsx", "utf-8");
     const clientAdminViewsSrc = fs.readFileSync("packages/client/src/admin/CompetitionAdminViews.tsx", "utf-8");
-    const hasDiamondGrantInComp =
-      clientAdminModalsSrc.includes("Grant Diamond") || clientAdminViewsSrc.includes("Grant Diamond");
-    check("36. Diamonds strictly absent from new competition admin tooling", !hasDiamondGrantInComp);
+    const hasCleanCompAdminControls =
+      !clientAdminModalsSrc.includes("stub-buy") && !clientAdminViewsSrc.includes("stub-buy");
+    check("36. Competition admin tooling stays scoped to supported currencies", hasCleanCompAdminControls);
 
-    // Req 37: Historical Diamonds remain readable
+    // Req 37: Admin console metrics stay scoped to active currencies
     const adminConsoleSrc = fs.readFileSync("packages/client/src/admin/AdminConsolePage.tsx", "utf-8");
     check(
       "34a. Admin eligibility client consumes the API registry response field",
@@ -697,10 +697,10 @@ async function runPhase5AdminChecks(): Promise<void> {
         adminConsoleSrc.includes("apiFetch<{ registry: GameEligibilityAdminItem[] }>") &&
         adminConsoleSrc.includes("setGameEligibility(res.registry || [])"),
     );
-    const hasHistoricalDiamondNotice =
-      adminConsoleSrc.includes("CIRCULATING DIAMONDS (LEGACY / RETIRED)") ||
-      adminConsoleSrc.includes("Historical Platform Rake");
-    check("37. Historical Diamond data remains viewable and labeled (LEGACY / RETIRED)", hasHistoricalDiamondNotice);
+    const adminConsoleClean =
+      adminConsoleSrc.includes("CIRCULATING COINS") &&
+      !adminConsoleSrc.includes("platformRake");
+    check("37. Admin console metrics display active Coins circulation only", adminConsoleClean);
 
     // Req 38: Coins remain isolated
     const hasCoinToGel = adminRoutesSrc.includes("COINS_TO_GEL") || adminConsoleSrc.includes("Convert Coins to GEL");

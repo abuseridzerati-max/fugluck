@@ -11,7 +11,8 @@ import { checkAdminLockout, recordFailedAdminLogin, resetAdminLockout } from "..
 import { db, pool } from "../db/client";
 import { sandboxAccountingAdapter } from "../accounting/sandboxAdapter";
 import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users } from "../db/schema";
-import { ensureMatchSettlementsTable, getBalances } from "../wallet/ledger";
+import { SIGNUP_COIN_GRANT } from "@fugluck/shared";
+import { ensureMatchSettlementsTable, getBalances, lockWalletUsers } from "../wallet/ledger";
 import { getActiveMatchesSummary } from "../matchmaking/matches";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { competitionAdminRouter } from "./adminCompetitions";
@@ -136,8 +137,6 @@ adminRouter.get("/dashboard", requirePermission("ADMIN_VIEW_AUDIT"), async (_req
   const [totalVoidedRes] = await db.select({ value: count() }).from(matchesHistory).where(eq(matchesHistory.status, "VOIDED"));
 
   const [coinsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(eq(ledgerEntries.currency, "COINS"));
-  const [diamondsCirculationRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.currency, "DIAMONDS"), sql`${ledgerEntries.userId} != 'platform_rake_account'`));
-  const [platformRakeRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, "platform_rake_account"), eq(ledgerEntries.currency, "DIAMONDS")));
 
   const recentAuditLogs = await db.query.adminAuditLogs.findMany({
     limit: 10,
@@ -158,8 +157,6 @@ adminRouter.get("/dashboard", requirePermission("ADMIN_VIEW_AUDIT"), async (_req
       matchesVoidedToday: todayVoidedRes?.value ?? 0,
       totalMatchesVoided: totalVoidedRes?.value ?? 0,
       coinsCirculation: coinsCirculationRes?.value ?? 0,
-      diamondsCirculation: diamondsCirculationRes?.value ?? 0,
-      platformRakeDiamonds: platformRakeRes?.value ?? 0,
     },
     recentAuditLogs,
   });
@@ -198,29 +195,50 @@ adminRouter.get("/users", requirePermission("USERS_VIEW"), async (req, res) => {
 
   const [totalRes] = await db.select({ value: count() }).from(users).where(whereCondition);
 
-  // Compute derived ledger balances for listed users
-  const userResults = await Promise.all(
-    userList.map(async (u) => {
-      const [coinsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, u.id), eq(ledgerEntries.currency, "COINS")));
-      const [diamondsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, u.id), eq(ledgerEntries.currency, "DIAMONDS")));
-      return {
-        id: u.id,
-        username: u.username,
-        email: u.email,
-        role: u.role,
-        status: u.status,
-        statusReason: u.statusReason,
-        gamesPlayed: u.gamesPlayed,
-        gamesWon: u.gamesWon,
-        createdAt: u.createdAt.toISOString(),
-        balances: {
-          coins: coinsRes?.value ?? 0,
-          diamonds: diamondsRes?.value ?? 0,
-        },
-        sandboxBalances: await sandboxAccountingAdapter.getUserBalance(u.id),
-      };
-    })
-  );
+  // Batch-compute derived ledger balances (eliminates N+1 queries per user)
+  const listedIds = userList.map((u) => u.id);
+  const ledgerMap = new Map<string, { coins: number }>();
+  const sandboxMap = new Map<string, { availableMinor: number; reservedMinor: number }>();
+
+  if (listedIds.length > 0) {
+    const [walletRows, sandboxRows] = await Promise.all([
+      pool.query<{ user_id: string; total: number }>(
+        `SELECT user_id, COALESCE(SUM(amount), 0)::int AS total
+         FROM ledger_entries WHERE user_id = ANY($1::text[]) AND currency = 'COINS'
+         GROUP BY user_id`,
+        [listedIds],
+      ),
+      pool.query<{ user_id: string; available: number; reserved: number }>(
+        `SELECT user_id,
+                COALESCE(SUM(CASE WHEN balance_type = 'AVAILABLE' THEN amount_minor ELSE 0 END), 0)::int AS available,
+                COALESCE(SUM(CASE WHEN balance_type = 'RESERVED' THEN amount_minor ELSE 0 END), 0)::int AS reserved
+         FROM sandbox_ledger_entries WHERE user_id = ANY($1::text[]) AND currency = 'GEL'
+         GROUP BY user_id`,
+        [listedIds],
+      ),
+    ]);
+
+    for (const row of walletRows.rows) {
+      ledgerMap.set(row.user_id, { coins: Number(row.total) });
+    }
+    for (const row of sandboxRows.rows) {
+      sandboxMap.set(row.user_id, { availableMinor: Number(row.available), reservedMinor: Number(row.reserved) });
+    }
+  }
+
+  const userResults = userList.map((u) => ({
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    role: u.role,
+    status: u.status,
+    statusReason: u.statusReason,
+    gamesPlayed: u.gamesPlayed,
+    gamesWon: u.gamesWon,
+    createdAt: u.createdAt.toISOString(),
+    balances: ledgerMap.get(u.id) ?? { coins: 0 },
+    sandboxBalances: sandboxMap.get(u.id) ?? { availableMinor: 0, reservedMinor: 0 },
+  }));
 
   res.json({
     users: userResults,
@@ -237,7 +255,6 @@ adminRouter.get("/users/:id", requirePermission("USERS_VIEW"), async (req, res) 
   }
 
   const [coinsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, targetId), eq(ledgerEntries.currency, "COINS")));
-  const [diamondsRes] = await db.select({ value: sql<number>`coalesce(sum(amount), 0)::int` }).from(ledgerEntries).where(and(eq(ledgerEntries.userId, targetId), eq(ledgerEntries.currency, "DIAMONDS")));
 
   const sandboxBalances = await sandboxAccountingAdapter.getUserBalance(targetId);
 
@@ -284,7 +301,6 @@ adminRouter.get("/users/:id", requirePermission("USERS_VIEW"), async (req, res) 
       createdAt: user.createdAt.toISOString(),
       balances: {
         coins: coinsRes?.value ?? 0,
-        diamonds: diamondsRes?.value ?? 0,
       },
       sandboxBalances,
     },
@@ -618,7 +634,7 @@ adminRouter.get("/ledger", requirePermission("WALLET_VIEW"), async (req, res) =>
 
   const conditions = [];
   if (userId.length > 0) conditions.push(eq(ledgerEntries.userId, userId));
-  if (currency.length > 0 && (currency === "COINS" || currency === "DIAMONDS")) conditions.push(eq(ledgerEntries.currency, currency));
+  if (currency.length > 0 && currency === "COINS") conditions.push(eq(ledgerEntries.currency, currency));
 
   const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -707,9 +723,247 @@ adminRouter.post("/wallet/grant-coins", requirePermission("WALLET_GRANT_COINS"),
   }
 });
 
-// Diamond grants are retired; keep the route as an explicit compatibility response.
-adminRouter.post("/wallet/grant-diamonds", requirePermission("WALLET_GRANT_DIAMONDS"), (_req, res) => {
-  res.status(410).json({ error: "Diamond grants are retired. Historical Diamond balances and ledger entries remain preserved." });
+// Reset a single user's COINS balance up to SIGNUP_COIN_GRANT (1,000 COINS).
+// Users already at >= 1,000 COINS are left untouched.
+adminRouter.post("/wallet/reset-coins", requirePermission("WALLET_GRANT_COINS"), async (req, res) => {
+  const adminUserId = req.userId!;
+  const { targetUserId, reason, idempotencyKey } = req.body ?? {};
+
+  if (typeof targetUserId !== "string" || targetUserId.trim().length === 0) {
+    res.status(400).json({ error: "Target user ID is required." });
+    return;
+  }
+  if (typeof reason !== "string" || reason.trim().length === 0) {
+    res.status(400).json({ error: "An explicit reason is required." });
+    return;
+  }
+  if (typeof idempotencyKey !== "string" || idempotencyKey.trim().length === 0 || idempotencyKey.trim().length > 96) {
+    res.status(400).json({ error: "A valid idempotencyKey (1-96 chars) is required." });
+    return;
+  }
+
+  const trimmedTargetId = targetUserId.trim();
+  const trimmedReason = reason.trim();
+  const trimmedKey = idempotencyKey.trim();
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const existingAudit = await tx.query.adminAuditLogs.findFirst({
+        where: eq(adminAuditLogs.idempotencyKey, trimmedKey),
+      });
+      if (existingAudit) {
+        const balances = await getBalances(trimmedTargetId, tx);
+        const details = (existingAudit.details ?? {}) as Record<string, unknown>;
+        return {
+          status: 200,
+          body: {
+            success: true,
+            duplicate: true,
+            idempotencyKey: trimmedKey,
+            auditLogId: existingAudit.id,
+            target: SIGNUP_COIN_GRANT,
+            previousCoins: typeof details.previousCoins === "number" ? details.previousCoins : balances.coins,
+            topUp: typeof details.topUp === "number" ? details.topUp : 0,
+            newCoins: balances.coins,
+            toppedUp: Boolean(details.toppedUp),
+            balances,
+          },
+        };
+      }
+
+      await lockWalletUsers(tx, [trimmedTargetId]);
+
+      const targetUser = await tx.query.users.findFirst({ where: eq(users.id, trimmedTargetId) });
+      if (!targetUser) {
+        return { status: 404, body: { error: "Target user not found." } };
+      }
+
+      const balancesBefore = await getBalances(trimmedTargetId, tx);
+      const topUp = balancesBefore.coins < SIGNUP_COIN_GRANT ? SIGNUP_COIN_GRANT - balancesBefore.coins : 0;
+      let ledgerId: string | null = null;
+
+      if (topUp > 0) {
+        ledgerId = `ledger_${randomUUID()}`;
+        await tx
+          .insert(ledgerEntries)
+          .values({
+            id: ledgerId,
+            userId: trimmedTargetId,
+            currency: "COINS",
+            amount: topUp,
+            reason: `admin_coin_reset:${trimmedKey}`,
+          })
+          .onConflictDoNothing();
+      }
+
+      const balancesAfter = await getBalances(trimmedTargetId, tx);
+      const auditLogId = `audit_${randomUUID()}`;
+      await tx.insert(adminAuditLogs).values({
+        id: auditLogId,
+        adminUserId,
+        action: "ADMIN_RESET_COINS",
+        targetType: "user",
+        targetId: trimmedTargetId,
+        amount: topUp,
+        currency: "COINS",
+        reason: trimmedReason,
+        idempotencyKey: trimmedKey,
+        details: {
+          target: SIGNUP_COIN_GRANT,
+          previousCoins: balancesBefore.coins,
+          topUp,
+          newCoins: balancesAfter.coins,
+          toppedUp: topUp > 0,
+        },
+      });
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          ledgerId,
+          auditLogId,
+          target: SIGNUP_COIN_GRANT,
+          previousCoins: balancesBefore.coins,
+          topUp,
+          newCoins: balancesAfter.coins,
+          toppedUp: topUp > 0,
+          balances: balancesAfter,
+        },
+      };
+    });
+
+    res.status(result.status).json(result.body);
+  } catch (err: any) {
+    logger.error("[admin] Reset user coins error:", err);
+    res.status(500).json({ error: "Failed to reset user coins due to an internal error." });
+  }
+});
+
+// Reset all users with < 1,000 COINS up to exactly 1,000 COINS.
+// Users already at >= 1,000 COINS are left untouched.
+adminRouter.post("/wallet/reset-coins-all", requirePermission("WALLET_GRANT_COINS"), async (req, res) => {
+  const adminUserId = req.userId!;
+  const { reason, idempotencyKey } = req.body ?? {};
+
+  if (typeof reason !== "string" || reason.trim().length === 0) {
+    res.status(400).json({ error: "An explicit reason is required." });
+    return;
+  }
+  if (typeof idempotencyKey !== "string" || idempotencyKey.trim().length === 0 || idempotencyKey.trim().length > 96) {
+    res.status(400).json({ error: "A valid idempotencyKey (1-96 chars) is required." });
+    return;
+  }
+
+  const trimmedReason = reason.trim();
+  const trimmedKey = idempotencyKey.trim();
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const existingAudit = await tx.query.adminAuditLogs.findFirst({
+        where: eq(adminAuditLogs.idempotencyKey, trimmedKey),
+      });
+      if (existingAudit) {
+        const details = (existingAudit.details ?? {}) as Record<string, unknown>;
+        return {
+          status: 200,
+          body: {
+            success: true,
+            duplicate: true,
+            idempotencyKey: trimmedKey,
+            auditLogId: existingAudit.id,
+            target: SIGNUP_COIN_GRANT,
+            totalUsersScanned: Number(details.totalUsersScanned ?? 0),
+            usersToppedUp: Number(details.usersToppedUp ?? 0),
+            usersUntouched: Number(details.usersUntouched ?? 0),
+            totalCoinsGranted: Number(details.totalCoinsGranted ?? 0),
+          },
+        };
+      }
+
+      const allUserRows = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM users WHERE id <> 'platform_rake_account' ORDER BY id`,
+      );
+      const allUserIds = allUserRows.rows.map((r) => r.id);
+      if (allUserIds.length > 0) {
+        await lockWalletUsers(tx, allUserIds);
+      }
+
+      const balanceRows = await tx.execute<{ id: string; coins: number }>(sql`
+        SELECT u.id, COALESCE(SUM(le.amount), 0)::int AS coins
+        FROM users u
+        LEFT JOIN ledger_entries le ON le.user_id = u.id AND le.currency = 'COINS'
+        WHERE u.id <> 'platform_rake_account'
+        GROUP BY u.id
+        ORDER BY u.id
+      `);
+
+      const ledgerReason = `admin_coin_reset:${trimmedKey}`;
+      const inserts: Array<{ id: string; userId: string; currency: string; amount: number; reason: string }> = [];
+      let totalCoinsGranted = 0;
+
+      for (const row of balanceRows.rows) {
+        const currentCoins = Number(row.coins);
+        if (currentCoins < SIGNUP_COIN_GRANT) {
+          const topUp = SIGNUP_COIN_GRANT - currentCoins;
+          totalCoinsGranted += topUp;
+          inserts.push({
+            id: `ledger_${randomUUID()}`,
+            userId: row.id,
+            currency: "COINS",
+            amount: topUp,
+            reason: ledgerReason,
+          });
+        }
+      }
+
+      if (inserts.length > 0) {
+        await tx.insert(ledgerEntries).values(inserts).onConflictDoNothing();
+      }
+
+      const totalUsersScanned = balanceRows.rows.length;
+      const usersToppedUp = inserts.length;
+      const usersUntouched = totalUsersScanned - usersToppedUp;
+      const auditLogId = `audit_${randomUUID()}`;
+
+      await tx.insert(adminAuditLogs).values({
+        id: auditLogId,
+        adminUserId,
+        action: "ADMIN_RESET_COINS_ALL",
+        targetType: "system",
+        targetId: "all_users",
+        amount: totalCoinsGranted,
+        currency: "COINS",
+        reason: trimmedReason,
+        idempotencyKey: trimmedKey,
+        details: {
+          target: SIGNUP_COIN_GRANT,
+          totalUsersScanned,
+          usersToppedUp,
+          usersUntouched,
+          totalCoinsGranted,
+        },
+      });
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          auditLogId,
+          target: SIGNUP_COIN_GRANT,
+          totalUsersScanned,
+          usersToppedUp,
+          usersUntouched,
+          totalCoinsGranted,
+        },
+      };
+    });
+
+    res.status(result.status).json(result.body);
+  } catch (err: any) {
+    logger.error("[admin] Global coin reset error:", err);
+    res.status(500).json({ error: "Failed to run global coin reset due to an internal error." });
+  }
 });
 
 adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_req, res) => {

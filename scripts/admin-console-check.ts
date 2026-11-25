@@ -32,7 +32,7 @@ async function main() {
   check("OWNER has wallet.grant_coins permission", hasPermission("OWNER", "wallet.grant_coins"));
   check("ADMIN has WALLET_GRANT_COINS permission", hasPermission("ADMIN", "WALLET_GRANT_COINS"));
   check("MODERATOR has MATCHES_VOID permission", hasPermission("MODERATOR", "MATCHES_VOID"));
-  check("MODERATOR lacks WALLET_GRANT_DIAMONDS permission", !hasPermission("MODERATOR", "WALLET_GRANT_DIAMONDS"));
+  check("MODERATOR lacks WALLET_GRANT_COINS permission", !hasPermission("MODERATOR", "WALLET_GRANT_COINS"));
   check("SUPPORT has USERS_VIEW permission", hasPermission("SUPPORT", "USERS_VIEW"));
   check("SUPPORT lacks USERS_BAN permission", !hasPermission("SUPPORT", "USERS_BAN"));
   check("Standard user has 0 admin permissions", ROLE_PERMISSIONS.user.length === 0);
@@ -313,33 +313,24 @@ async function main() {
   check("Banning OWNER account is rejected (403)", !banOwner.allowed && banOwner.status === 403);
 
   // ---------------------------------------------------------------------------
-  // Test 14: Disjoint Circulating Diamonds & Platform Rake Metric Accounting
+  // Test 14: Circulating Coins Metric Accounting
   // ---------------------------------------------------------------------------
-  console.log("\nTest 14: Disjoint Circulating Diamonds & Platform Rake Metric Accounting");
+  console.log("\nTest 14: Circulating Coins Metric Accounting");
 
   type MockLedger = { userId: string; currency: string; amount: number };
   const ledgerSample: MockLedger[] = [
-    { userId: "player_1", currency: "DIAMONDS", amount: 100 },
-    { userId: "player_2", currency: "DIAMONDS", amount: 50 },
-    { userId: "platform_rake_account", currency: "DIAMONDS", amount: 15 },
     { userId: "player_1", currency: "COINS", amount: 1000 },
+    { userId: "player_2", currency: "COINS", amount: 500 },
+    { userId: "player_1", currency: "COINS", amount: -100 },
   ];
 
-  const playerCirculatingDiamonds = ledgerSample
-    .filter((l) => l.currency === "DIAMONDS" && l.userId !== "platform_rake_account")
+  const totalCoins = ledgerSample
+    .filter((l) => l.currency === "COINS")
     .reduce((sum, l) => sum + l.amount, 0);
 
-  const platformRakeDiamonds = ledgerSample
-    .filter((l) => l.currency === "DIAMONDS" && l.userId === "platform_rake_account")
-    .reduce((sum, l) => sum + l.amount, 0);
-
-  const totalDiamonds = ledgerSample
-    .filter((l) => l.currency === "DIAMONDS")
-    .reduce((sum, l) => sum + l.amount, 0);
-
-  check("Player circulating diamonds excludes platform rake account (150)", playerCirculatingDiamonds === 150);
-  check("Platform rake diamonds accurately captures platform rake account (15)", platformRakeDiamonds === 15);
-  check("Disjoint sum of player circulating and rake matches total diamonds (165)", playerCirculatingDiamonds + platformRakeDiamonds === totalDiamonds);
+  check("Circulating coins reflects net player balances (1400)", totalCoins === 1400);
+  check("Admin permissions list only contains active wallet grant permissions", ALL_ADMIN_PERMISSIONS.includes("WALLET_GRANT_COINS") && ALL_ADMIN_PERMISSIONS.filter((p) => p.startsWith("WALLET_GRANT_")).length === 1);
+  check("Active admin ledger sample contains zero non-COINS entries", ledgerSample.every((l) => l.currency === "COINS"));
 
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);

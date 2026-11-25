@@ -67,7 +67,7 @@ async function main(){
   const operationsChecks = { status: opsResponse!.status === 200, backend: ops.backend?.healthy === true, database: ops.database?.healthy === true, revision: ops.frontend?.revision === frontendRevision, authority: Boolean(ops.authority?.sessions), competitions: Boolean(ops.competitions?.instances), accounting: ops.accounting?.reconciled === true, secretAbsent: !JSON.stringify(ops).includes('DATABASE_URL') };
   if (!Object.values(operationsChecks).every(Boolean)) console.error('Operations contract checks:', JSON.stringify(operationsChecks));
   check('owner can read operations health without secrets',Object.values(operationsChecks).every(Boolean));
-  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0014_security_boundaries'&&ops.database.migrations.expectedCount===15&&['match','mismatch','unavailable'].includes(ops.database.migrations.status));
+  check('operations reports migration identity explicitly',ops.database?.migrations?.expectedHead==='0016_restrict_currency_coins_gel'&&ops.database?.migrations?.expectedCount===17&&['match','mismatch','unavailable'].includes(ops.database?.migrations?.status));
   check('operations exposes a password-independent database fingerprint',/^[a-f0-9]{64}$/.test(ops.database?.identity?.fingerprint));
   check('operations shows all real-money operations disabled',ops.commercial?.moneyEnabled===false&&ops.commercial.deposits.allowed===false&&ops.commercial.withdrawals.allowed===false&&ops.commercial.competitions.allowed===false);
   check('operations reports mock commercial ledger without enabling money',ops.commercialFinance?.mode==='MOCK_CANDIDATE_ONLY'&&ops.commercialFinance.ledgerBalanced===true&&ops.commercial?.moneyEnabled===false);
@@ -113,6 +113,32 @@ async function main(){
   check('admin report displays returned refund total',modal.includes('Entry Refunds:')&&modal.includes('reconciliation.totalRefundedMinor'));
   const list=await fetch(`http://127.0.0.1:${(server.address() as any).port}/api/admin/competitions/instances?templateId=${id}`,{headers:{Cookie:`${ADMIN_SESSION_COOKIE_NAME}=${(await fixtureSession(owner, 'admin'))}`}}).then(r=>r.json()) as any;
   check('instance list count follows actual HTTP contract',list.total===1&&list.instances.length===1&&source.includes('setCompInstanceTotal(res.total ?? 0)'));
+
+  // Admin manual 1,000-COINS allowance reset (single-user and global)
+  const lowUserId=`adm_reset_low_${id}`;
+  const highUserId=`adm_reset_high_${id}`;
+  const bulkLowUserId=`adm_reset_bulk_${id}`;
+  await pool.query("INSERT INTO users(id,username,password_hash,role,status) VALUES ($1,$2,'test-only','user','active'),($3,$4,'test-only','user','active'),($5,$6,'test-only','user','active')",[lowUserId,`rlow_${id.slice(-8)}`,highUserId,`rhigh_${id.slice(-8)}`,bulkLowUserId,`rbulk_${id.slice(-8)}`]);
+  await pool.query("INSERT INTO ledger_entries(id,user_id,currency,amount,reason) VALUES ($1,$2,'COINS',350,$3),($4,$5,'COINS',1400,$6),($7,$8,'COINS',200,$9)",[`led_rl_${id}`,lowUserId,`seed:${id}:low`,`led_rh_${id}`,highUserId,`seed:${id}:high`,`led_rb_${id}`,bulkLowUserId,`seed:${id}:bulk`]);
+  const singleLowKey=`reset_single_low_${id}`;
+  const singleLowRes=await adminRequest('/wallet/reset-coins','POST',{targetUserId:lowUserId,reason:'Manual reset test low',idempotencyKey:singleLowKey});
+  const singleLowBody=await singleLowRes.json() as any;
+  check('single-user reset tops up < 1,000 COINS to exactly 1,000',singleLowRes.status===200&&singleLowBody.previousCoins===350&&singleLowBody.topUp===650&&singleLowBody.newCoins===1000&&singleLowBody.toppedUp===true);
+  const singleLowReplay=await adminRequest('/wallet/reset-coins','POST',{targetUserId:lowUserId,reason:'Manual reset test low',idempotencyKey:singleLowKey}).then(r=>r.json()) as any;
+  check('single-user reset is idempotent on replay',singleLowReplay.duplicate===true&&singleLowReplay.newCoins===1000);
+  const singleHighRes=await adminRequest('/wallet/reset-coins','POST',{targetUserId:highUserId,reason:'Manual reset test high',idempotencyKey:`reset_single_high_${id}`});
+  const singleHighBody=await singleHighRes.json() as any;
+  check('single-user reset leaves >= 1,000 COINS untouched',singleHighRes.status===200&&singleHighBody.previousCoins===1400&&singleHighBody.topUp===0&&singleHighBody.newCoins===1400&&singleHighBody.toppedUp===false);
+  const globalKey=`reset_global_${id}`;
+  const globalRes=await adminRequest('/wallet/reset-coins-all','POST',{reason:'Manual global reset test',idempotencyKey:globalKey});
+  const globalBody=await globalRes.json() as any;
+  const bulkAfter=(await pool.query("SELECT COALESCE(SUM(amount),0)::int AS coins FROM ledger_entries WHERE user_id=$1 AND currency='COINS'",[bulkLowUserId])).rows[0].coins;
+  const highAfter=(await pool.query("SELECT COALESCE(SUM(amount),0)::int AS coins FROM ledger_entries WHERE user_id=$1 AND currency='COINS'",[highUserId])).rows[0].coins;
+  check('global reset tops up users < 1,000 to 1,000 and leaves >= 1,000 untouched',globalRes.status===200&&bulkAfter===1000&&highAfter===1400&&globalBody.usersToppedUp>=1&&globalBody.totalCoinsGranted>=800);
+  const globalReplay=await adminRequest('/wallet/reset-coins-all','POST',{reason:'Manual global reset test',idempotencyKey:globalKey}).then(r=>r.json()) as any;
+  check('global reset is idempotent on replay',globalReplay.duplicate===true&&globalReplay.usersToppedUp===globalBody.usersToppedUp);
+  check('non-admin cannot invoke single or global coin reset',(await adminRequest('/wallet/reset-coins','POST',{targetUserId:lowUserId,reason:'unauth',idempotencyKey:`unauth_s_${id}`},player)).status===403&&(await adminRequest('/wallet/reset-coins-all','POST',{reason:'unauth',idempotencyKey:`unauth_g_${id}`},player)).status===403);
+  check('admin UI exposes single-user and global 1,000-COINS reset actions',source.includes('/api/admin/wallet/reset-coins')&&source.includes('/api/admin/wallet/reset-coins-all')&&newViews.includes("onOpenAction('reset_coins', user)"));
  }finally{
   if(server)await new Promise<void>(r=>server!.close(()=>r()));
   // Preserve audit history, but never leave a privileged fixture behind to

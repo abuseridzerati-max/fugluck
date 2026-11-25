@@ -34,8 +34,6 @@ export type Metrics = {
   matchesVoidedToday: number
   totalMatchesVoided: number
   coinsCirculation: number
-  diamondsCirculation: number
-  platformRakeDiamonds: number
 }
 
 export type UserItem = {
@@ -47,7 +45,7 @@ export type UserItem = {
   statusReason: string | null
   gamesPlayed?: number
   gamesWon?: number
-  balances: { coins: number; diamonds: number }
+  balances: { coins: number }
   sandboxBalances: { availableMinor: number; reservedMinor: number }
   createdAt: string
 }

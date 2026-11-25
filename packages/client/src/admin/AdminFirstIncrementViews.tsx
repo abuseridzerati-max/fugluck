@@ -11,7 +11,7 @@ export function UserDetailDrawer({ detail, onClose, onGrant, onOpenAction }: {
   detail: UserDetail
   onClose: () => void
   onGrant: (user: UserItem) => void
-  onOpenAction: (action: 'suspend' | 'ban' | 'unban' | 'role' | 'grant', user: UserItem) => void
+  onOpenAction: (action: 'suspend' | 'ban' | 'unban' | 'role' | 'grant' | 'reset_coins', user: UserItem) => void
 }) {
   const [section, setSection] = useState<'competitions' | 'accounting' | 'matches' | 'audit'>('competitions')
   const { user } = detail
@@ -31,7 +31,7 @@ export function UserDetailDrawer({ detail, onClose, onGrant, onOpenAction }: {
         {section === 'matches' && (detail.recentMatches.length ? <div style={{ overflowX: 'auto' }}><table style={tableStyle}><thead><tr><th>Game / Match</th><th>Opponent</th><th>Result</th><th>Time</th></tr></thead><tbody>{detail.recentMatches.map(m => <tr key={m.id}><td>{m.gameId}<div style={muted}>{m.id}</div></td><td>{m.player1Id === user.id ? m.player2Id : m.player1Id}</td><td>{m.status}</td><td>{new Date(m.createdAt).toLocaleString()}</td></tr>)}</tbody></table></div> : <Empty>No match history.</Empty>)}
         {section === 'audit' && (detail.userAuditLogs.length ? <div style={{ overflowX: 'auto' }}><table style={tableStyle}><thead><tr><th>Time</th><th>Action</th><th>Reason</th></tr></thead><tbody>{detail.userAuditLogs.map(a => <tr key={a.id}><td>{new Date(a.createdAt).toLocaleString()}</td><td>{a.action}</td><td>{a.reason}</td></tr>)}</tbody></table></div> : <Empty>No audit events for this user.</Empty>)}
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 20, paddingTop: 14, borderTop: '1px solid #282a36' }}><strong style={{ color: '#94a3b8', fontSize: 12, alignSelf: 'center' }}>ACCOUNT ACTIONS</strong><button type="button" style={button} onClick={() => onOpenAction('grant', user)}>Grant Coins</button>{user.status !== 'suspended' && user.status !== 'banned' && <button type="button" style={button} onClick={() => onOpenAction('suspend', user)}>Suspend</button>}{user.status !== 'banned' && <button type="button" style={button} onClick={() => onOpenAction('ban', user)}>Ban</button>}{(user.status === 'suspended' || user.status === 'banned') && <button type="button" style={button} onClick={() => onOpenAction('unban', user)}>Reactivate</button>}<button type="button" style={button} onClick={() => onOpenAction('role', user)}>Change role</button></div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 20, paddingTop: 14, borderTop: '1px solid #282a36' }}><strong style={{ color: '#94a3b8', fontSize: 12, alignSelf: 'center' }}>ACCOUNT ACTIONS</strong><button type="button" style={button} onClick={() => onOpenAction('grant', user)}>Grant Coins</button><button type="button" style={{ ...button, background: '#0e7490', borderColor: '#0891b2', color: '#fff' }} onClick={() => onOpenAction('reset_coins', user)}>Reset Coins to 1,000</button>{user.status !== 'suspended' && user.status !== 'banned' && <button type="button" style={button} onClick={() => onOpenAction('suspend', user)}>Suspend</button>}{user.status !== 'banned' && <button type="button" style={button} onClick={() => onOpenAction('ban', user)}>Ban</button>}{(user.status === 'suspended' || user.status === 'banned') && <button type="button" style={button} onClick={() => onOpenAction('unban', user)}>Reactivate</button>}<button type="button" style={button} onClick={() => onOpenAction('role', user)}>Change role</button></div>
     </aside>
   </div>
 }

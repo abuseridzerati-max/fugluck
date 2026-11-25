@@ -608,7 +608,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     }
   }
 
-  function triggerUserAction(action: 'suspend' | 'ban' | 'unban' | 'role', user: UserItem) {
+  function triggerUserAction(action: 'suspend' | 'ban' | 'unban' | 'role' | 'reset_coins', user: UserItem) {
     if (action === 'suspend') {
       setConfirmModalConfig({
         title: `Suspend Account: ${user.username}`,
@@ -683,7 +683,72 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         },
         onClose: () => setConfirmModalConfig(null),
       })
+    } else if (action === 'reset_coins') {
+      const topUp = user.balances.coins < 1000 ? 1000 - user.balances.coins : 0
+      setConfirmModalConfig({
+        title: `Reset Coins Allowance: ${user.username}`,
+        actionLabel: topUp > 0 ? `Top Up +${topUp.toLocaleString()} COINS` : 'Run Allowance Check (No Change)',
+        intent: 'primary',
+        targetDescription: `User ${user.username} (${user.id}) — Current balance: ${user.balances.coins.toLocaleString()} COINS`,
+        impactWarning:
+          topUp > 0
+            ? `Will credit +${topUp.toLocaleString()} COINS so ${user.username} reaches exactly 1,000 COINS. Users at 1,000+ COINS are never reduced.`
+            : `${user.username} already has ${user.balances.coins.toLocaleString()} COINS (>= 1,000). Their balance will remain untouched, and the check will be audit-logged.`,
+        initialReason: 'Manual single-user 1,000 COINS allowance reset',
+        onConfirm: async (reason) => {
+          const idempotencyKey = `ui_reset_coins_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+          const res = await apiFetch<{ previousCoins: number; topUp: number; newCoins: number; toppedUp: boolean }>(
+            '/api/admin/wallet/reset-coins',
+            {
+              method: 'POST',
+              body: JSON.stringify({ targetUserId: user.id, reason, idempotencyKey }),
+            },
+          )
+          setStatusMessage(
+            res.toppedUp
+              ? `Reset "${user.username}": +${res.topUp.toLocaleString()} COINS (${res.previousCoins.toLocaleString()} -> ${res.newCoins.toLocaleString()} COINS).`
+              : `"${user.username}" already had ${res.newCoins.toLocaleString()} COINS (>= 1,000); balance left untouched.`,
+          )
+          fetchUsers()
+          if (selectedUserDetail) inspectUser(user.id)
+          if (activeTab === 'ledger') fetchLedger()
+          if (activeTab === 'dashboard') fetchDashboard()
+        },
+        onClose: () => setConfirmModalConfig(null),
+      })
     }
+  }
+
+  function triggerGlobalCoinReset() {
+    setConfirmModalConfig({
+      title: 'Reset All Users to 1,000 COINS Allowance',
+      actionLabel: 'Run Global 1,000 COINS Reset',
+      intent: 'warning',
+      targetDescription: 'All registered user accounts',
+      impactWarning:
+        'Every user with fewer than 1,000 COINS will receive the exact top-up needed to reach 1,000 COINS. Users with 1,000 or more COINS will remain completely untouched. Logged as ADMIN_RESET_COINS_ALL.',
+      initialReason: 'Manual global 1,000 COINS allowance reset',
+      onConfirm: async (reason) => {
+        const idempotencyKey = `ui_reset_coins_all_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        const res = await apiFetch<{
+          totalUsersScanned: number
+          usersToppedUp: number
+          usersUntouched: number
+          totalCoinsGranted: number
+        }>('/api/admin/wallet/reset-coins-all', {
+          method: 'POST',
+          body: JSON.stringify({ reason, idempotencyKey }),
+        })
+        setStatusMessage(
+          `Global COINS reset complete: ${res.usersToppedUp.toLocaleString()} user(s) topped up (+${res.totalCoinsGranted.toLocaleString()} COINS total), ${res.usersUntouched.toLocaleString()} user(s) untouched at >= 1,000 COINS (${res.totalUsersScanned.toLocaleString()} scanned).`,
+        )
+        fetchUsers()
+        if (selectedUserDetail) inspectUser(selectedUserDetail.user.id)
+        if (activeTab === 'ledger') fetchLedger()
+        if (activeTab === 'dashboard') fetchDashboard()
+      },
+      onClose: () => setConfirmModalConfig(null),
+    })
   }
 
   function triggerVoidMatch(matchId: string, match?: MatchItem) {
@@ -1073,10 +1138,19 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         {/* TAB 1: DASHBOARD */}
         {activeTab === 'dashboard' && metrics && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '15px', color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Platform Telemetry & Circulation Overview
               </h2>
+              {hasPerm('WALLET_GRANT_COINS') && (
+                <button
+                  type="button"
+                  onClick={triggerGlobalCoinReset}
+                  style={{ background: '#0e7490', color: '#fff', border: '1px solid #0891b2', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                >
+                  ↻ Reset All Users to 1,000 Coins
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '28px' }}>
@@ -1113,12 +1187,6 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 <div style={{ fontSize: '22px', fontWeight: 800, color: '#34d399' }}>{metrics.coinsCirculation.toLocaleString()}</div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Free-play aggregate</div>
               </div>
-
-              <div style={kpiCardStyle}>
-                <div style={kpiLabelStyle}>CIRCULATING DIAMONDS (LEGACY / RETIRED)</div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#fbbf24' }}>{metrics.diamondsCirculation.toLocaleString()}</div>
-                <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '4px' }}>Historical Platform Rake: {metrics.platformRakeDiamonds} 💎</div>
-              </div>
             </div>
 
             <h3 style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1133,7 +1201,18 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
         {/* TAB 2: USERS */}
         {activeTab === 'users' && (
           <div>
-            <div style={{ marginBottom: 16 }}><h1 style={{ margin: 0, color: '#f8fafc', fontSize: 24 }}>Users</h1><p style={{ margin: '5px 0 0', color: '#94a3b8', fontSize: 13 }}>Search accounts, inspect sandbox balances, and review account history.</p></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div><h1 style={{ margin: 0, color: '#f8fafc', fontSize: 24 }}>Users</h1><p style={{ margin: '5px 0 0', color: '#94a3b8', fontSize: 13 }}>Search accounts, inspect balances, reset 1,000-Coin allowances, and review account history.</p></div>
+              {hasPerm('WALLET_GRANT_COINS') && (
+                <button
+                  type="button"
+                  onClick={triggerGlobalCoinReset}
+                  style={{ background: '#0e7490', color: '#fff', border: '1px solid #0891b2', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
+                >
+                  ↻ Reset All Users to 1,000 Coins
+                </button>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <input
                 type="text"
@@ -1228,7 +1307,6 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                         </td>
                         <td style={{ padding: '12px' }}>
                           <div><span style={{ color: '#34d399', fontWeight: 600 }}>{u.balances.coins.toLocaleString()}</span> Coins</div>
-                          {u.balances.diamonds !== 0 && <div style={{ color: '#64748b', fontSize: 11 }}>Historical Diamonds: {u.balances.diamonds.toLocaleString()}</div>}
                         </td>
                         <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
                           <div><span style={{ color: '#93c5fd', fontWeight: 700 }}>{formatGEL(u.sandboxBalances.availableMinor)}</span> available</div>
@@ -1246,6 +1324,15 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                             >
                               Inspect
                             </button>
+                            {hasPerm('WALLET_GRANT_COINS') && (
+                              <button
+                                type="button"
+                                onClick={() => triggerUserAction('reset_coins', u)}
+                                style={{ background: '#0e7490', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}
+                              >
+                                Reset to 1,000
+                              </button>
+                            )}
                             {hasPerm('WALLET_GRANT_SANDBOX') && (
                               <button
                                 type="button"
@@ -1330,7 +1417,6 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
               >
                 <option value="">All Currencies</option>
                 <option value="COINS">COINS</option>
-                <option value="DIAMONDS">DIAMONDS</option>
               </select>
               <button
                 type="button"
@@ -1467,7 +1553,6 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
               >
                 <option value="">All Currencies</option>
                 <option value="COINS">COINS</option>
-                <option value="DIAMONDS">DIAMONDS</option>
               </select>
               <button
                 type="button"
@@ -1582,7 +1667,8 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 <option value="ADMIN_UNBAN_USER">ADMIN_UNBAN_USER</option>
                 <option value="ADMIN_UPDATE_USER_ROLE">ADMIN_UPDATE_USER_ROLE</option>
                 <option value="ADMIN_GRANT_COINS">ADMIN_GRANT_COINS</option>
-                <option value="ADMIN_GRANT_DIAMONDS">ADMIN_GRANT_DIAMONDS</option>
+                <option value="ADMIN_RESET_COINS">ADMIN_RESET_COINS</option>
+                <option value="ADMIN_RESET_COINS_ALL">ADMIN_RESET_COINS_ALL</option>
                 <option value="ADMIN_VOID_MATCH">ADMIN_VOID_MATCH</option>
                 <option value="ADMIN_REVERSE_LEDGER_ENTRY">ADMIN_REVERSE_LEDGER_ENTRY</option>
               </select>

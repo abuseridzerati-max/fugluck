@@ -272,7 +272,7 @@ export function UserDetailModal({
 }: {
   detail: UserDetail
   onClose: () => void
-  onOpenAction: (action: 'suspend' | 'ban' | 'unban' | 'role' | 'grant', user: UserItem) => void
+  onOpenAction: (action: 'suspend' | 'ban' | 'unban' | 'role' | 'grant' | 'reset_coins', user: UserItem) => void
 }) {
   const { user, recentMatches, recentLedger, userAuditLogs } = detail
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'ledger' | 'audit'>('matches')
@@ -316,16 +316,15 @@ export function UserDetailModal({
             <div style={statLabelStyle}>COIN BALANCE</div>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399' }}>{user.balances.coins.toLocaleString()}</div>
           </div>
-          <div style={statCardStyle}>
-            <div style={statLabelStyle}>DIAMONDS · RETIRED / LEGACY</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fbbf24' }}>{user.balances.diamonds.toLocaleString()}</div>
-          </div>
         </div>
 
         {/* Action Toolbar */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px', padding: '12px', background: '#12131c', borderRadius: '6px', border: '1px solid #1e2030' }}>
           <button type="button" onClick={() => onOpenAction('grant', user)} style={{ ...actionBtnStyle, background: '#059669' }}>
             + Grant Coins
+          </button>
+          <button type="button" onClick={() => onOpenAction('reset_coins', user)} style={{ ...actionBtnStyle, background: '#0e7490' }}>
+            ↻ Reset Coins to 1,000
           </button>
           <button type="button" onClick={() => onOpenAction('role', user)} style={{ ...actionBtnStyle, background: '#3b82f6' }}>
             Change Role

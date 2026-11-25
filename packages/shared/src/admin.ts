@@ -12,7 +12,6 @@ export type AdminPermission =
   | "MATCHES_REFUND"
   | "WALLET_VIEW"
   | "WALLET_GRANT_COINS"
-  | "WALLET_GRANT_DIAMONDS"
   | "WALLET_GRANT_SANDBOX"
   | "WALLET_REFUND"
   | "WALLET_REVERSE_TRANSACTION"
@@ -34,7 +33,6 @@ export type AdminPermission =
   | "matches.force_resolve"
   | "wallet.view"
   | "wallet.grant_coins"
-  | "wallet.grant_diamonds"
   | "wallet.grant_sandbox"
   | "wallet.refund"
   | "wallet.reverse_transaction"
@@ -59,7 +57,6 @@ export const PERMISSION_ALIAS_MAP: Record<string, AdminPermission> = {
   "matches.force_resolve": "MATCHES_VOID",
   "wallet.view": "WALLET_VIEW",
   "wallet.grant_coins": "WALLET_GRANT_COINS",
-  "wallet.grant_diamonds": "WALLET_GRANT_DIAMONDS",
   "wallet.grant_sandbox": "WALLET_GRANT_COINS",
   "WALLET_GRANT_SANDBOX": "WALLET_GRANT_COINS",
   "wallet.refund": "WALLET_REFUND",
