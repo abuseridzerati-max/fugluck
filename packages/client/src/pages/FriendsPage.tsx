@@ -4,6 +4,7 @@ import type { FriendEntry } from '@fugluck/shared'
 import { gameRegistry } from '@fugluck/games'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
+import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
 
 type FriendsPageProps = {
@@ -24,6 +25,7 @@ export default function FriendsPage({
   onInviteFriend,
 }: FriendsPageProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [friends, setFriends] = useState<FriendEntry[]>([])
   const [username, setUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +33,12 @@ export default function FriendsPage({
   const [inviteFor, setInviteFor] = useState<FriendEntry | null>(null)
 
   async function refresh() {
+    if (!user) {
+      setLoading(false)
+      setError(null)
+      setFriends([])
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -44,8 +52,14 @@ export default function FriendsPage({
   }
 
   useEffect(() => {
-    refresh()
-  }, [])
+    if (!user) {
+      setLoading(false)
+      setError(null)
+      setFriends([])
+      return
+    }
+    void refresh()
+  }, [user])
 
   async function sendRequest(e: React.FormEvent) {
     e.preventDefault()
@@ -146,8 +160,8 @@ export default function FriendsPage({
         {error && (
           <div className="ac-panel" style={{ padding: 'var(--space-3) var(--space-4)', borderColor: 'var(--color-danger, #f87171)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--color-danger, #f87171)' }}>{error}</span>
-            <button type="button" className="ac-btn ac-btn--ghost" onClick={refresh} style={{ fontSize: 'var(--font-size-xs)' }}>
-              🔄 Retry
+            <button type="button" className="ac-btn ac-btn--ghost ac-btn--sm" onClick={refresh}>
+              Retry
             </button>
           </div>
         )}

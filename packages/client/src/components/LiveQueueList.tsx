@@ -82,7 +82,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
 
   return (
     <section
-      className="ac-panel"
+      className={`ac-panel ac-lobby${entries.length === 0 ? ' ac-lobby--idle' : ''}`}
       aria-label={t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
       style={{
         padding: entries.length === 0 ? 'var(--space-3) var(--space-5)' : 'var(--space-5)',
@@ -96,6 +96,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
     >
       {/* Header Bar */}
       <div
+        className="ac-lobby__header"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -106,8 +107,9 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
           userSelect: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        <div className="ac-lobby__title-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <div
+            className="ac-lobby__icon"
             style={{
               width: '36px',
               height: '36px',
@@ -126,6 +128,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
           </div>
           <div>
             <h2
+              className="ac-lobby__title"
               style={{
                 margin: 0,
                 fontSize: 'var(--font-size-lg, 1.25rem)',
@@ -137,6 +140,7 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
               {t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
             </h2>
             <p
+              className="ac-lobby__subtitle"
               style={{
                 margin: '2px 0 0 0',
                 fontSize: 'var(--font-size-xs, 0.75rem)',

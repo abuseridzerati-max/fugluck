@@ -76,7 +76,12 @@ export default function ProfilePage({
           onNavigateCompetitions={onNavigateCompetitions}
         />
         <main className="ac-main ac-main--narrow">
-          <p className="ac-text-muted">{t('auth.notLoggedIn')}</p>
+          <h1 style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
+            {t('navigation.profile')}
+          </h1>
+          <div className="ac-panel">
+            <p className="ac-text-muted" style={{ margin: 0 }}>{t('auth.notLoggedIn')}</p>
+          </div>
         </main>
         <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
       </div>

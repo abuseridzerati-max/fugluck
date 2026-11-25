@@ -78,18 +78,23 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(10,10,15,0.75)',
+        background: 'rgba(4, 7, 12, 0.8)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 'var(--space-4)',
         zIndex: 100,
       }}
       onClick={onClose}
     >
-      <div className="ac-panel" style={{ width: 360 }} onClick={(e) => e.stopPropagation()}>
+      <div className="ac-panel" style={{ width: '100%', maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
         {mode === 'verification-sent' ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 44, marginBottom: 'var(--space-3)' }}>✉️</div>
@@ -235,7 +240,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                         cursor: 'pointer',
                         fontSize: 'var(--font-size-xs)',
                         padding: 0,
-                        color: 'var(--color-accent, #2de2ff)',
+                        color: 'var(--color-secondary)',
                       }}
                     >
                       Forgot password?
