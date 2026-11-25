@@ -75,7 +75,7 @@ export const ledgerEntries = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id),
-    // "COINS" (free Fmoney) or "DIAMONDS" (premium). Stored as text so a new
+    // "COINS" (free non-monetary virtual points). Stored as text so a new
     // currency is a new value, not a schema migration — see PROGRESS.md.
     currency: varchar("currency", { length: 16 }).notNull(),
     // Signed integer minor units. Positive = credit, negative = debit.
@@ -137,7 +137,7 @@ export const matchesHistory = pgTable(
     statusIdx: index("idx_matches_status").on(t.status),
     createdAtIdx: index("idx_matches_created").on(t.createdAt),
     compInstanceIdx: index("idx_matches_competition_instance").on(t.competitionInstanceId),
-    currencyCheck: check("matches_history_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS', 'GEL')`),
+    currencyCheck: check("matches_history_currency_check", sql`${t.currency} in ('COINS', 'GEL')`),
     stakeCheck: check("matches_history_stake_check", sql`${t.stake} >= 0`),
   }),
 );
@@ -160,7 +160,7 @@ export const matchSettlements = pgTable(
   (t) => ({
     matchFk: foreignKey({ columns: [t.matchId], foreignColumns: [matchesHistory.id] }),
     statusCheck: check("match_settlements_status_check", sql`${t.status} in ('PAYOUT', 'REFUND', 'DRAW', 'VOIDED')`),
-    currencyCheck: check("match_settlements_currency_check", sql`${t.currency} in ('COINS', 'DIAMONDS', 'GEL')`),
+    currencyCheck: check("match_settlements_currency_check", sql`${t.currency} in ('COINS', 'GEL')`),
     amountCheck: check(
       "match_settlements_amount_check",
       sql`${t.stake} > 0 and ${t.winnerPayout} >= 0 and ${t.rakeFee} >= 0`,
@@ -220,7 +220,7 @@ export const competitionTemplates = pgTable(
     title: varchar("title", { length: 128 }).notNull(),
     format: varchar("format", { length: 32 }).notNull().default("HEAD_TO_HEAD"),
     participantCapacity: integer("participant_capacity").notNull(),
-    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    currency: varchar("currency", { length: 8 }).notNull().default("GEL"),
     entryFeeMinor: integer("entry_fee_minor").notNull(),
     rulesVersion: varchar("rules_version", { length: 32 }).notNull(),
     skillAssessmentVersion: varchar("skill_assessment_version", { length: 32 }).notNull(),
@@ -246,7 +246,7 @@ export const competitionTemplatePrizes = pgTable(
       .references(() => competitionTemplates.id),
     placement: integer("placement").notNull(),
     amountMinor: integer("amount_minor").notNull(),
-    currency: varchar("currency", { length: 3 }).notNull().default("GEL"),
+    currency: varchar("currency", { length: 8 }).notNull().default("GEL"),
   },
   (t) => ({
     templatePlaceUnique: uniqueIndex("idx_tmpl_prizes_template_place").on(t.templateId, t.placement),
@@ -268,7 +268,7 @@ export const competitionInstances = pgTable(
     gameId: text("game_id").notNull(),
     format: varchar("format", { length: 32 }).notNull(),
     participantCapacity: integer("participant_capacity").notNull(),
-    currency: varchar("currency", { length: 3 }).notNull(),
+    currency: varchar("currency", { length: 8 }).notNull(),
     entryFeeMinor: integer("entry_fee_minor").notNull(),
     rulesVersion: varchar("rules_version", { length: 32 }).notNull(),
     skillAssessmentVersion: varchar("skill_assessment_version", { length: 32 }).notNull(),
@@ -299,7 +299,7 @@ export const competitionInstancePrizes = pgTable(
       .references(() => competitionInstances.id),
     placement: integer("placement").notNull(),
     amountMinor: integer("amount_minor").notNull(),
-    currency: varchar("currency", { length: 3 }).notNull(),
+    currency: varchar("currency", { length: 8 }).notNull(),
     awardedUserId: text("awarded_user_id").references(() => users.id),
   },
   (t) => ({

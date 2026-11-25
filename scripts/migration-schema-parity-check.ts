@@ -39,9 +39,11 @@ async function applyMigrations(pool: Pool): Promise<void> {
     "0012_commercial_financial_core.sql",
     "0013_knockout_tournaments.sql",
     "0014_security_boundaries.sql",
+    "0015_coin_tournaments.sql",
+    "0016_restrict_currency_coins_gel.sql",
   ];
 
-  console.log("\nPhase 1: Applying migration chain (0000 -> 0014) to disposable database...\n");
+  console.log("\nPhase 1: Applying migration chain (0000 -> 0016) to disposable database...\n");
 
   const client = await pool.connect();
   try {
@@ -112,6 +114,7 @@ async function verifySchema(pool: Pool): Promise<void> {
     'competition_authority_runs', 'competition_authority_sessions', 'competition_authority_results', 'competition_authority_decisions',
     'competition_product_configs','competition_special_cycles','competition_products','competition_tournaments','competition_bracket_matches',
     'competition_entry_intents','competition_qualification_events','competition_qualification_tracks','competition_qualification_tickets',
+    'coin_tournament_reservations','coin_tournament_settlements',
   ];
 
   const tableRes = await pool.query(
@@ -742,16 +745,10 @@ async function verifySchema(pool: Pool): Promise<void> {
   }
   check("DML constraint: Negative prize amount_minor rejected", negativePrizeRejected);
 
-  // 10. Historical Currency Compatibility Verification (COINS, DIAMONDS, GEL)
-  const matchDiamondsId = `m_diam_${ts}`;
+  // 10. Active Currency Verification (COINS and GEL)
   const matchCoinsId = `m_coins_${ts}`;
   const matchGelId = `m_gel_${ts}`;
 
-  await pool.query(
-    `INSERT INTO matches_history (id, game_id, player1_id, player2_id, currency, stake, seed, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [matchDiamondsId, "space-blaster", testUserId, testOpponentId, "DIAMONDS", 100, 12345, "COMPLETED"],
-  );
   await pool.query(
     `INSERT INTO matches_history (id, game_id, player1_id, player2_id, currency, stake, seed, status)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -762,13 +759,8 @@ async function verifySchema(pool: Pool): Promise<void> {
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [matchGelId, "space-blaster", testUserId, testOpponentId, "GEL", 500, 12347, "COMPLETED", instId],
   );
-  check("Historical compatibility: matches_history accepts DIAMONDS, COINS, and GEL", true);
+  check("Currency check: matches_history accepts COINS and GEL", true);
 
-  await pool.query(
-    `INSERT INTO match_settlements (match_id, status, winner_id, loser_id, currency, stake, winner_payout, rake_fee)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [matchDiamondsId, "PAYOUT", testUserId, testOpponentId, "DIAMONDS", 100, 190, 10],
-  );
   await pool.query(
     `INSERT INTO match_settlements (match_id, status, winner_id, loser_id, currency, stake, winner_payout, rake_fee)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -779,7 +771,7 @@ async function verifySchema(pool: Pool): Promise<void> {
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [matchGelId, "PAYOUT", testUserId, testOpponentId, "GEL", 500, 950, 50],
   );
-  check("Historical compatibility: match_settlements accepts DIAMONDS, COINS, and GEL", true);
+  check("Currency check: match_settlements accepts COINS and GEL", true);
 
   // Verify invalid currency rejected
   let invalidCurrRejected = false;
@@ -860,8 +852,8 @@ async function verifySchema(pool: Pool): Promise<void> {
   await pool.query(`DELETE FROM sandbox_settlements WHERE competition_instance_id = $1`, [instId]);
   await pool.query(`DELETE FROM sandbox_ledger_entries WHERE accounting_reference_id = $1 OR user_id IN ($2, $3)`, [sbRefId, testUserId, testOpponentId]);
   await pool.query(`DELETE FROM sandbox_entry_reservations WHERE competition_instance_id = $1`, [instId]);
-  await pool.query(`DELETE FROM match_settlements WHERE match_id IN ($1, $2, $3)`, [matchDiamondsId, matchCoinsId, matchGelId]);
-  await pool.query(`DELETE FROM matches_history WHERE id IN ($1, $2, $3)`, [matchDiamondsId, matchCoinsId, matchGelId]);
+  await pool.query(`DELETE FROM match_settlements WHERE match_id IN ($1, $2)`, [matchCoinsId, matchGelId]);
+  await pool.query(`DELETE FROM matches_history WHERE id IN ($1, $2)`, [matchCoinsId, matchGelId]);
   await pool.query(`DELETE FROM competition_participants WHERE instance_id = $1`, [instId]);
   await pool.query(`DELETE FROM competition_instance_prizes WHERE instance_id = $1`, [instId]);
   await pool.query(`DELETE FROM competition_instances WHERE id = $1`, [instId]);

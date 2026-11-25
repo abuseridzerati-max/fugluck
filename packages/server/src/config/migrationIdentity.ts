@@ -4,15 +4,18 @@ import { fileURLToPath } from 'node:url';
 
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export type AppliedMigration = { hash: string; created_at: string | number };
+let cachedExpectedMigrations: Array<{ tag: string; timestamp: number; hash: string; windowsHash: string }> | null = null;
 export function expectedMigrations() {
+  if (cachedExpectedMigrations) return cachedExpectedMigrations;
   const root = new URL('../../drizzle/', import.meta.url);
   const journal = JSON.parse(readFileSync(new URL('meta/_journal.json', root), 'utf8')) as { entries: Array<{ tag: string; when: number }> };
-  return journal.entries.map(entry => {
+  cachedExpectedMigrations = journal.entries.map(entry => {
     const canonical = readFileSync(fileURLToPath(new URL(`${entry.tag}.sql`, root)), 'utf8').replace(/\r\n/g, '\n');
     // Historical migrations were run from Windows and Linux. Accept only these
     // two exact newline representations of the reviewed SQL, not unknown hashes.
     return { tag: entry.tag, timestamp: entry.when, hash: hash(canonical), windowsHash: hash(canonical.replace(/\n/g, '\r\n')) };
   });
+  return cachedExpectedMigrations;
 }
 
 export function compareMigrationIdentity(rows: AppliedMigration[]) {
