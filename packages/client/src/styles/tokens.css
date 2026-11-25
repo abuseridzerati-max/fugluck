@@ -802,10 +802,10 @@ h1, h2, h3, h4 {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1.25rem 2rem;
-  padding: clamp(1.25rem, 2.5vw, 1.75rem) clamp(1.25rem, 3vw, 2rem);
-  margin-bottom: var(--space-5);
-  border-radius: var(--radius-lg);
+  gap: 1rem 1.5rem;
+  padding: clamp(1rem, 2vw, 1.35rem) clamp(1.1rem, 2.5vw, 1.65rem);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border-strong);
   background:
     radial-gradient(640px 220px at 90% 0%, rgba(16, 185, 129, 0.14), transparent 70%),
@@ -863,20 +863,20 @@ h1, h2, h3, h4 {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: var(--space-4);
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .ac-section-title-group {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .ac-section-title {
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
   letter-spacing: -0.02em;
 }
 
@@ -886,17 +886,10 @@ h1, h2, h3, h4 {
   color: var(--color-text-muted);
 }
 
-.ac-spotlight-grid {
+.ac-game-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5);
-  margin-bottom: var(--space-7, 2.5rem);
-}
-
-.ac-casual-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
 }
 
 .ac-game-card {
@@ -904,20 +897,21 @@ h1, h2, h3, h4 {
   flex-direction: column;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
+  min-width: 0;
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
 }
 
 .ac-game-card:hover {
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-elevate-hover);
+  box-shadow: var(--shadow-elevate);
   transform: translateY(-2px);
 }
 
 .ac-game-card--certified {
-  border-color: rgba(16, 185, 129, 0.32);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--color-surface) 55%);
+  border-color: rgba(16, 185, 129, 0.38);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, var(--color-surface) 50%);
 }
 
 .ac-game-card--certified:hover {
@@ -926,7 +920,8 @@ h1, h2, h3, h4 {
 
 .ac-game-card__media {
   position: relative;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 10;
+  max-height: 118px;
   background: #080d16;
   overflow: hidden;
   border-bottom: 1px solid var(--color-border-subtle);
@@ -941,57 +936,88 @@ h1, h2, h3, h4 {
 
 .ac-game-card__badges {
   position: absolute;
-  top: 0.7rem;
-  left: 0.7rem;
-  right: 0.7rem;
+  top: 6px;
+  left: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 4px;
   pointer-events: none;
+}
+
+.ac-game-card__badges .ac-tag {
+  font-size: 0.65rem;
+  padding: 2px 7px;
 }
 
 .ac-certified-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.7rem;
+  gap: 4px;
+  font-size: 0.65rem;
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: #04130d;
   background: var(--color-primary);
-  padding: 0.28rem 0.6rem;
+  padding: 2px 7px;
   border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
 .ac-game-card__body {
-  padding: var(--space-4);
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 0.75rem;
+  gap: 8px;
+  min-width: 0;
 }
 
 .ac-game-card__title {
-  margin: 0 0 0.25rem;
+  margin: 0 0 2px;
   font-family: var(--font-display);
-  font-size: var(--font-size-md);
+  font-size: 0.9375rem;
   font-weight: var(--font-weight-bold);
+  line-height: 1.25;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ac-game-card__tagline {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-  line-height: 1.45;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .ac-game-card__actions {
   margin-top: auto;
   display: flex;
-  gap: 0.5rem;
+  gap: 6px;
+}
+
+.ac-game-card__play-btn {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 0.75rem;
+}
+
+.ac-game-card__tourney-btn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* ---------- Wallet Hero & Responsive Table ---------- */
@@ -1090,13 +1116,29 @@ h1, h2, h3, h4 {
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .ac-spotlight-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1023px) {
+  .ac-game-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ac-game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .ac-game-card__body {
+    padding: 8px 10px 10px;
+  }
+
+  .ac-game-card__tourney-label {
+    display: none;
   }
 
   .ac-hero {
-    padding: 1.15rem;
+    padding: 1rem;
   }
 }
 

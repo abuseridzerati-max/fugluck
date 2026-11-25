@@ -42,38 +42,31 @@ export default function GameCard({
           <div className="ac-game-card__badges">
             <span
               className="ac-tag"
-              style={{ ['--tag-color' as string]: tagColor, background: 'rgba(7, 10, 16, 0.82)' }}
+              style={{ ['--tag-color' as string]: tagColor, background: 'rgba(7, 10, 16, 0.84)' }}
             >
               {engineLabel(engine)}
             </span>
             {certified && (
-              <span className="ac-certified-badge">
-                <TrophyIcon size={12} />
-                <span>Tournament Certified</span>
+              <span className="ac-certified-badge" title="Tournament Certified">
+                <TrophyIcon size={11} />
+                <span>Certified</span>
               </span>
             )}
           </div>
         </div>
 
         <div className="ac-game-card__body">
-          <div>
-            <h3 className="ac-game-card__title">{title}</h3>
-            {tagline && <p className="ac-game-card__tagline">{tagline}</p>}
+          <div style={{ minWidth: 0 }}>
+            <h3 className="ac-game-card__title" title={title}>{title}</h3>
+            {tagline && <p className="ac-game-card__tagline" title={tagline}>{tagline}</p>}
           </div>
 
           <div className="ac-game-card__actions">
             <button
               type="button"
-              className="ac-btn ac-btn--primary"
+              className="ac-btn ac-btn--primary ac-btn--sm ac-game-card__play-btn"
               disabled={loading}
               onClick={() => setShowModal(true)}
-              style={{
-                flex: 1,
-                height: '40px',
-                minHeight: '40px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-              }}
             >
               ▶ Play
             </button>
@@ -81,16 +74,13 @@ export default function GameCard({
             {certified && onOpenCompetitions && (
               <button
                 type="button"
-                className="ac-btn ac-btn--ghost"
+                className="ac-btn ac-btn--ghost ac-btn--sm ac-game-card__tourney-btn"
                 onClick={onOpenCompetitions}
-                style={{
-                  height: '40px',
-                  minHeight: '40px',
-                  whiteSpace: 'nowrap',
-                }}
+                title="Enter Tournament"
+                aria-label={`Enter Tournament for ${title}`}
               >
-                <TrophyIcon size={14} />
-                <span>Enter Tournament</span>
+                <TrophyIcon size={13} />
+                <span className="ac-game-card__tourney-label">Compete</span>
               </button>
             )}
           </div>

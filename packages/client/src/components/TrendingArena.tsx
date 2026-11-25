@@ -148,19 +148,19 @@ export default function TrendingArena({
       ) : (
         <>
           {certifiedGames.length > 0 && (
-            <div style={{ marginBottom: casualGames.length > 0 ? 'var(--space-8)' : 0 }}>
+            <div style={{ marginBottom: casualGames.length > 0 ? 'var(--space-6)' : 0 }}>
               <div className="ac-section-head">
                 <div className="ac-section-title-group">
-                  <TrophyIcon size={18} />
+                  <TrophyIcon size={16} />
                   <h2 className="ac-section-title">Tournament Certified</h2>
                   <span className="ac-badge ac-badge--sandbox">Server-Authoritative</span>
                 </div>
                 <p className="ac-section-sub">
-                  Eligible for Coins Knockout Tournaments &amp; live bracket competitions
+                  Coins Knockout Tournaments &amp; live bracket competitions
                 </p>
               </div>
 
-              <div className="ac-spotlight-grid">
+              <div className="ac-game-grid">
                 {certifiedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -202,7 +202,7 @@ export default function TrendingArena({
                 </p>
               </div>
 
-              <div className="ac-casual-grid">
+              <div className="ac-game-grid">
                 {casualGames.map((game) => (
                   <GameCard
                     key={game.id}
