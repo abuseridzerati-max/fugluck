@@ -89,7 +89,7 @@ type MatchState = {
   id: string;
   gameId: string;
   seed: number;
-  currency: "COINS" | "DIAMONDS";
+  currency: "COINS";
   stake: number;
   players: [MatchPlayer, MatchPlayer];
   forfeitTimer: ReturnType<typeof setTimeout> | null;
@@ -385,8 +385,8 @@ export async function createMatch(
   requestedMatchId?: string,
 ): Promise<string | null> {
   if (a.currency !== "COINS" || b.currency !== "COINS" || a.currency !== b.currency || a.stake !== b.stake) {
-    a.socket.emit("queueError", { message: "Diamond matches are retired; only matching casual Coins settings are supported." });
-    b.socket.emit("queueError", { message: "Diamond matches are retired; only matching casual Coins settings are supported." });
+    a.socket.emit("queueError", { message: "Only matching casual Coins settings are supported." });
+    b.socket.emit("queueError", { message: "Only matching casual Coins settings are supported." });
     return null;
   }
   // SECURITY INVARIANT: Self-match guard is enforced by queue deduplication.
@@ -610,7 +610,7 @@ export async function recoverOrphanMatches(): Promise<number> {
             tx,
             m.player1Id,
             m.player2Id,
-            m.currency as "COINS" | "DIAMONDS",
+            m.currency as "COINS",
             m.stake,
             m.id,
             "VOIDED",
@@ -638,7 +638,7 @@ type RematchPlayer = {
 type RematchWindow = {
   originalMatchId: string;
   gameId: string;
-  currency: "COINS" | "DIAMONDS";
+  currency: "COINS";
   stake: number;
   players: [RematchPlayer, RematchPlayer];
   timer: ReturnType<typeof setTimeout>;

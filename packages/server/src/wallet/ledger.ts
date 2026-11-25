@@ -57,12 +57,10 @@ export async function getBalances(userId: string, client: DbClientOrTx = db): Pr
     .groupBy(ledgerEntries.currency);
 
   let coins = 0;
-  let diamonds = 0;
   for (const row of rows) {
     if (row.currency === "COINS") coins = Number(row.total);
-    if (row.currency === "DIAMONDS") diamonds = Number(row.total);
   }
-  return { coins, diamonds };
+  return { coins };
 }
 
 async function hasReason(userId: string, reason: string, client: DbClientOrTx = db): Promise<boolean> {
@@ -74,7 +72,7 @@ async function hasReason(userId: string, reason: string, client: DbClientOrTx = 
 
 function validateCurrency(currency: string): asserts currency is Currency {
   if (currency !== "COINS") {
-    throw new Error("Only non-monetary COINS are supported by casual matchmaking; DIAMONDS are retired.");
+    throw new Error("Only non-monetary COINS are supported by casual matchmaking.");
   }
 }
 
@@ -84,10 +82,27 @@ function validatePositiveInteger(amount: number, label: string): void {
   }
 }
 
+export const MONTHLY_ALLOWANCE_TIMEZONE = "Asia/Tbilisi";
+
+export function getTbilisiMonthKey(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: MONTHLY_ALLOWANCE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  if (!year || !month) {
+    throw new Error("Failed to derive Asia/Tbilisi month key.");
+  }
+  return `${year}-${month}`;
+}
+
 // Evaluates and applies the monthly 1,000 COIN allowance refill on login/me.
 // Tops off balances under 1,000 COINS up to 1,000 COINS; balances >= 1,000 are left untouched.
-export async function checkAndApplyMonthlyAllowance(userId: string): Promise<WalletBalances> {
-  const monthKey = new Date().toISOString().slice(0, 7);
+// Month rollover follows Asia/Tbilisi (UTC+4, midnight on the 1st of each month).
+export async function checkAndApplyMonthlyAllowance(userId: string, now: Date = new Date()): Promise<WalletBalances> {
+  const monthKey = getTbilisiMonthKey(now);
   const reason = `monthly_allowance_refill:${monthKey}`;
 
   return await db.transaction(async (tx) => {
@@ -158,8 +173,7 @@ export async function escrowStake(
     }
 
     const balances = await getBalances(userId, tx);
-    const currentBalance = currency === "COINS" ? balances.coins : balances.diamonds;
-    if (currentBalance < amount) {
+    if (balances.coins < amount) {
       throw new Error(`Insufficient ${currency} balance for escrow.`);
     }
 
@@ -210,10 +224,8 @@ export async function escrowMatchStakes(
     getBalances(player1Id, client),
     getBalances(player2Id, client),
   ]);
-  const p1Available = currency === "COINS" ? p1BalancesBefore.coins : p1BalancesBefore.diamonds;
-  const p2Available = currency === "COINS" ? p2BalancesBefore.coins : p2BalancesBefore.diamonds;
-  if (p1Available < amount) throw new Error(`Player 1 has insufficient ${currency} balance for escrow.`);
-  if (p2Available < amount) throw new Error(`Player 2 has insufficient ${currency} balance for escrow.`);
+  if (p1BalancesBefore.coins < amount) throw new Error(`Player 1 has insufficient ${currency} balance for escrow.`);
+  if (p2BalancesBefore.coins < amount) throw new Error(`Player 2 has insufficient ${currency} balance for escrow.`);
 
   await client.insert(ledgerEntries).values([
     { id: randomUUID(), userId: player1Id, currency, amount: -amount, reason },

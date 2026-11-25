@@ -2,16 +2,18 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
 import { GAME_COMPETITION_CERTIFICATIONS, type TournamentConfig, type TournamentTerms, type SpecialCycle, type CompetitionProduct, type TournamentCapacity } from '@fugluck/shared';
 import { pool } from '../db/client';
-import { defaultTournamentConfig, freezeTournamentTerms, nextSpecialCycle, validateTournamentConfig } from './tournamentRules';
+import { defaultTournamentConfig, freezeCoinTournamentTerms, freezeTournamentTerms, nextSpecialCycle, validateTournamentConfig } from './tournamentRules';
 import { getAppEnvironment } from '../config/environment';
 import { COMMERCIAL_SWITCHES } from '../config/commercialSafety';
 
 export const knockoutEnabled=()=>process.env.ENABLE_KNOCKOUT_TOURNAMENTS==='true'&&process.env.ENABLE_COMPETITION_AUTHORITY==='true'&&['test','development','staging'].includes(getAppEnvironment())&&!Object.values(COMMERCIAL_SWITCHES).some(k=>process.env[k]&&process.env[k]!=='false');
+export const isCoinTemplate=(templateId:string)=>templateId.startsWith('tmpl_coin_ko_');
+export const coinTournamentsEnabled=()=>process.env.ENABLE_COMPETITION_AUTHORITY==='true'&&process.env.ENABLE_COIN_TOURNAMENTS!=='false';
 // Session locks cannot consume the pool needed to finish accounting transactions.
 const lockPool=new Pool({...pool.options,max:4,connectionTimeoutMillis:10000});
 export const closeTournamentLocks=()=>lockPool.end();
 const localLocks=new Map<string,Promise<void>>();
-export type ProductRow={template_id:string;game_id:string;product:CompetitionProduct;terms:TournamentTerms;cycle_id:string|null;provenance:'SANDBOX'|'STAGING_MOCK'|'LIVE'};
+export type ProductRow={template_id:string;game_id:string;product:CompetitionProduct;terms:TournamentTerms;cycle_id:string|null;provenance:'SANDBOX'|'STAGING_MOCK'|'LIVE'|'COINS'};
 export async function tournamentTx<T>(fn:(c:PoolClient)=>Promise<T>) {
   const c=await pool.connect();try{await c.query('BEGIN');const value=await fn(c);await c.query('COMMIT');return value;}
   catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
@@ -114,16 +116,54 @@ export async function ensureTournamentCatalog(now=Date.now()) {
     return ids;
   });
 }
+export async function ensureCoinTournamentCatalog() {
+  return tournamentTx(async c => {
+    const games = ['space-blaster', 'cyber-hopper'] as const;
+    const capacities: TournamentCapacity[] = [2, 4, 8, 16];
+    const products = games.flatMap(game_id =>
+      capacities.map(capacity => {
+        const terms = freezeCoinTournamentTerms(capacity, 1);
+        const id = `tmpl_coin_ko_${createHash('sha256').update(`${game_id}:COINS:STANDARD:${capacity}:1`).digest('hex').slice(0, 32)}`;
+        return { id, game_id, terms, version: GAME_COMPETITION_CERTIFICATIONS[game_id].authorityVersion };
+      }),
+    );
+    const ids = products.map(p => p.id);
+    const existing = (await c.query('SELECT template_id FROM competition_products WHERE template_id=ANY($1::text[])', [ids])).rows;
+    const missing = products.filter(p => !existing.some(row => row.template_id === p.id));
+    if (missing.length) {
+      const data = JSON.stringify(missing);
+      await c.query(
+        `INSERT INTO competition_templates(id,game_id,title,format,participant_capacity,currency,entry_fee_minor,rules_version,skill_assessment_version,jurisdiction,enabled)
+         SELECT id,game_id,'STANDARD','TOURNAMENT_BRACKET',(terms->>'capacity')::int,'COINS',(terms->>'entryMinor')::int,version,'knockout-coins-v1','GLOBAL',true
+         FROM jsonb_to_recordset($1::jsonb) AS x(id text,game_id text,terms jsonb,version text) ON CONFLICT DO NOTHING`,
+        [data],
+      );
+      await c.query(
+        `INSERT INTO competition_template_prizes(id,template_id,placement,amount_minor,currency)
+         SELECT 'prize_'||id,id,1,(terms->>'prizeMinor')::int,'COINS'
+         FROM jsonb_to_recordset($1::jsonb) AS x(id text,terms jsonb) ON CONFLICT DO NOTHING`,
+        [data],
+      );
+      await c.query(
+        `INSERT INTO competition_products(template_id,game_id,product,terms,cycle_id,provenance)
+         SELECT id,game_id,'STANDARD',terms,NULL,'COINS'
+         FROM jsonb_to_recordset($1::jsonb) AS x(id text,game_id text,terms jsonb) ON CONFLICT DO NOTHING`,
+        [data],
+      );
+    }
+    return ids;
+  });
+}
 export async function readProduct(templateId:string,c?:PoolClient):Promise<ProductRow|null> {
   return (await (c??pool).query('SELECT * FROM competition_products WHERE template_id=$1',[templateId])).rows[0]??null;
 }
 export async function createTournamentInstance(c:PoolClient,product:ProductRow) {
   const template=(await c.query('SELECT * FROM competition_templates WHERE id=$1 AND enabled',[product.template_id])).rows[0];
   if(!template||GAME_COMPETITION_CERTIFICATIONS[template.game_id]?.authorityVersion!==template.rules_version)throw Error('GAME_NOT_CERTIFIED');
-  const terms=product.terms,id=`inst_${randomUUID()}`;
+  const terms=product.terms,id=`inst_${randomUUID()}`,currency=product.provenance==='COINS'?'COINS':'GEL';
   await c.query(`INSERT INTO competition_instances(id,template_id,game_id,format,participant_capacity,currency,entry_fee_minor,rules_version,skill_assessment_version,jurisdiction)
-    VALUES($1,$2,$3,'TOURNAMENT_BRACKET',$4,'GEL',$5,$6,$7,$8)`,[id,product.template_id,product.game_id,terms.capacity,terms.entryMinor,template.rules_version,template.skill_assessment_version,template.jurisdiction]);
-  await c.query('INSERT INTO competition_instance_prizes(id,instance_id,placement,amount_minor,currency) VALUES($1,$2,1,$3,\'GEL\')',[`ip_${randomUUID()}`,id,terms.prizeMinor]);
+    VALUES($1,$2,$3,'TOURNAMENT_BRACKET',$4,$5,$6,$7,$8,$9)`,[id,product.template_id,product.game_id,terms.capacity,currency,terms.entryMinor,template.rules_version,template.skill_assessment_version,template.jurisdiction]);
+  await c.query('INSERT INTO competition_instance_prizes(id,instance_id,placement,amount_minor,currency) VALUES($1,$2,1,$3,$4)',[`ip_${randomUUID()}`,id,terms.prizeMinor,currency]);
   await c.query(`INSERT INTO competition_tournaments(instance_id,terms,cycle_id,provenance) VALUES($1,$2,$3,$4)`,[id,terms,product.cycle_id,product.provenance]);
   return id;
 }

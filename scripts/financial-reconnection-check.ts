@@ -13,8 +13,10 @@ import { randomUUID } from "node:crypto";
 async function main() {
   const {
     COINS_RAKE_PERCENT,
+    MONTHLY_ALLOWANCE_TIMEZONE,
     PLATFORM_RAKE_ACCOUNT,
     escrowStake,
+    getTbilisiMonthKey,
   } = await import("../packages/server/src/wallet/ledger.ts");
   const {
     createMatch,
@@ -55,7 +57,7 @@ async function main() {
     return socket;
   }
 
-  console.log("Test 1: Casual COINS policy and retired-Diamonds guard\n");
+  console.log("Test 1: Casual COINS policy and non-COINS currency guard\n");
 
   check("COINS rake percent is 0%", COINS_RAKE_PERCENT === 0);
   check("Platform rake account identifier exists", PLATFORM_RAKE_ACCOUNT === "platform_rake_account");
@@ -67,9 +69,9 @@ async function main() {
 
   check("COINS 100-stake match has 0 coins rake fee (0%)", coinsRakeFee === 0);
   check("COINS 100-stake winner receives full 200 coins pot", coinsWinnerPayout === 200);
-  let diamondEscrowRejected = false;
-  try { await escrowStake("no-user-db-call", "DIAMONDS", 1, "retired-diamond-test"); } catch (error) { diamondEscrowRejected = error instanceof Error && error.message.includes("retired"); }
-  check("new Diamond escrow is rejected before database access", diamondEscrowRejected);
+  let nonCoinsEscrowRejected = false;
+  try { await escrowStake("no-user-db-call", "OTHER" as any, 1, "non-coins-test"); } catch (error) { nonCoinsEscrowRejected = error instanceof Error && error.message.includes("Only non-monetary COINS"); }
+  check("non-COINS escrow is rejected before database access", nonCoinsEscrowRejected);
 
   // Monthly 1,000 COIN Allowance Refill Logic Calculations
   const lowBalance = 250;
@@ -79,6 +81,10 @@ async function main() {
 
   check("User with 250 COINS receives +750 refill to reach 1000 COINS", expectedTopUpLow === 750 && lowBalance + expectedTopUpLow === 1000);
   check("User with 1400 COINS receives 0 refill to remain at 1400 COINS", expectedTopUpHigh === 0 && highBalance + expectedTopUpHigh === 1400);
+  check("Monthly allowance timezone is Asia/Tbilisi", MONTHLY_ALLOWANCE_TIMEZONE === "Asia/Tbilisi");
+  check("Tbilisi month key stays on prior month at 23:59:59 Tbilisi (19:59:59Z)", getTbilisiMonthKey(new Date("2026-08-31T19:59:59.000Z")) === "2026-08");
+  check("Tbilisi month key rolls over at 00:00:00 Tbilisi on the 1st (20:00:00Z)", getTbilisiMonthKey(new Date("2026-08-31T20:00:00.000Z")) === "2026-09");
+  check("Tbilisi month key rolls year at midnight Tbilisi on Jan 1 (20:00:00Z)", getTbilisiMonthKey(new Date("2026-12-31T20:00:00.000Z")) === "2027-01");
 
 const matchId = "test-match-12345";
 const winnerId = "user-winner";

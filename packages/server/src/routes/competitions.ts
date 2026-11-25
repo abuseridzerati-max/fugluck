@@ -14,8 +14,9 @@ import { CommercialLedger } from '../accounting/commercialLedger';
 import { pool } from '../db/client';
 import { allowedMockUser, isMockTemplate, validMockAuthorization } from '../config/stagingMockCommercial';
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
-import { readCatalogRooms, readMyCompetitions, readPlayerInstance, readTournamentCatalog } from '../competitions/playerReadModel';
-import { ensureTournamentCatalog, knockoutEnabled } from '../competitions/tournamentPersistence';
+import { readCatalogRooms, readCoinTournamentCatalog, readMyCompetitions, readPlayerInstance, readTournamentCatalog } from '../competitions/playerReadModel';
+import { coinTournamentsEnabled, ensureCoinTournamentCatalog, ensureTournamentCatalog, isCoinTemplate, knockoutEnabled } from '../competitions/tournamentPersistence';
+import { getBalances } from '../wallet/ledger';
 
 const competitionsLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -25,6 +26,7 @@ const competitionsLimiter = createRateLimiterMiddleware({
 
 export const competitionsRouter = Router();
 competitionsRouter.use(competitionsLimiter);
+const sandboxAdapter = new SandboxAccountingAdapter();
 
 // ---------------------------------------------------------------------------
 // Public Read Endpoints
@@ -36,6 +38,18 @@ competitionsRouter.use(competitionsLimiter);
  */
 competitionsRouter.get("/templates", attachSession, async (req, res) => {
   try {
+    const wantsCoins = String(req.query.currency ?? "").toUpperCase() === "COINS" || String(req.query.mode ?? "").toLowerCase() === "coins";
+    const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
+    if (wantsCoins) {
+      const enabled = coinTournamentsEnabled();
+      const coinIds = enabled ? await ensureCoinTournamentCatalog() : [];
+      const coinTemplates = coinIds.length ? await readCoinTournamentCatalog((await templateService.listTemplates(coinIds)).filter(t => t.enabled), req.userId) : [];
+      const selected = gameId ? coinTemplates.filter((template) => template.gameId === gameId) : coinTemplates;
+      res.setHeader('Cache-Control','no-store');
+      res.json({ templates: selected, rooms: await readCatalogRooms(selected.map(t => t.id), req.userId),
+        playerMode: 'coins', joiningAvailable: enabled });
+      return;
+    }
     // Include disabled templates so an intentionally closed catalog stays empty.
     const tournaments=knockoutEnabled();
     if(!tournaments){
@@ -47,7 +61,6 @@ competitionsRouter.get("/templates", attachSession, async (req, res) => {
     // listTemplates() to inspect disabled and legacy rows.
     const productIds=tournaments?await ensureTournamentCatalog():null;
     const templates = productIds?await readTournamentCatalog((await templateService.listTemplates(productIds)).filter(t=>t.enabled),req.userId):await templateService.listEnabledTemplates();
-    const gameId = typeof req.query.gameId === "string" ? req.query.gameId.trim() : "";
     const publicTemplates=templates.filter(template=>!isMockTemplate(template.id));
     const selected=gameId ? publicTemplates.filter((template) => template.gameId === gameId) : publicTemplates;
     res.setHeader('Cache-Control','no-store');
@@ -65,8 +78,7 @@ competitionsRouter.get("/templates", attachSession, async (req, res) => {
  */
 competitionsRouter.get("/balance", attachSession, requireAuth, async (req, res) => {
   try {
-    const adapter = new SandboxAccountingAdapter();
-    const balance = await adapter.getUserBalance(req.userId!);
+    const balance = await sandboxAdapter.getUserBalance(req.userId!);
     res.json({
       availableMinor: balance.availableMinor,
       reservedMinor: balance.reservedMinor,
@@ -96,8 +108,7 @@ competitionsRouter.post("/sandbox-faucet", attachSession, requireAuth, async (re
       res.status(400).json({error:'amountMinor must be a positive integer up to 50,000.'}); return;
     }
     const grantAmount = amountMinor ?? 5_000;
-    const adapter = new SandboxAccountingAdapter();
-    const balance = await adapter.grantSandboxTestFunds(req.userId!, grantAmount);
+    const balance = await sandboxAdapter.grantSandboxTestFunds(req.userId!, grantAmount);
     res.json({
       success: true,
       grantedMinor: grantAmount,
@@ -132,6 +143,16 @@ competitionsRouter.post("/instances/:id/cancel", attachSession, requireAuth, asy
     const cancelRes = await lifecycleEngine.cancelUnfilledInstance(instanceId, adapter, "USER_CANCELLED",req.userId);
     if (!cancelRes.cancelled) {
       res.status(400).json({ error: "Competition cannot be cancelled; it may already be locked or started." });
+      return;
+    }
+    if (isCoinTemplate(instance.templateId)) {
+      const coinsBalance = await getBalances(req.userId!);
+      res.json({
+        success: true,
+        instanceId,
+        status: "CANCELLED",
+        availableCoins: coinsBalance.coins,
+      });
       return;
     }
     const balance = isMockTemplate(instance.templateId)

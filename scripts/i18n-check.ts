@@ -121,7 +121,7 @@ async function runI18nAudit() {
   console.log('\nTest 7: Application State Isolation Guard')
   const dummyState = {
     userId: 'usr_123',
-    balances: { coins: 1000, diamonds: 50 },
+    balances: { coins: 1000 },
     gameScore: 450,
   }
 
@@ -149,7 +149,6 @@ async function runI18nAudit() {
     'reconnect',
     'stake',
     'coins',
-    'diamonds',
     'matchmaking',
   ]
 

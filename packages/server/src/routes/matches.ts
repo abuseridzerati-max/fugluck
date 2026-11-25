@@ -1,4 +1,4 @@
-import { desc, eq, or } from "drizzle-orm";
+import { desc, eq, inArray, or } from "drizzle-orm";
 import { Router } from "express";
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
@@ -34,32 +34,35 @@ matchesRouter.get("/history", attachSession, requireAuth, matchHistoryLimiter, a
     limit: 20,
   });
 
-  const enriched = await Promise.all(
-    records.map(async (m) => {
-      const isP1 = m.player1Id === userId;
-      const opponentId = isP1 ? m.player2Id : m.player1Id;
-      const opponent = await db.query.users.findFirst({ where: eq(users.id, opponentId) });
-      const userScore = isP1 ? m.scoreP1 : m.scoreP2;
-      const opponentScore = isP1 ? m.scoreP2 : m.scoreP1;
+  const opponentIds = [...new Set(records.map((m) => (m.player1Id === userId ? m.player2Id : m.player1Id)))];
+  const opponentRows = opponentIds.length
+    ? await db.select({ id: users.id, username: users.username }).from(users).where(inArray(users.id, opponentIds))
+    : [];
+  const opponentById = new Map(opponentRows.map((u) => [u.id, u.username]));
 
-      let outcome = "draw";
-      if (m.winnerId === userId) outcome = "win";
-      else if (m.winnerId) outcome = "loss";
+  const enriched = records.map((m) => {
+    const isP1 = m.player1Id === userId;
+    const opponentId = isP1 ? m.player2Id : m.player1Id;
+    const userScore = isP1 ? m.scoreP1 : m.scoreP2;
+    const opponentScore = isP1 ? m.scoreP2 : m.scoreP1;
 
-      return {
-        id: m.id,
-        gameId: m.gameId,
-        opponentUsername: opponent?.username ?? "Opponent",
-        outcome,
-        currency: m.currency,
-        stake: m.stake,
-        userScore,
-        opponentScore,
-        seed: m.seed,
-        createdAt: m.createdAt.toISOString(),
-      };
-    }),
-  );
+    let outcome = "draw";
+    if (m.winnerId === userId) outcome = "win";
+    else if (m.winnerId) outcome = "loss";
+
+    return {
+      id: m.id,
+      gameId: m.gameId,
+      opponentUsername: opponentById.get(opponentId) ?? "Opponent",
+      outcome,
+      currency: m.currency,
+      stake: m.stake,
+      userScore,
+      opponentScore,
+      seed: m.seed,
+      createdAt: m.createdAt.toISOString(),
+    };
+  });
 
   res.json({ matches: enriched });
 });

@@ -36,10 +36,11 @@ export function CompetitionDialog({title,onClose,children}:{title:string;onClose
 }
 export function CompetitionRules({template}:{template:CompetitionTemplate}) {
   const {t}=useTranslation()
+  const isCoins=template.currency==='COINS'
   return <details className="competition-rules"><summary>{t('competition.rulesDetails')}</summary>
     <dl><div><dt>{t('competition.format')}</dt><dd>{t(`competition.formats.${template.format}`)}</dd></div><div><dt>{t('competition.players')}</dt><dd>{template.participantCapacity}</dd></div></dl>
-    <p>{t(template.gameId==='cyber-hopper'?'competition.hopperControls':'competition.blasterControls')}</p><p>{t(template.format==='TOURNAMENT_BRACKET'?'competition.knockout.rules':'competition.gameRules')}</p><p>{t(template.format==='TOURNAMENT_BRACKET'?'competition.knockout.leaveRule':'competition.leaveRule')}</p>
-    <div className="competition-policy-links"><a href="/rules" target="_blank" rel="noreferrer">{t('competition.rules')}</a><a href="/entry-fees-prizes" target="_blank" rel="noreferrer">{t('competition.entryPrizeDetails')}</a><a href="/fair-play" target="_blank" rel="noreferrer">{t('competition.fairPlay')}</a><a href="/terms" target="_blank" rel="noreferrer">{t('competition.terms')}</a><a href="/sandbox-notice" target="_blank" rel="noreferrer">{t('competition.sandboxDetails')}</a></div>
+    <p>{t(template.gameId==='cyber-hopper'?'competition.hopperControls':'competition.blasterControls')}</p><p>{t(template.format==='TOURNAMENT_BRACKET'?'competition.knockout.rules':'competition.gameRules')}</p><p>{t(isCoins?'competition.coinsLeaveRule':template.format==='TOURNAMENT_BRACKET'?'competition.knockout.leaveRule':'competition.leaveRule')}</p>
+    <div className="competition-policy-links"><a href="/rules" target="_blank" rel="noreferrer">{t('competition.rules')}</a><a href="/entry-fees-prizes" target="_blank" rel="noreferrer">{t('competition.entryPrizeDetails')}</a><a href="/fair-play" target="_blank" rel="noreferrer">{t('competition.fairPlay')}</a><a href="/terms" target="_blank" rel="noreferrer">{t('competition.terms')}</a>{isCoins?<a href="/coins" target="_blank" rel="noreferrer">{t('competition.coinsDetails')}</a>:<a href="/sandbox-notice" target="_blank" rel="noreferrer">{t('competition.sandboxDetails')}</a>}</div>
   </details>
 }
 export function CompetitionBracket({instance,userId}:{instance:PlayerCompetition;userId?:string}){
@@ -52,7 +53,7 @@ export function CompetitionBracket({instance,userId}:{instance:PlayerCompetition
   </details>
 }
 export function CompetitionQualification({template}:{template:CompetitionTemplate}){
-  const {t,i18n}=useTranslation(),info=template.tournament;if(!info)return null;
+  const {t,i18n}=useTranslation(),info=template.tournament;if(!info||info.promosEnabled===false||template.currency==='COINS')return null;
   const date=(value:string)=>new Intl.DateTimeFormat([i18n.resolvedLanguage??'en','en-GB'],{timeZone:info.cycle?.timezone??'Asia/Tbilisi',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
   return <div className="competition-qualification">
     {info.cycle&&<p>{t('competition.knockout.starts',{date:date(info.cycle.startsAt),zone:info.cycle.timezone})}</p>}
@@ -67,7 +68,7 @@ export function CompetitionResult({instance,userId,onRetry}:{instance:PlayerComp
   const {t}=useTranslation();const result=competitionResult(instance,userId)
   const icon=result.kind==='win'?'★':result.kind==='loss'?'⚑':result.kind==='draw'?'＝':result.kind==='pending'?'…':'↩'
   return <section className={`competition-result is-${result.kind}`} aria-live="polite">
-    <p className="competition-test-label">{t('competition.testLabel')}</p>
+    <p className="competition-test-label">{t(instance?.currency==='COINS'?'competition.coinsLabel':'competition.testLabel')}</p>
     <div className="competition-result-icon" aria-hidden="true">{icon}</div><h2>{t(`competition.results.${result.kind}`)}</h2>
     {result.kind==='pending'?<><p>{t('competition.resultPending')}</p>{onRetry&&<button type="button" className="ac-btn ac-btn--secondary" onClick={onRetry}>{t('competition.retry')}</button>}</>:<>
       <dl className="competition-terms"><div><dt>{t('competition.yourScore')}</dt><dd>{result.yourScore??'—'}</dd></div><div><dt>{t('competition.opponentScore')}</dt><dd>{result.opponentScore??'—'}</dd></div></dl>

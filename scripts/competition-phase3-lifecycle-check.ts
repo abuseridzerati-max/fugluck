@@ -641,11 +641,11 @@ async function runPhase3LifecycleChecks(): Promise<void> {
     const paired = tryPair("space-blaster", "COINS", 0);
     check("41. Existing COINS matchmaking still works", Boolean(paired && paired.length === 2));
 
-    // 42. Historical DIAMONDS remain unchanged
-    const diamondHistRows = await pool.query(
-      `SELECT count(*) FROM matches_history WHERE currency = 'DIAMONDS'`,
+    // 42. Casual matches_history rows remain intact
+    const casualHistRows = await pool.query(
+      `SELECT count(*) FROM matches_history WHERE currency = 'COINS'`,
     );
-    check("42. Historical DIAMONDS remain unchanged", Number(diamondHistRows.rows[0].count) >= 0);
+    check("42. Casual COINS match history remains intact", Number(casualHistRows.rows[0].count) >= 0);
 
     // 43. Full sandbox reconciliation remains zero discrepancy
     // Every reservation is either CAPTURED, RELEASED, or REFUNDED; all settlements balance

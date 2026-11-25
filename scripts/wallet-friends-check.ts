@@ -26,9 +26,9 @@ async function run() {
 
   check("signup grant is 1000 coins", SIGNUP_COIN_GRANT === 1000);
   const sharedWalletExports = await import("@fugluck/shared");
-  check("retired Diamond packs are not exported to player UI", !("DIAMOND_PACKS" in sharedWalletExports));
-  check("no active shared export advertises Diamond purchase packs", !Object.keys(sharedWalletExports).some((key) => /diamond.?packs/i.test(key)));
-  check("wallet shared module retains balances without purchase-pack data", !Object.keys(sharedWalletExports).some((key) => key === "DiamondPack"));
+  check("SIGNUP_COIN_GRANT is exported from shared wallet module", "SIGNUP_COIN_GRANT" in sharedWalletExports);
+  check("no shared export advertises virtual purchase packs", !Object.keys(sharedWalletExports).some((key) => /packs/i.test(key)));
+  check("wallet shared module exports clean currency helpers only", !Object.keys(sharedWalletExports).some((key) => /pack$/i.test(key)));
 
   const sample: PublicUser = {
     id: "x",
@@ -38,9 +38,9 @@ async function run() {
     gamesPlayed: 0,
     gamesWon: 0,
     createdAt: new Date().toISOString(),
-    balances: { coins: 10, diamonds: 0 },
+    balances: { coins: 10 },
   };
-  check("PublicUser carries balances", sample.balances.coins === 10 && sample.balances.diamonds === 0);
+  check("PublicUser carries balances", sample.balances.coins === 10);
 
   // Auth session persistence rehydration test simulation
   const mockStoredSession = JSON.stringify(sample);
@@ -174,7 +174,8 @@ async function run() {
   check("formatReasonLabel maps stake escrow", formatReasonLabel("stake_escrow:m_123", -100) === "Wager Escrow");
   check("formatReasonLabel maps stake payout", formatReasonLabel("stake_payout:m_123", 200) === "Match Payout (Victory)");
   check("formatReasonLabel maps stake refund", formatReasonLabel("stake_refund:m_123", 100) === "Match Refund");
-  check("formatReasonLabel maps diamond purchase", formatReasonLabel("diamond_pack_grant:pack_10:token", 10) === "Diamond Pack Purchase");
+  check("formatReasonLabel maps admin coin reset", formatReasonLabel("admin_coin_reset:key_1", 400) === "Coin Allowance Reset");
+  check("formatReasonLabel maps admin adjustment", formatReasonLabel("admin_adjustment:sys", 10) === "Admin Adjustment");
   check("formatReasonLabel maps admin grant", formatReasonLabel("admin_grant:sys", 500) === "Admin Grant");
   check("formatReasonLabel falls back to generic signed label", formatReasonLabel("other_reason", -25) === "Wallet Debit");
 

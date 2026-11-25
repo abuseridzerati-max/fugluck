@@ -23,6 +23,18 @@ export async function readTournamentCatalog(templates:CompetitionTemplate[],view
   }).sort((a,b)=>['space-blaster','cyber-hopper'].indexOf(a.gameId)-['space-blaster','cyber-hopper'].indexOf(b.gameId)||productOrder[a.tournament!.product]-productOrder[b.tournament!.product]||a.participantCapacity-b.participantCapacity);
 }
 
+export async function readCoinTournamentCatalog(templates:CompetitionTemplate[],viewerId?:string) {
+  const rows=(await pool.query(`SELECT p.* FROM competition_products p WHERE p.template_id=ANY($1::text[]) AND p.provenance='COINS' AND p.product='STANDARD'`,[templates.map(t=>t.id)])).rows;
+  const emptyTrack={progress:0,threshold:0,ticketStatus:null,targetCycleId:null,expiresAt:null};
+  return templates.filter(t=>rows.some(r=>r.template_id===t.id)).map(template=>{
+    const row=rows.find(r=>r.template_id===template.id)!;
+    const eligibility:TournamentCardInfo['eligibility']=!viewerId?'SIGN_IN':'AVAILABLE';
+    return {...template,participantCapacity:row.terms.capacity,entryFeeMinor:row.terms.entryMinor,currency:'COINS',
+      prizes:[{id:`public_${template.id}`,templateId:template.id,placement:1,amountMinor:row.terms.prizeMinor,currency:'COINS'}],
+      tournament:{product:'STANDARD',cycle:null,eligibility,promosEnabled:false,promo:emptyTrack,gift:emptyTrack,nextPromoCycle:null,nextGiftCycle:null}} as CompetitionTemplate;
+  }).sort((a,b)=>['space-blaster','cyber-hopper'].indexOf(a.gameId)-['space-blaster','cyber-hopper'].indexOf(b.gameId)||a.participantCapacity-b.participantCapacity);
+}
+
 export async function readCatalogRooms(templateIds: string[], viewerId?: string) {
   if (!templateIds.length) return []
   const rows = await pool.query<{id:string}>(`SELECT DISTINCT ON (ci.template_id) ci.id
@@ -44,7 +56,9 @@ export async function readPlayerInstance(id: string,viewerId?:string) {
       WHERE r.instance_id=$1 AND d.applied_at IS NOT NULL LIMIT 1`, [id]),
     pool.query<{user_id:string}>(`SELECT user_id FROM sandbox_entry_reservations WHERE competition_instance_id=$1
       AND status IN ('RELEASED','REFUNDED') UNION SELECT user_id FROM commercial_operations
-      WHERE competition_instance_id=$1 AND kind='ENTRY' AND status IN ('RELEASED','REFUNDED')`, [id]),
+      WHERE competition_instance_id=$1 AND kind='ENTRY' AND status IN ('RELEASED','REFUNDED')
+      UNION SELECT user_id FROM coin_tournament_reservations WHERE competition_instance_id=$1
+      AND status IN ('RELEASED','REFUNDED')`, [id]),
   ])
   const tournament=instance.format==='TOURNAMENT_BRACKET'?await readTournamentInstance(id,viewerId):undefined;
   return {...instance,...tournament?{tournament}:{}, resultKind:tournament?(instance.status==='SETTLED'?'WIN':instance.status==='VOIDED'?'VOID':null):decision.rows[0]?.kind ?? null,

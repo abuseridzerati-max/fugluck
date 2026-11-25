@@ -55,6 +55,59 @@ export function seedBracket(entrants:string[],seed=randomBytes(32).toString('hex
   }
   return {seed,order};
 }
+export const COIN_TOURNAMENT_ENTRY_COINS = 100;
+
+export function defaultCoinTournamentConfig(): TournamentConfig {
+  return {
+    referenceEntryMinor: COIN_TOURNAMENT_ENTRY_COINS,
+    capacities: [2, 4, 8, 16],
+    platformRateBps: 0,
+    promoPrizeBps: 0,
+    giftPrizeBps: 0,
+    promoThreshold: 0,
+    giftThreshold: 0,
+    promoHours: 6,
+    giftHours: 24,
+    timezone: 'Asia/Tbilisi',
+    promoCapacities: [],
+    giftCapacities: [],
+    cutoffMinutes: 5,
+    readyMs: 30000,
+    waitingMs: 120000,
+    recoveryAttempts: 3,
+  };
+}
+
+/** Freeze Standard-only Coins knockout terms: 0% rake, 100% of pot to champion, no Promo/Gift. */
+export function freezeCoinTournamentTerms(capacity: TournamentCapacity, revision = 1, configInput?: Partial<TournamentConfig>): TournamentTerms {
+  const config: TournamentConfig = { ...defaultCoinTournamentConfig(), ...configInput };
+  if (!TOURNAMENT_CAPACITIES.includes(capacity) || !Number.isSafeInteger(revision) || revision < 1) {
+    throw Error('INVALID_COIN_TOURNAMENT_TERMS');
+  }
+  if (!Number.isSafeInteger(config.referenceEntryMinor) || config.referenceEntryMinor < 1 || config.referenceEntryMinor > 100000) {
+    throw Error('INVALID_COIN_TOURNAMENT_TERMS');
+  }
+  const total = BigInt(capacity) * BigInt(config.referenceEntryMinor);
+  if (total > 2147483647n) throw Error('TOURNAMENT_AMOUNT_OVERFLOW');
+  const pot = Number(total);
+  return {
+    product: 'STANDARD',
+    capacity,
+    referenceEntryMinor: config.referenceEntryMinor,
+    entryMinor: config.referenceEntryMinor,
+    referenceTotalMinor: pot,
+    scheduledEntryTotalMinor: pot,
+    prizeMinor: pot,
+    marginMinor: 0,
+    subsidyMinor: 0,
+    prizeRateBps: 10000,
+    rounding: 'WHOLE_COINS',
+    currency: 'COINS',
+    configRevision: revision,
+    config,
+  };
+}
+
 export function roundName(capacity:number,round:number) {
   return ({16:'ROUND_OF_16',8:'QUARTERFINAL',4:'SEMIFINAL',2:'FINAL'} as const)[capacity/2**(round-1) as 2|4|8|16];
 }

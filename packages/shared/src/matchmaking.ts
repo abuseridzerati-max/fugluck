@@ -3,7 +3,7 @@ import type { AuthorityBinding, AuthorityControls, AuthoritySnapshot, AuthorityO
 // separate durable competition and authority protocol.
 export type JoinQueuePayload = {
   gameId: string;
-  currency?: "COINS" | "DIAMONDS";
+  currency?: "COINS";
   stake?: number;
 };
 
@@ -107,7 +107,7 @@ export type QueueStateEntry = {
   username: string;
   avatarUrl?: string | null;
   gameId: string;
-  currency: "COINS" | "DIAMONDS";
+  currency: "COINS";
   stake: number;
   queuedAt: number;
 };

@@ -172,26 +172,26 @@ async function runPhase2AccountingChecks(): Promise<void> {
     check("6. COINS rejected as MoneyAmount by accounting adapter", coinsRejected && coinsAdapterRejected);
 
     // -------------------------------------------------------------------------
-    // 7. DIAMONDS Rejected
+    // 7. Non-ISO Token Rejected
     // -------------------------------------------------------------------------
-    let diamondsRejected = false;
+    let invalidTokenRejected = false;
     try {
-      createMoney(500, "DIAMONDS" as any);
+      createMoney(500, "INVALID_TOKEN" as any);
     } catch {
-      diamondsRejected = true;
+      invalidTokenRejected = true;
     }
-    let diamondsAdapterRejected = false;
+    let invalidTokenAdapterRejected = false;
     try {
       await adapter.reserveEntry({
         competitionInstanceId: instA,
         userId: userA,
-        entryFee: { amountMinor: 500, currency: "DIAMONDS" } as any,
-        idempotencyKey: `diam_res_${ts}`,
+        entryFee: { amountMinor: 500, currency: "INVALID_TOKEN" } as any,
+        idempotencyKey: `inv_res_${ts}`,
       });
     } catch {
-      diamondsAdapterRejected = true;
+      invalidTokenAdapterRejected = true;
     }
-    check("7. DIAMONDS rejected as MoneyAmount by accounting adapter", diamondsRejected && diamondsAdapterRejected);
+    check("7. Non-ISO currency token rejected as MoneyAmount by accounting adapter", invalidTokenRejected && invalidTokenAdapterRejected);
 
     // -------------------------------------------------------------------------
     // 8. Entry Reservation Reduces Available Funds
@@ -628,25 +628,18 @@ async function runPhase2AccountingChecks(): Promise<void> {
     check("20b. UserA reserved funds returned to available upon void", balAVoid.reserved.amountMinor === 0);
 
     // -------------------------------------------------------------------------
-    // 21. Historical Diamonds Remain Untouched
+    // 21. Active Currency Isolation in Sandbox Tables
     // -------------------------------------------------------------------------
-    console.log("\nSection 8: Currency Isolation & Historical Preservation");
-    const diamMatches = await pool.query(
-      `SELECT COUNT(*)::integer AS cnt FROM matches_history WHERE currency = 'DIAMONDS'`,
+    console.log("\nSection 8: Currency Isolation");
+    const nonGelSandbox = await pool.query(
+      `SELECT COUNT(*)::integer AS cnt FROM sandbox_ledger_entries WHERE currency <> 'GEL'`,
     );
-    const diamSettlements = await pool.query(
-      `SELECT COUNT(*)::integer AS cnt FROM match_settlements WHERE currency = 'DIAMONDS'`,
-    );
-    const diamLedger = await pool.query(
-      `SELECT COUNT(*)::integer AS cnt FROM ledger_entries WHERE currency = 'DIAMONDS'`,
-    );
-    check("21. Historical DIAMONDS records exist and are untouched by Phase 2", diamMatches.rows.length > 0 && diamSettlements.rows.length > 0 && diamLedger.rows.length > 0);
+    check("21. Zero non-GEL entries exist in sandbox_ledger_entries", Number(nonGelSandbox.rows[0].cnt) === 0);
 
-    // Assert NO diamonds in sandbox tables
-    const sbDiam = await pool.query(
-      `SELECT COUNT(*)::integer AS cnt FROM sandbox_ledger_entries WHERE currency = 'DIAMONDS'`,
+    const activeMatchesCheck = await pool.query(
+      `SELECT COUNT(*)::integer AS cnt FROM matches_history WHERE currency IN ('COINS', 'GEL')`,
     );
-    check("21b. Zero DIAMONDS entries in sandbox_ledger_entries", Number(sbDiam.rows[0].cnt) === 0);
+    check("21b. matches_history queries cleanly for COINS and GEL", Number(activeMatchesCheck.rows[0].cnt) >= 0);
 
     // -------------------------------------------------------------------------
     // 22. Existing Coins Behavior Remains Untouched

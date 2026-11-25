@@ -50,15 +50,12 @@ async function main(): Promise<void> {
   const userIds: string[] = [];
   const matchIds: string[] = [];
 
-  async function user(label: string, coins: number, diamonds = 0): Promise<string> {
+  async function user(label: string, coins: number): Promise<string> {
     const id = `${prefix}_${label}`;
     userIds.push(id);
     const username = `${label.slice(0, 15)}_${randomUUID().slice(0, 12)}`;
     await db.insert(users).values({ id, username, passwordHash: "test-only" });
-    const grants = [];
-    if (coins) grants.push({ id: randomUUID(), userId: id, currency: "COINS", amount: coins, reason: `${prefix}:coins` });
-    if (diamonds) grants.push({ id: randomUUID(), userId: id, currency: "DIAMONDS", amount: diamonds, reason: `${prefix}:diamonds` });
-    if (grants.length) await db.insert(ledgerEntries).values(grants);
+    if (coins) await db.insert(ledgerEntries).values({ id: randomUUID(), userId: id, currency: "COINS", amount: coins, reason: `${prefix}:coins` });
     return id;
   }
 
@@ -67,7 +64,7 @@ async function main(): Promise<void> {
     p1: string,
     p2: string,
     stake: number,
-    currency: "COINS" | "DIAMONDS" = "COINS",
+    currency: string = "COINS",
   ) {
     const id = `${prefix}_${label}`;
     matchIds.push(id);
@@ -75,8 +72,8 @@ async function main(): Promise<void> {
     const b = fakeSocket(p2, p2);
     const result = await matches.createMatch(
       "neon-runner",
-      { socket: a, userId: p1, username: p1, stake, currency },
-      { socket: b, userId: p2, username: p2, stake, currency },
+      { socket: a, userId: p1, username: p1, stake, currency: currency as any },
+      { socket: b, userId: p2, username: p2, stake, currency: currency as any },
       424242,
       id,
     );
@@ -251,12 +248,12 @@ async function main(): Promise<void> {
     check("retry exhaustion creates no duplicate financial effects", !(await db.query.matchSettlements.findFirst({ where: eq(matchSettlements.matchId, exhaust.id) })) && (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_payout:${exhaust.id}`))).length === 0);
     matches.configureTerminalResolutionRetryForTests({});
 
-    const currencyA = await user("currency_a", 0, 20);
-    const currencyB = await user("currency_b", 0, 20);
-    const diamonds = await create("diamonds", currencyA, currencyB, 10, "DIAMONDS");
-    check("historical DIAMONDS balance remains readable", (await ledger.getBalances(currencyA)).diamonds === 20);
-    check("new DIAMONDS matchmaking is rejected", diamonds.result === null && diamonds.a.emitted.some((e) => e.event === "queueError"));
-    check("rejected DIAMONDS match makes no ledger mutations", (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${prefix}_diamonds`))).length === 0);
+    const currencyA = await user("currency_a", 20);
+    const currencyB = await user("currency_b", 20);
+    const invalidCurrency = await create("invalid_currency", currencyA, currencyB, 10, "INVALID");
+    check("COINS balance remains unaffected by rejected currency", (await ledger.getBalances(currencyA)).coins === 20);
+    check("non-COINS matchmaking currency is rejected", invalidCurrency.result === null && invalidCurrency.a.emitted.some((e) => e.event === "queueError"));
+    check("rejected non-COINS match makes no ledger mutations", (await db.select().from(ledgerEntries).where(eq(ledgerEntries.reason, `stake_escrow:${prefix}_invalid_currency`))).length === 0);
 
     const freeA = await user("free_a", 0);
     const freeB = await user("free_b", 0);

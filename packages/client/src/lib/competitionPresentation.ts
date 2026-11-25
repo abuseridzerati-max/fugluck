@@ -55,7 +55,10 @@ export function competitionErrorKey(code: string): string {
   if (code === 'CANCEL_REJECTED') return 'cannotLeave'
   return 'unavailable'
 }
-export function moneyLabel(minor: number, currency = 'GEL') { return `${(minor / 100).toFixed(2)} ${currency}` }
+export function moneyLabel(minor: number, currency = 'GEL') {
+  if (currency === 'COINS') return `${minor} COINS`
+  return `${(minor / 100).toFixed(2)} ${currency}`
+}
 export function catalogPresentation(template: CompetitionTemplate, room?: CatalogRoom) {
   // Existing open rooms own snapshotted terms; never derive a prize from entry fees.
   const terms = room ?? template

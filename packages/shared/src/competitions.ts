@@ -5,6 +5,9 @@
 import type { ISO4217Currency } from "./money";
 import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from "./authority";
 
+/** Competition currency: ISO-4217 monetary currencies or free virtual COINS (never mixed with MoneyAmount). */
+export type CompetitionCurrency = ISO4217Currency | "COINS";
+
 export type CompetitionFormat = "HEAD_TO_HEAD" | "TOURNAMENT_BRACKET" | "LEADERBOARD_RUSH";
 
 export type CompetitionStatus =
@@ -77,7 +80,7 @@ export function isTestGelCompetitionCertified(gameId: string, rulesVersion?: str
 export type CompetitionPrize = {
   placement: number;
   amountMinor: number;
-  currency: ISO4217Currency;
+  currency: CompetitionCurrency;
 };
 
 export type CompetitionTemplatePrize = {
@@ -85,7 +88,7 @@ export type CompetitionTemplatePrize = {
   templateId: string;
   placement: number;
   amountMinor: number;
-  currency: ISO4217Currency;
+  currency: CompetitionCurrency;
 };
 
 export type CompetitionInstancePrize = {
@@ -93,7 +96,7 @@ export type CompetitionInstancePrize = {
   instanceId: string;
   placement: number;
   amountMinor: number;
-  currency: ISO4217Currency;
+  currency: CompetitionCurrency;
   awardedUserId?: string | null;
 };
 
@@ -104,7 +107,7 @@ export type CompetitionTemplate = {
   title: string;
   format: CompetitionFormat;
   participantCapacity: number;
-  currency: ISO4217Currency;
+  currency: CompetitionCurrency;
   entryFeeMinor: number;
   rulesVersion: string;
   skillAssessmentVersion: string;
@@ -124,7 +127,7 @@ export type CompetitionInstance = {
   gameId: string;
   format: CompetitionFormat;
   participantCapacity: number;
-  currency: ISO4217Currency;
+  currency: CompetitionCurrency;
   entryFeeMinor: number;
   rulesVersion: string;
   skillAssessmentVersion: string;

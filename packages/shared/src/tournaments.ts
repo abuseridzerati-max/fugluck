@@ -31,7 +31,8 @@ export interface TournamentTerms {
   marginMinor: number;
   subsidyMinor: number;
   prizeRateBps: number;
-  rounding: 'FLOOR_TETRI';
+  rounding: 'FLOOR_TETRI' | 'WHOLE_COINS';
+  currency?: import('./competitions').CompetitionCurrency;
   configRevision: number;
   config: TournamentConfig;
 }
@@ -57,6 +58,7 @@ export interface TournamentCardInfo {
   product: CompetitionProduct;
   cycle: SpecialCycle | null;
   eligibility: 'AVAILABLE' | 'QUALIFY' | 'SIGN_IN' | 'CLOSED' | 'USED';
+  promosEnabled?: boolean;
   promo: QualificationTrackView;
   gift: QualificationTrackView;
   nextPromoCycle: SpecialCycle | null;

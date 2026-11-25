@@ -104,13 +104,13 @@ try {
 }
 check("createMoney strictly rejects virtual 'COINS' as a monetary currency", invalidCurrRejected);
 
-let diamondsCurrRejected = false;
+let unknownCurrRejected = false;
 try {
-  createMoney(500, "DIAMONDS" as any);
+  createMoney(500, "INVALID_TOKEN" as any);
 } catch (e: any) {
-  diamondsCurrRejected = e.message.includes("Unsupported currency");
+  unknownCurrRejected = e.message.includes("Unsupported currency");
 }
-check("createMoney strictly rejects retired 'DIAMONDS' as a monetary currency", diamondsCurrRejected);
+check("createMoney strictly rejects non-ISO currency tokens", unknownCurrRejected);
 
 // Display formatting
 check("formatMoneyDisplay formats ₾5.00 GEL", formatMoneyDisplay(gel5) === "₾5.00 GEL");

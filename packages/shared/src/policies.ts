@@ -6,7 +6,6 @@ export type PolicyType =
   | "PRIVACY"
   | "COOKIES"
   | "RULES"
-  | "DIAMONDS"
   | "WITHDRAWALS"
   | "REFUNDS"
   | "RESPONSIBLE_PLAY"
@@ -24,7 +23,6 @@ export const CURRENT_POLICY_VERSIONS: Record<PolicyType, string> = {
   PRIVACY: "draft-1.0",
   COOKIES: "2026-08-18",
   RULES: "draft-1.0",
-  DIAMONDS: "draft-1.0",
   WITHDRAWALS: "2026-08-18",
   REFUNDS: "2026-08-18",
   RESPONSIBLE_PLAY: "2026-08-18",

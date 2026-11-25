@@ -3,7 +3,7 @@ import { AuthorityRuntime, type AuthorityOptions } from '../competitions/authori
 import { AuthorityStore } from '../competitions/authorityStore';
 import type { CompetitionAccountingPort } from '../accounting/port';
 import { TournamentService } from '../competitions/tournamentService';
-import { knockoutEnabled, readProduct } from '../competitions/tournamentPersistence';
+import { coinTournamentsEnabled, isCoinTemplate, knockoutEnabled, readProduct } from '../competitions/tournamentPersistence';
 import { templateService } from '../competitions/templateService';
 import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from '@fugluck/shared';
 import type { Server as HttpServer } from "node:http";
@@ -97,8 +97,8 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         return;
       }
 
-      if (payload.currency === "DIAMONDS") {
-        socket.emit("queueError", { message: "Diamonds are retired and cannot be used for new matches." });
+      if (payload.currency !== undefined && payload.currency !== "COINS") {
+        socket.emit("queueError", { message: "Only COINS are supported for casual matchmaking." });
         return;
       }
 
@@ -163,7 +163,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         const isSupportedAuthorityGame =
           (template?.gameId === 'space-blaster' && template.rulesVersion === AUTHORITY_VERSION) ||
           (template?.gameId === 'cyber-hopper' && template.rulesVersion === CYBER_HOPPER_AUTHORITY_VERSION);
-        const tournament=template?.format==='TOURNAMENT_BRACKET'&&knockoutEnabled()?await readProduct(templateId):null;
+        const tournament=template?.format==='TOURNAMENT_BRACKET'&&(isCoinTemplate(templateId)?coinTournamentsEnabled():knockoutEnabled())?await readProduct(templateId):null;
         if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || (!tournament&&(template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2))) {
           throw Object.assign(new Error('Competition gameplay is blocked pending live authority acceptance.'), {code:'GAMEPLAY_BLOCKED'});
         }

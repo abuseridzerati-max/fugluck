@@ -78,15 +78,9 @@ async function main() {
       .from(ledgerEntries)
       .where(sql`${ledgerEntries.userId} = ${userId} AND ${ledgerEntries.currency} = 'COINS'`);
 
-    const [diamondsDb] = await db
-      .select({ val: sql<number>`coalesce(sum(amount), 0)::int` })
-      .from(ledgerEntries)
-      .where(sql`${ledgerEntries.userId} = ${userId} AND ${ledgerEntries.currency} = 'DIAMONDS'`);
-
     const expectedCoins = coinsDb?.val ?? 0;
-    const expectedDiamonds = diamondsDb?.val ?? 0;
 
-    return derived.coins === expectedCoins && derived.diamonds === expectedDiamonds;
+    return derived.coins === expectedCoins;
   }
 
   // ---------------------------------------------------------------------------
@@ -247,22 +241,15 @@ async function main() {
     // @ts-expect-error invalid currency test
     await escrowStake(p1Id, "EUROS", 100, "match_curr");
   } catch (err: any) {
-    badCurrencyErr = err.message.includes("retired");
+    badCurrencyErr = err.message.includes("Only non-monetary COINS");
   }
   check("Invalid currency (EUROS) rejected", badCurrencyErr);
 
-  // Simulate a preserved historical Diamond ledger row directly in this
-  // disposable database; active wallet functions must not create one.
-  const legacyDiamondReason = `historical_diamond_fixture:${p1Id}`;
-  const balancesBeforeLegacyDiamond = await getBalances(p1Id);
-  await db.insert(ledgerEntries).values({ id: randomUUID(), userId: p1Id, currency: "DIAMONDS", amount: 50, reason: legacyDiamondReason });
-  const balP1PostDiamond = await getBalances(p1Id);
-  check("historical Diamond balance remains readable", balP1PostDiamond.diamonds === 50);
-  check("historical Diamond ledger does not alter Coins balance", balP1PostDiamond.coins === balancesBeforeLegacyDiamond.coins);
-  let activeDiamondGrantRejected = false;
-  try { await escrowStake(p1Id, "DIAMONDS", 1, "retired_diamond_escrow"); } catch (error) { activeDiamondGrantRejected = error instanceof Error && error.message.includes("retired"); }
-  check("active Diamond wallet mutation is rejected", activeDiamondGrantRejected);
-  await db.delete(ledgerEntries).where(eq(ledgerEntries.reason, legacyDiamondReason));
+  const balancesSnapshot = await getBalances(p1Id);
+  check("getBalances returns coins-only casual wallet shape", typeof balancesSnapshot.coins === "number" && Object.keys(balancesSnapshot).every((k) => k === "coins" || k.startsWith("sandboxGel")));
+  let nonCoinsGrantRejected = false;
+  try { await escrowStake(p1Id, "USD" as any, 1, "invalid_currency_escrow"); } catch (error) { nonCoinsGrantRejected = error instanceof Error && error.message.includes("Only non-monetary COINS"); }
+  check("non-COINS wallet escrow mutation is rejected", nonCoinsGrantRejected);
 
   // This suite exercises the single-wallet escrow primitive without creating
   // match history. Remove that verified standalone fixture before handing the

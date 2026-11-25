@@ -10,8 +10,8 @@ import { CompetitionDialog, CompetitionGameVisual, CompetitionPlayerSlots, Compe
 import './competition.css'
 
 const CATALOG_REQUEST_TIMEOUT_MS = 6_000
-export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
-  gameId?:string;gameTitle?:string;onClose?:()=>void;onShowAll?:()=>void
+export default function CompetitionCatalog({gameId,currency='GEL',onClose,onShowAll}: {
+  gameId?:string;gameTitle?:string;currency?:'COINS'|'GEL';onClose?:()=>void;onShowAll?:()=>void
 }) {
   const {t,i18n}=useTranslation()
   const {user,loading:authLoading}=useAuth()
@@ -33,12 +33,16 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
     const timer=window.setTimeout(()=>controller.abort(),CATALOG_REQUEST_TIMEOUT_MS)
     if(!quiet)setLoading(true)
     setError(null)
-    const path=gameId?`/api/competitions/templates?gameId=${encodeURIComponent(gameId)}`:'/api/competitions/templates'
+    const params=new URLSearchParams()
+    if(currency==='COINS')params.set('currency','COINS')
+    if(gameId)params.set('gameId',gameId)
+    const qs=params.toString()
+    const path=qs?`/api/competitions/templates?${qs}`:'/api/competitions/templates'
     apiFetch<{templates:CompetitionTemplate[];rooms?:CatalogRoom[];playerMode?:string;joiningAvailable?:boolean}>(path,{signal:controller.signal})
       .then(res=>{if(activeCatalogRequest.current!==controller)return
         setTemplates(res.templates.filter(template=>template.enabled));setRooms(res.rooms??[])
         setRoomsKnown(Array.isArray(res.rooms))
-        setAvailable(res.playerMode==='sandbox'&&res.joiningAvailable===true&&Array.isArray(res.rooms))
+        setAvailable((currency==='COINS'?res.playerMode==='coins':res.playerMode==='sandbox')&&res.joiningAvailable===true&&Array.isArray(res.rooms))
         const ownRoom=res.rooms?.find(room=>room.viewerJoined&&room.status==='PENDING_ENTRANTS')
         const ownTemplate=res.templates.find(template=>template.id===ownRoom?.templateId)
         if(ownRoom&&ownTemplate&&!activeTemplateRef.current){sessionStorage.setItem(`authority:${ownTemplate.id}`,ownRoom.id);setActiveTemplate(ownTemplate)}
@@ -47,15 +51,16 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
   }
   useEffect(()=>{loadTemplates();const poll=window.setInterval(()=>{if(!activeCatalogRequest.current&&!document.hidden)loadTemplates(true)},10_000)
     return()=>{window.clearInterval(poll);activeCatalogRequest.current?.abort();activeCatalogRequest.current=null}
-  },[gameId,user?.id])
-  useEffect(()=>{activeTemplateRef.current=null;setActiveTemplate(null);setJoinError(null)},[user?.id])
+  },[gameId,currency,user?.id])
+  useEffect(()=>{activeTemplateRef.current=null;setActiveTemplate(null);setJoinError(null)},[user?.id,currency])
   function closePlay(){activeTemplateRef.current=null;setActiveTemplate(null);loadTemplates(true)}
   function join(template:CompetitionTemplate,room?:CatalogRoom){
     if(activeTemplateRef.current||authLoading)return
     if(!room?.viewerJoined){
-      const reason=joinBlockReason({signedIn:Boolean(user),balanceMinor:user?.balances.sandboxGelMinor??0,entryMinor:template.entryFeeMinor,
+      const balanceMinor=template.currency==='COINS'?(user?.balances.coins??0):(user?.balances.sandboxGelMinor??0)
+      const reason=joinBlockReason({signedIn:Boolean(user),balanceMinor,entryMinor:template.entryFeeMinor,
         status:room?.status??'PENDING_ENTRANTS',joined:room?.currentParticipants??0,capacity:template.participantCapacity,sandbox:available})
-      if(reason){setJoinError({templateId:template.id,reason});if(reason==='signIn')setAuth(true);return}
+      if(reason){setJoinError({templateId:template.id,reason:reason==='insufficient'&&template.currency==='COINS'?'insufficientCoins':reason});if(reason==='signIn')setAuth(true);return}
     }
     setJoinError(null)
     if(room?.viewerJoined)sessionStorage.setItem(`authority:${template.id}`,room.id)
@@ -76,7 +81,7 @@ export default function CompetitionCatalog({gameId,onClose,onShowAll}: {
           prizes:room?room.prizes.map((p,i)=>({...p,id:`display_${i}`,templateId:template.id})):template.prizes}
         return <article key={template.id} className={`competition-card${room?.viewerJoined?' is-joined':''}`} aria-label={`${view.gameName}, ${t('competition.entry')} ${view.isFree?t('competition.free'):moneyLabel(view.entryMinor,view.currency)}, ${t('competition.prize')} ${moneyLabel(view.prizeMinor,view.currency)}`}>
           <CompetitionGameVisual gameId={template.gameId}/><div className="competition-card-body">
-            <div className="competition-card-top"><span className="competition-status">{t(`competition.status.${available?publicCompetitionStatus(view.status,view.joined,view.capacity):'unavailable'}`)}</span>{view.isFree||view.isPromo?<span className="competition-badge">{t(view.isFree?'competition.free':'competition.promo')}</span>:null}</div>
+            <div className="competition-card-top"><span className="competition-status">{t(`competition.status.${available?publicCompetitionStatus(view.status,view.joined,view.capacity):'unavailable'}`)}</span>{template.currency!=='COINS'&&(view.isFree||view.isPromo)?<span className="competition-badge">{t(view.isFree?'competition.free':'competition.promo')}</span>:null}</div>
             <h2>{view.gameName}</h2>{template.tournament&&<span className="competition-badge">{t(`competition.knockout.products.${template.tournament.product}`)} · {view.capacity}</span>}<CompetitionTerms entryMinor={view.entryMinor} prizeMinor={view.prizeMinor} currency={view.currency}/>
             {roomsKnown?<CompetitionPlayerSlots joined={view.joined} capacity={view.capacity}/>:<p className="ac-text-muted">{t('competition.playersUnavailable')}</p>}
             <CompetitionQualification template={template}/>

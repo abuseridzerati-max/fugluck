@@ -155,7 +155,7 @@ friendsRouter.post("/:friendshipId/reject", socialLimiter, async (req, res) => {
 });
 
 // Cancel outgoing pending friend request (requester only)
-friendsRouter.delete("/:friendshipId/cancel", socialLimiter, async (req, res) => {
+const handleCancelOutgoingRequest: import("express").RequestHandler = async (req, res) => {
   const me = req.userId!;
   const friendshipId = String(req.params.friendshipId);
   const friendship = await db.query.friendships.findFirst({
@@ -167,21 +167,10 @@ friendsRouter.delete("/:friendshipId/cancel", socialLimiter, async (req, res) =>
   }
   await db.delete(friendships).where(eq(friendships.id, friendship.id));
   res.json({ success: true, friendshipId });
-});
+};
 
-friendsRouter.post("/:friendshipId/cancel", socialLimiter, async (req, res) => {
-  const me = req.userId!;
-  const friendshipId = String(req.params.friendshipId);
-  const friendship = await db.query.friendships.findFirst({
-    where: eq(friendships.id, friendshipId),
-  });
-  if (!friendship || friendship.requesterId !== me || friendship.status !== "pending") {
-    res.status(404).json({ error: "No pending outgoing request found to cancel." });
-    return;
-  }
-  await db.delete(friendships).where(eq(friendships.id, friendship.id));
-  res.json({ success: true, friendshipId });
-});
+friendsRouter.delete("/:friendshipId/cancel", socialLimiter, handleCancelOutgoingRequest);
+friendsRouter.post("/:friendshipId/cancel", socialLimiter, handleCancelOutgoingRequest);
 
 // Remove / Unfriend accepted friendship (either participant)
 friendsRouter.delete("/:friendshipId", socialLimiter, async (req, res) => {

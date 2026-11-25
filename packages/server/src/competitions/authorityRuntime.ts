@@ -11,7 +11,7 @@ import { measureAdmission } from './authorityAdmission';
 import { recordAdmission, recordAuthorityError, recordAuthorityReconnect } from './operationsTelemetry';
 import { pool } from '../db/client';
 import { TournamentService } from './tournamentService';
-import { ensureTournamentCatalog, knockoutEnabled } from './tournamentPersistence';
+import { coinTournamentsEnabled, ensureCoinTournamentCatalog, ensureTournamentCatalog, knockoutEnabled } from './tournamentPersistence';
 
 /** Constructor dependencies only; never populated from socket or HTTP messages. */
 export interface AuthorityOptions { capTicks?: number; countdownMs?: number; readyMs?: number; reconnectMs?: number; seedFactory?: () => number }
@@ -79,6 +79,7 @@ export class AuthorityRuntime {
   private recovering=false;
   private recoveryFailed=false;
   private catalogAt=0;
+  private coinCatalogAt=0;
   constructor(readonly store=new AuthorityStore(), readonly options:AuthorityOptions={}) {
     this.leaseTimer=setInterval(()=>{
       if(this.renewing||!this.runs.size)return;
@@ -113,6 +114,7 @@ export class AuthorityRuntime {
   async pumpTournaments(){
     if(this.closed)return;
     if(knockoutEnabled()&&Date.now()-this.catalogAt>60000){await ensureTournamentCatalog();this.catalogAt=Date.now();}
+    if(coinTournamentsEnabled()&&Date.now()-this.coinCatalogAt>60000){await ensureCoinTournamentCatalog();this.coinCatalogAt=Date.now();}
     await new TournamentService(this.store.accounting).recover();
     const active=(await pool.query("SELECT instance_id FROM competition_tournaments WHERE state='PLAYING'")).rows.map(r=>r.instance_id);
     for(const r of this.runs.values())if(r.bracketMatchId&&!active.includes(r.instanceId)&&!r.stopped)void this.finish(r,'TOURNAMENT_VOIDED',undefined,true);

@@ -9,7 +9,7 @@ export type QueueEntry = {
   userId: string;
   username: string;
   avatarUrl?: string | null;
-  currency: "COINS" | "DIAMONDS";
+  currency: "COINS";
   stake: number;
   queuedAt?: number;
 };
@@ -43,7 +43,7 @@ export function generateSeed(): number {
   return randomInt(0x7fffffff);
 }
 
-export function makeQueueKey(gameId: string, currency: "COINS" | "DIAMONDS" = "COINS", stake: number = 0): string {
+export function makeQueueKey(gameId: string, currency: "COINS" = "COINS", stake: number = 0): string {
   return `${gameId}:${currency}:${stake}`;
 }
 
@@ -70,10 +70,10 @@ export function getPublicQueueState(): QueueStateEntry[] {
 export function enqueue(
   gameId: string,
   socket: MatchmakingSocket,
-  currency: "COINS" | "DIAMONDS" = "COINS",
+  currency: "COINS" = "COINS",
   stake: number = 0,
 ): void {
-  if (currency !== "COINS") throw new Error("DIAMONDS_RETIRED");
+  if (currency !== "COINS") throw new Error("UNSUPPORTED_CURRENCY");
   const key = makeQueueKey(gameId, currency, stake);
   const entries = queues.get(key) ?? [];
   const withoutStale = entries.filter((e) => e.userId !== socket.data.userId);
@@ -91,7 +91,7 @@ export function enqueue(
 
 export function tryPair(
   gameId: string,
-  currency: "COINS" | "DIAMONDS" = "COINS",
+  currency: "COINS" = "COINS",
   stake: number = 0,
 ): [QueueEntry, QueueEntry] | null {
   if (currency !== "COINS") return null;

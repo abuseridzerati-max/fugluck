@@ -78,7 +78,7 @@ app.get("/", (_req, res) => {
     name: "Fugluck API Server",
     status: "online",
     health: "/api/health",
-    endpoints: ["/api/auth", "/api/account", "/api/wallet", "/api/friends", "/api/matches"],
+    endpoints: ["/api/auth", "/api/account", "/api/wallet", "/api/friends", "/api/matches", "/api/competitions"],
   });
 });
 

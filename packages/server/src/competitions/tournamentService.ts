@@ -4,8 +4,9 @@ import { createMoney, type AuthorityOutcome, type TournamentTerms } from '@fuglu
 import { pool } from '../db/client';
 import type { CompetitionAccountingPort } from '../accounting/port';
 import { StagingMockAccountingRouter } from '../accounting/stagingMockRouter';
+import { CoinTournamentAccountingAdapter } from '../accounting/coinTournamentAdapter';
 import { evaluateEligibility } from '../payments/eligibility';
-import { createTournamentInstance, currentTournamentConfig, knockoutEnabled, readProduct, tournamentLock, tournamentTx, type ProductRow } from './tournamentPersistence';
+import { coinTournamentsEnabled, createTournamentInstance, currentTournamentConfig, isCoinTemplate, knockoutEnabled, readProduct, tournamentLock, tournamentTx, type ProductRow } from './tournamentPersistence';
 import { consumeTournamentTicket, recordStandardQualification, replaceTournamentTickets, ticketForJoin } from './tournamentQualification';
 import { seedBracket } from './tournamentRules';
 import { allowedMockUser, isMockTemplate, stagingMockAction } from '../config/stagingMockCommercial';
@@ -13,8 +14,21 @@ import { allowedMockUser, isMockTemplate, stagingMockAction } from '../config/st
 function domainError(code:string){return Object.assign(new Error(code),{code});}
 const recoveryWarnings=new Set<string>();
 export class TournamentService {
-  constructor(readonly accounting:CompetitionAccountingPort=new StagingMockAccountingRouter()){}
+  constructor(
+    readonly accounting:CompetitionAccountingPort=new StagingMockAccountingRouter(),
+    readonly coinAccounting:CoinTournamentAccountingAdapter=new CoinTournamentAccountingAdapter(),
+  ){}
   private async eligible(userId:string,product:ProductRow){
+    if(product.provenance==='COINS'){
+      if(product.product!=='STANDARD'||product.cycle_id!==null)throw domainError('COIN_PROMO_DISABLED');
+      const template=(await pool.query('SELECT enabled FROM competition_templates WHERE id=$1',[product.template_id])).rows[0];
+      if(!template?.enabled)throw domainError('TEMPLATE_DISABLED');
+      const user=(await pool.query('SELECT status FROM users WHERE id=$1',[userId])).rows[0];
+      if(user?.status!=='active')throw domainError('ACCOUNT_INACTIVE');
+      const risk=await pool.query(`SELECT 1 FROM commercial_risk_cases WHERE user_id=$1 AND status='RESTRICTED' AND enforcement_action IN ('BLOCK_ALL','BLOCK_COMPETITIONS') LIMIT 1`,[userId]);
+      if(risk.rowCount)throw domainError('RISK_REVIEW_REQUIRED');
+      return;
+    }
     // Production financial qualification is deliberately unavailable until a separately approved provider/policy rollout.
     if(product.provenance==='LIVE')throw domainError('REAL_MONEY_DISABLED');
     if(product.provenance==='STAGING_MOCK'&&(!stagingMockAction('competitions')||!allowedMockUser(userId)||!isMockTemplate(product.template_id)))throw domainError('MOCK_AUTHORIZATION_REQUIRED');
@@ -28,9 +42,10 @@ export class TournamentService {
     if(!decision.allowed)throw domainError(decision.reasons[0]);
   }
   async join(templateId:string,userId:string,now=Date.now()) {
-    if(!knockoutEnabled())throw domainError('TOURNAMENT_DISABLED');
+    if(isCoinTemplate(templateId)?!coinTournamentsEnabled():!knockoutEnabled())throw domainError('TOURNAMENT_DISABLED');
     const value=await tournamentLock(`tournament-join:${templateId}`,async()=>{
       const product=await readProduct(templateId);if(!product)throw domainError('TEMPLATE_NOT_FOUND');
+      if(product.provenance==='COINS'?!coinTournamentsEnabled():!knockoutEnabled())throw domainError('TOURNAMENT_DISABLED');
       await this.eligible(userId,product);
       // Resume/compensate interrupted reservations before allocating another seat.
       const pending=(await pool.query(`SELECT e.instance_id,e.user_id FROM competition_entry_intents e JOIN competition_instances ci ON ci.id=e.instance_id
@@ -40,20 +55,21 @@ export class TournamentService {
         WHERE ci.template_id=$1 AND cp.user_id=$2 AND ci.status IN ('PENDING_ENTRANTS','LOCKED','ACTIVE','VERIFYING') LIMIT 1`,[templateId,userId])).rows[0];
       if(owned)return this.joinReceipt(owned.id,userId);
       const id=await tournamentTx(async c=>{
-        const ticket=await ticketForJoin(c,product,userId,now);
+        const ticket=product.provenance==='COINS'?null:await ticketForJoin(c,product,userId,now);
         let target=(await c.query(`SELECT ci.id FROM competition_instances ci JOIN competition_tournaments t ON t.instance_id=ci.id
           WHERE ci.template_id=$1 AND t.state='WAITING' AND ci.current_participants<ci.participant_capacity
           AND (t.cycle_id IS NOT NULL OR t.created_at+(t.terms->'config'->>'waitingMs')::bigint*interval '1 millisecond'>$2)
           ORDER BY ci.created_at LIMIT 1 FOR UPDATE OF ci`,[templateId,new Date(now)])).rows[0]?.id;
         if(!target){
           if(product.cycle_id&&(await c.query('SELECT 1 FROM competition_tournaments WHERE cycle_id=$1',[product.cycle_id])).rowCount)throw domainError('CYCLE_FULL');
-          if(product.product==='STANDARD'&&product.terms.configRevision!==(await currentTournamentConfig(product.game_id,c)).revision)throw domainError('TEMPLATE_RETIRED');
+          if(product.provenance!=='COINS'&&product.product==='STANDARD'&&product.terms.configRevision!==(await currentTournamentConfig(product.game_id,c)).revision)throw domainError('TEMPLATE_RETIRED');
           target=await createTournamentInstance(c,product);
         }
         const previous=(await c.query('SELECT state FROM competition_entry_intents WHERE instance_id=$1 AND user_id=$2',[target,userId])).rows[0];
         if(previous?.state==='REJECTED'){
           const financial=await c.query(`SELECT 1 FROM sandbox_entry_reservations WHERE competition_instance_id=$1 AND user_id=$2
-            UNION ALL SELECT 1 FROM commercial_operations WHERE competition_instance_id=$1 AND user_id=$2 AND kind='ENTRY'`,[target,userId]);
+            UNION ALL SELECT 1 FROM commercial_operations WHERE competition_instance_id=$1 AND user_id=$2 AND kind='ENTRY'
+            UNION ALL SELECT 1 FROM coin_tournament_reservations WHERE competition_instance_id=$1 AND user_id=$2`,[target,userId]);
           if(financial.rowCount)throw domainError('ENTRY_PREVIOUSLY_RELEASED');
           await c.query("UPDATE competition_entry_intents SET state='PENDING',ticket_id=$3,updated_at=now() WHERE instance_id=$1 AND user_id=$2",[target,userId,ticket]);
         }
@@ -71,30 +87,38 @@ export class TournamentService {
     return {instanceId:id,templateId:r.template_id,gameId:r.game_id,seatIndex:r.seat_index,currentParticipants:r.current_participants,
       participantCapacity:r.participant_capacity,status:r.status,isLocked:r.status==='LOCKED',entryFeeMinor:r.entry_fee_minor,currency:r.currency};
   }
-  private async compensate(id:string,userId:string,amount:number){
+  private async compensate(id:string,userId:string,amount:number,isCoins=false){
     await pool.query("UPDATE competition_entry_intents SET state='COMPENSATING',updated_at=now() WHERE instance_id=$1 AND user_id=$2 AND state<>'ACCEPTED'",[id,userId]);
-    if(amount>0){const r=await this.accounting.releaseEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-release:${id}:${userId}`});
-      if(!r.success&&r.errorCode!=='RESERVATION_NOT_FOUND')throw domainError('ACCOUNTING_PENDING');}
+    if(amount>0){
+      const r=isCoins
+        ? await this.coinAccounting.releaseEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-release:${id}:${userId}`})
+        : await this.accounting.releaseEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-release:${id}:${userId}`});
+      if(!r.success&&r.errorCode!=='RESERVATION_NOT_FOUND')throw domainError('ACCOUNTING_PENDING');
+    }
     await pool.query("UPDATE competition_entry_intents SET state='REJECTED',updated_at=now() WHERE instance_id=$1 AND user_id=$2 AND state='COMPENSATING'",[id,userId]);
   }
   private async finishEntry(id:string,userId:string,product:ProductRow,now:number){
     const intent=(await pool.query('SELECT * FROM competition_entry_intents WHERE instance_id=$1 AND user_id=$2',[id,userId])).rows[0];
     if(!intent||intent.state==='REJECTED')throw domainError('ENTRY_REJECTED');
     if(intent.state==='ACCEPTED')return;
-    const entry=product.terms.entryMinor;
-    if(intent.state==='COMPENSATING'){await this.compensate(id,userId,entry);return;}
+    const entry=product.terms.entryMinor,isCoins=product.provenance==='COINS';
+    if(intent.state==='COMPENSATING'){await this.compensate(id,userId,entry,isCoins);return;}
     try{
-      if(entry>0){const reserved=await this.accounting.reserveEntry({competitionInstanceId:id,userId,entryFee:createMoney(entry,'GEL'),idempotencyKey:`tournament-reserve:${id}:${userId}`});
-        if(!reserved.success)throw domainError(reserved.errorCode??'RESERVATION_FAILED');}
+      if(entry>0){
+        const reserved=isCoins
+          ? await this.coinAccounting.reserveEntry({competitionInstanceId:id,userId,amountCoins:entry,idempotencyKey:`tournament-reserve:${id}:${userId}`})
+          : await this.accounting.reserveEntry({competitionInstanceId:id,userId,entryFee:createMoney(entry,'GEL'),idempotencyKey:`tournament-reserve:${id}:${userId}`});
+        if(!reserved.success)throw domainError(reserved.errorCode??'RESERVATION_FAILED');
+      }
       await tournamentTx(async c=>{
         const inst=(await c.query('SELECT * FROM competition_instances WHERE id=$1 FOR UPDATE',[id])).rows[0];
         const root=(await c.query('SELECT * FROM competition_tournaments WHERE instance_id=$1 FOR UPDATE',[id])).rows[0];
         if(root.state!=='WAITING'||inst.status!=='PENDING_ENTRANTS'||inst.current_participants>=inst.participant_capacity)throw domainError('CYCLE_FULL');
         if(!root.cycle_id&&now-new Date(root.created_at).getTime()>=root.terms.config.waitingMs)throw domainError('CYCLE_CLOSED');
-        if(product.product!=='STANDARD'){
+        if(!isCoins&&product.product!=='STANDARD'){
           const fresh=await ticketForJoin(c,product,userId,now);if(fresh!==intent.ticket_id)throw domainError('QUALIFICATION_REQUIRED');
         }
-        await consumeTournamentTicket(c,intent.ticket_id,id,userId,now);
+        if(!isCoins)await consumeTournamentTicket(c,intent.ticket_id,id,userId,now);
         const seat=inst.current_participants,full=seat+1===inst.participant_capacity;
         await c.query(`INSERT INTO competition_participants(id,instance_id,user_id,seat_index,entry_fee_minor,status) VALUES($1,$2,$3,$4,$5,'REGISTERED')`,[`part_${randomUUID()}`,id,userId,seat,entry]);
         await c.query(`UPDATE competition_instances SET current_participants=current_participants+1,status=$2,locked_at=CASE WHEN $3 THEN now() ELSE NULL END WHERE id=$1`,[id,full?'LOCKED':'PENDING_ENTRANTS',full]);
@@ -106,7 +130,7 @@ export class TournamentService {
       const committed=(await pool.query('SELECT state FROM competition_entry_intents WHERE instance_id=$1 AND user_id=$2',[id,userId])).rows[0];
       if(committed?.state==='ACCEPTED')return;
       const reason=(e as Error).message;
-      if(['INSUFFICIENT_FUNDS','INSUFFICIENT_BALANCE','CYCLE_FULL','CYCLE_CLOSED','QUALIFICATION_REQUIRED','QUALIFICATION_INVALIDATED','TICKET_ALREADY_USED','DUPLICATE_ENTRY'].includes(reason))await this.compensate(id,userId,entry);
+      if(['INSUFFICIENT_FUNDS','INSUFFICIENT_BALANCE','CYCLE_FULL','CYCLE_CLOSED','QUALIFICATION_REQUIRED','QUALIFICATION_INVALIDATED','TICKET_ALREADY_USED','DUPLICATE_ENTRY'].includes(reason))await this.compensate(id,userId,entry,isCoins);
       // Unknown failures leave the intent pending: recovery retries the same reservation key.
       throw e;
     }
@@ -137,7 +161,7 @@ export class TournamentService {
     let root=(await pool.query(`SELECT t.*,ci.status,ci.current_participants,ci.game_id,cy.starts_at,cy.cutoff_at FROM competition_tournaments t
       JOIN competition_instances ci ON ci.id=t.instance_id LEFT JOIN competition_special_cycles cy ON cy.id=t.cycle_id WHERE instance_id=$1`,[id])).rows[0];
     if(!root)return;
-    const terms=root.terms as TournamentTerms;
+    const terms=root.terms as TournamentTerms,isCoins=root.provenance==='COINS';
     if(root.state==='WAITING'&&(root.cycle_id?now>=new Date(root.cutoff_at).getTime():now-new Date(root.created_at).getTime()>=terms.config.waitingMs)){
       const reason=root.cycle_id?'REGISTRATION_UNFILLED':'WAITING_TIMEOUT';
       if(await this.requestVoid(id,reason,'WAITING')){root.state='REFUNDING';root.void_reason=reason;}
@@ -146,8 +170,12 @@ export class TournamentService {
     if(root.state==='CAPTURING'){
       const players=(await pool.query('SELECT user_id FROM competition_participants WHERE instance_id=$1 ORDER BY seat_index',[id])).rows.map(r=>r.user_id as string);
       if(players.length!==terms.capacity)throw domainError('CAPACITY_MISMATCH');
-      if(terms.entryMinor>0)for(const userId of players){const result=await this.accounting.captureEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-capture:${id}:${userId}`});
-        if(!result.success){await this.requestVoid(id,'CAPTURE_FAILED');return;}}
+      if(terms.entryMinor>0)for(const userId of players){
+        const result=isCoins
+          ? await this.coinAccounting.captureEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-capture:${id}:${userId}`})
+          : await this.accounting.captureEntry({competitionInstanceId:id,userId,idempotencyKey:`tournament-capture:${id}:${userId}`});
+        if(!result.success){await this.requestVoid(id,'CAPTURE_FAILED');return;}
+      }
       const draw=seedBracket(players),commitment=createHash('sha256').update(JSON.stringify(draw)).digest('hex');
       await tournamentTx(async c=>{
         const t=(await c.query('SELECT state FROM competition_tournaments WHERE instance_id=$1 FOR UPDATE',[id])).rows[0];if(t.state!=='CAPTURING')return;
@@ -159,7 +187,9 @@ export class TournamentService {
       root.state='PLAYING';
     }
     if(root.state==='FINALIZING'){
-      const result=await this.accounting.settleCompetition({competitionInstanceId:id,prizes:[{placement:1,userId:root.winner_user_id,amount:createMoney(terms.prizeMinor,'GEL')}],idempotencyKey:`tournament-final:${id}`});
+      const result=isCoins
+        ? await this.coinAccounting.settleCompetition({competitionInstanceId:id,winnerUserId:root.winner_user_id,prizeCoins:terms.prizeMinor,idempotencyKey:`tournament-final:${id}`})
+        : await this.accounting.settleCompetition({competitionInstanceId:id,prizes:[{placement:1,userId:root.winner_user_id,amount:createMoney(terms.prizeMinor,'GEL')}],idempotencyKey:`tournament-final:${id}`});
       if(!result.success)throw domainError('ACCOUNTING_PENDING');
       await tournamentTx(async c=>{
         await c.query("UPDATE competition_tournaments SET state='SETTLED',completed_at=COALESCE(completed_at,now()) WHERE instance_id=$1 AND state='FINALIZING'",[id]);
@@ -172,7 +202,9 @@ export class TournamentService {
       // All admissions hold the same queue lock; do not race a reservation still in flight.
       const pending=await pool.query("SELECT 1 FROM competition_entry_intents WHERE instance_id=$1 AND state IN ('PENDING','COMPENSATING')",[id]);
       if(pending.rowCount)return;
-      const refund=await this.accounting.refundCompetition({competitionInstanceId:id,reason:root.void_reason??'PLATFORM_VOID',idempotencyKey:`tournament-refund:${id}`});
+      const refund=isCoins
+        ? await this.coinAccounting.refundCompetition({competitionInstanceId:id,reason:root.void_reason??'PLATFORM_VOID',idempotencyKey:`tournament-refund:${id}`})
+        : await this.accounting.refundCompetition({competitionInstanceId:id,reason:root.void_reason??'PLATFORM_VOID',idempotencyKey:`tournament-refund:${id}`});
       if(!refund.success)throw domainError('ACCOUNTING_PENDING');
       const status=root.void_reason==='USER_CANCELLED'?'CANCELLED':'VOIDED';
       await tournamentTx(async c=>{
@@ -183,8 +215,10 @@ export class TournamentService {
       });root.state=status;
     }
     if(['SETTLED','VOIDED','CANCELLED'].includes(root.state)&&!root.completion_processed_at){
-      if(root.state==='SETTLED')await recordStandardQualification(id,now);
-      else await replaceTournamentTickets(id,now,root.void_reason==='USER_CANCELLED'?root.cancellation_actor_id??undefined:undefined);
+      if(!isCoins){
+        if(root.state==='SETTLED')await recordStandardQualification(id,now);
+        else await replaceTournamentTickets(id,now,root.void_reason==='USER_CANCELLED'?root.cancellation_actor_id??undefined:undefined);
+      }
       await pool.query('UPDATE competition_tournaments SET completion_processed_at=now() WHERE instance_id=$1',[id]);
     }
   }
