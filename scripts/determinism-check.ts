@@ -3,7 +3,6 @@
 import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC } from "@fugluck/shared";
 import { RunnerEngine } from "../games/neon-runner/engine.ts";
 import { DashEngine } from "../games/pixel-ninja-dash/engine.ts";
-import { SkyDodgeEngine } from "../games/sky-dodge/engine.ts";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine.ts";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine.ts";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine.ts";
@@ -32,11 +31,6 @@ sameSeedRun("neon-runner", seed => {
 sameSeedRun("pixel-ninja-dash", seed => {
   const e = new DashEngine(seed); e.resize(1280, 720); e.reset();
   for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, { dashPressed:false });
-  return e;
-});
-sameSeedRun("sky-dodge", seed => {
-  const e = new SkyDodgeEngine(seed); e.resize(1280, 720); e.reset();
-  for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, { moveLeft:false, moveRight:false, boostPressed:false });
   return e;
 });
 sameSeedRun("space-blaster", seed => {

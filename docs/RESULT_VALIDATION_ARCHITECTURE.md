@@ -4,7 +4,7 @@ Decision: RV-001, version 1.0.0, 2026-09-23.
 
 **Historical decision note (verified against the 2026-09-25 source tree):** the decision text below records the original four-game design scope and remains unchanged as an approval artifact. The current implementation certification source of truth is [`COMPETITION_ARCHITECTURE.md`](COMPETITION_ARCHITECTURE.md): only Space Blaster and Cyber Hopper are currently Level 3 certified for TEST GEL competition; Neon Runner and Pixel Ninja Dash are not certified, and Speed Trivia / True-False Sprint are outside prize scope. This file does not certify games, enable templates, or authorize monetary operations.
 
-**USER-APPROVED ARCHITECTURE — implementation acceptance pending.** The user's Phase 5.5A request approves RV-001 and authorizes incremental implementation of the common authority foundation and Space Blaster reference only. Other game migrations, replay deletion, Diamond retirement, deployment, Phase 6 evidence generation and Phase 7 are excluded from that step. Runtime acceptance and monetary activation are not approved by this architecture decision.
+**USER-APPROVED ARCHITECTURE — implementation acceptance pending.** The user's Phase 5.5A request approves RV-001 and authorizes incremental implementation of the common authority foundation and Space Blaster reference only. Other game migrations, replay deletion, Legacy token retirement, deployment, Phase 6 evidence generation and Phase 7 are excluded from that step. Runtime acceptance and monetary activation are not approved by this architecture decision.
 
 Source baseline: `2cbc429caed07dc4e8ece05bbb4662fb27667018`. Source/code review only; no new runtime tests, capacity benchmark or browser trial. Supersedes the open plausibility-only selection in Phase 6 v0.2.0. [Phase 6 specification](PHASE_6_REVENUE_SERVICE_DOSSIER.md) v0.3.0 adopts this decision.
 
@@ -198,7 +198,7 @@ The full removal inventory in Phase 6 section 2.7 still applies, with live autho
 | P2 — four live authority integrations | Existing four `games/*/engine.ts`/constants retained; narrowly scoped live wrappers under server competitions; bounded server scheduler/transport; game modules and client MatchLoader/useMatchSocket render/control mode. Engine refactoring only where required for current state snapshots/no DOM |
 | P3 — trusted outcomes/settlement | Lifecycle, match outcome/history writers, accounting port/sandbox adapter and additive decision/result migrations. No direct settlement from client scores; lock/fencing/idempotent outcome recovery; preserve old history |
 | P4 — replay retirement | Section 8 files and Phase 6 inventory; explicit Level 1 casual/quiz policy with no GEL conversion or competition privileges; no alternate engine/reconstruction system |
-| P5 — Diamond retirement | `matchmaking/{index,queue,matches}.ts`, wallet routes/service and admin grant/pack offers; block new DIAMONDS for all flags/entry points; preserve historic balances/settlements/audit and narrowly scoped compensation |
+| P5 — Legacy token retirement | `matchmaking/{index,queue,matches}.ts`, wallet routes/service and admin grant/pack offers; block new LEGACY_TOKEN for all flags/entry points; preserve historic balances/settlements/audit and narrowly scoped compensation |
 | P6 — current docs/UI correction | AGENTS/CLAUDE/GAMES, deployment readiness, legal register/current policy/FAQ, result/admin wording, PROGRESS; version current policies through existing mechanism, preserve prior acceptances |
 | P7 — required checks | Shared/server/client typecheck/builds, every canonical script and affected integration checks, migration/DB safety, adversarial live socket tests, browser/device and capacity/latency validation |
 
@@ -219,7 +219,7 @@ Each enabled game must pass A1–A12; failed/unexecuted cases mean BLOCKED, not 
 | A7 | Valid unequal server results settle once from snapshots; exact ties/full refunds; zero versus missing/invalid distinguished; forfeit/disconnect/grace/both-disconnected policies enforced |
 | A8 | Lag, clock anomalies, server/lease loss, engine exceptions and active-state loss produce no unjustified winner. Restart after durable decision retries same outcome; restart without sound terminal facts voids/refunds |
 | A9 | Concurrent completion/void/cancel/forfeit cannot both settle and refund; accounting failure pending, never false success. Full existing standard/promo/freeroll, reservation/capture/release/refund and reconciliation matrix retained |
-| A10 | Raw Diamond queue/match/rematch/purchase/stub/admin-grant paths reject even with flags enabled; historical records unchanged; casual Coins/guest/friend/quiz regressions pass under explicit lower-trust policy |
+| A10 | Raw Legacy token queue/match/rematch/purchase/stub/admin-grant paths reject even with flags enabled; historical records unchanged; casual Coins/guest/friend/quiz regressions pass under explicit lower-trust policy |
 | A11 | Import/wire/storage audit shows no active competition replay dependency or input history; seeded utilities/engines still work; result/UI/legal descriptions match Level 3 and its residual limits |
 | A12 | Desktop and narrow/mobile controls/result UI checked; network delay/jitter/loss/reconnect and load tested; no secret/account leak in captures; readiness gates below pass for configured concurrency |
 

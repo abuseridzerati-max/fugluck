@@ -17,7 +17,7 @@ Branch: `codex/phase-5-5a-live-authority`.
 
 ## Implementation boundary
 
-BUILT, verified by source inspection and the checks recorded below: additive authority run/session/result/decision records; live fixed-step Space Blaster state; nonce/connection fencing; current snapshots; trusted terminal decisions through existing accounting; real socket integration and adversarial/load tests. Reference runtime is opt-in via `ENABLE_COMPETITION_AUTHORITY`; all other competition games remain blocked at entry. No migration of other games, deletion of replay/history, Diamond cleanup, deployment or Phase 6/7 work.
+BUILT, verified by source inspection and the checks recorded below: additive authority run/session/result/decision records; live fixed-step Space Blaster state; nonce/connection fencing; current snapshots; trusted terminal decisions through existing accounting; real socket integration and adversarial/load tests. Reference runtime is opt-in via `ENABLE_COMPETITION_AUTHORITY`; all other competition games remain blocked at entry. No migration of other games, deletion of replay/history, Legacy token cleanup, deployment or Phase 6/7 work.
 
 Legacy direct-service and casual tests retain their historical behavior. Public competition entry cannot fall back to that path. Space Blaster competition rendering uses current server state without running a local scoring simulation or collecting inputs for reconstruction.
 
@@ -65,7 +65,7 @@ For that trial: apply migration `0010_competition_authority.sql` through the exi
 
 **Not yet verified:** actual staging network admission, mobile/desktop browser playability, long-duration capacity, multi-host operational deployment and visual/manual acceptance. The current client renders full snapshots without interpolation; smoothness must be reviewed. Tests use a two-second cap, one-second reconnect window and fifteen-second ready timeout through server-constructor options only, never from client input. A fixed server seed provides an asteroid in the firing lane so real control messages can prove an earned score-based winner; no score/hit/result is injected. Production uses a cryptographically generated seed and the approved 180/10/30-second defaults. The database result trigger prevents UPDATE; application APIs expose no receipt deletion, but privileged database administrators retain fixture/retention control.
 
-**Retained:** browser practice and casual legacy matchmaking; legacy `submitScore`/`validateScore`, shared replay driver, adapters, game input collection and historical columns; COINS/DIAMONDS queue, ledger, wallet and related routes. Space Blaster competition mode bypasses these result-validation paths. Dash, Hopper and Runner have no authority engine integration. Phase 6 evidence generation and Phase 7 remain unstarted.
+**Retained:** browser practice and casual legacy matchmaking; legacy `submitScore`/`validateScore`, shared replay driver, adapters, game input collection and historical columns; COINS/LEGACY_TOKEN queue, ledger, wallet and related routes. Space Blaster competition mode bypasses these result-validation paths. Dash, Hopper and Runner have no authority engine integration. Phase 6 evidence generation and Phase 7 remain unstarted.
 
 ## Verification
 
@@ -168,7 +168,7 @@ Modified:
 
 Deleted: none.
 
-Implementation remains uncommitted on `codex/phase-5-5a-live-authority`: **16 modified tracked files and 7 new files**. HEAD is the separate architecture documentation commit `1361cce1e5d2b5b83701ccd6e2935ce05c530a16`; that commit does not contain the runtime work. Local main also points to the documentation commit; the fetched origin/main baseline is `2cbc429caed07dc4e8ece05bbb4662fb27667018`. No push, merge, staging/production deployment, real-money operation, other-game migration, replay deletion, Diamond retirement, Phase 6 implementation or Phase 7 work occurred.
+Implementation remains uncommitted on `codex/phase-5-5a-live-authority`: **16 modified tracked files and 7 new files**. HEAD is the separate architecture documentation commit `1361cce1e5d2b5b83701ccd6e2935ce05c530a16`; that commit does not contain the runtime work. Local main also points to the documentation commit; the fetched origin/main baseline is `2cbc429caed07dc4e8ece05bbb4662fb27667018`. No push, merge, staging/production deployment, real-money operation, other-game migration, replay deletion, Legacy token retirement, Phase 6 implementation or Phase 7 work occurred.
 
 **Verdict:** Phase 5.5A is a local implementation candidate for a separately authorized manual staging trial. **Staging/manual acceptance is NOT PASS / not performed.** Full Phase 5.5 is not complete.
 
@@ -192,7 +192,7 @@ Implementation remains uncommitted on `codex/phase-5-5a-live-authority`: **16 mo
 | 14 | Exact counts | 37 distinct scripts / 1,365 assertions / zero failures; every script listed above. Builds/typecheck/diff check pass. |
 | 15 | Performance | 20-state wall-clock benchmark: 59.83 Hz ticks, 19.94 Hz snapshots, 0.0060 ms mean engine tick/player, about 14.37 KB/s/player. Limits above. |
 | 16 | Replay remaining | Shared replay driver/adapters, legacy score service and casual input collection/history remain. New authority path does not use them. |
-| 17 | Diamond remaining | Legacy Diamond queue, stake, ledger, wallet and related backend paths retained. No retirement in this step. |
+| 17 | Legacy token remaining | Legacy Legacy token queue, stake, ledger, wallet and related backend paths retained. No retirement in this step. |
 | 18 | File changes | Seven created, sixteen modified, none deleted; exact list above. |
 | 19 | Progress update | PROGRESS.md Session 79 and GAMES.md updated with verified scope, counts and limitations. |
 | 20 | Final Git state | Runtime work uncommitted; HEAD remains documentation commit. No push/merge/deploy. |

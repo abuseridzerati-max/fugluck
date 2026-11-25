@@ -6,7 +6,7 @@ The complete result is in [sanitized evidence](evidence/technical-stabilization-
 
 ## A. Baseline and scope
 
-- Read all 57 handoff sections, the current GAMES manifest and latest PROGRESS handoff, relevant referenced acceptance/security/rollout documents, workspace/configuration files, migration chain and regression inventory. Actual source takes precedence over obsolete replay, Diamond, Supabase-browser-auth and six-test claims.
+- Read all 57 handoff sections, the current GAMES manifest and latest PROGRESS handoff, relevant referenced acceptance/security/rollout documents, workspace/configuration files, migration chain and regression inventory. Actual source takes precedence over obsolete replay, Legacy token, Supabase-browser-auth and six-test claims.
 - Read-only Git: branch **main**, HEAD **3dea8a10bab04b56b22efd5e3084532beb7125bd**. No branch/index/history/remote mutation was performed.
 - Pre-existing work preserved: modified `AGENTS.md`, `PROGRESS.md`; untracked `.agents/`, `docs/FULL_PROJECT_HANDOFF.md`, `docs/evidence/full-project-inventory-20261012.json`, and literal file `how --stat --oneline HEAD`. The requested handoff/progress files were updated additively; the other pre-existing items were not edited.
 - Initial runtime: Windows PowerShell, Node **24.18.0**, npm **11.16.0**. Validated dependency workflow now uses npm **11.21.1**. No global npm installation was changed.
@@ -173,13 +173,13 @@ Source review/test evidence retains server-side identity/ownership/role checks, 
 | Practice launch/input/exit | PASS; Space Blaster, Cyber Hopper result screen, Speed Trivia question/score progression | Current hosted gameplay **NOT TESTED** |
 | Authoritative game result integrity | PASS; Space Blaster **65**, Cyber Hopper **42**, latency **26**, presentation **24** | Historical four-player/recovery evidence retained; no fresh hosted match |
 | Tournament lifecycle/settlement/recovery | PASS; rules **180**, domain **97**, recovery **52**, authority **34**, wider competition suites | Full hosted 8/16, genuine qualification, owner Retry/operations acceptance **PENDING** |
-| Money-disabled behavior | PASS; health denies all commercial actions, Diamond purchase 410, environment **89**, mock gates **13** | Frontend metadata and fresh backend health both report money disabled; deposits/withdrawals/commercial competitions denied |
+| Money-disabled behavior | PASS; health denies all commercial actions, Legacy token purchase 410, environment **89**, mock gates **13** | Frontend metadata and fresh backend health both report money disabled; deposits/withdrawals/commercial competitions denied |
 | Deployment identity | Local identifies itself as test/local, never claims a deployed SHA | Frontend GET 200 at **3a24ea02df7dc9bfa4d06d4d19d13439ae517073**, same exact backend SHA on the successful health retry; new local fixes are not deployed |
 | Real delivery/payment, Production isolation | Outside permitted local task | **NOT TESTED / BLOCKED** pending separate scope and provider/operator inputs |
 
 Hosted access was limited to unauthenticated GET of the documented staging `deployment.json` and `/api/health`, with no redirects, cookies or writes. The first 15-second health request timed out; one bounded 45-second retry returned 200 after **32,598 ms** at **2026-10-22 13:15:05 UTC**. It confirmed staging/production runtime, healthy DB, matching migrations and exact client/server revision parity. All real-money actions were denied; mock competitions were enabled and mock deposits/withdrawals disabled. The slow response warrants availability/cold-start measurement, but its cause was not established. A point-in-time success is not an uptime guarantee. No hosted registration, authenticated /me, catalog materialization, queue/tournament entry, load/security burst, migration or email was run. Full hosted security **87/87** remains explicitly **historical**.
 
-Local HTTP smoke covered synthetic signup/current 1,000-Coin grant, verification without sending email, cookie profile reuse, logout revocation, login, socket-ticket handshake, Diamond retirement and five SPA deep links. Separate browser observations cover the three changed canvases and no-real-money notice. Supplemental smoke **19/19 is not added to the 2,409 regression count**. Local app/preview processes exited cleanly after smoke; authority load tests were rerun with them stopped.
+Local HTTP smoke covered synthetic signup/current 1,000-Coin grant, verification without sending email, cookie profile reuse, logout revocation, login, socket-ticket handshake, Legacy token retirement and five SPA deep links. Separate browser observations cover the three changed canvases and no-real-money notice. Supplemental smoke **19/19 is not added to the 2,409 regression count**. Local app/preview processes exited cleanly after smoke; authority load tests were rerun with them stopped.
 
 ## H. Reproducible validation workflow
 

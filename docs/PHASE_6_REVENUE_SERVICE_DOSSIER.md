@@ -24,7 +24,7 @@ This is a proposed engineering specification, not a dossier, evidence bundle, le
 
 The Phase 4/5 roadmap in [PROGRESS.md](../PROGRESS.md) calls Phase 6 **Revenue Service Technical Dossier + Submission Readiness**, with an older four-deliverable roadmap. Its former gameplay reconstruction deliverable is superseded by the current user instruction. The four proposed deliverables are now D1 technical/legal-review dossier, D2 result-validation & competition-integrity evidence, D3 ledger/reconciliation evidence, and D4 submission-readiness package. The introducing roadmap commits are `6d948c6` and `7174dcc`. Formal regulatory review/classification follows Phase 6; payment integration and monetary activation follow that gate.
 
-**Section 22 and the full `FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT` were not found.** Searches covered the current repository, hidden documentation paths excluding dependencies/build output/Git internals/secrets, root and client docs, source/migration comments, deployment and admin material, and reachable Git documentation history. History contains the roadmap's Section 22 reference, not the section's text. No separate archived/legal/specification folder containing that contract was found. The old legal register's `real_money_diamond_economy_architecture.md` reference is also not present in the searched documentation history. This does not assert that an external document never existed.
+**Section 22 and the full `FUGLUCK — FINAL COMPETITION DOMAIN CONTRACT` were not found.** Searches covered the current repository, hidden documentation paths excluding dependencies/build output/Git internals/secrets, root and client docs, source/migration comments, deployment and admin material, and reachable Git documentation history. History contains the roadmap's Section 22 reference, not the section's text. No separate archived/legal/specification folder containing that contract was found. The old legal register's `real_money_legacy token_economy_architecture.md` reference is also not present in the searched documentation history. This does not assert that an external document never existed.
 
 This document proposes replacement **Phase 6 scope only**, based on the user's current competition invariants and inspected code. It does not reconstruct or impersonate the missing contract. If an authoritative contract is subsequently supplied, record a reviewed comparison and resolve conflicts before implementation.
 
@@ -36,11 +36,11 @@ It must not conclude that Fugluck is legal, is not gambling, is licensed, is com
 
 ### 1.3 Scope and exclusions
 
-In scope: platform-controlled CompetitionTemplates; immutable instance **terms/prize snapshots** with separately changing lifecycle state; independent entry and predetermined prizes; Test/Sandbox GEL; separate free, non-redeemable Coins; retired Diamonds with preserved history; seeded gameplay and live server-authoritative competition state/scoring; competition/accounting lifecycles; administration/audit controls; cancellation, voids/refunds, ties, forfeits, rematches, promotional prizes, freerolls, simulated sponsorship, and historical records.
+In scope: platform-controlled CompetitionTemplates; immutable instance **terms/prize snapshots** with separately changing lifecycle state; independent entry and predetermined prizes; Test/Sandbox GEL; separate free, non-redeemable Coins; retired Legacy tokens with preserved history; seeded gameplay and live server-authoritative competition state/scoring; competition/accounting lifecycles; administration/audit controls; cancellation, voids/refunds, ties, forfeits, rematches, promotional prizes, freerolls, simulated sponsorship, and historical records.
 
 The initial runtime evidence profile is **HEAD_TO_HEAD, capacity 2, one predetermined first-place prize**, for the four current sandbox candidates. Preserve multiple-prize/format domain types and accounting capabilities. Do not describe tournament brackets, leaderboard rushes, or multi-placement runtime settlement as working until separately built and verified. Unsupported templates must not silently launch through the supported runtime (see P1).
 
-Excluded: real-money deposits/withdrawals/payouts/settlement; PSP activation or new PSP abstractions; card processing or bank integration; player-created monetary wagering/lobbies/prizes; friend-money challenges; bets on players/external events; restored Diamond economy; Coin-to-GEL conversion; legal filing or external transmission without later explicit authorization; new games/engines; expanded tournament formats; Phase 7; unrelated refactors. Every GEL amount remains **TEST / SANDBOX GEL — NO REAL MONEY**.
+Excluded: real-money deposits/withdrawals/payouts/settlement; PSP activation or new PSP abstractions; card processing or bank integration; player-created monetary wagering/lobbies/prizes; friend-money challenges; bets on players/external events; restored Legacy token economy; Coin-to-GEL conversion; legal filing or external transmission without later explicit authorization; new games/engines; expanded tournament formats; Phase 7; unrelated refactors. Every GEL amount remains **TEST / SANDBOX GEL — NO REAL MONEY**.
 
 ### 1.4 Separate completion gates
 
@@ -69,7 +69,7 @@ All findings in this section are **BUILT/source-inspected at the audited baselin
 | S5 | [Neon Runner engine](../games/neon-runner/engine.ts), [Dash engine](../games/pixel-ninja-dash/engine.ts), [Blaster engine](../games/space-blaster/engine.ts), [Hopper engine](../games/cyber-hopper/engine.ts), their constants and index modules | Actual score formulas, local result generation, gameplay seeds and timing; no trusted remote gameplay measurement established |
 | S6 | [port.ts](../packages/server/src/accounting/port.ts), [sandboxAdapter.ts](../packages/server/src/accounting/sandboxAdapter.ts), [schema.ts](../packages/server/src/db/schema.ts), [0008](../packages/server/drizzle/0008_competition_economy.sql), [0009](../packages/server/drizzle/0009_sandbox_accounting.sql) | Existing accounting, snapshots, journal and history compatibility |
 | S7 | [adminCompetitions.ts](../packages/server/src/routes/adminCompetitions.ts), [competition routes](../packages/server/src/routes/competitions.ts), [admin views](../packages/client/src/admin/CompetitionAdminViews.tsx) | Read/admin boundaries and eligibility wording requiring review |
-| S8 | [wallet.ts](../packages/server/src/routes/wallet.ts), [admin.ts](../packages/server/src/routes/admin.ts), [ledger.ts](../packages/server/src/wallet/ledger.ts), [queue.ts](../packages/server/src/matchmaking/queue.ts) | Diamond creation/grant/queue surfaces and history |
+| S8 | [wallet.ts](../packages/server/src/routes/wallet.ts), [admin.ts](../packages/server/src/routes/admin.ts), [ledger.ts](../packages/server/src/wallet/ledger.ts), [queue.ts](../packages/server/src/matchmaking/queue.ts) | Legacy token creation/grant/queue surfaces and history |
 | S9 | [Phase 3 checks](../scripts/competition-phase3-lifecycle-check.ts), [Phase 2 checks](../scripts/competition-phase2-accounting-check.ts), [Phase 5 checks](../scripts/competition-phase5-admin-check.ts) | Existing direct-service/accounting/admin coverage; not proof of the proposed result policy |
 
 The retired subsystem's exact paths and migration disposition are recorded in section 2.7. Source presence is not approval to keep it.
@@ -96,18 +96,18 @@ The current checker still uses the retired reconstruction subsystem. No selected
 
 Additive session/result/decision schema changes are required during implementation; none are made now. Source/build/authority provenance can be packaged by Phase 6. A lost active run without trusted durable terminal facts voids/refunds; a committed outcome retries the same economic effect. No replay persistence or proof package is authorized.
 
-### 2.4 Gap 3 — backend Diamond retirement: A, blocking prerequisite
+### 2.4 Gap 3 — backend Legacy token retirement: A, blocking prerequisite
 
 | Surface | Current inspected behavior | Required disposition |
 |---|---|---|
-| Socket `joinQueue`; `queue.enqueue`/`tryPair` | Accept DIAMONDS and caller-selected positive stake, subject to guest/email restrictions | Reject new Diamond entry at public and service boundaries; never silently reinterpret as Coins |
-| Legacy `createMatch` and rematch path | Carry currency/stake into legacy escrow/settlement; no universal Diamond retirement gate | Block new Diamond matches/rematches, including alternate entry points |
-| Wallet `/purchase-diamonds`, `/diamonds/stub-buy`, `grantDiamondsStub` | Environment-gated creation; can be enabled with a flag, defaults allowed outside production | Disabled in all supported runtime modes after hardening; retain history labels |
-| Admin `/wallet/grant-diamonds` | RBAC-protected but active ledger creation, without the purchase-stub environment gate | Disable new Diamond funding; historical read/audit remains |
+| Socket `joinQueue`; `queue.enqueue`/`tryPair` | Accept LEGACY_TOKEN and caller-selected positive stake, subject to guest/email restrictions | Reject new Legacy token entry at public and service boundaries; never silently reinterpret as Coins |
+| Legacy `createMatch` and rematch path | Carry currency/stake into legacy escrow/settlement; no universal Legacy token retirement gate | Block new Legacy token matches/rematches, including alternate entry points |
+| Wallet `/legacy-token-purchase`, `/legacy tokens/stub-buy`, `grantLegacy tokensStub` | Environment-gated creation; can be enabled with a flag, defaults allowed outside production | Disabled in all supported runtime modes after hardening; retain history labels |
+| Admin `/wallet/legacy-token-grant` | RBAC-protected but active ledger creation, without the purchase-stub environment gate | Disable new Legacy token funding; historical read/audit remains |
 | Wallet `/packs` and root wallet packs payload | Still advertise legacy packs | Remove active offers or return explicit retired/no-offers response; do not remove historical transactions |
 | Balance/history, legacy matches/settlements, ledger queries, compensating correction/recovery | Historical data or remediation paths | Preserve read access and original entries; separately audit any authorized correction so it cannot become a new funding/entry bypass |
 
-`index.ts` mounts the wallet/admin routers. This is an active-capable backend contradiction, not merely an unused type or historical record. Friend/guest invitation code currently uses COINS and zero stake; preserve it. This review did not execute Diamond actions or inspect a live account's Diamond balance.
+`index.ts` mounts the wallet/admin routers. This is an active-capable backend contradiction, not merely an unused type or historical record. Friend/guest invitation code currently uses COINS and zero stake; preserve it. This review did not execute Legacy token actions or inspect a live account's Legacy token balance.
 
 ### 2.5 Gap 4 — documentation: A for current claims; B for preserved history
 
@@ -115,13 +115,13 @@ Additive session/result/decision schema changes are required during implementati
 |---|---|---|
 | Latest Phase 5 acceptance in PROGRESS.md | Current evidence with explicit read-only/preview limits | Keep; link exact scope rather than upgrading it to transactional acceptance |
 | Earlier dated PROGRESS.md sessions | Historical; some architecture statements superseded | Preserve chronology; append corrections and current pointers |
-| AGENTS.md / CLAUDE.md | Current instructions, needs update | Replace active Diamond/stake/rake and authoritative gameplay-reconstruction claims with current competition/result-policy boundaries; clearly limit surviving Coin/legacy rules |
-| LEGAL_REVIEW_REQUIRED.md | Current register, needs update | Retire Diamond exchange/playthrough/payment and gameplay-reconstruction assumptions; keep unanswered classification/territory/tax/age questions as questions |
+| AGENTS.md / CLAUDE.md | Current instructions, needs update | Replace active Legacy token/stake/rake and authoritative gameplay-reconstruction claims with current competition/result-policy boundaries; clearly limit surviving Coin/legacy rules |
+| LEGAL_REVIEW_REQUIRED.md | Current register, needs update | Retire Legacy token exchange/playthrough/payment and gameplay-reconstruction assumptions; keep unanswered classification/territory/tax/age questions as questions |
 | REPO-STATE.md / RECOVERY-STATE.md | Historical August 2026 snapshots | Preserve unchanged; not a current architecture authority |
 | DEPLOYMENT.md | Current deployment guide, needs narrow update | Extend retirement verification to backend boundaries; preserve additive migration/staging identity safeguards |
 | GAMES.md | Current game manifest, needs claim reconciliation | Distinguish practice/Coins, candidate status, blocked Level 3 implementation/acceptance and actually evidenced formats; retire current authoritative verification claims, mark historical descriptions superseded |
-| `policyData.ts` current terms/rules/about/privacy and `faqData.ts` matchmaking copy | Current user-facing descriptions, needs update | Remove current Diamond economy, monetary pot/rake and authoritative gameplay-reconstruction descriptions; avoid blanket fairness/skill/legal claims; version current policies through the existing mechanism |
-| Historical Diamond policy and previously accepted policy versions | Historical / superseded policy content | Preserve original versions/acceptance records, identify historical scope; add current notices rather than silently rewriting a user's prior agreement |
+| `policyData.ts` current terms/rules/about/privacy and `faqData.ts` matchmaking copy | Current user-facing descriptions, needs update | Remove current Legacy token economy, monetary pot/rake and authoritative gameplay-reconstruction descriptions; avoid blanket fairness/skill/legal claims; version current policies through the existing mechanism |
+| Historical Legacy token policy and previously accepted policy versions | Historical / superseded policy content | Preserve original versions/acceptance records, identify historical scope; add current notices rather than silently rewriting a user's prior agreement |
 | Shared legacy enums, schema constraints, migration files, old test records | Compatibility/history, not an active product claim | Preserve where required for history; update only current runtime expectations/tests with clear reasons |
 | Missing competition contract / Section 22 | Referenced but unavailable | Do not fabricate; record this proposed spec's approval as its own authority |
 
@@ -165,8 +165,8 @@ Migration completion requires import/dependency and text review across source, s
 | P2 — per-game live authority | Run existing four engines online at fixed 60 Hz/1280×720; validate current controls, own collisions/state/score, emit snapshots/results; implement RV-001 latency/resource/cap rules; no history reconstruction |
 | P3 — trusted results and settlement | Add durable authoritative receipts and one terminal decision; settle/refund from server facts only via existing accounting; compare-and-set/idempotent recovery; preserve snapshots/history |
 | P4 — replay retirement | Remove retired driver/adapters/logging/contracts after replacement; retain gameplay/PRNG/score rules; scoped Level 1 casual/quiz compatibility |
-| P5 — Diamond retirement | Disable all new queue/create/rematch/purchase/stub/admin-grant/offer paths, preserve historical ledger/settlement/audit and authorized compensation |
-| P6 — current docs/UI | Correct stake/rake/Diamond and retired verification wording; explain live server authority and limitations; preserve historical versions/agreements |
+| P5 — Legacy token retirement | Disable all new queue/create/rematch/purchase/stub/admin-grant/offer paths, preserve historical ledger/settlement/audit and authorized compensation |
+| P6 — current docs/UI | Correct stake/rake/Legacy token and retired verification wording; explain live server authority and limitations; preserve historical versions/agreements |
 | P7 — required tests | RV-001 A1–A12 for every enabled game, all current canonical scripts, migration/DB safety/atomic checks, typecheck/builds, live-browser/mobile/network and measured capacity acceptance |
 
 Required chain: actual game/control/completion → server validation/live terminal facts → authoritative result → participant/CompetitionInstance and VERIFYING where appropriate → single settlement/refund/void → actual terminal status. Server may complete even if the client withholds its final acknowledgement. Direct service tests alone are insufficient.
@@ -188,7 +188,7 @@ Outputs: `dossier/dossier.md` as the reviewable source and `dossier/dossier.pdf`
 | 7 | Entry versus prize | Independent properties; standard/promo/free counterexamples to a fixed pot/rake invariant |
 | 8 | Free/casual Coins | Free points, no redemption/withdrawal/conversion; keep casual/social flow distinct |
 | 9 | Sandbox GEL | Simulated funds only; funding labels and zero external monetary rails |
-| 10 | Diamond retirement | Backend rejection evidence and retained historical reads, not just absent UI |
+| 10 | Legacy token retirement | Backend rejection evidence and retained historical reads, not just absent UI |
 | 11 | Competition lifecycle | State/ownership transitions and terminal protections demonstrated through real handlers |
 | 12 | Cancellation and voids | Pending release versus captured refund; who may initiate, race/duplicate handling |
 | 13 | Forfeits | Exact trigger and legitimate-opponent conditions; disconnect is a server policy event, not proof of cheating |
@@ -326,9 +326,9 @@ All numbers below are integer minor units in the machine files. Display examples
 | A09 | Idempotent retry matrix | Separately repeat reserve, capture, release, refund and settle at least twice under same operation identity, then retry same entity/terminal effect with a new request identity. One economic effect; cross-state requests reject or return existing state. Include same-key changed-payload conflict and post-restart retry. |
 | A10 | Concurrency and failure recovery | Insufficient aggregate balance across parallel entry attempts; duplicate settlement triggers; cancellation racing lock; void racing settlement; failure between evidence/accounting/state writes and recovery. No overdraft, double settlement, false terminal success, missing successful-operation evidence or stranded funds. |
 | A11 | Snapshot and rematch | Edit future template prize/entry after instance creation; old terms/prizes/evidence remain unchanged. A rematch creates a distinct instance and reservation from currently enabled platform terms; original postings never reused. |
-| A12 | Authorization and currency separation | Guests/unrelated users cannot enter or cancel others' instances; forged entry/prize ignored/rejected; Coin conversion and Diamond queue/grant/purchase blocked; quiz paid entry blocked; unauthorized admin mutation denied and logged. No forbidden ledger changes. |
+| A12 | Authorization and currency separation | Guests/unrelated users cannot enter or cancel others' instances; forged entry/prize ignored/rejected; Coin conversion and Legacy token queue/grant/purchase blocked; quiz paid entry blocked; unauthorized admin mutation denied and logged. No forbidden ledger changes. |
 | A13 | Multiple placements, adapter-only | Captured 1000; prizes 600 and 300; margin 100. Exercise CompetitionAccountingPort/adapter on disposable fixtures and verify independence of schedule. Explicitly `evidenceLevel: accounting-service`; not proof of live multi-placement runtime support. |
-| A14 | History preservation and negative control | Snapshot existing synthetic legacy Coin/Diamond history and immutable journal rows before cases; exact original row hashes preserved afterward. Verify restricted-role update/delete rejection and detect intentionally corrupt exported evidence. |
+| A14 | History preservation and negative control | Snapshot existing synthetic legacy Coin/Legacy token history and immutable journal rows before cases; exact original row hashes preserved afterward. Verify restricted-role update/delete rejection and detect intentionally corrupt exported evidence. |
 | A15 | Restart/orphan recovery | Controlled local restart with pending reservation and separately locked/active/verifying captured entries; release/refund according to recorded recovery rule, repeat recovery idempotently, no invented winner or lost evidence. |
 
 A02–A08 and A11 require the real runtime path after H, with A06 using the authorized admin/system boundary. A01/A09/A10/A12/A14/A15 exercise relevant real boundaries; extra service tests may supplement them. At minimum demonstrate standard, promo and freeroll runtime settlement for **each of the four candidate games**; cross-cutting admin/concurrency/accounting cases may use one representative game with justification in the index. V09 ties and relevant validation failures remain mandatory per game. A13 is the sole explicitly adapter-only positive prize-format example. Sponsored external receipt handling and expanded tournament formats are N/A by approved scope, not implied passes.
@@ -424,7 +424,7 @@ An automated allowlist/secret scan and a human review of JSON, text, images, log
 | Pseudonym mapping for exceptionally approved real data | Do not collect by default; custodian records necessity and explicit expiry before collection, normally no longer than the review requiring it |
 | Rejected/superseded official review versions | Retain the original bytes, status and reason under the accepted-bundle schedule; do not overwrite |
 | Actual filing correspondence/artifacts | Retention **TBD by legal reviewer and confirmed process**; no invented deadline or automatic deletion |
-| Application ledger/history/policy acceptance records | Outside this artifact-retention policy; never delete/mutate them to clean up evidence or retire Diamonds |
+| Application ledger/history/policy acceptance records | Outside this artifact-retention policy; never delete/mutate them to clean up evidence or retire Legacy tokens |
 
 All defaults require named custodian approval at Gate S. Storage must have restricted access, encrypted storage/transport where used, separate internal/reviewer locations, and an access/change record. No public repository or anonymous upload is the default evidence store. This specification does not configure storage, retention jobs, legal holds, credentials or permissions.
 

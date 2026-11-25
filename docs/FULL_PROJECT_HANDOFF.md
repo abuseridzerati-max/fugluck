@@ -34,7 +34,7 @@ The remaining inventory retains its original October 12 observations unless expl
 - The user explicitly confirmed that missing Keepz details should be marked unverified. The request supplies planning topics, not evidence that a Keepz API, approval, tax treatment, bot policy, or rebrand already exists.
 - JevRouter selected repository inspection as the primary capability. Public advisory checks supplement local npm audit findings.
 
-Older AGENTS/PROGRESS assertions about Supabase browser auth, active Diamonds, six tests, four games, replay adapters, or a pending main merge are superseded by inspected code and the facts here. Preserve historical evidence; do not implement against those obsolete claims.
+Older AGENTS/PROGRESS assertions about Supabase browser auth, active Legacy tokens, six tests, four games, replay adapters, or a pending main merge are superseded by inspected code and the facts here. Preserve historical evidence; do not implement against those obsolete claims.
 
 ## Table of contents
 
@@ -86,7 +86,7 @@ Older AGENTS/PROGRESS assertions about Supabase browser auth, active Diamonds, s
 - [46. SEO and Google](#46-seo-and-google)
 - [47. Branding](#47-branding)
 - [48. Legal and KYC readiness](#48-legal-and-kyc-readiness)
-- [49. Diamonds and Coins history](#49-diamonds-and-coins-history)
+- [49. Legacy tokens and Coins history](#49-legacy tokens-and-coins-history)
 - [50. Public website content](#50-public-website-content)
 - [51. Current blockers](#51-current-blockers)
 - [52. What is already complete](#52-what-is-already-complete)
@@ -242,7 +242,7 @@ Important files: App.tsx (navigation/composition), AuthContext.tsx (cached user/
 |---|---|
 | /api/auth | Signup/login/logout/me, password recovery, email verification, policies, signed socket/guest tickets |
 | /api/account | Authenticated profile/password actions |
-| /api/wallet | Own derived balances/history; retired Diamond endpoints return refusal |
+| /api/wallet | Own derived balances/history; retired Legacy token endpoints return refusal |
 | /api/friends | Owned friendship requests/accept/reject/cancel/remove |
 | /api/matches | Public guest-link lookup; authenticated own recent match history |
 | /api/competitions | Public sanitized templates; owned mine/instance views and cancellation; gated sandbox and administrative operations |
@@ -463,7 +463,7 @@ flowchart LR
 
 A webpage displays the balance; it does not hold the money. External accounts/rails hold actual funds under a still-unapproved custody/settlement arrangement. The internal ledger records obligations and available/reserved amounts. Each tournament uses an internal transfer, not a new card transaction. The payment provider is not the wallet's balance database.
 
-There are distinct systems: noncash COINS in the legacy ledger; simulated TEST GEL via sandbox accounting; and the commercial double-entry candidate, presently mock-only. No Coin/Diamond-to-GEL conversion exists. A code path capable of accounting for GEL does not mean real funds are enabled.
+There are distinct systems: noncash COINS in the legacy ledger; simulated TEST GEL via sandbox accounting; and the commercial double-entry candidate, presently mock-only. No Coin/Legacy token-to-GEL conversion exists. A code path capable of accounting for GEL does not mean real funds are enabled.
 
 Sources: wallet/ledger.ts; shared/wallet.ts and money.ts; accounting/port.ts, sandboxAdapter.ts, commercialLedger.ts, commercialAdapter.ts, stagingMockRouter.ts; payments/financialFlows.ts.
 
@@ -491,7 +491,7 @@ commercial_transactions, postings, accounts and event histories reject UPDATE/DE
 
 “Exactly once” here means idempotent persisted effects under these constraints/retries, not magical exactly-once network delivery. Provider idempotency/finality must still be mapped. Database owners can alter triggers/permissions, so access controls, independent exports and review remain essential.
 
-Sandbox accounting separately records balanced reference groups, reservations, settlements, refunds and simulated subsidy/margin; it is not identical to commercial tables. COINS uses an append-only application ledger with per-user reason uniqueness/nonnegative debit protection; historical Diamond rows remain readable. Do not attribute commercial immutability triggers to every legacy table.
+Sandbox accounting separately records balanced reference groups, reservations, settlements, refunds and simulated subsidy/margin; it is not identical to commercial tables. COINS uses an append-only application ledger with per-user reason uniqueness/nonnegative debit protection; historical Legacy token rows remain readable. Do not attribute commercial immutability triggers to every legacy table.
 
 Reconciliation checks transaction balance/roll-forward, reservation/escrow consistency, captured entries vs prizes/margin/subsidy/refunds, missing provider events, unmatched/mismatched/out-of-order events, provider success without ledger, stuck pending operations and duplicate prize settlement. Current reconciliation is diagnostic; no live provider transaction feed exists.
 
@@ -725,7 +725,7 @@ Intentional exclusions remain modified AGENTS.md, untracked .agents/ and the str
 | File | Purpose |
 |---|---|
 | 0000_early_marrow.sql | Initial users table |
-| 0001_wallet_friends.sql | Coin/Diamond historical ledger and friendships |
+| 0001_wallet_friends.sql | Coin/Legacy token historical ledger and friendships |
 | 0002_ledger_idempotency_unique.sql | Unique per-user ledger reason/idempotency protection |
 | 0003_matches_history.sql | Durable match history and one settlement per match |
 | 0004_atomic_wager_lifecycle.sql | User status/role fields, nonnegative wallet locking/trigger, platform system account and match/settlement constraints |
@@ -859,7 +859,7 @@ Verification links expire in 24 hours; reset links in one hour. Raw tokens are h
 
 OWNER/SUPER_ADMIN/ADMIN can pass requireOwnerAdmin; requirePermission then narrows actions using shared role permissions. MODERATOR/SUPPORT exist in the model but cannot bypass this outer operational guard. Ordinary user sessions, relabeled user cookies, inactive accounts and unauthorized actions are rejected. Admin login has request limits plus durable IP lockout records; session revocation/password changes apply.
 
-Views/APIs cover user search/detail, suspension/ban/unban/roles, casual matches and voiding, legacy wallet history/Coin grants/reversals, competition templates/enabling, instances/cancel/void, sandbox accounting/grants/reconciliation, game eligibility, operations/deployment/migration observations and audit logs. Diamond grants are retired responses, not money activation.
+Views/APIs cover user search/detail, suspension/ban/unban/roles, casual matches and voiding, legacy wallet history/Coin grants/reversals, competition templates/enabling, instances/cancel/void, sandbox accounting/grants/reconciliation, game eligibility, operations/deployment/migration observations and audit logs. Legacy token grants are retired responses, not money activation.
 
 Sensitive actions require explicit permission and reason/audit where implemented. Idempotency protects supported financial adjustments. No broad authenticated “set balance” endpoint exists. Production finance-admin MFA/dual approval, durable exports, role/IAM review and incident procedures remain unaccepted. Operational seed/reset utilities exist and were not run in discovery.
 
@@ -927,7 +927,7 @@ Sensitive actions require explicit permission and reason/audit where implemented
 | PAYMENT_PROVIDER_SECRET | Reserved future provider credential | Must be absent until reviewed integration | Server secret, unimplemented |
 | PAYMENT_WEBHOOK_SECRET | Reserved future verification credential | Must be absent | Server secret, unimplemented |
 | PAYOUT_PROVIDER_SECRET | Reserved future payout credential | Must be absent | Server secret, unimplemented |
-| ENABLE_DEV_DIAMOND_STUB | Retained historical flag | Example/blueprint false; cannot restore retired routes | Legacy non-secret |
+| LEGACY_DEV_TOKEN_STUB | Retained historical flag | Example/blueprint false; cannot restore retired routes | Legacy non-secret |
 
 ### Competition and hosted simulation
 
@@ -960,7 +960,7 @@ Sensitive actions require explicit permission and reason/audit where implemented
 | ADMIN_PASSWORD | Seed/test credential | Operational script only | Secret |
 | NEW_ADMIN_PASSWORD | Reset credential | Operational script only | Secret |
 
-No KEEPZ_* contract was found. Absence of a variable in an example does not mean unused: several mock/provider/CA settings are only in source or dashboards. Conversely VITE_SUPABASE_* and Diamond flags in examples are not proof of active features. Local private files include packages/server/.env, .env.staging.local and .env.staging-eu.local; their values were not copied or edited.
+No KEEPZ_* contract was found. Absence of a variable in an example does not mean unused: several mock/provider/CA settings are only in source or dashboards. Conversely VITE_SUPABASE_* and Legacy token flags in examples are not proof of active features. Local private files include packages/server/.env, .env.staging.local and .env.staging-eu.local; their values were not copied or edited.
 
 ## 46. SEO and Google
 
@@ -970,7 +970,7 @@ No KEEPZ_* contract was found. Absence of a variable in an example does not mean
 
 | Item | Status / implication |
 |---|---|
-| Descriptions | Static metadata still advertises coins **and diamonds**, contradicting retirement/current product |
+| Descriptions | Static metadata still advertises coins **and legacy tokens**, contradicting retirement/current product |
 | Per-route metadata | Titles partly dynamic; static descriptions/social shell, no SSR/prerender evidence |
 | Structured data | No JSON-LD/schema implementation found |
 | Sitemap | No tracked sitemap; staging /sitemap.xml returns SPA HTML 200 |
@@ -1011,7 +1011,7 @@ A rename would require coordinated UI/logo/icon/social image, domains/TLS/DNS/CO
 | Bots | No real-money activation; future principles listed | Approved disclosed product/legal/provider/accounting rules if ever pursued |
 | Refunds / disputes | Internal competition refund; incomplete provider refund lifecycle | Customer terms, actual provider refunds/chargebacks, deadlines/support process |
 | Turnover | Section 33 scenario only | Realistic forecast, source assumptions and bank limits; no actual turnover claim |
-| Diamonds | Historical premium virtual currency retired | Accurate provider explanation of retirement and no current conversion/purchases |
+| Legacy tokens | Historical premium virtual currency retired | Accurate provider explanation of retirement and no current conversion/purchases |
 | Company details | Public contact/operator fields pending | Registered entity, tax/registration/address/beneficial owner/authorized signatory details |
 | Social media | Static @Fugluck metadata | Verified owned business profiles |
 | ID document | Not in audit | USER sends required identity documents through approved provider channel only |
@@ -1019,17 +1019,17 @@ A rename would require coordinated UI/logo/icon/social image, domains/TLS/DNS/CO
 
 Public legal drafts need reviewed effective dates, entity/contact, privacy/data maps, territory/age policy, disputes/refunds/prizes, consumer notices and translations. No documents were submitted and no ID/bank statement contents were accessed or retained here.
 
-## 49. Diamonds and Coins history
+## 49. Legacy tokens and Coins history
 
-**HISTORICAL / source + Git:** Diamonds were a premium virtual currency alongside Coins, with purchase/grant/wager concepts and a historical 5% rake design. Dual-currency implementation appears in commit **415a05f (2026-08-02)**. Their existence must not be denied or historical ledger rows removed.
+**HISTORICAL / source + Git:** Legacy tokens were a premium virtual currency alongside Coins, with purchase/grant/wager concepts and a historical 5% rake design. Dual-currency implementation appears in commit **415a05f (2026-08-02)**. Their existence must not be denied or historical ledger rows removed.
 
-**BUILT current behavior:** new Diamond purchases/stub purchases/admin grants/matchmaking are refused; shared Currency still includes DIAMONDS for historical reads. Schema, ledger balances, old settlement data, /diamonds public history page and legacy UI/type/env references remain. Static social/meta descriptions incorrectly advertise Diamonds and need cleanup.
+**BUILT current behavior:** new Legacy token purchases/stub purchases/admin grants/matchmaking are refused; shared Currency still includes LEGACY_TOKEN for historical reads. Schema, ledger balances, old settlement data, /legacy tokens public history page and legacy UI/type/env references remain. Static social/meta descriptions incorrectly advertise Legacy tokens and need cleanup.
 
 Retirement accompanies the transition to platform-defined TEST GEL/certified-authority competitions documented in Phase 6/consolidation records; an exact first retirement commit/date was not conclusively established by the targeted history search. The September 25 consolidation and current source prove the current model, not a precise earlier policy-decision date.
 
 Coins remain free noncash points: **1,000 starting grant**, monthly top-up to 1,000 only when below it, no reduction above it, per-user/month reason idempotency. Casual Coin stakes stay separated by game/currency/stake, with zero rake and ordinary casual result semantics. Coins do not convert to GEL or authorize real-money prizes.
 
-Real-denominated amounts use integer-minor-unit sandbox/commercial ledgers separately. The commercial candidate is disabled for actual money; there is no current cash value promise for Coins, historical Diamonds or TEST GEL.
+Real-denominated amounts use integer-minor-unit sandbox/commercial ledgers separately. The commercial candidate is disabled for actual money; there is no current cash value promise for Coins, historical Legacy tokens or TEST GEL.
 
 ## 50. Public website content
 
@@ -1055,7 +1055,7 @@ Real-denominated amounts use integer-minor-unit sandbox/commercial ledgers separ
 | /games-and-skill | Yes | Practice vs prize certification explanation |
 | /coins | Yes | Free virtual points |
 | /test-gel /sandbox-notice | Yes | Simulated-money notice |
-| /diamonds | Yes | Historical/retired records explanation |
+| /legacy tokens | Yes | Historical/retired records explanation |
 | /withdrawals | Alias | Routes to sandbox notice; no live withdrawal product |
 | /refunds | Alias | Routes to rules; no provider refund UI |
 | /cookies /data-rights | Aliases | Privacy |
@@ -1088,7 +1088,7 @@ No complete commercial public site is accepted. Needed work is factual/legal/pro
 | P1 | Monitoring/DR/finance operator controls | Alerting, retention, on-call, approved RPO/RTO/off-site recovery, MFA/dual control unaccepted |
 | P1 | Hosting/network availability | Free service/cold-start history and strict RTT admission; paid pilot capacity and geographic feasibility not established |
 | P1 | Hosted permission/security completion | All role/creator/IAM checks; CSP validation; future checkout security; provider secrets and least privilege |
-| P2 | SEO and public content | Staging noindex missing, robots/sitemap absent, obsolete Diamond metadata, final policies/entity/support/localization needed |
+| P2 | SEO and public content | Staging noindex missing, robots/sitemap absent, obsolete Legacy token metadata, final policies/entity/support/localization needed |
 | P2 | Final display brand/domain decision | Fugluck exists; GameBGood is only a proposal. Avoid redoing provider/legal/SEO work without an owner decision |
 | P3 | Shared rate limiting and scaling | Required before multiple replicas; no need for speculative scale architecture now |
 | P3 | Additional games/providers/currencies/bots | Explicitly outside launch scope until current product is accepted |
@@ -1226,7 +1226,7 @@ These are completed implementation/evidence tasks, including local dependency re
 - A multi-currency wallet/FX product merely because types contain USD/EUR.
 - Real-money bots, undisclosed test players, adaptive financial difficulty or speculative bot liquidity.
 - A second payment provider before the first approved integration reconciles end to end.
-- New virtual currencies, revived Diamond purchases/wagering or Coin-to-cash conversion.
+- New virtual currencies, revived Legacy token purchases/wagering or Coin-to-cash conversion.
 - User-defined monetary stakes/prizes/private cash challenges that bypass frozen platform terms.
 - Replay restoration or a large engine/accounting rewrite without a proven need.
 - Additional decorative UI, dashboards or speculative microservices/scaling unrelated to the blockers.

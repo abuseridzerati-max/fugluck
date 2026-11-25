@@ -103,6 +103,10 @@ $RECYCLE.BIN/
 # (Preserves Assets/, Packages/, ProjectSettings/, and all *.meta files)
 # -----------------------------------------------------------------------------
 [Ll]ibrary/
+# -----------------------------------------------------------------------------
+# Local Temporary Archives, Test Clusters & Regression Artifacts
+# -----------------------------------------------------------------------------
+Temp/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/

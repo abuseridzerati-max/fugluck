@@ -6,7 +6,6 @@
 import { VIRTUAL_VIEWPORT } from "@fugluck/shared";
 import { RunnerEngine } from "../games/neon-runner/engine";
 import { DashEngine } from "../games/pixel-ninja-dash/engine";
-import { SkyDodgeEngine } from "../games/sky-dodge/engine";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
@@ -216,38 +215,6 @@ console.log("\nTest 3: Pixel Ninja Dash 300-Frame Headless Canvas draw() Suite\n
   const callsInRun = totalVerifiedDrawCalls - initialCallCount;
   check("Pixel Ninja Dash 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Pixel Ninja Dash verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
-}
-
-// ---------------------------------------------------------------------------
-// Test 3.5: Sky Dodge 300-Frame Headless Canvas draw() Suite
-// ---------------------------------------------------------------------------
-console.log("\nTest 3.5: Sky Dodge 300-Frame Headless Canvas draw() Suite\n");
-
-{
-  const mockCtx = createMockCanvasContext();
-  const engine = new SkyDodgeEngine(987654);
-  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  engine.reset();
-
-  let thrownError: Error | null = null;
-  const initialCallCount = totalVerifiedDrawCalls;
-
-  try {
-    for (let frame = 0; frame < 300; frame++) {
-      engine.update(1 / 60, {
-        moveLeft: frame % 40 < 20,
-        moveRight: frame % 40 >= 20,
-        boostPressed: frame % 50 === 0,
-      });
-      engine.draw(mockCtx);
-    }
-  } catch (err) {
-    thrownError = err as Error;
-  }
-
-  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
-  check("Sky Dodge 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
-  check("Sky Dodge verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
 }
 
 // ---------------------------------------------------------------------------

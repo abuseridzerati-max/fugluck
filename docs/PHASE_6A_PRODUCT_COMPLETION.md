@@ -6,8 +6,8 @@
 ## Player product and copy
 
 - Current terms, rules, privacy, FAQ, footer, account confirmation, and withdrawal navigation now describe the active product: practice and casual COINS are separate from a limited set of platform-defined TEST / SANDBOX GEL competitions; entry and predetermined prize terms come from the platform; real-money deposits, withdrawals, redemption, payment rails, and real-value prizes are inactive. Terms/privacy/rules policy versions are `2026-09-25` so existing consent is renewed for these material updates. No legal classification or regulatory approval is asserted.
-- Historical Diamonds retain account-history access and are labeled retired/legacy. The historical page and footer fallback do not suggest an active Diamond wallet, purchase, or cash-out service.
-- Removed obsolete public FAQ claims about automatic freeze-frame detection, headless replay validation, Diamond staking, and rake. Casual score reporting is distinguished from the server-owned TEST GEL competition result.
+- Historical Legacy tokens retain account-history access and are labeled retired/legacy. The historical page and footer fallback do not suggest an active Legacy token wallet, purchase, or cash-out service.
+- Removed obsolete public FAQ claims about automatic freeze-frame detection, headless replay validation, Legacy token staking, and rake. Casual score reporting is distinguished from the server-owned TEST GEL competition result.
 - Wallet TEST GEL copy explicitly states no real-world value and no deposit, withdrawal, or redemption. Signed-out users see an explanation in place of private ledger loading, and the test-funds action is disabled until sign-in.
 - The competition flow keeps the existing platform-defined templates, distinct entry/prize fields, freeroll `FREE` wording, simulated-money notices, sign-in requirements, and recoverable catalog error/retry behavior. Its existing responsive card/modal checks remain in `scripts/competition-phase4-ui-check.ts`.
 

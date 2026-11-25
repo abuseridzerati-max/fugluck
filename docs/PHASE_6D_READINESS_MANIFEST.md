@@ -24,7 +24,7 @@ The provider views showed the frontend and backend on the same application revis
 - **BUILT — unsupported staging defaults blocked** (verified in admin UI and public API): Neon Runner and Pixel Ninja Dash defaults are disabled and are absent from the player catalog. Controlled Cyber Hopper and Space Blaster trial templates remain disabled.
 - The visible cards distinguish `ENTRY COST` from `PREDETERMINED PRIZE`; the freeroll says `FREE`; each displays format, capacity/status and a join action. TEST / SANDBOX / NO REAL MONEY context is visible on the page. Screens were visually inspected in the signed-in staging browser at desktop width.
 - The authenticated staging account showed TEST GEL ₾82.00 and Coins 1,000. No funds were granted and no competition was joined during this work. The staging reconciliation view reported balanced ledger and zero discrepancy; no historical records were fabricated.
-- The footer link is labeled **Historical Diamond & Wallet Policy** and remains available as historical/legal access. Active Diamond controls and active replay architecture were not found in the current product paths based on the Phase 5.5C source and automated checks.
+- The footer link is labeled **Historical Legacy token & Wallet Policy** and remains available as historical/legal access. Active Legacy token controls and active replay architecture were not found in the current product paths based on the Phase 5.5C source and automated checks.
 
 ## Certification and sandbox boundary
 

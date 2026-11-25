@@ -21,7 +21,7 @@ The code's live runner currently accepts H2H with one first-place prize only. Ot
 
 - Integer minor-unit validation, negative/fractional rejection, currency separation, balance checks and overdraft prevention.
 - Entry reservation, available/reserved balance movement, duplicate reservation idempotency, exact capture, release before capture, cancellation/void, captured-entry refund and duplicate-refund no-double-credit.
-- Exactly-once settlement, winner balance unchanged on retry, draw refund, promotion subsidy, and preservation of Coins and historical Diamonds outside the sandbox ledger.
+- Exactly-once settlement, winner balance unchanged on retry, draw refund, promotion subsidy, and preservation of Coins and historical Legacy tokens outside the sandbox ledger.
 - Per-instance and full-ledger double-entry reconciliation report zero discrepancy. Total sandbox ledger postings sum to zero.
 
 ## Source map and limits

@@ -19,10 +19,6 @@
       "import": "./pixel-ninja-dash/index.ts",
       "default": "./pixel-ninja-dash/index.ts"
     },
-    "./sky-dodge": {
-      "import": "./sky-dodge/index.ts",
-      "default": "./sky-dodge/index.ts"
-    },
     "./space-blaster": {
       "import": "./space-blaster/index.ts",
       "default": "./space-blaster/index.ts"

@@ -30,7 +30,7 @@ Status: **Phase 6B local gate passed on 2026-09-25**. This is not a staging back
 
 ### Protected data classes
 
-Users and authentication metadata; policy acceptances; Coins and historical Diamond records; TEST GEL ledger and balances; reservations, captures, releases, settlements, refunds and reconciliation; competition templates, prizes, instances, participants and lifecycle events; authority runs, sessions, admissions, results and decisions; admin audit/funding history; migration journal and application configuration references. No passwords, tokens, database URLs, or unnecessary personal details belong in an evidence artifact.
+Users and authentication metadata; policy acceptances; Coins and historical Legacy token records; TEST GEL ledger and balances; reservations, captures, releases, settlements, refunds and reconciliation; competition templates, prizes, instances, participants and lifecycle events; authority runs, sessions, admissions, results and decisions; admin audit/funding history; migration journal and application configuration references. No passwords, tokens, database URLs, or unnecessary personal details belong in an evidence artifact.
 
 ## 3. Deployment, migration order, and rollback
 

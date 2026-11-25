@@ -200,7 +200,6 @@ The Supabase dashboard identifies the current isolated project as `fugluck-stagi
 | `COOKIE_DOMAIN` | `.fugluck.com` | No |
 | `COOKIE_SAMESITE` | `lax` | No |
 | `TRUST_PROXY` | `1` | No |
-| `ENABLE_DEV_DIAMOND_STUB` | `false` | No |
 | `EMAIL_PROVIDER` | `logger` | No |
 | `EMAIL_FROM` | `Fugluck Staging <no-reply@fugluck.com>` | No |
 
@@ -285,7 +284,6 @@ In your DNS Provider (Cloudflare, Namecheap, GoDaddy, AWS Route 53, etc.), add t
 | `COOKIE_DOMAIN` | Server | **Yes** | `.fugluck.com` | Domain for cookie scoping across subdomains |
 | `COOKIE_SAMESITE` | Server | Optional | `lax` | SameSite cookie attribute (`lax` / `none`) |
 | `TRUST_PROXY` | Server | Optional | `1` | Reverse proxy hop count for secure headers & IP |
-| `ENABLE_DEV_DIAMOND_STUB` | Server | Optional | `false` | Disables test diamond generation button |
 | `EMAIL_PROVIDER` | Server | Optional | `logger` | Transactional email provider (`logger`, `resend`, `smtp`) |
 | `EMAIL_FROM` | Server | Optional | `Fugluck <no-reply@fugluck.com>` | From email address header |
 | `VITE_API_URL` | Client | **Yes** | `https://api-staging.fugluck.com` | Public API & WebSocket endpoint for frontend |
@@ -339,7 +337,6 @@ After completing the deployment steps above, conduct the following live browser 
 ### 6. Wallet & Financial Safety
 - [ ] Open `https://staging.fugluck.com/wallet`.
 - [ ] Verify COINS balance reflects game outcomes and grants.
-- [ ] Verify there is no active Diamond shop, stake picker, or competition mode; historical Diamond information is marked retired/legacy.
 - [ ] Confirm competition balances and entry/prize values use **TEST / SANDBOX GEL / NO REAL MONEY** messaging; simulated funding is labeled **ADD TEST FUNDS**, not Deposit.
 - [ ] Verify there are NO fields requesting real credit cards, bank accounts, or withdrawal methods.
 

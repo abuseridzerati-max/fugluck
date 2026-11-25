@@ -4,7 +4,7 @@ Final status: **PASS** (Formally closed following verified physical manual gamep
 
 ## Scope and Git
 
-Source/Git verified: branch `codex/phase-5-5a-remediation` initially clean at local evidence `05018ee2096e8ba88813c46ca01f33d546364f94`, remote runtime `996c9b4cb97ee364508558350a0d3d5df3595bbf`. Evidence was pushed without rewriting history. Local main remains `1361cce1e5d2b5b83701ccd6e2935ce05c530a16`; remote main was verified at `2cbc429caed07dc4e8ece05bbb4662fb27667018`. No main merge. Only the Space Blaster reference is in scope; other games, replay/Diamond retirement and Phases 6/7 are excluded.
+Source/Git verified: branch `codex/phase-5-5a-remediation` initially clean at local evidence `05018ee2096e8ba88813c46ca01f33d546364f94`, remote runtime `996c9b4cb97ee364508558350a0d3d5df3595bbf`. Evidence was pushed without rewriting history. Local main remains `1361cce1e5d2b5b83701ccd6e2935ce05c530a16`; remote main was verified at `2cbc429caed07dc4e8ece05bbb4662fb27667018`. No main merge. Only the Space Blaster reference is in scope; other games, replay/Legacy token retirement and Phases 6/7 are excluded.
 
 ## Infrastructure preparation — verified
 
@@ -151,7 +151,7 @@ Historical content fingerprints remain identical for all 31 legacy ledger rows, 
 | 37 | Main merge | None. |
 | 38 | Other games | Not migrated. |
 | 39 | Replay retirement | Not started. |
-| 40 | Diamond retirement | Not started. |
+| 40 | Legacy token retirement | Not started. |
 | 41 | Phase 6 | Not started. |
 | 42 | Phase 7 | Not started. |
 

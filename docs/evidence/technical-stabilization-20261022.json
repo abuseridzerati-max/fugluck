@@ -1043,7 +1043,7 @@
         "status": "PASS"
       },
       {
-        "name": "retired Diamond purchase gate stays closed",
+        "name": "retired Legacy token purchase gate stays closed",
         "status": "PASS"
       },
       {

@@ -10,9 +10,10 @@ Current status is based on the source tree and checks named below. **BUILT** mea
 | Cyber Hopper | [`games/cyber-hopper/`](games/cyber-hopper/) | BUILT | BUILT | Level 3 certified; `cyber-hopper-rv001-v1` |
 | Speed Trivia Clash | [`games/speed-trivia/`](games/speed-trivia/) | BUILT | BUILT | OUT OF CURRENT PRIZE SCOPE |
 | True / False Sprint | [`games/tf-sprint/`](games/tf-sprint/) | BUILT | BUILT | OUT OF CURRENT PRIZE SCOPE |
-| Sky Dodge | [`games/sky-dodge/`](games/sky-dodge/) | Legacy source retained | Not in active game catalog | Not certified |
 
 ## Verification
+
+- **BUILT / freshly verified 2026-11-24 locally:** In-game **Coins Knockout Tournaments** (Standard 2/4/8/16-player brackets, 100 Coins entry, 0% rake / 100% pot to winner, no Promo/Gift) added for `Space Blaster` and `Cyber Hopper` using the existing Level 3 server-authoritative runtime and isolated `COINS` ledger/reservation/settlement tables (`0015_coin_tournaments.sql`). Verified by `scripts/coin-tournaments-check.ts` (**59/59**) and complete **56-script / 2,470-assertion** local regression (`0` failures, `0` skips). Uncommitted and not deployed to staging.
 
 - **BUILT / freshly verified 2026-10-22 locally:** Space Blaster, Cyber Hopper and Speed Trivia ResizeObserver callbacks now pass canonical 1280×720 to engine.resize. The real-module lifecycle fixture reproduced six physical-size failures before the fix; final **30/30** covers resize/backing size/letterboxing/countdown/listener/observer teardown. Canvas **21/21**, determinism **12/12**, Space Blaster authority **65/65**, Cyber Hopper authority **42/42** and the complete **55-script / 2,409-assertion** suite passed at one final source fingerprint. Browser smoke exercised launch/input/exit for all three changed modules. No game scoring or mechanics were rebalanced. This is local evidence; these edits are not deployed. See [the stabilization report](docs/TECHNICAL_STABILIZATION_REPORT.md) for the preserved intermediate timing failure and acceptance limits.
 
@@ -27,7 +28,3 @@ Current status is based on the source tree and checks named below. **BUILT** mea
 ## Shared game runtime
 
 The game engines remain game-specific. Shared utilities include seeded random generation, the fixed-step update scheduler, and the canonical 1280 × 720 viewport. These shared utilities do not make the individual engines interchangeable. Deterministic engines are useful for practice and continuous server-authoritative gameplay; no active end-of-run replay validator or replay submission path remains.
-
-## Legacy data
-
-Historical DIAMONDS ledger rows, prior match/settlement records, and their schema remain available for history and audit. New Diamond matchmaking, purchases, grants, and competition use are retired. Historical views must label them `DIAMONDS — RETIRED / LEGACY`.

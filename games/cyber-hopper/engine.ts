@@ -276,7 +276,7 @@ export class CyberHopperEngine {
       ctx.arc(playerX, playerY, halfW + 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // Body (Neon Cyber Green Diamond/Frog Shape)
+      // Body (Neon Cyber Green Geometric/Frog Shape)
       ctx.fillStyle = CYBER_COLORS.playerPrimary;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2.5;

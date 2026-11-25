@@ -34,8 +34,6 @@ services:
         value: https://staging.fugluck.com
       - key: COOKIE_SAMESITE
         value: lax
-      - key: ENABLE_DEV_DIAMOND_STUB
-        value: "false"
       - key: REAL_MONEY_ENABLED
         value: "false"
       - key: REAL_MONEY_DEPOSITS_ENABLED

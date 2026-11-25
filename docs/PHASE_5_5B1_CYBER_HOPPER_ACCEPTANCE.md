@@ -61,4 +61,4 @@ After the successful acceptance, the staging Admin template workflow disabled `t
 
 Preserved sanitized Render log lines and the Admin evidence summary are in [`docs/evidence/phase55b1-cyber-hopper/authority-run-20260925.txt`](evidence/phase55b1-cyber-hopper/authority-run-20260925.txt). The focused local suites on this revision passed: Cyber Hopper authority 42/42, general competition authority 65/65, authority latency 26/26, and authority presentation 24/24. The first parallel DB-backed invocation hit a disposable-test-database connection collision; individual serial reruns passed. No code or tests were changed for this acceptance.
 
-**Phase boundary:** no main merge; no architecture-consolidation work; no Neon Runner, Pixel Ninja Dash, replay retirement, Diamond retirement, Admin 2, Phase 6, or Phase 7 work.
+**Phase boundary:** no main merge; no architecture-consolidation work; no Neon Runner, Pixel Ninja Dash, replay retirement, Legacy token retirement, Admin 2, Phase 6, or Phase 7 work.

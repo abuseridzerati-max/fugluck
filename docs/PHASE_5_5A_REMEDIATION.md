@@ -2,7 +2,7 @@
 
 ## Scope and evidence status
 
-This focused branch starts at the tested implementation `5a6d4847c6efc77feb64d0305d4ccfe1b7edc0ad`. The previous acceptance record remains in local commit `3b91ccfdc7c54a35857a499fe048a60c43dc6307` on `codex/phase-5-5a-live-authority`. Neither historical commit was rewritten. Main merging, production deployment, the other games, replay/Diamond retirement and Phases 6/7 are excluded.
+This focused branch starts at the tested implementation `5a6d4847c6efc77feb64d0305d4ccfe1b7edc0ad`. The previous acceptance record remains in local commit `3b91ccfdc7c54a35857a499fe048a60c43dc6307` on `codex/phase-5-5a-live-authority`. Neither historical commit was rewritten. Main merging, production deployment, the other games, replay/Legacy token retirement and Phases 6/7 are excluded.
 
 **Final staging acceptance: NOT PASS.** The remediated runtime starts and settles real staging games, but intermittent transport latency, incomplete narrow-screen control verification and newly exposed admin reconciliation/state defects prevent acceptance. Local test success is not manual acceptance.
 
@@ -188,7 +188,7 @@ Final SQL verified **global ledger sum 0, escrow 0, reserved balance 0, open con
 | 28 | Main merge | None; remote main independently rechecked at `2cbc429`. |
 | 29 | Other games | Runner, Dash and Hopper not migrated. |
 | 30 | Replay retirement | Not started. |
-| 31 | Diamond retirement | Not started. |
+| 31 | Legacy token retirement | Not started. |
 | 32 | Phase 6 | Not started. |
 | 33 | Phase 7 | Not started. |
 

@@ -30,7 +30,7 @@ Verified UI scope includes landing/home, authentication and policy consent, game
 | Practice | Local game play | No competition entry or prize ledger |
 | Casual Coins | Non-monetary casual game currency | Cannot convert to TEST GEL |
 | TEST GEL competition | Server-defined competition entry and prize | Simulated only; no deposit, withdrawal, redemption, or real-world value |
-| Historical Diamonds | Preserved ledger/history display where needed | New grants, purchases, queueing and competition use are retired |
+| Historical Legacy tokens | Preserved ledger/history display where needed | New grants, purchases, queueing and competition use are retired |
 
 No player selects a monetary stake, chooses a prize, bets on another person, or bets on an external event. The service currently exposes no active bank, card, PSP, payment, withdrawal, or real-prize path. This is a source-code and automated-test finding, not a promise about future changes.
 
@@ -97,7 +97,7 @@ Duplicate settlement/refund requests do not create duplicate ledger effects. Set
 
 The admin console provides user search/detail and TEST GEL grants; competition templates and instance inspection; safe cancellation/void operations; sandbox balances, ledger and reconciliation; game certification status; operations health; and audit history. Admin grant flows require permission, integer minor units, reason and review/confirm, and record ledger plus audit reference together.
 
-The implemented admin API does not provide a winner-pick operation, score rewrite, settled-history edit, ledger-row edit/delete, direct balance set, new Diamond grant or real-payment control. Competition mutations are RBAC-guarded and audit-recorded. Operations health is separately guarded by `ADMIN_VIEW_AUDIT`; recent process telemetry is bounded and non-durable as described in the [Phase 6B runbook](PHASE_6B_OPERATIONAL_READINESS.md).
+The implemented admin API does not provide a winner-pick operation, score rewrite, settled-history edit, ledger-row edit/delete, direct balance set, new Legacy token grant or real-payment control. Competition mutations are RBAC-guarded and audit-recorded. Operations health is separately guarded by `ADMIN_VIEW_AUDIT`; recent process telemetry is bounded and non-durable as described in the [Phase 6B runbook](PHASE_6B_OPERATIONAL_READINESS.md).
 
 ## 7. Security and operational evidence
 
