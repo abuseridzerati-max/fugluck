@@ -116,8 +116,8 @@ if (fs.existsSync(renderYamlPath)) {
 
 // 5. Documentation & Environment Templates
 console.log("\nSection 5: Documentation & Environment Templates");
-const deploymentMdPath = path.resolve(process.cwd(), "DEPLOYMENT.md");
-check("DEPLOYMENT.md exists at repository root", fs.existsSync(deploymentMdPath));
+const deploymentMdPath = path.resolve(process.cwd(), "docs/DEPLOYMENT.md");
+check("docs/DEPLOYMENT.md exists", fs.existsSync(deploymentMdPath));
 if (fs.existsSync(deploymentMdPath)) {
   const deploymentContent = fs.readFileSync(deploymentMdPath, "utf-8");
   check("Deployment instructions distinguish APP_ENV=staging from NODE_ENV=production", deploymentContent.includes("`APP_ENV`") && deploymentContent.includes("`staging` (deployment identity; independent of Node runtime mode)"));

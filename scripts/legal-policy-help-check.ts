@@ -80,7 +80,7 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   check("Terms and privacy remain visibly draft content", policyContent.includes("DRAFT_LEGAL_REVIEW") && policyContent.includes("DRAFT_IMPLEMENTATION_REVIEW"));
   check("Public pages use neutral operator/contact publication wording", policyContent.includes("Operator and contact details will be published before commercial launch") && policyContent.includes("No contact channels are provided on this review build"));
   check("No editor placeholders are rendered in public policy copy", !/\[(?:REQUIRES|LEGAL REVIEW|OPERATOR INPUT|POLICY DECISION)/i.test(policyContent));
-  const internalChecklistPath = path.resolve(process.cwd(), "docs/PUBLIC_CONTENT_RELEASE_CHECKLIST.md");
+  const internalChecklistPath = path.resolve(process.cwd(), "docs/LEGAL_REVIEW_REQUIRED.md");
   check("Internal content checklist exists outside public page data", fs.existsSync(internalChecklistPath));
   const internalChecklist = fs.readFileSync(internalChecklistPath, "utf-8");
   check("Internal checklist retains missing operator, legal, privacy and filing inputs", ["entity name", "registration or identification number", "support, legal/regulatory and privacy contact", "retention periods", "Revenue Service filing", "Georgian and Russian"].every((item) => internalChecklist.toLowerCase().includes(item.toLowerCase())));
@@ -223,8 +223,8 @@ async function runLegalPolicyHelpSuite(): Promise<void> {
   // -------------------------------------------------------------------------
   console.log("\nSection 6: Legal Review Register");
 
-  const registerPath = path.resolve(process.cwd(), "LEGAL_REVIEW_REQUIRED.md");
-  check("LEGAL_REVIEW_REQUIRED.md exists at root", fs.existsSync(registerPath));
+  const registerPath = path.resolve(process.cwd(), "docs/LEGAL_REVIEW_REQUIRED.md");
+  check("docs/LEGAL_REVIEW_REQUIRED.md exists", fs.existsSync(registerPath));
   const registerText = fs.readFileSync(registerPath, "utf-8");
   check("LEGAL_REVIEW_REQUIRED.md documents Skill-Gaming Classification", registerText.includes("Skill-Gaming Classification"));
   check("LEGAL_REVIEW_REQUIRED.md documents Minimum Age", registerText.includes("Minimum Age"));
