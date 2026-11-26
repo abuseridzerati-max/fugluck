@@ -353,5 +353,497 @@
       },
       "rules": "All seats must fill. One entry covers every round. Win to advance; a tie means a rematch. Only the final winner receives the displayed prize. Miss the ready deadline and you forfeit; if neither player is ready, the tournament is voided and entries returned."
     }
+  },
+  "helpCenter": {
+    "eyebrow": "OFFICIAL HELP CENTER • PLATFORM GUIDE & MASTER Q&A",
+    "title": "Fugluck Knowledge Base",
+    "faqTitle": "Frequently Asked Questions",
+    "subtitle": "Complete Player Guide, Platform Rules, Game Modes, Tournament Format, Fair Play Standards & 42-Question FAQ",
+    "breadcrumbHome": "Home",
+    "breadcrumbHelp": "Help Center",
+    "breadcrumbFaq": "FAQ",
+    "tocHeading": "Browse Help Topics",
+    "guideHeading": "How It Works & Platform Guide",
+    "faqHeading": "42-Question Master FAQ",
+    "searchLabel": "Search questions and answers",
+    "searchPlaceholder": "Search all 42 questions, game modes, Coins, tournaments…",
+    "allCategories": "All Questions",
+    "noResults": "No answers match this search. Try another term or topic.",
+    "glossaryHeading": "Player Glossary",
+    "glossarySubtitle": "Key platform terms defined clearly for players.",
+    "glossaryTermCol": "Term",
+    "glossaryDefCol": "Plain-English Definition",
+    "stillNeedHelpTitle": "Still need help?",
+    "stillNeedHelpBody": "If you need help with an account issue, suspected fair-play violation, or bug report, email [support@fugluck.com] with your username and relevant match details.",
+    "legalIndexLink": "Legal & Policy Index",
+    "sections": {
+      "s01": {
+        "code": "SECTION 01",
+        "title": "About Fugluck & How It Works",
+        "shortTitle": "About & How It Works",
+        "subtitle": "What the platform is, why it exists, and how a new player goes from first visit to tournament champion.",
+        "summary": "Platform mission, skill-first philosophy, browser-native design, and the 4-step player journey (Q1–Q5).",
+        "intro": "Fugluck is a skill-based competitive browser arcade built for players who love fast, fair, head-to-head competition. Instead of heavy downloads, pay-to-win upgrades, or games of chance, Fugluck puts every player on an identical playing field directly inside their desktop or mobile browser. Whether you have two minutes for a quick reflex run or fifteen minutes for a full 16-player knockout bracket, every match is decided purely by your timing, accuracy, and composure.",
+        "principlesTitle": "Our Core Principles",
+        "principles": [
+          "100% Skill-Based Competition: Outcomes are driven by player performance—never by random loot boxes, paid stat boosts, or luck-based mechanics.",
+          "Instant Browser Play: Zero installers, zero app store waiting, and zero massive updates. Open the site, pick a game, and start playing in seconds.",
+          "Protected Fair Play: Competitive matches on Tournament Certified games run in a protected, independently verified environment so scores reflect genuine human skill.",
+          "Accessible to Everyone: Every player starts with free virtual Coins and receives automatic monthly refills, ensuring anyone can enter tournaments and sharpen their skills."
+        ],
+        "journeyTitle": "How It Works — The 4-Step Player Journey",
+        "journey": [
+          "Step 1 — Browse or Create a Free Account: Explore the arcade right away in Practice mode, or register a free account in under a minute to claim your 1,000 free starter Coins.",
+          "Step 2 — Pick a Game & Learn the Ropes: Open any game card from the Home arena. Review the controls, jump into unlimited Solo Practice, and build muscle memory before facing live opponents.",
+          "Step 3 — Compete Head-to-Head: Step into the Live Matchmaking Lobby to face an active opponent in real time, or generate an Instant Friend Challenge Link to settle a score directly with someone you know.",
+          "Step 4 — Enter Coins Knockout Tournaments: Head to the Competitions page, pick a 2, 4, 8, or 16-player bracket on a Tournament Certified game, and outscore your opponents round by round to claim the Coin prize pool."
+        ]
+      },
+      "s02": {
+        "code": "SECTION 02",
+        "title": "Game Modes Explained",
+        "shortTitle": "Game Modes",
+        "subtitle": "Understanding Practice, Casual 1v1, Friend Challenges, and Coins Knockout Tournaments.",
+        "summary": "Side-by-side comparison and full walkthrough of Solo Practice, Casual 1v1, Friend Challenges, and Knockout Tournaments (Q6–Q10).",
+        "intro": "Every game card on Fugluck opens a unified Launch Menu that lets you choose how you want to play. Depending on whether a game is Tournament Certified or part of the Practice & Casual lineup, up to three distinct play paths are available.",
+        "tableHeaders": [
+          "Mode",
+          "Players",
+          "Entry Cost",
+          "Best For",
+          "Available Games"
+        ],
+        "tableRows": [
+          [
+            "Practice (Solo)",
+            "1 Player",
+            "Free (Unlimited)",
+            "Learning controls, testing pacing, and warming up with zero pressure.",
+            "All games in the catalog"
+          ],
+          [
+            "Casual 1v1 (Live Lobby)",
+            "2 Players",
+            "Free or Virtual Coins",
+            "Fast head-to-head matches against another player waiting in the live queue.",
+            "All multiplayer-enabled games"
+          ],
+          [
+            "Casual (Friend Challenge)",
+            "2 Players",
+            "Free or Virtual Coins",
+            "Private 1v1 duels with a specific friend using a one-click shareable link.",
+            "All multiplayer-enabled games"
+          ],
+          [
+            "Coins Knockout Tournaments",
+            "2, 4, 8, or 16 Players",
+            "Virtual Coins Entry",
+            "High-stakes bracket competition with elimination rounds and Coin prize pools.",
+            "Tournament Certified games only"
+          ]
+        ]
+      },
+      "s03": {
+        "code": "SECTION 03",
+        "title": "Game Catalog & Tournament Certified Games",
+        "shortTitle": "Game Catalog",
+        "subtitle": "How the arcade is organized, featured certified titles, and how new games join the arena.",
+        "summary": "How games are categorized, detailed guides to Space Blaster and Cyber Hopper, and how new titles earn certification (Q11–Q14).",
+        "intro": "To keep the arcade easy to navigate as the library grows, the Home page organizes titles into two clear tiers—Tournament Certified and Practice & Casual—paired with instant genre filters (Runner, Arena Shooter, Reflex Timing, Quiz) and a live search bar.",
+        "tableTitle": "Featured Tournament Certified Games",
+        "tableHeaders": [
+          "Game Title",
+          "Genre",
+          "Core Objective & Gameplay Style",
+          "What Wins Matches"
+        ],
+        "tableRows": [
+          [
+            "Space Blaster",
+            "Arena Shooter",
+            "A fast-paced retro vector space shooter. Pilot your ship, dodge incoming hazards, and eliminate waves of targets under live match pressure.",
+            "Precision aiming, clean movement control, and surviving longer while maximizing score multipliers."
+          ],
+          [
+            "Cyber Hopper",
+            "Reflex Timing",
+            "A high-speed synthwave road-crossing reflex challenge. Time every lane jump accurately across moving traffic and dynamic obstacles.",
+            "Split-second rhythm, reading lane speeds ahead of time, and maintaining calm streaks without mistimed jumps."
+          ]
+        ]
+      },
+      "s04": {
+        "code": "SECTION 04",
+        "title": "Coins & Your Virtual Wallet",
+        "shortTitle": "Coins & Wallet",
+        "subtitle": "Everything you need to know about starter Coins, monthly top-ups, winning Coins, and balance rules.",
+        "summary": "Starter 1,000 Coins, automatic monthly top-ups, earning Coins, transaction history, and strict no-cash-value rules (Q15–Q20).",
+        "intro": "Coins are Fugluck's free virtual competition points. They give every match and knockout bracket a clear sense of stakes and progression—without requiring players to spend real money. Your current balance is always visible in the top navigation bar, and clicking it opens your full Wallet.",
+        "calloutTitle": "Important Policy: Free Virtual Points Only",
+        "calloutBullets": [
+          "Coins have zero real-world monetary value.",
+          "Coins cannot be purchased with real money, transferred between user accounts, sold, or redeemed/withdrawn for cash or physical prizes.",
+          "Coins exist solely to power in-platform matches, tournament entries, and competitive progression."
+        ]
+      },
+      "s05": {
+        "code": "SECTION 05",
+        "title": "Coins Knockout Tournaments — Complete Rules",
+        "shortTitle": "Knockout Tournaments",
+        "subtitle": "Bracket sizes, entry fees, prize pools, registration locks, round timers, and disconnect rules.",
+        "summary": "2, 4, 8, and 16-player bracket rules, prize pools, registration, cancellations, round timers, ties, and disconnects (Q21–Q27).",
+        "intro": "Coins Knockout Tournaments are the centerpiece of competitive play on Fugluck. Each tournament is a single-elimination bracket where players are paired head-to-head each round. Win your matchup to advance; win the final round to claim the tournament's Coin prize pool.",
+        "tableTitle": "Standard Bracket Formats",
+        "tableHeaders": [
+          "Bracket Tier",
+          "Total Seats",
+          "Rounds to Win",
+          "Format Style"
+        ],
+        "tableRows": [
+          [
+            "2-Player Duel",
+            "2 Players",
+            "1 Round (Final)",
+            "Fast head-to-head championship match—instant winner takes the prize pool."
+          ],
+          [
+            "4-Player Bracket",
+            "4 Players",
+            "2 Rounds (Semis → Final)",
+            "Quick mini-tournament ideal for short competitive sessions."
+          ],
+          [
+            "8-Player Knockout",
+            "8 Players",
+            "3 Rounds (Quarters → Final)",
+            "Classic competitive bracket requiring consistency across three straight wins."
+          ],
+          [
+            "16-Player Major",
+            "16 Players",
+            "4 Rounds (Round of 16 → Final)",
+            "Flagship endurance bracket with the largest Coin prize pool per game."
+          ]
+        ]
+      },
+      "s06": {
+        "code": "SECTION 06",
+        "title": "Live Matchmaking Lobby & Friend Challenges",
+        "shortTitle": "Lobby & Friends",
+        "subtitle": "How real-time opponent queues and instant private duel links work.",
+        "summary": "Real-time opponent matching, instant shareable challenge links, adding friends, and etiquette (Q28–Q31).",
+        "intro": "You don't have to wait for a full 16-player bracket to play someone live. Fugluck offers two fast ways to jump into 1v1 action: the public Live Matchmaking Lobby on the Home page and private Instant Friend Challenge Links."
+      },
+      "s07": {
+        "code": "SECTION 07",
+        "title": "Fair Play, Integrity & Community Standards",
+        "shortTitle": "Fair Play",
+        "subtitle": "How we protect competitive honesty and what we expect from every player.",
+        "summary": "How we keep matches honest, prohibited behavior, enforcement, and reporting (Q32–Q35).",
+        "intro": "Competitive gaming only works when every player trusts the scoreboard. Fair play is the foundation of Fugluck, and we protect our tournaments through independent match verification and clear community rules.",
+        "calloutTitle": "Our Competitive Integrity Promise",
+        "calloutBody": "Every Tournament Certified match is independently verified in a protected match environment rather than blindly trusting browser-reported scores. To keep our safeguards effective against cheaters, we do not publish the internal mechanics of our verification and detection systems."
+      },
+      "s08": {
+        "code": "SECTION 08",
+        "title": "Accounts, Security & Language Settings",
+        "shortTitle": "Accounts & Language",
+        "subtitle": "Managing your profile, login security, and multi-language preferences.",
+        "summary": "Registration, guest access, password resets, profile management, and switching between English, Georgian, and Russian (Q36–Q39)."
+      },
+      "s09": {
+        "code": "SECTION 09",
+        "title": "Technical Guide & Troubleshooting",
+        "shortTitle": "Technical Guide",
+        "subtitle": "Quick fixes for lag, browser compatibility, mobile performance, and connection issues.",
+        "summary": "Supported browsers, mobile performance tips, fixing lag, connection recovery, and contacting support (Q40–Q42)."
+      }
+    },
+    "glossary": [
+      {
+        "term": "Coins",
+        "definition": "Free virtual points used to enter Casual matches and Knockout Tournaments. No cash value."
+      },
+      {
+        "term": "Tournament Certified",
+        "definition": "A game that has passed full competitive review and supports verified Coins Knockout Tournaments."
+      },
+      {
+        "term": "Knockout Bracket",
+        "definition": "A single-elimination tournament (2, 4, 8, or 16 players) where winning advances you to the next round."
+      },
+      {
+        "term": "Live Matchmaking Lobby",
+        "definition": "The real-time queue on the Home page where players pair up for instant 1v1 matches."
+      },
+      {
+        "term": "Friend Challenge Link",
+        "definition": "A shareable private URL that matches you directly against a friend for a 1v1 game."
+      },
+      {
+        "term": "Monthly Top-Up",
+        "definition": "Automatic recurring virtual Coin refill credited on the Asia/Tbilisi monthly schedule."
+      },
+      {
+        "term": "Practice Mode",
+        "definition": "Unlimited free solo play designed for learning controls and warming up."
+      }
+    ],
+    "faqs": [
+      {
+        "id": "q1",
+        "section": "s01",
+        "q": "Q1. What exactly is Fugluck?",
+        "a": "Fugluck is an online competitive arcade featuring fast-paced, skill-based browser games. Players can practice solo, challenge friends directly, match against other players in real time, and enter structured Coins Knockout Tournaments—all from a standard web browser."
+      },
+      {
+        "id": "q2",
+        "section": "s01",
+        "q": "Q2. Is Fugluck a gambling site or a game of chance?",
+        "a": "No. Fugluck is strictly a skill-based gaming platform. Every game rewards reflexes, precision, pattern recognition, or knowledge—not random chance. Furthermore, competitions operate using free virtual Coins that have no real-world monetary value and cannot be bought or cashed out."
+      },
+      {
+        "id": "q3",
+        "section": "s01",
+        "q": "Q3. Do I have to download an app or install browser plugins?",
+        "a": "No. Every game on Fugluck runs natively inside modern desktop and mobile web browsers, including Chrome, Safari, Edge, and Firefox. There are no downloads, launchers, or third-party plugins required."
+      },
+      {
+        "id": "q4",
+        "section": "s01",
+        "q": "Q4. Is Fugluck free to play?",
+        "a": "Yes. Browsing the catalog, playing Solo Practice, creating an account, receiving your 1,000 starter Coins, and receiving automatic monthly Coin top-ups are all completely free."
+      },
+      {
+        "id": "q5",
+        "section": "s01",
+        "q": "Q5. Can I play on both my computer and my phone?",
+        "a": "Yes. The platform is designed to adapt cleanly to desktop monitors, laptops, and mobile screens. Some fast-action games offer keyboard controls on desktop and touch controls on mobile so you can play comfortably on whichever device you prefer."
+      },
+      {
+        "id": "q6",
+        "section": "s02",
+        "q": "Q6. What is Practice Mode and why should I use it?",
+        "a": "Practice Mode is a free, unlimited solo session. It lets you learn a game's controls, scoring rhythm, and obstacles without risking any Coins or waiting for another player. Even experienced players use a quick Practice run to warm up before entering a major tournament bracket."
+      },
+      {
+        "id": "q7",
+        "section": "s02",
+        "q": "Q7. How does Casual Mode differ from Tournaments?",
+        "a": "Casual Mode is designed for quick, single-round 1v1 matches—either by joining the Live Matchmaking Lobby or by sending a direct Friend Challenge link. Tournaments, by contrast, are structured multi-round elimination brackets (2, 4, 8, or 16 players) played exclusively on Tournament Certified games with fixed Coin entry fees and larger prize pools."
+      },
+      {
+        "id": "q8",
+        "section": "s02",
+        "q": "Q8. When I click a game card, what do 'Play' and 'Compete' do?",
+        "a": "Clicking 'Play' opens the game's Launch Menu, where you can immediately start Solo Practice, launch a Casual match, or generate a Friend Challenge link. Clicking 'Compete' (available on Tournament Certified games) takes you straight to the Competitions page so you can browse and join active Coins Knockout brackets for that game."
+      },
+      {
+        "id": "q9",
+        "section": "s02",
+        "q": "Q9. Can I play Casual matches without spending Coins?",
+        "a": "Yes. You can play friendly matches or use Practice mode without risking Coins. When you want to add friendly stakes to a Casual 1v1 match, you can choose an eligible Coin stake from your available virtual balance."
+      },
+      {
+        "id": "q10",
+        "section": "s02",
+        "q": "Q10. Do scores from Practice Mode count toward Tournaments?",
+        "a": "No. Practice sessions are completely separate from competitive play. Only scores achieved inside an official, active tournament round count toward bracket advancement and Coin prizes."
+      },
+      {
+        "id": "q11",
+        "section": "s03",
+        "q": "Q11. What is the difference between 'Tournament Certified' and 'Practice & Casual' games?",
+        "a": "Tournament Certified games have passed our full competitive integrity review and support official Coins Knockout Tournaments with independent match verification. Practice & Casual games are great for fun, warm-ups, and casual play, and may be promoted to Tournament Certified status in the future once they complete full competitive certification."
+      },
+      {
+        "id": "q12",
+        "section": "s03",
+        "q": "Q12. How do I filter or find a specific game quickly?",
+        "a": "Use the genre filter pills (All, Runner, Arena Shooter, Reflex Timing, Quiz) or type a game name or genre into the search bar on the Home page. The catalog updates instantly as you type."
+      },
+      {
+        "id": "q13",
+        "section": "s03",
+        "q": "Q13. Are the rules and conditions identical for both players in a match?",
+        "a": "Yes. Competitive matches are designed to ensure fair, parallel conditions for both players—same rules, same time limits, and identical scoring criteria—so the higher score reflects stronger execution rather than a luckier setup."
+      },
+      {
+        "id": "q14",
+        "section": "s03",
+        "q": "Q14. Will more games be added to the platform?",
+        "a": "Yes. The arcade is built to expand regularly with new skill-based titles across multiple genres. New games typically debut in the catalog for players to try, and titles built for competitive brackets are added to the Tournament Certified lineup once verified."
+      },
+      {
+        "id": "q15",
+        "section": "s04",
+        "q": "Q15. How many Coins do I get when I sign up?",
+        "a": "Every newly registered account automatically receives 1,000 free Coins immediately upon sign-up. You can use them right away to enter Casual matches or Coins Knockout Tournaments."
+      },
+      {
+        "id": "q16",
+        "section": "s04",
+        "q": "Q16. What happens if I run out of Coins? How do monthly top-ups work?",
+        "a": "You never get permanently locked out of competing. Eligible accounts receive automatic monthly Coin top-ups scheduled according to Asia/Tbilisi time. You can check your exact monthly top-up schedule anytime inside the Wallet page."
+      },
+      {
+        "id": "q17",
+        "section": "s04",
+        "q": "Q17. How can I earn more Coins?",
+        "a": "The primary way to grow your Coin balance is by winning head-to-head Casual matches and finishing first in Coins Knockout Tournaments. Larger brackets (such as 8-player and 16-player knockouts) offer proportionally larger Coin prize pools."
+      },
+      {
+        "id": "q18",
+        "section": "s04",
+        "q": "Q18. Can I send or gift Coins to a friend?",
+        "a": "No. Coins are tied strictly to your individual account and cannot be transferred, gifted, or traded between players. This prevents abuse and keeps tournament competition fair."
+      },
+      {
+        "id": "q19",
+        "section": "s04",
+        "q": "Q19. Where can I check my past tournament entries and winnings?",
+        "a": "Open the Wallet page by clicking your Coin balance pill in the top navigation bar. The Transaction History panel lists every Coin entry fee, refund, monthly top-up, and tournament prize credited to your account."
+      },
+      {
+        "id": "q20",
+        "section": "s04",
+        "q": "Q20. Why didn't my Coin balance update immediately after a match?",
+        "a": "In most cases, balances update within seconds of a match or tournament concluding. If you just finished a tournament round, wait until the final bracket result settles, then refresh the Wallet page. If a discrepancy persists for more than a few minutes, contact support with the match time and game name."
+      },
+      {
+        "id": "q21",
+        "section": "s05",
+        "q": "Q21. How do I join a Coins Knockout Tournament?",
+        "a": "Visit the Competitions page, optionally filter by your preferred Tournament Certified game (Space Blaster or Cyber Hopper), select a bracket size that fits your Coin balance, and click Join. Your Coin entry fee is reserved immediately and your seat is confirmed on the bracket progress bar."
+      },
+      {
+        "id": "q22",
+        "section": "s05",
+        "q": "Q22. When does a tournament actually start?",
+        "a": "Knockout tournaments begin automatically once all seats in the bracket are filled (for example, 4/4 or 8/8 players). You can track your active and upcoming entries under the 'My Competitions' section on the Competitions page."
+      },
+      {
+        "id": "q23",
+        "section": "s05",
+        "q": "Q23. Can I cancel my registration and get my Coins back?",
+        "a": "Yes—as long as the tournament has not yet filled and started. If you leave an open bracket before it locks in, your Coin entry fee is automatically refunded to your Wallet. Once all seats are filled and the tournament begins, entries are locked and non-refundable."
+      },
+      {
+        "id": "q24",
+        "section": "s05",
+        "q": "Q24. How are winners decided in each tournament round?",
+        "a": "In each round, paired opponents play the same certified game under identical rules and time limits. The player with the higher verified score wins the round and advances to the next stage of the bracket."
+      },
+      {
+        "id": "q25",
+        "section": "s05",
+        "q": "Q25. What happens if two players finish a round with the exact same score?",
+        "a": "In the rare event of an exact score tie, the platform applies its standard deterministic tie-resolution rules for that game (such as secondary performance metrics or completion timing) so the bracket advances cleanly without stalling."
+      },
+      {
+        "id": "q26",
+        "section": "s05",
+        "q": "Q26. What happens if I disconnect, close my tab, or go idle during a tournament match?",
+        "a": "Tournament rounds run on strict live timers to keep the entire bracket moving fairly for all other participants. If your connection drops briefly, reopen the match as fast as possible. If a player fails to participate, forfeits, or remains disconnected until the round timer expires, the active opponent wins the round by default and advances."
+      },
+      {
+        "id": "q27",
+        "section": "s05",
+        "q": "Q27. Can I enter multiple tournaments at the same time?",
+        "a": "You can register for open brackets as long as you have sufficient Coins, though we strongly recommend focusing on one active live match at a time. Missing a live round timer because you are busy in another tab counts as a forfeit."
+      },
+      {
+        "id": "q28",
+        "section": "s06",
+        "q": "Q28. How does the Live Matchmaking Lobby work?",
+        "a": "The Live Matchmaking Lobby on the Home page shows players who are actively waiting for a 1v1 opponent right now. You can click Match to join an open player's game immediately, or queue up for your favorite game so another player can match with you."
+      },
+      {
+        "id": "q29",
+        "section": "s06",
+        "q": "Q29. How do I challenge a specific friend directly?",
+        "a": "Follow these three steps to start a private 1v1 duel:\n1. Open the Game Card: Click Play on any game from the Home page to open the Launch Menu.\n2. Select Casual Mode: Choose Casual and click 'Create Instant Friend Challenge Link.'\n3. Share the Link: Copy the generated link and send it to your friend via messaging or chat. As soon as they open the link and accept, your private match begins."
+      },
+      {
+        "id": "q30",
+        "section": "s06",
+        "q": "Q30. How does the Friends page work?",
+        "a": "Sign in and open the Friends page to add players by username, accept incoming friend requests, and keep a list of your regular rivals in one place so it's easy to organize rematches."
+      },
+      {
+        "id": "q31",
+        "section": "s06",
+        "q": "Q31. Why did my Friend Challenge link expire?",
+        "a": "Challenge links are generated for live sessions and expire automatically if they aren't accepted within the active window or if the host cancels the lobby. Simply generate a fresh link from the game's Launch Menu whenever your friend is ready."
+      },
+      {
+        "id": "q32",
+        "section": "s07",
+        "q": "Q32. What does 'Tournament Certified' mean for fair play?",
+        "a": "It means the game runs with continuous, independent integrity verification throughout the match. Attempts to alter scores locally, slow down game speed, or inject unauthorized inputs are rejected so that tournament results reflect genuine skill."
+      },
+      {
+        "id": "q33",
+        "section": "s07",
+        "q": "Q33. What behaviors are strictly prohibited on Fugluck?",
+        "a": "The following actions violate our Fair Play Policy and are strictly forbidden:\n• Cheating & Automation: Using bots, scripts, macros, browser extensions, memory editors, or any third-party tool designed to gain an unfair advantage.\n• Multi-Accounting: Creating or operating multiple accounts to farm extra starter/monthly Coins or manipulate tournament brackets.\n• Collusion & Match-Fixing: Intentionally losing, feeding Coins to another account, or coordinating outcomes with other players.\n• Bug Exploitation: Deliberately abusing a technical glitch or unintended behavior instead of reporting it.\n• Harassment & Impersonation: Using offensive usernames, impersonating staff, or harassing other players."
+      },
+      {
+        "id": "q34",
+        "section": "s07",
+        "q": "Q34. What happens if a player is caught breaking the Fair Play Policy?",
+        "a": "Confirmed violations result in decisive action depending on severity—including immediate match disqualification, forfeiture of unfairly gained Coins, temporary suspension, or permanent account termination. Severe cheating or multi-accounting results in an immediate permanent ban."
+      },
+      {
+        "id": "q35",
+        "section": "s07",
+        "q": "Q35. How do I report a suspected cheater or a game bug?",
+        "a": "Send an email to [support@fugluck.com] with your username, the opponent's username (if applicable), the game title, and the approximate date and time of the match. Every credible report is reviewed against official match records."
+      },
+      {
+        "id": "q36",
+        "section": "s08",
+        "q": "Q36. What can I do as a guest versus with a registered account?",
+        "a": "Guests can explore the full game catalog, read the Help Center and Legal Index, and play Solo Practice runs. Creating a free account unlocks your 1,000 starter Coins, automatic monthly top-ups, Wallet history, Friends list, Casual Coin matches, and Coins Knockout Tournaments."
+      },
+      {
+        "id": "q37",
+        "section": "s08",
+        "q": "Q37. I forgot my password. How do I recover my account?",
+        "a": "Click 'Log in' in the top navigation bar, select 'Forgot password?', and enter the email address linked to your account. Follow the reset link sent to your inbox to set a new password. If you don't see the email within a few minutes, check your Spam or Promotions folder."
+      },
+      {
+        "id": "q38",
+        "section": "s08",
+        "q": "Q38. Which languages does Fugluck support?",
+        "a": "Fugluck supports English (EN), Georgian (KA), and Russian (RU). You can switch your language anytime using the language selector in the top-right corner of the navigation bar, and your preference is saved automatically."
+      },
+      {
+        "id": "q39",
+        "section": "s08",
+        "q": "Q39. How can I delete my account or ask about my personal data?",
+        "a": "You can review our Privacy Policy and Terms of Service anytime via the Legal & Policy Index in the site footer. To request account deletion or a data inquiry, email [support@fugluck.com] from your registered email address."
+      },
+      {
+        "id": "q40",
+        "section": "s09",
+        "q": "Q40. Which browsers and devices work best with Fugluck?",
+        "a": "For the smoothest frame rates and lowest input latency, use the latest version of Google Chrome, Microsoft Edge, Mozilla Firefox, or Apple Safari on desktop or mobile. Keep your browser updated so graphics acceleration and audio work reliably."
+      },
+      {
+        "id": "q41",
+        "section": "s09",
+        "q": "Q41. A game feels choppy or laggy on my device. How can I fix it?",
+        "a": "Try these quick performance checks before entering a tournament:\n• Close Heavy Background Tabs: Video streams, downloads, or dozens of open tabs compete for browser memory and frame timing.\n• Disable Battery Saver / Low Power Mode: On phones and laptops, power-saving modes throttle screen refresh rates and cause choppy animations.\n• Enable Hardware Acceleration: In desktop browser settings, ensure Graphics/Hardware Acceleration is turned on.\n• Check Your Connection: Use stable Wi-Fi or strong 4G/5G—switching networks mid-match can cause a temporary disconnect."
+      },
+      {
+        "id": "q42",
+        "section": "s09",
+        "q": "Q42. I found a visual glitch, broken button, or translation typo. Where should I send it?",
+        "a": "We appreciate detailed bug reports! Email [support@fugluck.com] with a short description of what happened, which page or game you were on, your device/browser (for example, 'iPhone Safari' or 'Windows Chrome'), and a screenshot if possible."
+      }
+    ]
   }
 }

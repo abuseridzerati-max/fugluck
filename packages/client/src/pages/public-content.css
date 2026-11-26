@@ -84,11 +84,32 @@
 .public-list__item p { margin: 0; color: #cbd5e1; line-height: 1.65; }
 .public-list__item a { display: inline-block; margin-top: .65rem; color: #86e8f7; }
 
-.help-topics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; margin: 0 auto 2.5rem; }
+.help-topics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1rem; margin: 0 auto 2.5rem; }
 .help-topic { padding: 1rem 0; border-top: 1px solid rgba(255,255,255,.14); }
-.help-topic h2 { margin: 0 0 .45rem; color: #fff; font-size: 1.05rem; }
-.help-topic p { margin: 0 0 .5rem; color: #cbd5e1; line-height: 1.6; }
-.help-topic a { color: #86e8f7; }
+.help-topic--card { padding: 1rem 1.15rem; border: 1px solid var(--color-border, #222d42); border-radius: var(--radius-md, 12px); background: var(--color-surface, #0e1420); display: flex; flex-direction: column; gap: .4rem; }
+.help-topic__code { font-family: var(--font-mono, monospace); font-size: .7rem; font-weight: 700; letter-spacing: .06em; color: var(--color-primary-hover, #34d399); text-transform: uppercase; }
+.help-topic h2 { margin: 0; color: var(--color-text, #f3f6fc); font-size: 1rem; line-height: 1.3; }
+.help-topic p { margin: 0; color: var(--color-text-muted, #8b9bb4); font-size: .84rem; line-height: 1.55; flex: 1; }
+.help-topic__link { align-self: flex-start; margin-top: .35rem; padding: 0; background: none; border: 0; color: var(--color-primary-hover, #34d399); font-size: .82rem; font-weight: 600; cursor: pointer; }
+.help-topic__link:hover { text-decoration: underline; }
+.help-guide-stack { display: flex; flex-direction: column; gap: 1.25rem; }
+.help-guide-card { padding: 1.35rem 1.5rem; border: 1px solid var(--color-border, #222d42); border-radius: var(--radius-lg, 16px); background: var(--color-surface, #0e1420); scroll-margin-top: 84px; }
+.help-guide-card__head h3 { margin: .25rem 0 .35rem; font-size: 1.25rem; color: var(--color-text, #f3f6fc); }
+.help-guide-card__sub { margin: 0 0 .85rem; color: var(--color-text-muted, #8b9bb4); font-size: .875rem; }
+.help-guide-card__intro { margin: 0 0 1rem; color: var(--color-text-secondary, #cbd5e1); line-height: 1.7; font-size: .95rem; }
+.help-guide-block { margin-top: 1rem; }
+.help-guide-block h4 { margin: 0 0 .55rem; font-size: .95rem; color: var(--color-text, #f3f6fc); }
+.help-guide-list, .help-guide-steps { margin: 0; padding-left: 1.25rem; display: grid; gap: .45rem; color: var(--color-text-secondary, #cbd5e1); font-size: .9rem; line-height: 1.6; }
+.help-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--color-border, #222d42); border-radius: var(--radius-sm, 8px); background: var(--color-bg-subtle, #0b1019); }
+.help-table { width: 100%; min-width: 520px; border-collapse: collapse; text-align: left; font-size: .85rem; }
+.help-table th { padding: .65rem .85rem; color: var(--color-text-muted, #8b9bb4); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--color-border, #222d42); white-space: nowrap; }
+.help-table td { padding: .7rem .85rem; color: var(--color-text-secondary, #cbd5e1); border-bottom: 1px solid var(--color-border-subtle, rgba(255,255,255,.07)); vertical-align: top; line-height: 1.5; }
+.help-table tr:last-child td { border-bottom: 0; }
+.help-table__lead { font-weight: 700; color: var(--color-text, #f3f6fc); white-space: nowrap; }
+.help-callout { margin-top: 1rem; padding: .95rem 1.1rem; border-radius: var(--radius-sm, 8px); border: 1px solid var(--color-secondary-border, rgba(245,158,11,.34)); background: var(--color-secondary-subtle, rgba(245,158,11,.1)); color: var(--color-text-secondary, #cbd5e1); font-size: .875rem; line-height: 1.6; }
+.help-callout strong { display: block; margin-bottom: .35rem; color: var(--color-secondary-hover, #fbbf24); }
+.help-callout p { margin: 0; }
+.help-callout ul { margin: .35rem 0 0; padding-left: 1.25rem; display: grid; gap: .3rem; }
 .help-search { width: min(100%, 720px); box-sizing: border-box; padding: .75rem 1rem; border: 1px solid var(--color-border, #222d42); border-radius: var(--radius-sm, 8px); background: var(--color-surface, #0e1420); color: var(--color-text, #f3f6fc); font: inherit; }
 .help-search:focus { outline: none; border-color: var(--color-primary, #10b981); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16); }
 .faq-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 1.5rem; }
