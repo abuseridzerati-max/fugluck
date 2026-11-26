@@ -27,3 +27,44 @@
 .competition-card-waiting{font-size:13px;line-height:1.5;color:#a7f3d0;text-align:center}.competition-card-waiting p{margin:0}.competition-card-waiting .competition-secondary{color:#a7f3d0}
 .competition-play[hidden]{display:none}
 .competition-notice.is-coins{border-color:var(--color-secondary-border,rgba(245,158,11,.34));background:rgba(245,158,11,.08)}.competition-notice.is-coins strong{color:var(--color-secondary-hover,#fbbf24)}.competition-coins-balance{font-family:var(--font-mono);font-weight:700;color:var(--color-secondary-hover,#fbbf24);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Grouped compact competition catalog */
+.competition-groups{display:flex;flex-direction:column;gap:22px}
+.competition-game-group{border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.competition-game-group__header{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border-subtle)}
+.competition-game-group__thumb{width:88px;height:50px;border-radius:10px;overflow:hidden;border:1px solid var(--color-border);background:#080d16;flex-shrink:0}
+.competition-game-group__thumb .ac-game-art{width:100%;height:100%;object-fit:cover;display:block}
+.competition-game-group__meta{min-width:0;flex:1}
+.competition-game-group__title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.competition-game-group__title-row h2{margin:0;font-size:18px;letter-spacing:-.02em}
+.competition-game-group__tagline{margin:3px 0 0;font-size:12px;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.competition-tier-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.competition-tier-card{border:1px solid var(--color-border);border-radius:12px;background:var(--color-bg-subtle,#0b1019);padding:13px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.competition-tier-card:hover{border-color:var(--color-primary,#10b981);box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+.competition-tier-card.is-joined,.competition-tier-card.is-joined:hover{border-color:var(--color-primary,#10b981);background:linear-gradient(145deg,rgba(16,185,129,.14),var(--color-bg-subtle,#0b1019) 75%)}
+.competition-tier-card__top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.competition-tier-badge{font-size:12px;font-weight:700;color:var(--color-text);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.competition-tier-terms{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0;padding:8px 10px;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-border-subtle)}
+.competition-tier-terms dt{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:2px}
+.competition-tier-terms dd{margin:0;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--color-text)}
+.competition-tier-terms dd.is-prize{color:var(--color-secondary-hover,#fbbf24)}
+.competition-tier-card__actions{display:flex;flex-direction:column;gap:4px;margin-top:auto}
+.competition-tier-card .competition-primary{width:100%;min-height:38px;padding:0 12px;font-size:13px;justify-content:center;font-weight:700}
+.competition-tier-rules-btn{align-self:center;font-size:11px;color:var(--color-text-muted);padding:2px 6px;min-height:28px;background:none;border:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.competition-tier-rules-btn:hover{color:var(--color-text)}
+.competition-skeleton--compact{height:190px;border-radius:12px}
+
+@media(max-width:1024px){
+  .competition-tier-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .competition-game-group{padding:12px;gap:10px}
+  .competition-game-group__thumb{width:68px;height:40px}
+  .competition-game-group__title-row h2{font-size:16px}
+  .competition-tier-grid{grid-template-columns:1fr;gap:8px}
+  .competition-tier-card{padding:11px 12px;gap:8px}
+  .competition-tier-card__actions{flex-direction:row;align-items:center;gap:8px}
+  .competition-tier-card .competition-primary{flex:1;min-height:36px}
+  .competition-tier-rules-btn{flex-shrink:0;padding:4px 8px}
+}

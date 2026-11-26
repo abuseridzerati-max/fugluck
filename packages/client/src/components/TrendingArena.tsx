@@ -11,6 +11,7 @@ type TrendingArenaProps = {
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
   onLaunchGuestInvite?: (id: string, title: string) => void
   onOpenCompetitions?: (id: string, title: string) => void
+  onNavigateCompetitions?: () => void
   loadingGameId: string | null
   selectedCategory?: string
   onSelectCategory?: (category: string) => void
@@ -24,6 +25,7 @@ export default function TrendingArena({
   onFindOpponent,
   onLaunchGuestInvite,
   onOpenCompetitions,
+  onNavigateCompetitions,
   loadingGameId,
   selectedCategory = 'all',
   onSelectCategory,
@@ -160,7 +162,7 @@ export default function TrendingArena({
                 </p>
               </div>
 
-              <div className="ac-game-grid">
+              <div className="ac-game-grid ac-game-grid--certified">
                 {certifiedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -186,6 +188,62 @@ export default function TrendingArena({
                     }
                   />
                 ))}
+
+                {certifiedGames.length < 4 && (
+                  <aside
+                    className="ac-tourney-steps-card"
+                    style={{ ['--steps-start-col' as string]: String(certifiedGames.length + 1) }}
+                    aria-label={t('home.howTournamentsWork.title', { defaultValue: 'How Tournaments Work' })}
+                  >
+                    <div className="ac-tourney-steps-card__head">
+                      <span className="ac-certified-badge">
+                        <TrophyIcon size={11} />
+                        <span>{t('launch.competitionsBadge', { defaultValue: 'COINS KNOCKOUT' })}</span>
+                      </span>
+                      <h3>{t('home.howTournamentsWork.title', { defaultValue: 'How Tournaments Work' })}</h3>
+                    </div>
+
+                    <ol className="ac-tourney-steps-card__list">
+                      <li>
+                        <span className="ac-tourney-steps-card__num">1</span>
+                        <div>
+                          <strong>{t('home.howTournamentsWork.step1Title', { defaultValue: 'Pick a Bracket' })}</strong>
+                          <p>{t('home.howTournamentsWork.step1Desc', { defaultValue: 'Choose 2, 4, 8, or 16-player Coins knockout rooms.' })}</p>
+                        </div>
+                      </li>
+                      <li>
+                        <span className="ac-tourney-steps-card__num">2</span>
+                        <div>
+                          <strong>{t('home.howTournamentsWork.step2Title', { defaultValue: 'Compete Live' })}</strong>
+                          <p>{t('home.howTournamentsWork.step2Desc', { defaultValue: 'Server-authoritative matches verify every score fairly.' })}</p>
+                        </div>
+                      </li>
+                      <li>
+                        <span className="ac-tourney-steps-card__num">3</span>
+                        <div>
+                          <strong>{t('home.howTournamentsWork.step3Title', { defaultValue: 'Win the Coin Pot' })}</strong>
+                          <p>{t('home.howTournamentsWork.step3Desc', { defaultValue: '0% rake — the champion takes 100% of the virtual Coins.' })}</p>
+                        </div>
+                      </li>
+                    </ol>
+
+                    {onNavigateCompetitions && (
+                      <a
+                        href="/competitions"
+                        className="ac-btn ac-btn--primary ac-btn--sm"
+                        style={{ textDecoration: 'none', alignSelf: 'flex-start' }}
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                          e.preventDefault()
+                          onNavigateCompetitions()
+                        }}
+                      >
+                        <TrophyIcon size={13} />
+                        <span>{t('launch.viewCompetitionsBtn', { defaultValue: 'VIEW COMPETITIONS' })}</span>
+                      </a>
+                    )}
+                  </aside>
+                )}
               </div>
             </div>
           )}

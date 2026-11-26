@@ -9,7 +9,11 @@ type FooterProps = { onNavigate: (path: string) => void }
 export default function Footer({ onNavigate }: FooterProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const showSandboxDisclaimer = canViewSandboxGelUi(user)
+  const commercialMoneyEnabled = import.meta.env.VITE_COMMERCIAL_MONEY_ENABLED === 'true'
+  const isStaffRole = Boolean(
+    user?.role && ['OWNER', 'SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT'].includes(user.role),
+  )
+  const showSandboxDisclaimer = (commercialMoneyEnabled || isStaffRole) && canViewSandboxGelUi(user)
   const columns = [
     { id: 'FUGLUCK', heading: t('policies.footer.productHeading', 'Fugluck'), items: POLICY_NAV_ITEMS.filter((item) => item.category === 'FUGLUCK') },
     { id: 'HELP', heading: t('policies.footer.helpHeading', 'Help'), items: POLICY_NAV_ITEMS.filter((item) => item.category === 'HELP') },

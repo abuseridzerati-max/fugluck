@@ -74,16 +74,21 @@ export default function GameCard({
             </button>
 
             {certified && onOpenCompetitions && (
-              <button
-                type="button"
+              <a
+                href={`/competitions?game=${encodeURIComponent(gameId)}`}
                 className="ac-btn ac-btn--ghost ac-btn--sm ac-game-card__tourney-btn"
-                onClick={onOpenCompetitions}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                  e.preventDefault()
+                  onOpenCompetitions()
+                }}
                 title={t('home.enterTournament')}
                 aria-label={`${t('home.enterTournament')} — ${title}`}
+                style={{ textDecoration: 'none' }}
               >
                 <TrophyIcon size={13} />
                 <span className="ac-game-card__tourney-label">{t('home.competeBtn')}</span>
-              </button>
+              </a>
             )}
           </div>
         </div>

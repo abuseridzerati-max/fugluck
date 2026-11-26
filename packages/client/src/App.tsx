@@ -304,15 +304,22 @@ function AppShell() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [i18n.language, t])
 
-  function navigateTo(targetView: View) {
+  function navigateTo(targetView: View, search?: string) {
     setViewState(targetView)
-    const targetPath = getPathForView(targetView)
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState(null, '', targetPath)
+    const basePath = getPathForView(targetView)
+    const targetUrl = search ? `${basePath}${search.startsWith('?') ? search : `?${search}`}` : basePath
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+    if (currentUrl !== targetUrl) {
+      window.history.pushState(null, '', targetUrl)
     }
     const title = getTitleForView(targetView)
     document.title = title
-    updateSocialMetaTags(title, targetPath)
+    updateSocialMetaTags(title, basePath)
+  }
+
+  function navigateToCompetitions(gameId?: string) {
+    const query = gameId ? `?game=${encodeURIComponent(gameId)}` : ''
+    navigateTo('competitions', query)
   }
 
   async function loadGame(
@@ -553,12 +560,12 @@ function AppShell() {
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
           onLaunchGuestInvite={handleLaunchGuestInvite}
-          onOpenCompetitions={() => navigateTo('competitions')}
+          onOpenCompetitions={(id) => navigateToCompetitions(id)}
           loadingGameId={loadingGameId}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigateCompetitions={() => navigateToCompetitions()}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
         />
