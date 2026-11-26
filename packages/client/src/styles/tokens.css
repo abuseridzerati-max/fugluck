@@ -1032,6 +1032,203 @@ h1, h2, h3, h4 {
   flex-shrink: 0;
 }
 
+#arena-games {
+  scroll-margin-top: 80px;
+}
+
+/* ---------- Guest Onboarding Strip & Inline Coins Callout ---------- */
+
+.ac-guest-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.65rem 0.95rem;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-secondary-border);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(14, 20, 32, 0.96) 100%);
+}
+
+.ac-guest-banner__copy,
+.ac-guest-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ac-guest-coins-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-secondary-border);
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-secondary-hover);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ac-guest-coins-callout__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- LaunchModal Controls & Mode Rows ---------- */
+
+.ac-launch-controls {
+  padding: 0.55rem 0.75rem;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.ac-launch-controls strong {
+  color: var(--color-primary-hover);
+}
+
+.ac-launch-row {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ac-launch-row--certified {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(14, 20, 32, 0.96) 100%);
+  border-color: var(--color-primary-border);
+  margin-top: var(--space-1);
+}
+
+.ac-launch-row__copy {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.ac-launch-row__cta {
+  width: 158px;
+  min-width: 158px;
+  flex-shrink: 0;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .ac-launch-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ac-launch-row__cta {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ---------- Desktop Tournament Certified 3-Step Info Card ---------- */
+
+.ac-tourney-steps-card {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .ac-game-grid--certified {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ac-tourney-steps-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    grid-column: var(--steps-start-col, 3) / -1;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-primary-border);
+    background:
+      radial-gradient(360px 140px at 100% 0%, rgba(16, 185, 129, 0.14), transparent 72%),
+      var(--color-surface);
+  }
+
+  .ac-tourney-steps-card__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ac-tourney-steps-card__head h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    letter-spacing: -0.02em;
+  }
+
+  .ac-tourney-steps-card__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .ac-tourney-steps-card__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  .ac-tourney-steps-card__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-subtle);
+    border: 1px solid var(--color-primary-border);
+    color: var(--color-primary-hover);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .ac-tourney-steps-card__list strong {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--color-text);
+    margin-bottom: 2px;
+  }
+
+  .ac-tourney-steps-card__list p {
+    margin: 0;
+    font-size: 0.7rem;
+    line-height: 1.38;
+    color: var(--color-text-muted);
+  }
+}
+
 /* ---------- Wallet Hero & Responsive Table ---------- */
 
 .ac-wallet-grid {

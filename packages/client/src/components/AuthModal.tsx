@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
+import { CoinIcon } from './icons'
 
 type AuthModalMode = 'login' | 'signup' | 'forgot-password' | 'verification-sent'
 
@@ -188,7 +189,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
           </div>
         ) : (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mode === 'signup' ? 'var(--space-3)' : 'var(--space-5)' }}>
               <h2 style={{ margin: 0 }}>
                 {mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
               </h2>
@@ -202,6 +203,15 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 ×
               </button>
             </div>
+
+            {mode === 'signup' && (
+              <div className="ac-guest-coins-callout" style={{ marginBottom: 'var(--space-4)' }} role="note">
+                <div className="ac-guest-coins-callout__text">
+                  <CoinIcon size={15} />
+                  <span>{t('onboarding.guestCoinsCallout', { defaultValue: 'Sign up free — start with 1,000 COINS' })}</span>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

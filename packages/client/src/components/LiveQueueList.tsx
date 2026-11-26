@@ -80,16 +80,18 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
     onFindOpponent(entry.gameId, gameTitle, entry.stake, entry.currency)
   }
 
+  const isIdle = entries.length === 0
+
   return (
     <section
-      className={`ac-panel ac-lobby${entries.length === 0 ? ' ac-lobby--idle' : ''}`}
+      className={`ac-panel ac-lobby${isIdle ? ' ac-lobby--idle' : ''}`}
       aria-label={t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
       style={{
-        padding: entries.length === 0 ? 'var(--space-3) var(--space-5)' : 'var(--space-5)',
-        marginBottom: 'var(--space-5)',
+        padding: isIdle ? '8px 14px' : 'var(--space-5)',
+        marginBottom: 'var(--space-4)',
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
+        borderRadius: isIdle ? 'var(--radius-md)' : 'var(--radius-lg)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -101,56 +103,61 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-3)',
-          marginBottom: entries.length === 0 && !error ? 0 : 'var(--space-5)',
+          flexWrap: isIdle ? 'nowrap' : 'wrap',
+          gap: 'var(--space-2)',
+          marginBottom: isIdle && !error ? 0 : 'var(--space-5)',
           userSelect: 'none',
         }}
       >
-        <div className="ac-lobby__title-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        <div className="ac-lobby__title-group" style={{ display: 'flex', alignItems: 'center', gap: isIdle ? '8px' : 'var(--space-3)', minWidth: 0 }}>
           <div
             className="ac-lobby__icon"
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-sm)',
+              width: isIdle ? '24px' : '36px',
+              height: isIdle ? '24px' : '36px',
+              borderRadius: 'var(--radius-xs)',
               background: 'var(--color-primary-subtle)',
               border: '1px solid var(--color-primary-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '16px',
+              fontSize: isIdle ? '12px' : '16px',
               color: 'var(--color-primary-hover)',
               flexShrink: 0,
             }}
           >
             ⚡
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h2
               className="ac-lobby__title"
               style={{
                 margin: 0,
-                fontSize: 'var(--font-size-lg, 1.25rem)',
+                fontSize: isIdle ? 'var(--font-size-sm, 0.875rem)' : 'var(--font-size-lg, 1.25rem)',
                 fontWeight: 'var(--font-weight-bold, 700)',
                 color: 'var(--color-text, #f5f5f7)',
                 letterSpacing: '-0.01em',
+                whiteSpace: isIdle ? 'nowrap' : undefined,
+                overflow: isIdle ? 'hidden' : undefined,
+                textOverflow: isIdle ? 'ellipsis' : undefined,
               }}
             >
               {t('lobby.title', { defaultValue: 'Live Matchmaking Lobby' })}
             </h2>
-            <p
-              className="ac-lobby__subtitle"
-              style={{
-                margin: '2px 0 0 0',
-                fontSize: 'var(--font-size-xs, 0.75rem)',
-                color: 'var(--color-text-muted, #9a9aa8)',
-              }}
-            >
-              {t('lobby.subtitle', {
-                defaultValue: 'Real-time arena queue — click Match to instantly join and play',
-              })}
-            </p>
+            {!isIdle && (
+              <p
+                className="ac-lobby__subtitle"
+                style={{
+                  margin: '2px 0 0 0',
+                  fontSize: 'var(--font-size-xs, 0.75rem)',
+                  color: 'var(--color-text-muted, #9a9aa8)',
+                }}
+              >
+                {t('lobby.subtitle', {
+                  defaultValue: 'Real-time arena queue — click Match to instantly join and play',
+                })}
+              </p>
+            )}
           </div>
         </div>
 
@@ -158,14 +165,16 @@ export default function LiveQueueList({ onFindOpponent }: LiveQueueListProps) {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
+            flexShrink: 0,
             background: entries.length > 0 ? 'rgba(52, 211, 153, 0.12)' : 'rgba(255, 255, 255, 0.04)',
             border: entries.length > 0 ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid var(--color-border)',
             color: entries.length > 0 ? 'var(--color-success, #34d399)' : 'var(--color-text-muted, #9a9aa8)',
-            padding: '4px 12px',
+            padding: '3px 10px',
             borderRadius: 'var(--radius-full, 9999px)',
             fontSize: 'var(--font-size-xs, 0.75rem)',
             fontWeight: 'var(--font-weight-medium, 500)',
+            whiteSpace: 'nowrap',
           }}
         >
           <span

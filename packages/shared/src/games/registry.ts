@@ -68,7 +68,7 @@ export const GAME_MANIFESTS: readonly GameManifest[] = [
   {
     id: "cyber-hopper",
     title: "Cyber Hopper",
-    tagline: "Synthwave road-crossing timing and evasion",
+    tagline: "Lane-crossing timing & evasion",
     genre: "reflex-timing",
     certified: true,
     modes: ["practice", "casual", "tournament"],

@@ -195,6 +195,12 @@
       "COINS": "Coins Tournaments",
       "GEL": "Test GEL"
     },
+    "tiers": {
+      "cap2": "2-Player Duel",
+      "cap4": "4-Player Bracket",
+      "cap8": "8-Player Knockout",
+      "cap16": "16-Player Major"
+    },
     "coinsLabel": "IN-GAME COINS · FREE VIRTUAL POINTS",
     "coinsNotice": "Standard knockout brackets using free in-game Coins (0% rake, winner takes 100% of the Coin pot). Coins have no cash value.",
     "coinsBalance": "🪙 {{count}} COINS",
@@ -882,9 +888,31 @@
       "arena-shooter": "Arena Shooter",
       "reflex-timing": "Reflex Timing",
       "quiz": "Quiz"
+    },
+    "howTournamentsWork": {
+      "title": "How Tournaments Work",
+      "step1Title": "Pick a Bracket",
+      "step1Desc": "Choose 2, 4, 8, or 16-player Coins knockout rooms.",
+      "step2Title": "Compete Live",
+      "step2Desc": "Server-authoritative matches verify every score fairly.",
+      "step3Title": "Win the Coin Pot",
+      "step3Desc": "0% rake — the champion takes 100% of the virtual Coins."
     }
   },
+  "onboarding": {
+    "guestCoinsCallout": "Sign up free — start with 1,000 COINS"
+  },
   "launch": {
+    "howToPlayLabel": "Controls:",
+    "signUpRequired": "Sign up",
+    "controls": {
+      "space-blaster": "WASD / Arrows to steer · Space to shoot · Survive & destroy waves (3 min cap)",
+      "cyber-hopper": "WASD / Arrows to hop lanes · Dodge hovercars · Reach the top zone to score",
+      "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
+      "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
+      "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
+      "tf-sprint": "Click or press T / F (Left / Right) · Rapid-fire True or False sprint"
+    },
     "practiceTitle": "PRACTICE",
     "practiceDesc": "Play solo rush. No opponent or funds needed.",
     "playBtn": "PLAY",
