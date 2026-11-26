@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { GameEngine } from '@fugluck/games'
 import { categoryColors } from '@fugluck/theme'
 import { engineLabel } from '../lib/format'
@@ -31,6 +32,7 @@ export default function GameCard({
   onOpenCompetitions,
   loading,
 }: GameCardProps) {
+  const { t } = useTranslation()
   const [showModal, setShowModal] = useState(false)
   const tagColor = categoryColors[engine]
 
@@ -44,12 +46,12 @@ export default function GameCard({
               className="ac-tag"
               style={{ ['--tag-color' as string]: tagColor, background: 'rgba(7, 10, 16, 0.84)' }}
             >
-              {engineLabel(engine)}
+              {t(`home.filters.${engine}`, { defaultValue: engineLabel(engine) })}
             </span>
             {certified && (
-              <span className="ac-certified-badge" title="Tournament Certified">
+              <span className="ac-certified-badge" title={t('home.tournamentCertified')}>
                 <TrophyIcon size={11} />
-                <span>Certified</span>
+                <span>{t('home.certifiedBadge')}</span>
               </span>
             )}
           </div>
@@ -68,7 +70,7 @@ export default function GameCard({
               disabled={loading}
               onClick={() => setShowModal(true)}
             >
-              ▶ Play
+              ▶ {t('common.play')}
             </button>
 
             {certified && onOpenCompetitions && (
@@ -76,11 +78,11 @@ export default function GameCard({
                 type="button"
                 className="ac-btn ac-btn--ghost ac-btn--sm ac-game-card__tourney-btn"
                 onClick={onOpenCompetitions}
-                title="Enter Tournament"
-                aria-label={`Enter Tournament for ${title}`}
+                title={t('home.enterTournament')}
+                aria-label={`${t('home.enterTournament')} — ${title}`}
               >
                 <TrophyIcon size={13} />
-                <span className="ac-game-card__tourney-label">Compete</span>
+                <span className="ac-game-card__tourney-label">{t('home.competeBtn')}</span>
               </button>
             )}
           </div>

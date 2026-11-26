@@ -106,7 +106,7 @@ export default function ProfilePage({
           <div>
             <h1 style={{ margin: 0, fontSize: 'var(--font-size-3xl)' }}>{user.username}</h1>
             <p className="ac-text-muted" style={{ margin: 'var(--space-1) 0 0' }}>
-              Joined {new Date(user.createdAt).toLocaleDateString(currentLang)}
+              {t('profileUi.joined', { date: new Date(user.createdAt).toLocaleDateString(currentLang) })}
             </p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function ProfilePage({
               {user.balances.coins.toLocaleString(currentLang)}
             </div>
             <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-              Casual virtual tokens
+              {t('profileUi.casualVirtualTokens')}
             </div>
           </div>
           <div>
@@ -134,7 +134,7 @@ export default function ProfilePage({
               TEST ₾{(((user.balances.sandboxGelMinor ?? 0)) / 100).toFixed(2)}
             </div>
             <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-              Simulated skill test funds
+              {t('profileUi.simulatedTestFunds')}
             </div>
           </div>
           <div>
@@ -156,17 +156,17 @@ export default function ProfilePage({
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
           {onNavigateWallet && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateWallet} style={{ flex: '1 1 180px' }}>
-              💳 View Wallet & Sandbox
+              {t('profileUi.viewWallet')}
             </button>
           )}
           {onNavigateCompetitions && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateCompetitions} style={{ flex: '1 1 180px' }}>
-              🏆 Competitions
+              {t('profileUi.competitions')}
             </button>
           )}
           {onNavigateFriends && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateFriends} style={{ flex: '1 1 180px' }}>
-              👥 {t('navigation.friends')}
+              {t('navigation.friends')}
             </button>
           )}
           <button
@@ -175,7 +175,7 @@ export default function ProfilePage({
             onClick={() => setIsChangePasswordOpen(true)}
             style={{ flex: '1 1 180px' }}
           >
-            🔒 {t('auth.changePassword', { defaultValue: 'Change Password' })}
+            {t('auth.changePassword', { defaultValue: 'Change Password' })}
           </button>
         </div>
 
@@ -191,7 +191,7 @@ export default function ProfilePage({
               disabled={loadingMatches}
               style={{ fontSize: 'var(--font-size-xs)' }}
             >
-              🔄 {t('common.refresh', { defaultValue: 'Refresh' })}
+              {t('common.refresh', { defaultValue: 'Refresh' })}
             </button>
           </div>
 
@@ -220,7 +220,7 @@ export default function ProfilePage({
                   ? `TEST ₾${(m.stake / 100).toFixed(2)} (SANDBOX)`
                   : m.stake > 0
                   ? `${m.stake} COINS`
-                  : 'Free Play'
+                  : t('profileUi.freePlay')
 
                 return (
                   <div
@@ -238,7 +238,7 @@ export default function ProfilePage({
                         <strong style={{ color: outcomeColor }}>
                           {(t(`game.${m.outcome}`) || m.outcome).toUpperCase()}
                         </strong>{' '}
-                        — <strong>{gameName}</strong> vs <strong>{m.opponentUsername}</strong>
+                        — <strong>{gameName}</strong> {t('profileUi.vs')} <strong>{m.opponentUsername}</strong>
                       </div>
                       <div className="ac-text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
                         {t('game.scoreLine', {

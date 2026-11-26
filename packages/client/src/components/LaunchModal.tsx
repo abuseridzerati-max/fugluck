@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { CoinIcon, GamepadIcon, TrophyIcon } from './icons'
@@ -24,6 +25,7 @@ export default function LaunchModal({
   onLaunchCoinsMatch,
   onOpenCompetitions,
 }: LaunchModalProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [showCoinsLobby, setShowCoinsLobby] = useState(false)
   const [selectedCoinStake, setSelectedCoinStake] = useState<number>(100)
@@ -80,14 +82,14 @@ export default function LaunchModal({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-            {showCoinsLobby ? `Casual Coins — ${gameTitle}` : gameTitle}
+            {showCoinsLobby ? `${t('launch.casualTitle', { defaultValue: 'CASUAL' })} — ${gameTitle}` : gameTitle}
           </h2>
           <button
             type="button"
             className="ac-btn ac-btn--ghost ac-btn--sm"
             onClick={onClose}
             style={{ minWidth: 36, padding: 0 }}
-            aria-label="Close"
+            aria-label={t('common.close', { defaultValue: 'Close' })}
           >
             ✕
           </button>
@@ -96,7 +98,7 @@ export default function LaunchModal({
         {showCoinsLobby ? (
           <div>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
-              Play casual multiplayer matches with free virtual COINS.
+              {t('launch.casualDesc', { defaultValue: '1v1 matchmaking with free virtual COINS or friend invites.' })}
             </p>
 
             <div
@@ -112,7 +114,7 @@ export default function LaunchModal({
               }}
             >
               <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                Available COINS Balance:
+                {t('launch.availableCoins', { defaultValue: 'Available COINS Balance:' })}
               </span>
               <strong
                 style={{
@@ -248,10 +250,10 @@ export default function LaunchModal({
               <div style={{ flex: '1 1 200px' }}>
                 <strong style={{ fontSize: 'var(--font-size-base)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                   <GamepadIcon size={15} />
-                  <span>PRACTICE</span>
+                  <span>{t('launch.practiceTitle', { defaultValue: 'PRACTICE' })}</span>
                 </strong>
                 <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
-                  Play solo rush. No opponent or funds needed.
+                  {t('launch.practiceDesc', { defaultValue: 'Play solo rush. No opponent or funds needed.' })}
                 </span>
               </div>
               <button
@@ -263,7 +265,7 @@ export default function LaunchModal({
                 }}
                 style={{ minWidth: 112 }}
               >
-                PLAY
+                {t('launch.playBtn', { defaultValue: 'PLAY' })}
               </button>
             </div>
 
@@ -284,10 +286,10 @@ export default function LaunchModal({
               <div style={{ flex: '1 1 200px' }}>
                 <strong style={{ fontSize: 'var(--font-size-base)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                   <CoinIcon size={15} />
-                  <span>CASUAL</span>
+                  <span>{t('launch.casualTitle', { defaultValue: 'CASUAL' })}</span>
                 </strong>
                 <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
-                  1v1 matchmaking with free virtual COINS or friend invites.
+                  {t('launch.casualDesc', { defaultValue: '1v1 matchmaking with free virtual COINS or friend invites.' })}
                 </span>
               </div>
               <button
@@ -296,7 +298,7 @@ export default function LaunchModal({
                 onClick={() => setShowCoinsLobby(true)}
                 style={{ minWidth: 132 }}
               >
-                PLAY CASUAL
+                {t('launch.playCasualBtn', { defaultValue: 'PLAY CASUAL' })}
               </button>
             </div>
 
@@ -310,7 +312,7 @@ export default function LaunchModal({
               }}
               style={{ fontSize: 'var(--font-size-xs)', width: '100%', borderStyle: 'dashed' }}
             >
-              Create Instant Friend Challenge Link
+              {t('launch.friendLinkBtn', { defaultValue: 'Create Instant Friend Challenge Link' })}
             </button>
 
             {/* Mode C: COMPETITIONS (Level 3 Certified Games Only) */}
@@ -333,14 +335,14 @@ export default function LaunchModal({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
                     <span className="ac-certified-badge">
                       <TrophyIcon size={11} />
-                      <span>COINS KNOCKOUT</span>
+                      <span>{t('launch.competitionsBadge', { defaultValue: 'COINS KNOCKOUT' })}</span>
                     </span>
                     <strong style={{ fontSize: 'var(--font-size-base)' }}>
-                      COMPETITIONS
+                      {t('launch.competitionsTitle', { defaultValue: 'COMPETITIONS' })}
                     </strong>
                   </div>
                   <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-xs)', display: 'block', lineHeight: 1.45 }}>
-                    Coins Knockout Tournaments with server-authoritative brackets &amp; predetermined prizes. No real money.
+                    {t('launch.competitionsDesc', { defaultValue: 'Coins Knockout Tournaments with server-authoritative brackets & predetermined prizes. No real money.' })}
                   </span>
                 </div>
                 <button
@@ -357,7 +359,7 @@ export default function LaunchModal({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  VIEW COMPETITIONS
+                  {t('launch.viewCompetitionsBtn', { defaultValue: 'VIEW COMPETITIONS' })}
                 </button>
               </div>
             )}

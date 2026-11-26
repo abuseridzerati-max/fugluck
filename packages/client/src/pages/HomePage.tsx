@@ -61,11 +61,9 @@ export default function HomePage({
       <main className="ac-main">
         <section className="ac-hero" aria-label="Fugluck Arena overview">
           <div className="ac-hero__content">
-            <span className="ac-hero__eyebrow">Skill-Based Competitive Arena</span>
-            <h1 className="ac-hero__title">Play Fast. Outscore Everyone.</h1>
-            <p className="ac-hero__subtitle">
-              Jump into server-authoritative Coins Knockout Tournaments or sharpen your reflexes in instant 1v1 and solo practice games.
-            </p>
+            <span className="ac-hero__eyebrow">{t('home.eyebrow')}</span>
+            <h1 className="ac-hero__title">{t('home.heroTitle')}</h1>
+            <p className="ac-hero__subtitle">{t('home.heroSubtitle')}</p>
           </div>
           <div className="ac-hero__actions">
             {onNavigateCompetitions && (
@@ -79,7 +77,7 @@ export default function HomePage({
               </button>
             )}
             <a href="#arena-games" className="ac-btn ac-btn--ghost" style={{ textDecoration: 'none' }}>
-              Browse Games
+              {t('home.browseGames')}
             </a>
           </div>
         </section>

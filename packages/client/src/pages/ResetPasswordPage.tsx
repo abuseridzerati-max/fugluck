@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 
 type ResetPasswordPageProps = {
@@ -7,6 +8,7 @@ type ResetPasswordPageProps = {
 }
 
 export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: ResetPasswordPageProps) {
+  const { t } = useTranslation()
   const { resetPassword, forgotPassword } = useAuth()
   const [token, setToken] = useState<string | null>(null)
   const [password, setPassword] = useState('')
@@ -39,15 +41,15 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!token) {
-      setError('Reset token is missing from the URL. Please request a new reset link.')
+      setError(t('resetPassword.missingToken'))
       return
     }
     if (!passwordsMatch) {
-      setError('Passwords do not match.')
+      setError(t('resetPassword.mismatch'))
       return
     }
     if (!hasMinLength || !hasLetter || !hasNumber) {
-      setError('Password must be at least 8 characters and include at least one letter and one number.')
+      setError(t('resetPassword.policyError'))
       return
     }
 
@@ -57,7 +59,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
       await resetPassword(token, password)
       setSuccess(true)
     } catch (err: any) {
-      setError(err?.message || 'Password reset failed. The reset token may be expired or already used.')
+      setError(err?.message || t('resetPassword.resetFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -70,9 +72,9 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
     setRequestMessage(null)
     try {
       const msg = await forgotPassword(requestEmail.trim())
-      setRequestMessage(msg || 'Password reset link sent if an account exists.')
+      setRequestMessage(msg || t('resetPassword.linkSent'))
     } catch (err: any) {
-      setError(err?.message || 'Failed to request reset link.')
+      setError(err?.message || t('resetPassword.requestFailed'))
     } finally {
       setRequesting(false)
     }
@@ -99,34 +101,33 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
       >
         {success ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 'var(--space-4)' }}>🔒✨</div>
             <h1 style={{ fontSize: 'var(--font-size-2xl)', margin: '0 0 var(--space-3)' }}>
-              Password Reset Complete
+              {t('resetPassword.completeTitle')}
             </h1>
             <p style={{ color: 'var(--color-success, #00ff88)', margin: 'var(--space-4) 0 var(--space-6)' }}>
-              Your password has been successfully updated. You can now log in with your new credentials.
+              {t('resetPassword.completeBody')}
             </p>
             <button
               onClick={onNavigateLogin}
               className="ac-btn ac-btn--primary"
               style={{ width: '100%', padding: 'var(--space-3)' }}
             >
-              Log In Now ▶
+              {t('resetPassword.logInNow')}
             </button>
           </div>
         ) : token ? (
           <div>
             <h1 style={{ fontSize: 'var(--font-size-2xl)', margin: '0 0 var(--space-2)' }}>
-              Choose New Password
+              {t('resetPassword.chooseTitle')}
             </h1>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
-              Set a strong password for your Fugluck account.
+              {t('resetPassword.chooseSubtitle')}
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-                  New Password
+                  {t('resetPassword.newPassword')}
                 </span>
                 <input
                   type="password"
@@ -140,7 +141,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-                  Confirm New Password
+                  {t('resetPassword.confirmPassword')}
                 </span>
                 <input
                   type="password"
@@ -164,16 +165,16 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
                 }}
               >
                 <div style={{ color: hasMinLength ? 'var(--color-success, #00ff88)' : 'var(--color-text-muted)' }}>
-                  {hasMinLength ? '✓' : '○'} At least 8 characters
+                  {hasMinLength ? '✓' : '○'} {t('resetPassword.ruleLength')}
                 </div>
                 <div style={{ color: hasLetter ? 'var(--color-success, #00ff88)' : 'var(--color-text-muted)' }}>
-                  {hasLetter ? '✓' : '○'} Contains at least one letter
+                  {hasLetter ? '✓' : '○'} {t('resetPassword.ruleLetter')}
                 </div>
                 <div style={{ color: hasNumber ? 'var(--color-success, #00ff88)' : 'var(--color-text-muted)' }}>
-                  {hasNumber ? '✓' : '○'} Contains at least one number
+                  {hasNumber ? '✓' : '○'} {t('resetPassword.ruleNumber')}
                 </div>
                 <div style={{ color: passwordsMatch ? 'var(--color-success, #00ff88)' : 'var(--color-text-muted)' }}>
-                  {passwordsMatch ? '✓' : '○'} Passwords match
+                  {passwordsMatch ? '✓' : '○'} {t('resetPassword.ruleMatch')}
                 </div>
               </div>
 
@@ -189,7 +190,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
                 disabled={submitting || !isPolicyValid}
                 style={{ padding: 'var(--space-3)' }}
               >
-                {submitting ? 'Updating Password...' : 'Save New Password'}
+                {submitting ? t('resetPassword.updating') : t('resetPassword.saveBtn')}
               </button>
             </form>
 
@@ -199,18 +200,17 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
                 className="ac-link--secondary"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                ← Return to Home
+                {t('resetPassword.returnHome')}
               </button>
             </div>
           </div>
         ) : (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 'var(--space-4)' }}>🔑</div>
             <h1 style={{ fontSize: 'var(--font-size-2xl)', margin: '0 0 var(--space-2)' }}>
-              Reset Your Password
+              {t('resetPassword.requestTitle')}
             </h1>
             <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
-              Enter your email or username to receive password reset instructions.
+              {t('resetPassword.requestSubtitle')}
             </p>
 
             <form
@@ -219,7 +219,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
             >
               <input
                 type="text"
-                placeholder="Email address or username"
+                placeholder={t('resetPassword.emailOrUsername')}
                 value={requestEmail}
                 onChange={(e) => setRequestEmail(e.target.value)}
                 required
@@ -232,7 +232,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
                 disabled={requesting || !requestEmail.trim()}
                 style={{ padding: 'var(--space-3)' }}
               >
-                {requesting ? 'Sending...' : 'Send Reset Link'}
+                {requesting ? t('resetPassword.sending') : t('resetPassword.sendLinkBtn')}
               </button>
             </form>
 
@@ -254,7 +254,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
                 className="ac-link--secondary"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                ← Back to Log In
+                {t('resetPassword.backToLogin')}
               </button>
             </div>
           </div>

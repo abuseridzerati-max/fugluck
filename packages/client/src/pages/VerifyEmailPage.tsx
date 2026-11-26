@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 
 type VerifyEmailPageProps = {
@@ -7,6 +8,7 @@ type VerifyEmailPageProps = {
 }
 
 export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: VerifyEmailPageProps) {
+  const { t } = useTranslation()
   const { verifyEmail, resendVerification, user } = useAuth()
   const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'idle'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -25,7 +27,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
         })
         .catch((err: any) => {
           setStatus('error')
-          setErrorMessage(err?.message || 'Verification token is invalid or has expired.')
+          setErrorMessage(err?.message || t('verifyEmail.invalidToken'))
         })
     } else {
       setStatus('idle')
@@ -40,9 +42,9 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
     try {
       const emailToUse = resendEmail.trim() || user?.email || undefined
       const msg = await resendVerification(emailToUse)
-      setResendSuccessMessage(msg || 'Verification email has been sent.')
+      setResendSuccessMessage(msg || t('verifyEmail.resendSent'))
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to resend verification link.')
+      setErrorMessage(err?.message || t('verifyEmail.resendFailed'))
     } finally {
       setResending(false)
     }
@@ -68,37 +70,33 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         }}
       >
-        <div style={{ fontSize: 48, marginBottom: 'var(--space-4)' }}>
-          {status === 'success' ? '✨' : status === 'error' ? '⚠️' : '✉️'}
-        </div>
-
         <h1 style={{ fontSize: 'var(--font-size-2xl)', margin: '0 0 var(--space-3)' }}>
           {status === 'success'
-            ? 'Account Verified!'
+            ? t('verifyEmail.titleSuccess')
             : status === 'verifying'
-              ? 'Verifying Your Email...'
+              ? t('verifyEmail.titleVerifying')
               : status === 'error'
-                ? 'Verification Link Expired or Invalid'
-                : 'Email Verification'}
+                ? t('verifyEmail.titleError')
+                : t('verifyEmail.titleIdle')}
         </h1>
 
         {status === 'verifying' && (
           <p className="ac-text-muted" style={{ margin: 'var(--space-4) 0' }}>
-            Please wait while we confirm your email verification token...
+            {t('verifyEmail.verifyingBody')}
           </p>
         )}
 
         {status === 'success' && (
           <div>
             <p style={{ color: 'var(--color-success, #00ff88)', margin: 'var(--space-4) 0 var(--space-6)' }}>
-              Your email has been confirmed! Account, casual matchmaking, and social features are now active.
+              {t('verifyEmail.successBody')}
             </p>
             <button
               onClick={onNavigateHome}
               className="ac-btn ac-btn--primary"
               style={{ width: '100%', padding: 'var(--space-3)' }}
             >
-              Enter the Arena ▶
+              {t('verifyEmail.enterArena')}
             </button>
           </div>
         )}
@@ -118,12 +116,12 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
               }}
             >
               <h3 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-base)' }}>
-                Request a New Verification Link
+                {t('verifyEmail.requestNewTitle')}
               </h3>
               <form onSubmit={handleResend} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 <input
                   type="email"
-                  placeholder="Enter your registered email address"
+                  placeholder={t('verifyEmail.emailPlaceholder')}
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
                   defaultValue={user?.email || ''}
@@ -131,7 +129,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
                   required
                 />
                 <button type="submit" className="ac-btn ac-btn--secondary" disabled={resending}>
-                  {resending ? 'Sending...' : 'Resend Verification Email'}
+                  {resending ? t('verifyEmail.sending') : t('verifyEmail.resendBtn')}
                 </button>
               </form>
               {resendSuccessMessage && (
@@ -147,7 +145,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
                 className="ac-link--secondary"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                ← Return to Home
+                {t('verifyEmail.returnHome')}
               </button>
             </div>
           </div>
@@ -156,13 +154,13 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
         {status === 'idle' && (
           <div>
             <p className="ac-text-muted" style={{ margin: 'var(--space-4) 0 var(--space-6)' }}>
-              Need a new verification link sent to your registered email address?
+              {t('verifyEmail.idlePrompt')}
             </p>
 
             <form onSubmit={handleResend} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <input
                 type="email"
-                placeholder="Enter your registered email address"
+                placeholder={t('verifyEmail.emailPlaceholder')}
                 value={resendEmail}
                 onChange={(e) => setResendEmail(e.target.value)}
                 defaultValue={user?.email || ''}
@@ -170,7 +168,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
                 required
               />
               <button type="submit" className="ac-btn ac-btn--primary" disabled={resending}>
-                {resending ? 'Sending...' : 'Send Verification Email'}
+                {resending ? t('verifyEmail.sending') : t('verifyEmail.sendBtn')}
               </button>
             </form>
 
@@ -186,14 +184,14 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
                 className="ac-link--secondary"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                ← Return to Home
+                {t('verifyEmail.returnHome')}
               </button>
               <button
                 onClick={onNavigateLogin}
                 className="ac-link--secondary"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent, #2de2ff)' }}
               >
-                Log In
+                {t('verifyEmail.logIn')}
               </button>
             </div>
           </div>

@@ -1,11 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import { POLICY_NAV_ITEMS } from '@fugluck/shared'
+import { useAuth } from '../auth/AuthContext'
+import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
 import { BrandMarkIcon } from './icons'
 
 type FooterProps = { onNavigate: (path: string) => void }
 
 export default function Footer({ onNavigate }: FooterProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const showSandboxDisclaimer = canViewSandboxGelUi(user)
   const columns = [
     { id: 'FUGLUCK', heading: t('policies.footer.productHeading', 'Fugluck'), items: POLICY_NAV_ITEMS.filter((item) => item.category === 'FUGLUCK') },
     { id: 'HELP', heading: t('policies.footer.helpHeading', 'Help'), items: POLICY_NAV_ITEMS.filter((item) => item.category === 'HELP') },
@@ -28,7 +32,7 @@ export default function Footer({ onNavigate }: FooterProps) {
             </span>
             <span>Fugluck</span>
           </a>
-          <p>Competitive skill games, practice and platform-defined competitions.</p>
+          <p>{t('footer.tagline')}</p>
         </div>
         {columns.map((column) => <nav key={column.id} aria-label={column.heading}>
           <h2>{column.heading}</h2>
@@ -38,7 +42,11 @@ export default function Footer({ onNavigate }: FooterProps) {
         </nav>)}
       </div>
       <div className="site-footer__bottom">
-        <p>TEST / SANDBOX ENVIRONMENT — NO REAL MONEY. GEL-denominated values shown here are simulated and have zero real-world value. They cannot be deposited, withdrawn or redeemed. No real payment rails or real-money prizes are active.</p>
+        <p>
+          {showSandboxDisclaimer
+            ? 'TEST / SANDBOX ENVIRONMENT — NO REAL MONEY. GEL-denominated values shown here are simulated and have zero real-world value. They cannot be deposited, withdrawn or redeemed. No real payment rails or real-money prizes are active.'
+            : t('footer.coinsNotice')}
+        </p>
         <a href="/legal" onClick={(e) => handleLinkClick(e, '/legal')}>{t('policies.nav.legalIndex', 'Legal and Policy Index')}</a>
       </div>
     </footer>

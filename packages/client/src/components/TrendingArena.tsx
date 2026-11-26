@@ -76,7 +76,7 @@ export default function TrendingArena({
                     className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
                     onClick={() => onSelectCategory(f.engine)}
                   >
-                    {f.label}
+                    {t(`home.filters.${f.engine}`, { defaultValue: f.label })}
                   </button>
                 )
               })}
@@ -111,10 +111,10 @@ export default function TrendingArena({
 
       {trimmedQuery && (
         <div className="ac-section-head">
-          <h2 className="ac-section-title">Search Results: "{searchQuery}"</h2>
+          <h2 className="ac-section-title">{t('home.searchResults', { query: searchQuery })}</h2>
           {onClearSearch && (
             <button type="button" className="ac-btn ac-btn--ghost ac-btn--sm" onClick={onClearSearch}>
-              Clear Search
+              {t('common.clearSearch')}
             </button>
           )}
         </div>
@@ -134,15 +134,15 @@ export default function TrendingArena({
         >
           {trimmedQuery ? (
             <div>
-              <p style={{ margin: '0 0 var(--space-3)' }}>No games found matching "{searchQuery}".</p>
+              <p style={{ margin: '0 0 var(--space-3)' }}>{t('home.noSearchResults', { query: searchQuery })}</p>
               {onClearSearch && (
                 <button type="button" className="ac-btn ac-btn--primary" onClick={onClearSearch}>
-                  Clear Search
+                  {t('common.clearSearch')}
                 </button>
               )}
             </div>
           ) : (
-            <p style={{ margin: 0 }}>No active games found in this category.</p>
+            <p style={{ margin: 0 }}>{t('home.noCategoryResults')}</p>
           )}
         </div>
       ) : (
@@ -152,11 +152,11 @@ export default function TrendingArena({
               <div className="ac-section-head">
                 <div className="ac-section-title-group">
                   <TrophyIcon size={16} />
-                  <h2 className="ac-section-title">Tournament Certified</h2>
-                  <span className="ac-badge ac-badge--sandbox">Server-Authoritative</span>
+                  <h2 className="ac-section-title">{t('home.tournamentCertified')}</h2>
+                  <span className="ac-badge ac-badge--sandbox">{t('home.fairPlayVerified')}</span>
                 </div>
                 <p className="ac-section-sub">
-                  Coins Knockout Tournaments &amp; live bracket competitions
+                  {t('home.certifiedSubtitle')}
                 </p>
               </div>
 
@@ -195,10 +195,10 @@ export default function TrendingArena({
               <div className="ac-section-head">
                 <div className="ac-section-title-group">
                   <GamepadIcon size={18} />
-                  <h2 className="ac-section-title">Practice &amp; Casual</h2>
+                  <h2 className="ac-section-title">{t('home.practiceCasual')}</h2>
                 </div>
                 <p className="ac-section-sub">
-                  Solo practice, instant friend links, and casual Coins matchmaking
+                  {t('home.casualSubtitle')}
                 </p>
               </div>
 

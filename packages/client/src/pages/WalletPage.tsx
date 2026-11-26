@@ -112,10 +112,10 @@ export default function WalletPage({
       <main className="ac-main">
         <header style={{ marginBottom: 'var(--space-5)' }}>
           <h1 style={{ margin: '0 0 var(--space-1)', fontSize: 'var(--font-size-2xl)' }}>
-            Wallet &amp; Balances
+            {t('walletUi.title', { defaultValue: 'Wallet & Balances' })}
           </h1>
           <p className="ac-text-muted" style={{ margin: 0, fontSize: 'var(--font-size-sm)' }}>
-            Track your virtual COINS balance, monthly top-up schedule, and ledger history.
+            {t('walletUi.subtitle', { defaultValue: 'Track your virtual COINS balance, monthly top-up schedule, and ledger history.' })}
           </p>
         </header>
 
@@ -129,7 +129,7 @@ export default function WalletPage({
               </span>
               <span className="ac-badge ac-badge--coins">
                 <CoinIcon size={12} />
-                <span>FREE VIRTUAL POINTS</span>
+                <span>{t('walletUi.freeVirtualPoints', { defaultValue: 'FREE VIRTUAL POINTS' })}</span>
               </span>
             </div>
 
@@ -138,14 +138,14 @@ export default function WalletPage({
             </div>
 
             <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-              Use COINS for casual 1v1 matches, friend challenges, and Coins Knockout Tournaments.
+              {t('walletUi.coinsUse', { defaultValue: 'Use COINS for casual 1v1 matches, friend challenges, and Coins Knockout Tournaments.' })}
             </p>
 
             <div className="ac-wallet-refill-note">
-              <strong style={{ color: 'var(--color-secondary-hover)', whiteSpace: 'nowrap' }}>Monthly Top-Up:</strong>
-              <span>
-                Accounts below <strong>1,000 COINS</strong> automatically refill back to <strong>1,000 COINS</strong> on the 1st of every month at <strong>00:00 Asia/Tbilisi</strong>. Balances of 1,000+ remain untouched.
-              </span>
+              <strong style={{ color: 'var(--color-secondary-hover)', whiteSpace: 'nowrap' }}>
+                {t('walletUi.monthlyTopUpLabel', { defaultValue: 'Monthly Top-Up:' })}
+              </strong>
+              <span>{t('walletUi.monthlyTopUpBody')}</span>
             </div>
           </section>
 
@@ -220,7 +220,7 @@ export default function WalletPage({
 
           {!user ? (
             <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0', margin: 0 }}>
-              Sign in to view your transaction history.
+              {t('walletUi.signInHistory', { defaultValue: 'Sign in to view your transaction history.' })}
             </p>
           ) : loadingHistory ? (
             <p className="ac-text-muted" style={{ padding: 'var(--space-4) 0', margin: 0 }}>
@@ -242,10 +242,10 @@ export default function WalletPage({
               <table className="ac-table">
                 <thead>
                   <tr>
-                    <th>Type / Description</th>
-                    <th>Amount</th>
-                    <th>Currency</th>
-                    <th>Date &amp; Time</th>
+                    <th>{t('walletUi.colType')}</th>
+                    <th>{t('walletUi.colAmount')}</th>
+                    <th>{t('walletUi.colCurrency')}</th>
+                    <th>{t('walletUi.colDate')}</th>
                   </tr>
                 </thead>
                 <tbody>
