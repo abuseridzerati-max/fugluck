@@ -14,6 +14,7 @@ const GameLoader = lazy(() => import('./game-loader/GameLoader'))
 const MatchLoader = lazy(() => import('./game-loader/MatchLoader'))
 const AdminConsolePage = lazy(() => import('./admin/AdminConsolePage'))
 const CompetitionsPage = lazy(() => import('./pages/CompetitionsPage'))
+const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
@@ -64,6 +65,7 @@ type PolicySlug = (typeof POLICY_SLUGS)[number]
 type View =
   | 'home'
   | 'competitions'
+  | 'leaderboards'
   | 'profile'
   | 'friends'
   | 'wallet'
@@ -122,6 +124,7 @@ function getViewFromPath(pathname: string): View {
   const cleanPath = pathname.replace(/\/$/, '') || '/'
   if (cleanPath === '/' || cleanPath === '/home') return 'home'
   if (cleanPath === '/competitions') return 'competitions'
+  if (cleanPath === '/leaderboards') return 'leaderboards'
   if (cleanPath === '/profile') return 'profile'
   if (cleanPath === '/friends') return 'friends'
   if (cleanPath === '/wallet') return 'wallet'
@@ -152,6 +155,8 @@ function getPathForView(view: View): string {
   switch (view) {
     case 'competitions':
       return '/competitions'
+    case 'leaderboards':
+      return '/leaderboards'
     case 'profile':
       return '/profile'
     case 'friends':
@@ -252,6 +257,8 @@ function AppShell() {
     switch (targetView) {
       case 'competitions':
         return 'Competitions | Fugluck'
+      case 'leaderboards':
+        return 'Leaderboards | Fugluck'
       case 'profile':
         return t('meta.titleProfile')
       case 'friends':
@@ -477,7 +484,17 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onLaunchCompetition={handleLaunchCompetition}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
+        />
+      ) : view === 'leaderboards' ? (
+        <LeaderboardsPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateProfile={() => navigateTo('profile')}
+          onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateCompetitions={() => navigateToCompetitions()}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'profile' ? (
@@ -486,6 +503,7 @@ function AppShell() {
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
           onNavigateCompetitions={() => navigateTo('competitions')}
+          onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'wallet' ? (
@@ -566,6 +584,7 @@ function AppShell() {
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
           onNavigateCompetitions={() => navigateToCompetitions()}
+          onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}
         />

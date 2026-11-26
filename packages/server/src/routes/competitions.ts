@@ -17,6 +17,7 @@ import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { readCatalogRooms, readCoinTournamentCatalog, readMyCompetitions, readPlayerInstance, readTournamentCatalog } from '../competitions/playerReadModel';
 import { coinTournamentsEnabled, ensureCoinTournamentCatalog, ensureTournamentCatalog, isCoinTemplate, knockoutEnabled } from '../competitions/tournamentPersistence';
 import { getBalances } from '../wallet/ledger';
+import type { RecentTournamentWinner, RecentWinnersResponse } from '@fugluck/shared';
 
 const competitionsLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
@@ -69,6 +70,62 @@ competitionsRouter.get("/templates", attachSession, async (req, res) => {
   } catch (err: any) {
     logger.error("[competitions] Failed to load public competition templates:", err);
     res.status(500).json({ error: "Competition catalog is temporarily unavailable. Please retry." });
+  }
+});
+
+/**
+ * GET /api/competitions/recent-winners?limit=10
+ * Public read-only feed of the most recent completed Coins Knockout Tournament champions.
+ * Returns public username only — never exposes private user fields.
+ */
+competitionsRouter.get("/recent-winners", async (req, res) => {
+  try {
+    const parsedLimit = Number.parseInt(String(req.query.limit ?? "10"), 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(25, Math.max(1, parsedLimit)) : 10;
+
+    const { rows } = await pool.query<{
+      username: string;
+      game_id: string;
+      participant_capacity: number;
+      prize_coins: number;
+      completed_at: Date;
+    }>(
+      `
+      SELECT
+        u.username,
+        ci.game_id,
+        ci.participant_capacity,
+        COALESCE(cip.amount_minor, ci.entry_fee_minor * ci.participant_capacity)::int AS prize_coins,
+        COALESCE(ci.settled_at, ci.created_at) AS completed_at
+      FROM competition_instances ci
+      JOIN users u ON u.id = ci.winner_user_id
+      LEFT JOIN competition_instance_prizes cip
+        ON cip.instance_id = ci.id AND cip.placement = 1
+      WHERE ci.status = 'SETTLED'
+        AND ci.format = 'TOURNAMENT_BRACKET'
+        AND ci.currency = 'COINS'
+        AND ci.winner_user_id IS NOT NULL
+        AND u.status = 'active'
+      ORDER BY COALESCE(ci.settled_at, ci.created_at) DESC
+      LIMIT $1
+      `,
+      [limit],
+    );
+
+    const winners: RecentTournamentWinner[] = rows.map((row) => ({
+      username: row.username,
+      gameId: row.game_id,
+      bracketSize: Number(row.participant_capacity) || 2,
+      prizeCoins: Number(row.prize_coins) || 0,
+      completedAt: new Date(row.completed_at).toISOString(),
+    }));
+
+    const payload: RecentWinnersResponse = { winners };
+    res.setHeader("Cache-Control", "no-store");
+    res.json(payload);
+  } catch (err) {
+    logger.error("[competitions] Failed to load recent winners:", err);
+    res.status(500).json({ error: "Recent winners are temporarily unavailable." });
   }
 });
 

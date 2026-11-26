@@ -1229,6 +1229,232 @@ h1, h2, h3, h4 {
   }
 }
 
+/* ---------- Leaderboards, Recent Winners & Personal Bests ---------- */
+
+.ac-game-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ac-pb-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-secondary-subtle);
+  border: 1px solid var(--color-secondary-border);
+  color: var(--color-secondary-hover);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ac-pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.ac-pb-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.ac-pb-card__game {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-pb-card__score {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-secondary-hover);
+}
+
+.ac-winners-feed {
+  padding: 12px 14px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.ac-winners-feed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ac-winners-feed__title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  letter-spacing: -0.01em;
+}
+
+.ac-winners-feed__strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.ac-winner-chip {
+  flex: 0 0 auto;
+  min-width: 176px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ac-winner-chip__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ac-winner-chip__name {
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.ac-winner-chip__prize {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-secondary-hover);
+  white-space: nowrap;
+}
+
+.ac-winner-chip__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.ac-leaderboard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.ac-leaderboard__table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ac-leaderboard__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.ac-leaderboard__table th,
+.ac-leaderboard__table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ac-leaderboard__table th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.ac-leaderboard__table th.is-num,
+.ac-leaderboard__table td.is-num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-leaderboard__table td.is-score {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-hover);
+}
+
+.ac-leaderboard__table td.is-player {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.ac-rank-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-rank-pill--top1 {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+}
+
+.ac-rank-pill--top2 {
+  background: rgba(203, 213, 225, 0.14);
+  border-color: rgba(203, 213, 225, 0.42);
+  color: #e2e8f0;
+}
+
+.ac-rank-pill--top3 {
+  background: rgba(217, 119, 6, 0.16);
+  border-color: rgba(217, 119, 6, 0.45);
+  color: #fdba74;
+}
+
+.ac-leaderboard__empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
 /* ---------- Wallet Hero & Responsive Table ---------- */
 
 .ac-wallet-grid {

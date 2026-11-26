@@ -14,6 +14,7 @@ type GameCardProps = {
   tagline?: string
   thumbnailKey?: string
   certified?: boolean
+  personalBest?: number
   onPlay?: () => void
   onFindOpponent?: (stake?: number, currency?: 'COINS') => void
   onLaunchGuestInvite?: () => void
@@ -28,6 +29,7 @@ export default function GameCard({
   tagline,
   thumbnailKey,
   certified,
+  personalBest,
   onPlay,
   onFindOpponent,
   onLaunchGuestInvite,
@@ -63,7 +65,14 @@ export default function GameCard({
 
         <div className="ac-game-card__body">
           <div style={{ minWidth: 0 }}>
-            <h3 className="ac-game-card__title" title={title}>{title}</h3>
+            <div className="ac-game-card__title-row">
+              <h3 className="ac-game-card__title" title={title}>{title}</h3>
+              {typeof personalBest === 'number' && personalBest > 0 && (
+                <span className="ac-pb-badge" title={t('leaderboards.personalBest', { defaultValue: 'Personal Best' })}>
+                  {t('leaderboards.pbShort', { defaultValue: 'PB' })} {personalBest.toLocaleString()}
+                </span>
+              )}
+            </div>
             {tagline && <p className="ac-game-card__tagline" title={tagline}>{tagline}</p>}
           </div>
 

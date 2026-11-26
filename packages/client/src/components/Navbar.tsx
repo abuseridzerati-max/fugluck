@@ -13,7 +13,8 @@ type NavbarProps = {
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
-  activePage?: 'home' | 'competitions' | 'wallet' | 'profile' | 'friends'
+  onNavigateLeaderboards?: () => void
+  activePage?: 'home' | 'competitions' | 'leaderboards' | 'wallet' | 'profile' | 'friends'
 }
 
 export default function Navbar({
@@ -22,6 +23,7 @@ export default function Navbar({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateCompetitions,
+  onNavigateLeaderboards,
   activePage,
 }: NavbarProps) {
   const { t } = useTranslation()
@@ -80,6 +82,16 @@ export default function Navbar({
               >
                 <TrophyIcon size={15} />
                 <span>{t('competition.title')}</span>
+              </button>
+            )}
+
+            {onNavigateLeaderboards && (
+              <button
+                type="button"
+                className={`ac-nav__link${activePage === 'leaderboards' ? ' ac-nav__link--active' : ''}`}
+                onClick={onNavigateLeaderboards}
+              >
+                <span>{t('leaderboards.title', { defaultValue: 'Leaderboards' })}</span>
               </button>
             )}
           </div>

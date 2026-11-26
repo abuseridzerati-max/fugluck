@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getGameTitle } from '@fugluck/shared'
+import { GAME_MANIFESTS, getGameTitle } from '@fugluck/shared'
 import Avatar from '../components/Avatar'
 import ChangePasswordModal from '../components/ChangePasswordModal'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch, ApiError } from '../lib/api'
+import { usePersonalBests } from '../lib/usePersonalBests'
 
 type MatchHistoryItem = {
   id: string
@@ -26,6 +27,7 @@ type ProfilePageProps = {
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
+  onNavigateLeaderboards?: () => void
   onNavigatePolicy?: (path: string) => void
 }
 
@@ -34,10 +36,12 @@ export default function ProfilePage({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateCompetitions,
+  onNavigateLeaderboards,
   onNavigatePolicy,
 }: ProfilePageProps) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const { bests } = usePersonalBests()
   const [matches, setMatches] = useState<MatchHistoryItem[]>([])
   const [loadingMatches, setLoadingMatches] = useState(true)
   const [matchError, setMatchError] = useState<string | null>(null)
@@ -74,6 +78,7 @@ export default function ProfilePage({
           onNavigateFriends={onNavigateFriends}
           onNavigateWallet={onNavigateWallet}
           onNavigateCompetitions={onNavigateCompetitions}
+          onNavigateLeaderboards={onNavigateLeaderboards}
         />
         <main className="ac-main ac-main--narrow">
           <h1 style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--font-size-2xl)' }}>
@@ -99,6 +104,7 @@ export default function ProfilePage({
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
+        onNavigateLeaderboards={onNavigateLeaderboards}
       />
       <main className="ac-main ac-main--narrow">
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-8)' }}>
@@ -178,6 +184,25 @@ export default function ProfilePage({
             {t('auth.changePassword', { defaultValue: 'Change Password' })}
           </button>
         </div>
+
+        <section style={{ marginBottom: 'var(--space-6)' }}>
+          <h2 style={{ fontSize: 'var(--font-size-xl)', margin: '0 0 var(--space-3)' }}>
+            {t('leaderboards.personalBestsTitle', { defaultValue: 'Personal Bests' })}
+          </h2>
+          <div className="ac-pb-grid">
+            {GAME_MANIFESTS.map((manifest) => {
+              const best = bests[manifest.id]
+              return (
+                <div key={manifest.id} className="ac-pb-card">
+                  <span className="ac-pb-card__game">{manifest.title}</span>
+                  <strong className="ac-pb-card__score">
+                    {typeof best === 'number' && best > 0 ? best.toLocaleString(currentLang) : '—'}
+                  </strong>
+                </div>
+              )
+            })}
+          </div>
+        </section>
 
         <section>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>

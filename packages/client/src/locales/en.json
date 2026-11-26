@@ -902,6 +902,23 @@
   "onboarding": {
     "guestCoinsCallout": "Sign up free — start with 1,000 COINS"
   },
+  "leaderboards": {
+    "title": "Leaderboards",
+    "subtitle": "Top players ranked by highest verified score and tournament wins.",
+    "allCertified": "All Certified",
+    "loadError": "Could not load leaderboards. Please try again.",
+    "empty": "No verified scores recorded yet. Play a match or tournament to claim #1!",
+    "colRank": "Rank",
+    "colPlayer": "Player",
+    "colBestScore": "Best Score",
+    "colWins": "Wins",
+    "recentWinnersTitle": "Recent Tournament Winners",
+    "recentWinnersEmpty": "No completed Coins tournaments yet — join a bracket to be the first champion!",
+    "bracketSizeLabel": "{{count}}-Player",
+    "personalBest": "Personal Best",
+    "personalBestsTitle": "Personal Bests",
+    "pbShort": "PB"
+  },
   "launch": {
     "howToPlayLabel": "Controls:",
     "signUpRequired": "Sign up",

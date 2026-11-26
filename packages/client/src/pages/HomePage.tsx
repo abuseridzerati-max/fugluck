@@ -5,6 +5,7 @@ import AuthModal from '../components/AuthModal'
 import Footer from '../components/Footer'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
+import RecentWinnersFeed from '../components/RecentWinnersFeed'
 import TrendingArena from '../components/TrendingArena'
 import { CoinIcon } from '../components/icons'
 
@@ -18,6 +19,7 @@ type HomePageProps = {
   onNavigateFriends: () => void
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
+  onNavigateLeaderboards?: () => void
   onNavigatePolicy?: (path: string) => void
   initialAuthModalMode?: 'login' | 'signup'
 }
@@ -32,6 +34,7 @@ export default function HomePage({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateCompetitions,
+  onNavigateLeaderboards,
   onNavigatePolicy,
   initialAuthModalMode,
 }: HomePageProps) {
@@ -57,6 +60,7 @@ export default function HomePage({
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
         onNavigateCompetitions={onNavigateCompetitions}
+        onNavigateLeaderboards={onNavigateLeaderboards}
       />
       <main className="ac-main">
         {!user && (
@@ -82,6 +86,7 @@ export default function HomePage({
           </div>
         )}
         <LiveQueueList onFindOpponent={onFindOpponent} />
+        <RecentWinnersFeed limit={6} hideWhenEmpty />
         <TrendingArena
           onPlayGame={onPlayGame}
           onFindOpponent={onFindOpponent}

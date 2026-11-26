@@ -3,6 +3,7 @@ import { getAvailableGenres } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { CLIENT_GAME_PLUGIN_LIST } from '../games/registry'
 import { engineLabel } from '../lib/format'
+import { usePersonalBests } from '../lib/usePersonalBests'
 import GameCard from './GameCard'
 import { GamepadIcon, SearchIcon, TrophyIcon } from './icons'
 
@@ -35,6 +36,7 @@ export default function TrendingArena({
 }: TrendingArenaProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const { bests } = usePersonalBests()
 
   const trimmedQuery = searchQuery.trim().toLowerCase()
 
@@ -173,6 +175,7 @@ export default function TrendingArena({
                     tagline={manifest.tagline}
                     thumbnailKey={manifest.thumbnail}
                     certified
+                    personalBest={bests[manifest.id]}
                     loading={loadingGameId === manifest.id}
                     onPlay={() => onPlayGame(manifest.id, manifest.title)}
                     onFindOpponent={
@@ -267,6 +270,7 @@ export default function TrendingArena({
                     engine={manifest.genre}
                     tagline={manifest.tagline}
                     thumbnailKey={manifest.thumbnail}
+                    personalBest={bests[manifest.id]}
                     loading={loadingGameId === manifest.id}
                     onPlay={() => onPlayGame(manifest.id, manifest.title)}
                     onFindOpponent={

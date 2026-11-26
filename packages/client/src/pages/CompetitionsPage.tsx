@@ -4,7 +4,9 @@ import { getCertifiedGameManifests, type CompetitionTemplate } from '@fugluck/sh
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import CompetitionCatalog from '../components/CompetitionCatalog'
+import LeaderboardPanel from '../components/LeaderboardPanel'
 import MyCompetitions from '../components/MyCompetitions'
+import RecentWinnersFeed from '../components/RecentWinnersFeed'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch } from '../lib/api'
 import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
@@ -22,6 +24,7 @@ export default function CompetitionsPage({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
+  onNavigateLeaderboards,
   onLaunchCompetition,
   onNavigatePolicy,
 }: {
@@ -29,12 +32,14 @@ export default function CompetitionsPage({
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet: () => void
+  onNavigateLeaderboards?: () => void
   onLaunchCompetition: (gameId: string, template: CompetitionTemplate) => void
   onNavigatePolicy?: (path: string) => void
 }) {
   const { t, i18n } = useTranslation()
   const { user, refreshUser } = useAuth()
   const showSandboxGel = canViewSandboxGelUi(user)
+  const [sectionTab, setSectionTab] = useState<'tournaments' | 'leaderboards'>('tournaments')
   const [mode, setMode] = useState<'COINS' | 'GEL'>('COINS')
   const activeMode: 'COINS' | 'GEL' = showSandboxGel ? mode : 'COINS'
   const [game, setGameState] = useState<string>(() => readGameFilterFromUrl())
@@ -78,7 +83,11 @@ export default function CompetitionsPage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={() => setGame('all')}
+        onNavigateCompetitions={() => {
+          setSectionTab('tournaments')
+          setGame('all')
+        }}
+        onNavigateLeaderboards={onNavigateLeaderboards}
       />
       <main className="competition-page ac-main">
         <header className="competition-heading">
@@ -86,71 +95,100 @@ export default function CompetitionsPage({
             <h1>{t('competition.title')}</h1>
             <p>{t('competition.tagline')}</p>
           </div>
-          {showSandboxGel && (
-            <div className="competition-filters" role="group" aria-label={t('competition.modeLabel')}>
-              {(['COINS', 'GEL'] as const).map((next) => (
+          <div className="competition-filters" role="tablist" aria-label={t('competition.title')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sectionTab === 'tournaments'}
+              className={`ac-pill${sectionTab === 'tournaments' ? ' ac-pill--active' : ''}`}
+              onClick={() => setSectionTab('tournaments')}
+            >
+              {t('competition.title')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sectionTab === 'leaderboards'}
+              className={`ac-pill${sectionTab === 'leaderboards' ? ' ac-pill--active' : ''}`}
+              onClick={() => setSectionTab('leaderboards')}
+            >
+              {t('leaderboards.title', { defaultValue: 'Leaderboards' })}
+            </button>
+            {showSandboxGel && sectionTab === 'tournaments' && (['COINS', 'GEL'] as const).map((next) => (
+              <button
+                key={next}
+                type="button"
+                aria-pressed={activeMode === next}
+                className={`ac-pill${activeMode === next ? ' ac-pill--active' : ''}`}
+                onClick={() => setMode(next)}
+              >
+                {t(`competition.modes.${next}`)}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        {sectionTab === 'leaderboards' ? (
+          <>
+            <RecentWinnersFeed limit={8} />
+            <div style={{ marginTop: 'var(--space-5)' }}>
+              <LeaderboardPanel initialGameId={game} limit={15} />
+            </div>
+          </>
+        ) : (
+          <>
+            <RecentWinnersFeed limit={6} />
+
+            {activeMode === 'COINS' ? (
+              <aside className="competition-notice is-coins">
+                <div>
+                  <strong>{t('competition.coinsLabel')}</strong>
+                  <p>{t('competition.coinsNotice')}</p>
+                </div>
+                {user && <span className="competition-coins-balance">{user.balances.coins.toLocaleString()} COINS</span>}
+              </aside>
+            ) : (
+              <aside className="competition-notice">
+                <div>
+                  <strong>{t('competition.testLabel')}</strong>
+                  <p>{t('competition.testNotice')}</p>
+                </div>
+                {user && (
+                  <button type="button" className="ac-btn ac-btn--secondary" disabled={funding} onClick={addTestFunds}>
+                    {t(funding ? 'competition.addingTestFunds' : 'competition.addTestFunds')}
+                  </button>
+                )}
+              </aside>
+            )}
+
+            {activeMode === 'GEL' && fundingError && <p role="alert">{t('competition.fundsError')}</p>}
+
+            <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>
+              <button
+                type="button"
+                aria-pressed={game === 'all'}
+                className={`ac-pill${game === 'all' ? ' ac-pill--active' : ''}`}
+                onClick={() => setGame('all')}
+              >
+                {t('competition.all')}
+              </button>
+              {getCertifiedGameManifests().map((manifest) => (
                 <button
-                  key={next}
+                  key={manifest.id}
                   type="button"
-                  aria-pressed={activeMode === next}
-                  className={`ac-pill${activeMode === next ? ' ac-pill--active' : ''}`}
-                  onClick={() => setMode(next)}
+                  aria-pressed={game === manifest.id}
+                  className={`ac-pill${game === manifest.id ? ' ac-pill--active' : ''}`}
+                  onClick={() => setGame(manifest.id)}
                 >
-                  {t(`competition.modes.${next}`)}
+                  {manifest.title}
                 </button>
               ))}
             </div>
-          )}
-        </header>
 
-        {activeMode === 'COINS' ? (
-          <aside className="competition-notice is-coins">
-            <div>
-              <strong>{t('competition.coinsLabel')}</strong>
-              <p>{t('competition.coinsNotice')}</p>
-            </div>
-            {user && <span className="competition-coins-balance">{user.balances.coins.toLocaleString()} COINS</span>}
-          </aside>
-        ) : (
-          <aside className="competition-notice">
-            <div>
-              <strong>{t('competition.testLabel')}</strong>
-              <p>{t('competition.testNotice')}</p>
-            </div>
-            {user && (
-              <button type="button" className="ac-btn ac-btn--secondary" disabled={funding} onClick={addTestFunds}>
-                {t(funding ? 'competition.addingTestFunds' : 'competition.addTestFunds')}
-              </button>
-            )}
-          </aside>
+            <CompetitionCatalog currency={activeMode} gameId={game === 'all' ? undefined : game} onShowAll={() => setGame('all')} />
+            <MyCompetitions onLaunch={(template) => onLaunchCompetition(template.gameId, template)} />
+          </>
         )}
-
-        {activeMode === 'GEL' && fundingError && <p role="alert">{t('competition.fundsError')}</p>}
-
-        <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>
-          <button
-            type="button"
-            aria-pressed={game === 'all'}
-            className={`ac-pill${game === 'all' ? ' ac-pill--active' : ''}`}
-            onClick={() => setGame('all')}
-          >
-            {t('competition.all')}
-          </button>
-          {getCertifiedGameManifests().map((manifest) => (
-            <button
-              key={manifest.id}
-              type="button"
-              aria-pressed={game === manifest.id}
-              className={`ac-pill${game === manifest.id ? ' ac-pill--active' : ''}`}
-              onClick={() => setGame(manifest.id)}
-            >
-              {manifest.title}
-            </button>
-          ))}
-        </div>
-
-        <CompetitionCatalog currency={activeMode} gameId={game === 'all' ? undefined : game} onShowAll={() => setGame('all')} />
-        <MyCompetitions onLaunch={(template) => onLaunchCompetition(template.gameId, template)} />
       </main>
       <Footer onNavigate={onNavigatePolicy ?? onNavigateHome} />
     </div>
