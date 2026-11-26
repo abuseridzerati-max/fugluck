@@ -2,7 +2,8 @@ import { logger } from '../utils/safeLogger';
 import { randomInt, randomUUID, createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { Pool, type PoolClient } from 'pg';
-import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, createMoney, type ISO4217Currency, type AuthorityOutcome } from '@fugluck/shared';
+import { AUTHORITY_CAP_TICKS, createMoney, type ISO4217Currency, type AuthorityOutcome } from '@fugluck/shared';
+import { getServerGamePlugin } from '../games/registry';
 import { pool } from '../db/client';
 import { StagingMockAccountingRouter } from '../accounting/stagingMockRouter';
 import type { CompetitionAccountingPort } from '../accounting/port';
@@ -37,11 +38,12 @@ export class AuthorityStore {
         if(!root||root.state!=='PLAYING'||!bracket||bracket.state!=='READY'||!bracket.player1_id||!bracket.player2_id||root.starts_at&&Date.now()<new Date(root.starts_at).getTime())throw Error('BRACKET_NOT_READY');
         readyMs=root.terms.config.readyMs;
       }else if((await c.query('SELECT 1 FROM competition_authority_runs WHERE instance_id=$1',[instanceId])).rowCount)throw Error('AUTHORITY_ALREADY_EXISTS');
-      if (!inst || !['LOCKED',...(bracket?['ACTIVE']:[])].includes(inst.status) || !['space-blaster', 'cyber-hopper'].includes(inst.game_id) || (!bracket&&inst.participant_capacity !== 2)) throw Error('AUTHORITY_UNSUPPORTED');
+      const plugin = inst ? getServerGamePlugin(inst.game_id) : undefined;
+      if (!inst || !['LOCKED',...(bracket?['ACTIVE']:[])].includes(inst.status) || !plugin || (!bracket&&inst.participant_capacity !== 2)) throw Error('AUTHORITY_UNSUPPORTED');
       const players = bracket?[{user_id:bracket.player1_id},{user_id:bracket.player2_id}]:(await c.query('SELECT user_id FROM competition_participants WHERE instance_id=$1 ORDER BY seat_index', [instanceId])).rows;
       if (players.length !== 2) throw Error('AUTHORITY_CAPACITY');
       const id = randomUUID(), matchId = `comp_match_${randomUUID()}`;
-      const version = inst.game_id === 'cyber-hopper' ? CYBER_HOPPER_AUTHORITY_VERSION : AUTHORITY_VERSION;
+      const version = plugin.authorityVersion;
       await c.query(`INSERT INTO matches_history(id,game_id,player1_id,player2_id,competition_instance_id,currency,stake,seed,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'ACTIVE')`, [matchId,inst.game_id,players[0].user_id,players[1].user_id,instanceId,inst.currency,inst.entry_fee_minor,seed]);
       if(!bracket)await c.query('UPDATE competition_instances SET match_id=$2 WHERE id=$1', [instanceId,matchId]);
       else await c.query("UPDATE competition_bracket_matches SET state='ACTIVE',attempt=attempt+1,ready_deadline=clock_timestamp()+$2*interval '1 millisecond' WHERE id=$1",[bracketMatchId,readyMs]);
@@ -120,7 +122,7 @@ export class AuthorityStore {
       const r = await this.lock(c,id,false);
       if ((await c.query('SELECT 1 FROM competition_authority_decisions WHERE run_id=$1', [id])).rowCount) return;
       if (!(administrativeVoid && systemVoid) && (recovery ? r.healthy : (r.owner_id !== this.ownerId || !r.healthy))) throw Error('AUTHORITY_FENCED');
-      const s = (await c.query(`SELECT s.*,v.id AS result_id,v.score FROM competition_authority_sessions s LEFT JOIN competition_authority_results v ON v.session_id=s.id WHERE run_id=$1 ORDER BY s.id`, [id])).rows;
+      const s = (await c.query(`SELECT s.*,v.id AS result_id,v.score,v.ticks FROM competition_authority_sessions s LEFT JOIN competition_authority_results v ON v.session_id=s.id WHERE run_id=$1 ORDER BY s.id`, [id])).rows;
       let kind = 'VOID', winner: string | null = null;
       if (!systemVoid) {
         if (forfeitUser) {
@@ -128,8 +130,18 @@ export class AuthorityStore {
           kind='FORFEIT'; winner=s.find(p=>p.user_id!==forfeitUser).user_id;
         } else {
           if (s.length !== 2 || s.some(p=>!p.result_id)) throw Error('RESULTS_PENDING');
-          kind=s[0].score===s[1].score?'DRAW':'WIN';
-          if (kind==='WIN') winner=(s[0].score>s[1].score?s[0]:s[1]).user_id;
+          if (s[0].score === s[1].score) {
+            const plugin = getServerGamePlugin(r.game_id);
+            const tieWinner = plugin?.resolveTie(
+              { userId: s[0].user_id, score: Number(s[0].score), ticks: Number(s[0].ticks ?? 0) },
+              { userId: s[1].user_id, score: Number(s[1].score), ticks: Number(s[1].ticks ?? 0) },
+            ) ?? null;
+            kind = tieWinner ? 'WIN' : 'DRAW';
+            winner = tieWinner;
+          } else {
+            kind = 'WIN';
+            winner = (s[0].score > s[1].score ? s[0] : s[1]).user_id;
+          }
         }
       }
       await c.query(`INSERT INTO competition_authority_decisions(run_id,kind,winner_user_id,reason,result_ids) VALUES($1,$2,$3,$4,$5)`, [id,kind,winner,reason,JSON.stringify(s.map(p=>p.result_id).filter(Boolean))]);

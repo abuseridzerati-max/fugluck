@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GameEngine } from '@fugluck/games'
+import { getGameManifest, type GameGenre } from '@fugluck/shared'
 import { categoryColors } from '@fugluck/theme'
 import { engineLabel } from '../lib/format'
 import GameArtwork from './GameArtwork'
@@ -10,8 +10,9 @@ import { TrophyIcon } from './icons'
 type GameCardProps = {
   gameId: string
   title: string
-  engine: GameEngine
+  engine: GameGenre
   tagline?: string
+  thumbnailKey?: string
   certified?: boolean
   onPlay?: () => void
   onFindOpponent?: (stake?: number, currency?: 'COINS') => void
@@ -25,7 +26,8 @@ export default function GameCard({
   title,
   engine,
   tagline,
-  certified = false,
+  thumbnailKey,
+  certified,
   onPlay,
   onFindOpponent,
   onLaunchGuestInvite,
@@ -34,13 +36,15 @@ export default function GameCard({
 }: GameCardProps) {
   const { t } = useTranslation()
   const [showModal, setShowModal] = useState(false)
+  const manifest = getGameManifest(gameId)
+  const isCertified = certified ?? manifest?.certified ?? false
   const tagColor = categoryColors[engine]
 
   return (
     <>
-      <article className={`ac-game-card${certified ? ' ac-game-card--certified' : ''}`}>
+      <article className={`ac-game-card${isCertified ? ' ac-game-card--certified' : ''}`}>
         <div className="ac-game-card__media">
-          <GameArtwork gameId={gameId} />
+          <GameArtwork gameId={gameId} thumbnailKey={thumbnailKey ?? manifest?.thumbnail} />
           <div className="ac-game-card__badges">
             <span
               className="ac-tag"
@@ -48,7 +52,7 @@ export default function GameCard({
             >
               {t(`home.filters.${engine}`, { defaultValue: engineLabel(engine) })}
             </span>
-            {certified && (
+            {isCertified && (
               <span className="ac-certified-badge" title={t('home.tournamentCertified')}>
                 <TrophyIcon size={11} />
                 <span>{t('home.certifiedBadge')}</span>
@@ -73,7 +77,7 @@ export default function GameCard({
               ▶ {t('common.play')}
             </button>
 
-            {certified && onOpenCompetitions && (
+            {isCertified && onOpenCompetitions && (
               <button
                 type="button"
                 className="ac-btn ac-btn--ghost ac-btn--sm ac-game-card__tourney-btn"

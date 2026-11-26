@@ -3,7 +3,7 @@
 // All monetary values in paid competitions are represented in integer minor units (tetri/cents).
 
 import type { ISO4217Currency } from "./money";
-import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from "./authority";
+import { GAME_MANIFESTS } from "./games";
 
 /** Competition currency: ISO-4217 monetary currencies or free virtual COINS (never mixed with MoneyAmount). */
 export type CompetitionCurrency = ISO4217Currency | "COINS";
@@ -47,15 +47,18 @@ export type CompetitionCertification = {
   authorityVersion?: string;
 };
 
-/** Single technical source of truth for current TEST GEL competition eligibility. */
-export const GAME_COMPETITION_CERTIFICATIONS: Record<string, CompetitionCertification> = {
-  "space-blaster": { practice: true, casualCoins: true, testGelCompetition: "LEVEL_3_CERTIFIED", authorityVersion: AUTHORITY_VERSION },
-  "cyber-hopper": { practice: true, casualCoins: true, testGelCompetition: "LEVEL_3_CERTIFIED", authorityVersion: CYBER_HOPPER_AUTHORITY_VERSION },
-  "neon-runner": { practice: true, casualCoins: true, testGelCompetition: "NOT_CERTIFIED" },
-  "pixel-ninja-dash": { practice: true, casualCoins: true, testGelCompetition: "NOT_CERTIFIED" },
-  "speed-trivia": { practice: true, casualCoins: true, testGelCompetition: "OUT_OF_SCOPE" },
-  "tf-sprint": { practice: true, casualCoins: true, testGelCompetition: "OUT_OF_SCOPE" },
-};
+/** Single technical source of truth for current TEST GEL competition eligibility (derived from GAME_MANIFESTS). */
+export const GAME_COMPETITION_CERTIFICATIONS: Record<string, CompetitionCertification> = Object.fromEntries(
+  GAME_MANIFESTS.map((manifest) => [
+    manifest.id,
+    {
+      practice: true as const,
+      casualCoins: manifest.modes.includes("casual"),
+      testGelCompetition: manifest.certified ? "LEVEL_3_CERTIFIED" : manifest.certificationScope,
+      ...(manifest.authorityVersion ? { authorityVersion: manifest.authorityVersion } : {}),
+    },
+  ]),
+);
 
 // Architectural eligibility classifications per technical audit.
 // Note: These classifications represent technical compatibility assessments (entropy, determinism,

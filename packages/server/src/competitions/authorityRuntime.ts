@@ -1,9 +1,8 @@
 import { logger } from '../utils/safeLogger';
 import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
-import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine';
-import { CyberHopperEngine, type Obstacle as CyberHopperObstacle } from '@fugluck/games/cyber-hopper/engine';
-import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION, AUTHORITY_CAP_TICKS, FIXED_TIMESTEP_SEC, VIRTUAL_VIEWPORT, type AuthorityBinding, type AuthorityControls, type AuthoritySnapshot, type AuthorityState } from '@fugluck/shared';
+import { AUTHORITY_CAP_TICKS, FIXED_TIMESTEP_SEC, type AuthorityBinding, type AuthorityControls, type AuthoritySnapshot, type AuthorityState } from '@fugluck/shared';
+import { getServerGamePlugin, type ServerGamePlugin } from '../games/registry';
 import type { MatchmakingSocket } from '../matchmaking/socketAuth';
 import { getOnlineSocket } from '../matchmaking/presence';
 import { AuthorityStore } from './authorityStore';
@@ -55,14 +54,13 @@ export class LiveControls {
     this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
   }
 }
-type AuthorityEngine = SpaceBlasterEngine | CyberHopperEngine;
 interface Player {
   userId:string; sessionId:string; binding?:AuthorityBinding; socket?:MatchmakingSocket;
-  state:AuthorityState; engine:AuthorityEngine; controls:LiveControls;
+  state:AuthorityState; gameState:unknown;
   disconnectedAt:number|null; snapshots:Map<number,number>; snapshotSeq:number; pending:Promise<void>; readyPendingEpoch?:number;
 }
 interface Run {
-  id:string; instanceId:string; matchId:string; gameId:string; version:string; players:Player[]; created:number;
+  id:string; instanceId:string; matchId:string; gameId:string; version:string; plugin:ServerGamePlugin<any>; players:Player[]; created:number;
   bracketMatchId?:string; readyMs:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
   stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
@@ -177,12 +175,8 @@ export class AuthorityRuntime {
       if(this.findRun(p.instanceId,socket.data.userId,p.matchId)?.stopped)return;
       const {r,player}=this.authenticate(socket,p);
       if(player.state!=='ACTIVE'||!r.startAt||Date.now()<r.startAt) throw Error('NOT_ACTIVE');
-      if (r.gameId === 'cyber-hopper') {
-        if(Object.keys(p).some(k=>!['sessionId','instanceId','matchId','gameId','version','nonce','epoch','seq','snapshot','hopUp','hopDown','hopLeft','hopRight'].includes(k))) throw Error('INPUT_SHAPE');
-      } else {
-        if(Object.keys(p).some(k=>!['sessionId','instanceId','matchId','gameId','version','nonce','epoch','seq','snapshot','left','right','up','down','fire'].includes(k))) throw Error('INPUT_SHAPE');
-      }
-      player.controls.accept(p,performance.now(),player.snapshots,r.gameId);
+      if(Object.keys(p).some(k=>!r.plugin.allowedControlKeys.includes(k))) throw Error('INPUT_SHAPE');
+      r.plugin.applyInput(player.gameState,p,performance.now(),player.snapshots);
       r.metrics.controls++;
     }));
     socket.on('authority:forfeit',guarded(async p=>{
@@ -192,7 +186,7 @@ export class AuthorityRuntime {
       await this.finish(r,'EXPLICIT_FORFEIT',opponent.socket?.connected?player.userId:undefined,!opponent.socket?.connected);
     }));
     socket.on('disconnect',()=>{
-      for(const r of this.runs.values()) for(const p of r.players) if(p.socket?.id===socket.id) { p.disconnectedAt=performance.now(); p.controls.neutral(); }
+      for(const r of this.runs.values()) for(const p of r.players) if(p.socket?.id===socket.id) { p.disconnectedAt=performance.now(); r.plugin.resetControls(p.gameState,false); }
     });
   }
   authenticate(socket:MatchmakingSocket,p:AuthorityBinding) {
@@ -214,7 +208,7 @@ export class AuthorityRuntime {
       const epoch=await this.store.bind(r.id,p.sessionId,socket.id,nonce);
       r.metrics.bindMaxMs=Math.max(r.metrics.bindMaxMs,performance.now()-began);
       if(p.socket&&p.socket.id!==socket.id) p.socket.emit('authority:error',{code:'CONTROLLER_REPLACED'});
-      p.socket=socket; p.disconnectedAt=null; p.controls=new LiveControls(); p.snapshots.clear();
+      p.socket=socket; p.disconnectedAt=null; r.plugin.resetControls(p.gameState,true); p.snapshots.clear();
       p.binding={sessionId:p.sessionId,instanceId:r.instanceId,matchId:r.matchId,gameId:r.gameId,version:r.version,nonce,epoch};
       socket.emit('authority:session',p.binding);
       this.snapshot(r,p);
@@ -224,9 +218,10 @@ export class AuthorityRuntime {
   async create(instanceId:string,bracketMatchId?:string) {
     const record=await this.store.create(instanceId,this.options.capTicks??AUTHORITY_CAP_TICKS,this.options.seedFactory?.(),bracketMatchId);
     if(this.closed)throw Error('AUTHORITY_CLOSED'); // The durable lease expires to the next owner.
+    const plugin=getServerGamePlugin(record.gameId);
+    if(!plugin)throw Error('AUTHORITY_UNSUPPORTED');
     const now=performance.now();
-    const r:Run={...record,gameId:record.gameId,version:record.version,players:record.sessions.map(s=>({ ...s,state:'CREATED',engine:record.gameId==='cyber-hopper'?new CyberHopperEngine(record.seed):new SpaceBlasterEngine(record.seed),controls:new LiveControls(),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
-    r.players.forEach(p=>p.engine.resize(VIRTUAL_VIEWPORT.width,VIRTUAL_VIEWPORT.height));
+    const r:Run={...record,gameId:record.gameId,version:record.version,plugin,players:record.sessions.map(s=>({ ...s,state:'CREATED',gameState:plugin.createState(record.seed),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     this.runs.set(bracketMatchId?record.matchId:instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
     for(const p of r.players) { const socket=getOnlineSocket(p.userId); if(socket) await this.bind(r,p,socket); }
@@ -234,32 +229,9 @@ export class AuthorityRuntime {
   }
   snapshot(r:Run,p:Player,reliable=false) {
     const began=performance.now();
-    const e=p.engine, seq=++p.snapshotSeq, createdAt=Date.now();
-    const value:AuthoritySnapshot={sessionId:p.sessionId,epoch:p.binding?.epoch??0,createdAt,emittedAt:0,seq,serverTime:createdAt,startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:e.tickCount,score:e.score,gameOver:e.gameOver};
-    if (r.gameId === 'cyber-hopper') {
-      const ch = e as CyberHopperEngine;
-      value.gridX = ch.gridX;
-      value.gridY = ch.gridY;
-      value.roundsCompleted = ch.roundsCompleted;
-      value.obstacles = ch.obstacles
-        .filter((o: CyberHopperObstacle) => o.active && o.x >= -o.width && o.x <= VIRTUAL_VIEWPORT.width + o.width)
-        .map((o: CyberHopperObstacle) => ({
-          id: o.id,
-          x: Math.round(o.x),
-          y: Math.round(o.y),
-          width: o.width,
-          height: Math.round(o.height),
-          direction: o.direction,
-          color: o.color,
-          active: true,
-        }));
-    } else {
-      const sb = e as SpaceBlasterEngine;
-      value.shipX = sb.shipX;
-      value.shipY = sb.shipY;
-      value.bullets = sb.bullets.filter(b=>b.active);
-      value.asteroids = sb.asteroids.filter(a=>a.active);
-    }
+    const seq=++p.snapshotSeq, createdAt=Date.now();
+    const base:AuthoritySnapshot={sessionId:p.sessionId,epoch:p.binding?.epoch??0,createdAt,emittedAt:0,seq,serverTime:createdAt,startAt:r.startAt,deadline:r.deadline,state:p.state,tickCount:r.plugin.getTickCount(p.gameState),score:r.plugin.getScore(p.gameState),gameOver:false};
+    const value=r.plugin.serializeSnapshot(p.gameState,base);
     p.snapshots.set(seq,performance.now());
     for(const [key,time] of p.snapshots) if(performance.now()-time>500) p.snapshots.delete(key);
     value.emittedAt=Date.now();
@@ -274,7 +246,7 @@ export class AuthorityRuntime {
   }
   private async persistResult(r:Run,p:Player,reason:string) {
     const began=performance.now();
-    try {await this.store.result(r.id,p.sessionId,p.engine.score,p.engine.tickCount,reason);}
+    try {await this.store.result(r.id,p.sessionId,r.plugin.getScore(p.gameState),r.plugin.getTickCount(p.gameState),reason);}
     finally {r.metrics.resultWriteMaxMs=Math.max(r.metrics.resultWriteMaxMs,performance.now()-began);}
   }
   tick(r:Run) {
@@ -291,11 +263,12 @@ export class AuthorityRuntime {
     } else if(now>=r.startMono) {
       const target=Math.floor((now-r.startMono)/(FIXED_TIMESTEP_SEC*1000));
       if(now-r.startMono-r.ticks*FIXED_TIMESTEP_SEC*1000>250) { void this.finish(r,'SERVER_TICK_LAG',undefined,true); return; }
+      const capTicks=this.options.capTicks??AUTHORITY_CAP_TICKS;
       while(r.ticks<target&&!r.stopped) {
         const began=performance.now(); r.ticks++;
         for(const p of r.players) if(p.state==='ACTIVE') {
-          const collision=p.engine.update(FIXED_TIMESTEP_SEC,p.controls.take(now,r.gameId) as any);
-          if(collision||p.engine.tickCount>=(this.options.capTicks??AUTHORITY_CAP_TICKS)) {
+          const collision=r.plugin.tick(p.gameState,FIXED_TIMESTEP_SEC,now);
+          if(collision||r.plugin.isFinished(p.gameState,capTicks)) {
             p.state='COMPLETED';
             p.pending=p.pending.then(()=>this.persistResult(r,p,collision?'COLLISION':'CAP_REACHED'));
             void p.pending.catch(()=>this.finish(r,'RESULT_PERSISTENCE_FAILED',undefined,true));
@@ -315,7 +288,7 @@ export class AuthorityRuntime {
       const gone=disconnected.length===1?disconnected.find(p=>p.state==='ACTIVE'&&p.disconnectedAt!==null&&now-p.disconnectedAt>(this.options.reconnectMs??10000)):undefined;
       if(gone) {
         const opponent=r.players.find(p=>p!==gone)!;
-        const healthy=opponent.state==='COMPLETED'||now-opponent.controls.lastInput<1000;
+        const healthy=opponent.state==='COMPLETED'||now-r.plugin.getLastInputAt(opponent.gameState)<1000;
         void this.finish(r,healthy?'RECONNECT_EXPIRED':'NETWORK_UNCERTAIN',healthy?gone.userId:undefined,!healthy);return;
       }
     }
@@ -348,7 +321,7 @@ export class AuthorityRuntime {
       const outcome=await this.store.decide(r.id,reason,forfeitUser,systemVoid);
       decisionAndApplyMs=performance.now()-decisionStarted;
       const notificationStarted=performance.now();
-      r.players.forEach(p=>p.socket?.emit('authority:outcome',{...outcome,matchId:r.matchId,yourScore:p.engine.score}));
+      r.players.forEach(p=>p.socket?.emit('authority:outcome',{...outcome,matchId:r.matchId,yourScore:r.plugin.getScore(p.gameState)}));
       notificationEmitMs=performance.now()-notificationStarted;
     } catch {
       // No speculative winner: durable decisions retry; lost state expires to recovery/refund.

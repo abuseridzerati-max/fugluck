@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import type {
-  GameModule,
-  GameModuleFactory,
-  GameOverPayload,
-  MatchedPayload,
-  MatchResolvedPayload,
-  PlayerResult,
+import {
+  isCertifiedGame,
+  type GameModule,
+  type GameModuleFactory,
+  type GameOverPayload,
+  type MatchedPayload,
+  type MatchResolvedPayload,
+  type PlayerResult,
 } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { canNativeShare, copyTextToClipboard } from '../lib/clipboard'
@@ -54,7 +55,7 @@ function isTerminal(phase: Phase): boolean {
 
 export default function MatchLoader(props: MatchLoaderProps) {
   if (props.matchMode?.kind === 'competition') {
-    if (props.gameId === 'space-blaster' || props.gameId === 'cyber-hopper') {
+    if (isCertifiedGame(props.gameId)) {
       return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} template={props.matchMode.template} onExit={props.onExit} onComplete={props.onMatchResolved} />
     }
     return (

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
-import { GAME_COMPETITION_CERTIFICATIONS, type TournamentConfig, type TournamentTerms, type SpecialCycle, type CompetitionProduct, type TournamentCapacity } from '@fugluck/shared';
+import { GAME_COMPETITION_CERTIFICATIONS, getCertifiedGameIds, isCertifiedGame, type TournamentConfig, type TournamentTerms, type SpecialCycle, type CompetitionProduct, type TournamentCapacity } from '@fugluck/shared';
 import { pool } from '../db/client';
 import { defaultTournamentConfig, freezeCoinTournamentTerms, freezeTournamentTerms, nextSpecialCycle, validateTournamentConfig } from './tournamentRules';
 import { getAppEnvironment } from '../config/environment';
@@ -34,13 +34,13 @@ async function durableLock<T>(key:string,fn:()=>Promise<T>,tryOnly:boolean):Prom
   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
 }
 export async function currentTournamentConfig(gameId:string,c?:PoolClient):Promise<{revision:number;config:TournamentConfig}> {
-  if(!['space-blaster','cyber-hopper'].includes(gameId))throw Error('GAME_NOT_CERTIFIED');
+  if(!isCertifiedGame(gameId))throw Error('GAME_NOT_CERTIFIED');
   const q=c??pool;const row=(await q.query('SELECT revision,config FROM competition_product_configs WHERE game_id=$1 AND active',[gameId])).rows[0];
   return row??{revision:1,config:defaultTournamentConfig(gameId)};
 }
 /** Internal operator domain method; no client route accepts configuration or financial provenance. */
 export async function saveTournamentConfig(gameId:string,config:TournamentConfig,actorId:string) {
-  validateTournamentConfig(config);if(!actorId||!['space-blaster','cyber-hopper'].includes(gameId))throw Error('INVALID_TOURNAMENT_CONFIG');
+  validateTournamentConfig(config);if(!actorId||!isCertifiedGame(gameId))throw Error('INVALID_TOURNAMENT_CONFIG');
   return tournamentTx(async c=>{
     await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`product-config:${gameId}`]);
     const revision=Number((await c.query('SELECT COALESCE(max(revision),0)+1 n FROM competition_product_configs WHERE game_id=$1',[gameId])).rows[0].n);
@@ -74,7 +74,7 @@ export async function materializeTournamentProduct(c:PoolClient,gameId:string,te
 }
 export async function ensureTournamentCatalog(now=Date.now()) {
   return tournamentTx(async c=>{
-    const games=['space-blaster','cyber-hopper'];
+    const games=getCertifiedGameIds();
     let configs=(await c.query('SELECT game_id,revision,config FROM competition_product_configs WHERE game_id=ANY($1::text[]) AND active',[games])).rows;
     if(configs.length!==games.length){
       const missing=games.filter(game=>!configs.some(row=>row.game_id===game)).map(game=>({game_id:game,config:defaultTournamentConfig(game)}));
@@ -118,7 +118,7 @@ export async function ensureTournamentCatalog(now=Date.now()) {
 }
 export async function ensureCoinTournamentCatalog() {
   return tournamentTx(async c => {
-    const games = ['space-blaster', 'cyber-hopper'] as const;
+    const games = getCertifiedGameIds();
     const capacities: TournamentCapacity[] = [2, 4, 8, 16];
     const products = games.flatMap(game_id =>
       capacities.map(capacity => {

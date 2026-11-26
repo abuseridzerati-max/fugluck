@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { getGameTitle, type CompetitionTemplate, type GameModuleFactory, type InviteReceivedPayload } from '@fugluck/shared'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import AuthModal from './components/AuthModal'
-import { gameFactories } from './game-loader/gameFactories'
+import { getClientGamePlugin } from './games/registry'
 import { InviteProvider } from './invites/InviteProvider'
 import InviteLanding from './invites/InviteLanding'
 import type { MatchSocketMode } from './matchmaking/useMatchSocket'
@@ -101,7 +101,7 @@ function readStoredActiveMatch(): StoredActiveMatch | null {
     const raw = sessionStorage.getItem(ACTIVE_MATCH_STORAGE_KEY) || sessionStorage.getItem(LEGACY_ACTIVE_MATCH_STORAGE_KEY)
     if (!raw) return null
     const value = JSON.parse(raw) as Partial<StoredActiveMatch>
-    if (typeof value.id !== 'string' || typeof value.title !== 'string' || !gameFactories[value.id]) {
+    if (typeof value.id !== 'string' || typeof value.title !== 'string' || !getClientGamePlugin(value.id)) {
       storeActiveMatch(null)
       return null
     }
@@ -321,10 +321,10 @@ function AppShell() {
     mode: 'practice' | 'match',
     matchMode?: MatchSocketMode,
   ) {
-    const loadFactory = gameFactories[id]
-    if (!loadFactory) return
+    const plugin = getClientGamePlugin(id)
+    if (!plugin) return
     setLoadingGameId(id)
-    const mod = await loadFactory()
+    const mod = await plugin.loadModule()
     setLoadingGameId(null)
     setActiveGame({ id, title, factory: mod.default, mode, matchMode })
   }
@@ -350,7 +350,7 @@ function AppShell() {
     setInviteJoin({ status: 'looking-up', code })
     try {
       const res = await apiFetch<{ valid: boolean; gameId: string; hostUsername: string }>(`/api/matches/guest-link/${code}`)
-      if (!res.valid || !res.gameId || !gameFactories[res.gameId]) {
+      if (!res.valid || !res.gameId || !getClientGamePlugin(res.gameId)) {
         setInviteJoin({
           status: 'error',
           code,

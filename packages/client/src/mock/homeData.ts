@@ -1,25 +1,26 @@
-import type { GameEngine } from '@fugluck/games'
+import { GAME_MANIFESTS, getAvailableGenres, type GameGenre } from '@fugluck/shared'
+import { engineLabel } from '../lib/format'
 
 export type CatalogGame = {
   id: string
   title: string
-  engine: GameEngine
+  engine: GameGenre
   tagline?: string
 }
 
-export const activeGames: CatalogGame[] = [
-  { id: 'neon-runner', title: 'Neon Runner', engine: 'runner', tagline: 'High-speed neon runner survival race' },
-  { id: 'pixel-ninja-dash', title: 'Pixel Ninja Dash', engine: 'reflex-timing', tagline: 'Precision rooftop dash and leap reflex challenge' },
-  { id: 'space-blaster', title: 'Space Blaster', engine: 'arena-shooter', tagline: 'Retro vector arcade space shooter' },
-  { id: 'cyber-hopper', title: 'Cyber Hopper', engine: 'reflex-timing', tagline: 'Synthwave road-crossing timing and evasion' },
-  { id: 'speed-trivia', title: 'Speed Trivia Clash', engine: 'quiz', tagline: '10-question speed trivia speed duel' },
-  { id: 'tf-sprint', title: 'True / False Sprint', engine: 'quiz', tagline: 'Rapid-fire True or False trivia clash' },
-]
+/** Derived from `GAME_MANIFESTS` in `@fugluck/shared`. */
+export const activeGames: CatalogGame[] = GAME_MANIFESTS.map((manifest) => ({
+  id: manifest.id,
+  title: manifest.title,
+  engine: manifest.genre,
+  tagline: manifest.tagline,
+}))
 
-export const navFilters: Array<{ label: string; engine: GameEngine | 'all' }> = [
+/** Dynamically derived genre filter pills from `GAME_MANIFESTS`. */
+export const navFilters: Array<{ label: string; engine: GameGenre | 'all' }> = [
   { label: 'All', engine: 'all' },
-  { label: 'Runner', engine: 'runner' },
-  { label: 'Arena Shooter', engine: 'arena-shooter' },
-  { label: 'Reflex Timing', engine: 'reflex-timing' },
-  { label: 'Quiz', engine: 'quiz' },
+  ...getAvailableGenres().map((genre) => ({
+    label: engineLabel(genre),
+    engine: genre,
+  })),
 ]

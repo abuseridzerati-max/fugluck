@@ -2,6 +2,7 @@ import React, { useRef, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CompetitionTemplate } from '@fugluck/shared'
 import { competitionResult, moneyLabel, type PlayerCompetition } from '../lib/competitionPresentation'
+import { getClientGamePlugin } from '../games/registry'
 
 function formatCompetitionMoney(minor: number, currency = 'GEL'): string {
   if (currency === 'COINS') {
@@ -60,7 +61,7 @@ export function CompetitionRules({ template }: { template: CompetitionTemplate }
   const isCoins = template.currency === 'COINS'
   return <details className="competition-rules"><summary>{t('competition.rulesDetails')}</summary>
     <dl><div><dt>{t('competition.format')}</dt><dd>{t(`competition.formats.${template.format}`)}</dd></div><div><dt>{t('competition.players')}</dt><dd>{template.participantCapacity}</dd></div></dl>
-    <p>{t(template.gameId === 'cyber-hopper' ? 'competition.hopperControls' : 'competition.blasterControls')}</p><p>{t(template.format === 'TOURNAMENT_BRACKET' ? 'competition.knockout.rules' : 'competition.gameRules')}</p><p>{t(isCoins ? 'competition.coinsLeaveRule' : template.format === 'TOURNAMENT_BRACKET' ? 'competition.knockout.leaveRule' : 'competition.leaveRule')}</p>
+    <p>{t(getClientGamePlugin(template.gameId)?.competitionControlsKey ?? 'competition.blasterControls')}</p><p>{t(template.format === 'TOURNAMENT_BRACKET' ? 'competition.knockout.rules' : 'competition.gameRules')}</p><p>{t(isCoins ? 'competition.coinsLeaveRule' : template.format === 'TOURNAMENT_BRACKET' ? 'competition.knockout.leaveRule' : 'competition.leaveRule')}</p>
     <div className="competition-policy-links"><a href="/rules" target="_blank" rel="noreferrer">{t('competition.rules')}</a><a href="/entry-fees-prizes" target="_blank" rel="noreferrer">{t('competition.entryPrizeDetails')}</a><a href="/fair-play" target="_blank" rel="noreferrer">{t('competition.fairPlay')}</a><a href="/terms" target="_blank" rel="noreferrer">{t('competition.terms')}</a>{isCoins ? <a href="/coins" target="_blank" rel="noreferrer">{t('competition.coinsDetails')}</a> : <a href="/sandbox-notice" target="_blank" rel="noreferrer">{t('competition.sandboxDetails')}</a>}</div>
   </details>
 }

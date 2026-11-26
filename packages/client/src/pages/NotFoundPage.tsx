@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import LaunchModal from '../components/LaunchModal'
-import { activeGames } from '../mock/homeData'
+import { GAME_MANIFESTS } from '@fugluck/shared'
 
 type NotFoundPageProps = {
   onNavigateHome: () => void
@@ -32,7 +32,7 @@ export default function NotFoundPage({
   const [selectedGame, setSelectedGame] = useState<{ id: string; title: string } | null>(null)
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
 
-  const quickGames = activeGames
+  const quickGames = GAME_MANIFESTS
 
   return (
     <div className="ac-shell">

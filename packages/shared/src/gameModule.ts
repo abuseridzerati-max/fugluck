@@ -25,16 +25,9 @@ export interface GameModule extends EventTarget {
 
 export type GameModuleFactory = () => GameModule;
 
-export type GameCategory =
-  | "runner"
-  | "racer"
-  | "arena-shooter"
-  | "falling-block"
-  | "physics-table"
-  | "turn-based-board"
-  | "reflex-timing"
-  | "word-trivia"
-  | "quiz";
+import { GAME_MANIFESTS, GAME_MANIFEST_MAP, type GameGenre } from "./games";
+
+export type GameCategory = GameGenre;
 
 export type GameRegistryItem = {
   id: string;
@@ -43,18 +36,16 @@ export type GameRegistryItem = {
   modulePath: string;
 };
 
-export const GAME_REGISTRY: GameRegistryItem[] = [
-  { id: "neon-runner", name: "Neon Runner", engine: "runner", modulePath: "./neon-runner/index.ts" },
-  { id: "pixel-ninja-dash", name: "Pixel Ninja Dash", engine: "reflex-timing", modulePath: "./pixel-ninja-dash/index.ts" },
-  { id: "space-blaster", name: "Space Blaster", engine: "arena-shooter", modulePath: "./space-blaster/index.ts" },
-  { id: "cyber-hopper", name: "Cyber Hopper", engine: "reflex-timing", modulePath: "./cyber-hopper/index.ts" },
-  { id: "speed-trivia", name: "Speed Trivia Clash", engine: "quiz", modulePath: "./speed-trivia/index.ts" },
-  { id: "tf-sprint", name: "True / False Sprint", engine: "quiz", modulePath: "./tf-sprint/index.ts" },
-];
+/** Derived from the single source-of-truth `GAME_MANIFESTS` registry. */
+export const GAME_REGISTRY: GameRegistryItem[] = GAME_MANIFESTS.map((manifest) => ({
+  id: manifest.id,
+  name: manifest.title,
+  engine: manifest.genre,
+  modulePath: manifest.modulePath,
+}));
 
 export function getGameTitle(gameId: string): string {
-  const item = GAME_REGISTRY.find((g) => g.id === gameId);
-  return item?.name ?? gameId;
+  return GAME_MANIFEST_MAP[gameId]?.title ?? gameId;
 }
 
 

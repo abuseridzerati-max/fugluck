@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
+import { getGameManifest } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import { CoinIcon, GamepadIcon, TrophyIcon } from './icons'
 
@@ -41,8 +41,8 @@ export default function LaunchModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const isEligibleForSandboxCompetitions =
-    GAME_COMPETITION_CERTIFICATIONS[gameId]?.testGelCompetition === 'LEVEL_3_CERTIFIED'
+  const manifest = getGameManifest(gameId)
+  const isEligibleForSandboxCompetitions = Boolean(manifest?.certified && manifest.modes.includes('tournament'))
 
   const currentCoinBalance = user?.balances.coins ?? 0
 

@@ -12,7 +12,7 @@ const readOnlyChecks = new Set([
   'admin-console-check.ts', 'admin-security-check.ts', 'authority-presentation-check.ts',
   'canvas-render-check.ts', 'competition-phase1-domain-check.ts', 'competition-socket-session-check.ts',
   'cors-audit-check.ts', 'determinism-check.ts', 'environment-safety-check.ts', 'file-upload-audit-check.ts',
-  'game-module-lifecycle-check.ts', 'i18n-check.ts', 'input-validation-check.ts',
+  'game-module-lifecycle-check.ts', 'game-plugin-contract-check.ts', 'i18n-check.ts', 'input-validation-check.ts',
   'password-policy-check.ts', 'password-security-check.ts', 'proxy-rate-limit-check.ts',
   'rate-limit-check.ts', 'registration-verification-check.ts', 'regression-runner-check.ts',
   'request-logging-audit-check.ts', 'score-validation-check.ts', 'sql-injection-check.ts',

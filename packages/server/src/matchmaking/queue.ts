@@ -1,7 +1,6 @@
 import { logger } from '../utils/safeLogger';
 import { randomInt } from "node:crypto";
-import { gameRegistry } from "@fugluck/games";
-import type { QueueStateEntry } from "@fugluck/shared";
+import { GAME_MANIFESTS, type QueueStateEntry } from "@fugluck/shared";
 import type { MatchmakingSocket } from "./socketAuth";
 
 export type QueueEntry = {
@@ -14,7 +13,7 @@ export type QueueEntry = {
   queuedAt?: number;
 };
 
-const VALID_GAME_IDS = new Set(gameRegistry.map((g) => g.id));
+const VALID_GAME_IDS = new Set(GAME_MANIFESTS.map((g) => g.id));
 
 const queues = new Map<string, QueueEntry[]>();
 

@@ -3,6 +3,7 @@ import { getAppEnvironment } from "./environment";
 import { validateDeploymentIdentity } from './deploymentIdentity';
 import { validateCommercialSafety } from './commercialSafety';
 import { validateStagingMockConfig } from './stagingMockCommercial';
+import { assertServerGamePluginsValid } from '../games/registry';
 
 export type StartupValidationResult = {
   valid: boolean;
@@ -61,6 +62,11 @@ export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): Sta
   }
 
   errors.push(...validateDeploymentIdentity(env), ...validateCommercialSafety(env), ...validateStagingMockConfig(env));
+  try {
+    assertServerGamePluginsValid();
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+  }
   if(env.ENABLE_KNOCKOUT_TOURNAMENTS==='true'){
     if(!['development','test','staging'].includes(appEnvironment))errors.push('Knockout tournaments currently require an isolated non-production environment.');
     if(env.ENABLE_COMPETITION_AUTHORITY!=='true')errors.push('Knockout tournaments require certified server authority.');

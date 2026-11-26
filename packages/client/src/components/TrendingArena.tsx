@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { GAME_COMPETITION_CERTIFICATIONS } from '@fugluck/shared'
+import { getAvailableGenres } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
-import { gameFactories } from '../game-loader/gameFactories'
-import { activeGames, navFilters } from '../mock/homeData'
+import { CLIENT_GAME_PLUGIN_LIST } from '../games/registry'
+import { engineLabel } from '../lib/format'
 import GameCard from './GameCard'
 import { GamepadIcon, SearchIcon, TrophyIcon } from './icons'
 
@@ -36,29 +36,30 @@ export default function TrendingArena({
 
   const trimmedQuery = searchQuery.trim().toLowerCase()
 
-  const filteredGames = activeGames.filter((game) => {
+  const genreFilters = [
+    { label: 'All', genre: 'all' as const },
+    ...getAvailableGenres().map((genre) => ({ label: engineLabel(genre), genre })),
+  ]
+
+  const filteredPlugins = CLIENT_GAME_PLUGIN_LIST.filter(({ manifest }) => {
     const categoryMatches =
       !selectedCategory ||
       selectedCategory.toLowerCase() === 'all' ||
-      game.engine.toLowerCase() === selectedCategory.toLowerCase()
+      manifest.genre.toLowerCase() === selectedCategory.toLowerCase()
     if (!categoryMatches) return false
 
     if (trimmedQuery) {
-      const titleMatches = game.title.toLowerCase().includes(trimmedQuery)
-      const engineMatches = game.engine.toLowerCase().includes(trimmedQuery)
-      const taglineMatches = game.tagline?.toLowerCase().includes(trimmedQuery)
-      return Boolean(titleMatches || engineMatches || taglineMatches)
+      const titleMatches = manifest.title.toLowerCase().includes(trimmedQuery)
+      const genreMatches = manifest.genre.toLowerCase().includes(trimmedQuery)
+      const taglineMatches = manifest.tagline.toLowerCase().includes(trimmedQuery)
+      return Boolean(titleMatches || genreMatches || taglineMatches)
     }
 
     return true
   })
 
-  const certifiedGames = filteredGames.filter(
-    (game) => GAME_COMPETITION_CERTIFICATIONS[game.id]?.testGelCompetition === 'LEVEL_3_CERTIFIED',
-  )
-  const casualGames = filteredGames.filter(
-    (game) => GAME_COMPETITION_CERTIFICATIONS[game.id]?.testGelCompetition !== 'LEVEL_3_CERTIFIED',
-  )
+  const certifiedPlugins = filteredPlugins.filter(({ manifest }) => manifest.certified)
+  const casualPlugins = filteredPlugins.filter(({ manifest }) => !manifest.certified)
 
   return (
     <section id="arena-games" style={{ margin: '0 0 var(--space-8)' }}>
@@ -66,17 +67,17 @@ export default function TrendingArena({
         <div className="ac-arena-toolbar" role="region" aria-label="Filter and search games">
           {onSelectCategory && (
             <div className="ac-arena-toolbar__filters" role="group" aria-label="Game genres">
-              {navFilters.map((f) => {
-                const isActive = selectedCategory.toLowerCase() === f.engine.toLowerCase()
+              {genreFilters.map((f) => {
+                const isActive = selectedCategory.toLowerCase() === f.genre.toLowerCase()
                 return (
                   <button
-                    key={f.label}
+                    key={f.genre}
                     type="button"
                     aria-pressed={isActive}
                     className={`ac-pill${isActive ? ' ac-pill--active' : ''}`}
-                    onClick={() => onSelectCategory(f.engine)}
+                    onClick={() => onSelectCategory(f.genre)}
                   >
-                    {t(`home.filters.${f.engine}`, { defaultValue: f.label })}
+                    {t(`home.filters.${f.genre}`, { defaultValue: f.label })}
                   </button>
                 )
               })}
@@ -120,7 +121,7 @@ export default function TrendingArena({
         </div>
       )}
 
-      {filteredGames.length === 0 ? (
+      {filteredPlugins.length === 0 ? (
         <div
           style={{
             textAlign: 'center',
@@ -147,8 +148,8 @@ export default function TrendingArena({
         </div>
       ) : (
         <>
-          {certifiedGames.length > 0 && (
-            <div style={{ marginBottom: casualGames.length > 0 ? 'var(--space-6)' : 0 }}>
+          {certifiedPlugins.length > 0 && (
+            <div style={{ marginBottom: casualPlugins.length > 0 ? 'var(--space-6)' : 0 }}>
               <div className="ac-section-head">
                 <div className="ac-section-title-group">
                   <TrophyIcon size={16} />
@@ -161,28 +162,25 @@ export default function TrendingArena({
               </div>
 
               <div className="ac-game-grid">
-                {certifiedGames.map((game) => (
+                {certifiedPlugins.map(({ manifest }) => (
                   <GameCard
-                    key={game.id}
-                    gameId={game.id}
-                    title={game.title}
-                    engine={game.engine}
-                    tagline={game.tagline}
+                    key={manifest.id}
+                    gameId={manifest.id}
+                    title={manifest.title}
+                    engine={manifest.genre}
+                    tagline={manifest.tagline}
+                    thumbnailKey={manifest.thumbnail}
                     certified
-                    loading={loadingGameId === game.id}
-                    onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
+                    loading={loadingGameId === manifest.id}
+                    onPlay={() => onPlayGame(manifest.id, manifest.title)}
                     onFindOpponent={
-                      user && game.id in gameFactories
-                        ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                      user
+                        ? (stake, currency) => onFindOpponent(manifest.id, manifest.title, stake, currency)
                         : undefined
                     }
-                    onLaunchGuestInvite={
-                      game.id in gameFactories
-                        ? () => onLaunchGuestInvite?.(game.id, game.title)
-                        : undefined
-                    }
+                    onLaunchGuestInvite={() => onLaunchGuestInvite?.(manifest.id, manifest.title)}
                     onOpenCompetitions={
-                      onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
+                      onOpenCompetitions ? () => onOpenCompetitions(manifest.id, manifest.title) : undefined
                     }
                   />
                 ))}
@@ -190,7 +188,7 @@ export default function TrendingArena({
             </div>
           )}
 
-          {casualGames.length > 0 && (
+          {casualPlugins.length > 0 && (
             <div>
               <div className="ac-section-head">
                 <div className="ac-section-title-group">
@@ -203,27 +201,24 @@ export default function TrendingArena({
               </div>
 
               <div className="ac-game-grid">
-                {casualGames.map((game) => (
+                {casualPlugins.map(({ manifest }) => (
                   <GameCard
-                    key={game.id}
-                    gameId={game.id}
-                    title={game.title}
-                    engine={game.engine}
-                    tagline={game.tagline}
-                    loading={loadingGameId === game.id}
-                    onPlay={game.id in gameFactories ? () => onPlayGame(game.id, game.title) : undefined}
+                    key={manifest.id}
+                    gameId={manifest.id}
+                    title={manifest.title}
+                    engine={manifest.genre}
+                    tagline={manifest.tagline}
+                    thumbnailKey={manifest.thumbnail}
+                    loading={loadingGameId === manifest.id}
+                    onPlay={() => onPlayGame(manifest.id, manifest.title)}
                     onFindOpponent={
-                      user && game.id in gameFactories
-                        ? (stake, currency) => onFindOpponent(game.id, game.title, stake, currency)
+                      user
+                        ? (stake, currency) => onFindOpponent(manifest.id, manifest.title, stake, currency)
                         : undefined
                     }
-                    onLaunchGuestInvite={
-                      game.id in gameFactories
-                        ? () => onLaunchGuestInvite?.(game.id, game.title)
-                        : undefined
-                    }
+                    onLaunchGuestInvite={() => onLaunchGuestInvite?.(manifest.id, manifest.title)}
                     onOpenCompetitions={
-                      onOpenCompetitions ? () => onOpenCompetitions(game.id, game.title) : undefined
+                      onOpenCompetitions ? () => onOpenCompetitions(manifest.id, manifest.title) : undefined
                     }
                   />
                 ))}

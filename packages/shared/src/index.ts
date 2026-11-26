@@ -55,3 +55,4 @@ export { GAME_COMPETITION_ELIGIBILITY_REGISTRY, GAME_COMPETITION_CERTIFICATIONS,
 
 export * from './authority';
 export * from './tournaments';
+export * from './games';

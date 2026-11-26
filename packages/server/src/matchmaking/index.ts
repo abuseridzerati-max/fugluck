@@ -5,7 +5,7 @@ import type { CompetitionAccountingPort } from '../accounting/port';
 import { TournamentService } from '../competitions/tournamentService';
 import { coinTournamentsEnabled, isCoinTemplate, knockoutEnabled, readProduct } from '../competitions/tournamentPersistence';
 import { templateService } from '../competitions/templateService';
-import { AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from '@fugluck/shared';
+import { isSupportedServerGame } from '../games/registry';
 import type { Server as HttpServer } from "node:http";
 import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared";
 import { Server, type DefaultEventsMap } from "socket.io";
@@ -160,9 +160,9 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
           !validMockAuthorization((socket.handshake.auth as {stagingMockAuthorization?:unknown})?.stagingMockAuthorization)))
           throw new Error('Staging mock competition authorization required.');
         const template = await templateService.getTemplate(templateId);
-        const isSupportedAuthorityGame =
-          (template?.gameId === 'space-blaster' && template.rulesVersion === AUTHORITY_VERSION) ||
-          (template?.gameId === 'cyber-hopper' && template.rulesVersion === CYBER_HOPPER_AUTHORITY_VERSION);
+        const isSupportedAuthorityGame = Boolean(
+          template && isSupportedServerGame(template.gameId, template.rulesVersion),
+        );
         const tournament=template?.format==='TOURNAMENT_BRACKET'&&(isCoinTemplate(templateId)?coinTournamentsEnabled():knockoutEnabled())?await readProduct(templateId):null;
         if (process.env.ENABLE_COMPETITION_AUTHORITY !== 'true' || !isSupportedAuthorityGame || (!tournament&&(template?.format !== 'HEAD_TO_HEAD' || template?.participantCapacity !== 2))) {
           throw Object.assign(new Error('Competition gameplay is blocked pending live authority acceptance.'), {code:'GAMEPLAY_BLOCKED'});

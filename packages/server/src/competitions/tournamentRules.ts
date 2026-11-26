@@ -1,8 +1,10 @@
 import { createHmac, randomBytes } from 'node:crypto';
-import { TOURNAMENT_CAPACITIES, type TournamentCapacity, type TournamentConfig, type TournamentTerms, type CompetitionProduct, type SpecialCycle } from '@fugluck/shared';
+import { isCertifiedGame, TOURNAMENT_CAPACITIES, type TournamentCapacity, type TournamentConfig, type TournamentTerms, type CompetitionProduct, type SpecialCycle } from '@fugluck/shared';
+import { getServerGamePlugin } from '../games/registry';
 
 export function defaultTournamentConfig(gameId: string): TournamentConfig {
-  return {referenceEntryMinor:gameId==='cyber-hopper'?400:500,capacities:[2,4,8,16],platformRateBps:1000,
+  const referenceEntryMinor = getServerGamePlugin(gameId)?.defaultReferenceEntryMinor ?? 500;
+  return {referenceEntryMinor,capacities:[2,4,8,16],platformRateBps:1000,
     promoPrizeBps:15000,giftPrizeBps:15000,promoThreshold:5,giftThreshold:10,promoHours:6,giftHours:24,
     timezone:'Asia/Tbilisi',promoCapacities:[2,4,8,16],giftCapacities:[16],cutoffMinutes:5,
     readyMs:30000,waitingMs:120000,recoveryAttempts:3};
@@ -34,7 +36,7 @@ export function freezeTournamentTerms(product: CompetitionProduct, capacity: Tou
 /** Launch zones have no daylight-saving ambiguity; arbitrary zones are rejected, never approximated. */
 export function nextSpecialCycle(gameId:string,product:'PROMO'|'GIFT',config:TournamentConfig,now:number):SpecialCycle {
   validateTournamentConfig(config);
-  if(!Number.isSafeInteger(now)||!['space-blaster','cyber-hopper'].includes(gameId))throw Error('INVALID_CYCLE');
+  if(!Number.isSafeInteger(now)||!isCertifiedGame(gameId))throw Error('INVALID_CYCLE');
   const period=(product==='PROMO'?config.promoHours:config.giftHours)*3600000;
   const offset=config.timezone==='Asia/Tbilisi'?4*3600000:0;
   let starts=Math.floor((now+offset)/period)*period-offset+period;

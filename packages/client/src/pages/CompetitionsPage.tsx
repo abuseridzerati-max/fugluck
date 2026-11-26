@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CompetitionTemplate } from '@fugluck/shared'
+import { getCertifiedGameManifests, type CompetitionTemplate } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import CompetitionCatalog from '../components/CompetitionCatalog'
@@ -24,7 +24,10 @@ export default function CompetitionsPage({onNavigateHome,onNavigateProfile,onNav
       {activeMode==='COINS'?<aside className="competition-notice is-coins"><div><strong>{t('competition.coinsLabel')}</strong><p>{t('competition.coinsNotice')}</p></div>{user&&<span className="competition-coins-balance">{user.balances.coins.toLocaleString()} COINS</span>}</aside>
         :<aside className="competition-notice"><div><strong>{t('competition.testLabel')}</strong><p>{t('competition.testNotice')}</p></div>{user&&<button type="button" className="ac-btn ac-btn--secondary" disabled={funding} onClick={addTestFunds}>{t(funding?'competition.addingTestFunds':'competition.addTestFunds')}</button>}</aside>}
       {activeMode==='GEL'&&fundingError&&<p role="alert">{t('competition.fundsError')}</p>}
-      <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>{['all','space-blaster','cyber-hopper'].map(id=><button key={id} type="button" aria-pressed={game===id} className={`ac-pill${game===id?' ac-pill--active':''}`} onClick={()=>setGame(id)}>{id==='all'?t('competition.all'):id==='space-blaster'?'Space Blaster':'Cyber Hopper'}</button>)}</div>
+      <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>
+        <button type="button" aria-pressed={game==='all'} className={`ac-pill${game==='all'?' ac-pill--active':''}`} onClick={()=>setGame('all')}>{t('competition.all')}</button>
+        {getCertifiedGameManifests().map(manifest=><button key={manifest.id} type="button" aria-pressed={game===manifest.id} className={`ac-pill${game===manifest.id?' ac-pill--active':''}`} onClick={()=>setGame(manifest.id)}>{manifest.title}</button>)}
+      </div>
       <CompetitionCatalog currency={activeMode} gameId={game==='all'?undefined:game} onShowAll={()=>setGame('all')}/>
       <MyCompetitions onLaunch={template=>onLaunchCompetition(template.gameId,template)}/>
     </main><Footer onNavigate={onNavigatePolicy??onNavigateHome}/>
