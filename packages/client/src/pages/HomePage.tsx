@@ -6,7 +6,6 @@ import Footer from '../components/Footer'
 import LiveQueueList from '../components/LiveQueueList'
 import Navbar from '../components/Navbar'
 import TrendingArena from '../components/TrendingArena'
-import { TrophyIcon } from '../components/icons'
 
 type HomePageProps = {
   onPlayGame: (id: string, title: string) => void
@@ -59,29 +58,7 @@ export default function HomePage({
         onNavigateCompetitions={onNavigateCompetitions}
       />
       <main className="ac-main">
-        <section className="ac-hero" aria-label="Fugluck Arena overview">
-          <div className="ac-hero__content">
-            <span className="ac-hero__eyebrow">{t('home.eyebrow')}</span>
-            <h1 className="ac-hero__title">{t('home.heroTitle')}</h1>
-            <p className="ac-hero__subtitle">{t('home.heroSubtitle')}</p>
-          </div>
-          <div className="ac-hero__actions">
-            {onNavigateCompetitions && (
-              <button
-                type="button"
-                className="ac-btn ac-btn--primary"
-                onClick={onNavigateCompetitions}
-              >
-                <TrophyIcon size={15} />
-                <span>{t('competition.title')}</span>
-              </button>
-            )}
-            <a href="#arena-games" className="ac-btn ac-btn--ghost" style={{ textDecoration: 'none' }}>
-              {t('home.browseGames')}
-            </a>
-          </div>
-        </section>
-
+        <h1 className="ac-sr-only">{t('home.heroTitle')}</h1>
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}
