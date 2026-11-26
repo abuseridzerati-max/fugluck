@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import AuthModal from '../components/AuthModal'
 import Footer from '../components/Footer'
@@ -34,7 +33,6 @@ export default function HomePage({
   onNavigatePolicy,
   initialAuthModalMode,
 }: HomePageProps) {
-  const { t } = useTranslation()
   const { user } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -58,7 +56,6 @@ export default function HomePage({
         onNavigateCompetitions={onNavigateCompetitions}
       />
       <main className="ac-main">
-        <h1 className="ac-sr-only">{t('home.heroTitle')}</h1>
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <TrendingArena
           onPlayGame={onPlayGame}
