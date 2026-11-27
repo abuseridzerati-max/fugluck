@@ -15,3 +15,10 @@ export {
   getGameManifest,
   isCertifiedGame,
 } from "./registry";
+export type {
+  TurnBasedEngine,
+  TurnBasedGameState,
+  TurnBasedMove,
+  TurnBasedOutcome,
+  TurnBasedPlayer,
+} from "./turnBased";

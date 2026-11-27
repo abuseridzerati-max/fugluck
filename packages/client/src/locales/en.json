@@ -267,6 +267,7 @@
     "neonSnakeControls": "Use arrow keys, WASD, swipe, or D-pad to steer the snake. Eat orbs and avoid walls or your tail.",
     "minesweeperControls": "Click or tap cells to reveal safe tiles. Right-click, Shift+click, or switch to Flag Mode to mark mines.",
     "brickBreakerControls": "Use Left / Right arrow keys, A / D, or touch buttons to steer the paddle and clear brick waves.",
+    "blitzChessControls": "Click or tap a White piece to highlight legal squares, then click or tap a destination square to move.",
     "liveCanvas": "Live {{game}} competition",
     "leaveCompetition": "Leave Competition",
     "forfeit": "Forfeit competition",
@@ -328,7 +329,8 @@
       "fire": "Fire",
       "drop": "DROP",
       "digMode": "MODE: DIG",
-      "flagMode": "MODE: FLAG"
+      "flagMode": "MODE: FLAG",
+      "clearSelection": "Clear Selection"
     },
     "emptyGame": "No {{game}} competitions available right now.",
     "showAll": "Show All",
@@ -895,6 +897,7 @@
       "runner": "Runner",
       "arena-shooter": "Arena Shooter",
       "reflex-timing": "Reflex Timing",
+      "turn-based-board": "Board Games",
       "quiz": "Quiz"
     },
     "howTournamentsWork": {
@@ -938,6 +941,7 @@
       "neon-snake": "Arrows / WASD or Swipe to steer · Eat orbs to grow & grab timed bonus orbs",
       "minesweeper-sprint": "Click / Tap to reveal · Right-click, Shift+click, or Flag Mode to flag · 90s sprint",
       "brick-breaker": "Left / Right Arrows, A / D, or drag paddle · Chain brick combos & clear waves",
+      "blitz-chess": "Click / Tap a piece, then a highlighted square · 3+0 Blitz vs seeded tactical AI",
       "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
       "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
       "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
@@ -1063,6 +1067,12 @@
       "description": "Deterministic neon paddle & armored brick wave breaker",
       "controls": "Use Left / Right arrows, A / D, touch buttons, or drag directly on the canvas to steer the paddle.",
       "rules": "Deflect the ball to shatter armored and standard bricks (+50 pts per hit with combo multiplier, +100 pts per break, +500 wave clear bonus). Aim shots using the paddle edges. Run ends at 0 lives or when the 120-second timer expires."
+    },
+    "blitzChess": {
+      "title": "Blitz Chess",
+      "description": "3+0 blitz chess vs deterministic seeded tactical AI",
+      "controls": "Click or tap a White piece to view legal moves, then click or tap a highlighted destination square.",
+      "rules": "Play official 3+0 Blitz Chess (180 seconds per side) as White against a deterministic seeded tactical AI. Score points from captures, checks, remaining clock bonus, and +1,000 for Checkmate victory. Flagging or losing ends the run with 0 points."
     }
   }
 }

@@ -15,6 +15,8 @@ import { MinesweeperSprintModule } from '../games/minesweeper-sprint';
 import { MinesweeperSprintEngine } from '../games/minesweeper-sprint/engine';
 import { BrickBreakerModule } from '../games/brick-breaker';
 import { BrickBreakerEngine } from '../games/brick-breaker/engine';
+import { BlitzChessModule } from '../games/blitz-chess';
+import { BlitzChessEngine } from '../games/blitz-chess/engine';
 import { SpeedTriviaModule } from '../games/speed-trivia';
 import { SpeedTriviaEngine } from '../games/speed-trivia/engine';
 
@@ -81,6 +83,7 @@ try {
     ['neon-snake', NeonSnakeModule, NeonSnakeEngine],
     ['minesweeper-sprint', MinesweeperSprintModule, MinesweeperSprintEngine],
     ['brick-breaker', BrickBreakerModule, BrickBreakerEngine],
+    ['blitz-chess', BlitzChessModule, BlitzChessEngine],
     ['speed-trivia', SpeedTriviaModule, SpeedTriviaEngine],
   ] as const) {
     const calls: number[][] = [];

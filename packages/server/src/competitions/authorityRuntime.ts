@@ -21,13 +21,22 @@ export class LiveControls {
   hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
   movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
   cellInput: { action?: 'reveal' | 'flag'; col?: number; row?: number } = {};
+  chessMove: { moveFrom?: string; moveTo?: string; resign?: boolean } = {};
   dropPending = false;
   accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === 'brick-breaker') {
+    if (gameId === 'blitz-chess') {
+      if (p.resign !== undefined && typeof p.resign !== 'boolean') throw Error('INPUT_SHAPE');
+      if (p.moveFrom !== undefined || p.moveTo !== undefined) {
+        if (typeof p.moveFrom !== 'string' || typeof p.moveTo !== 'string' || !/^[a-h][1-8]$/.test(p.moveFrom) || !/^[a-h][1-8]$/.test(p.moveTo)) throw Error('INPUT_SHAPE');
+      }
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      if (p.resign) this.chessMove = { resign: true };
+      else if (p.moveFrom && p.moveTo) this.chessMove = { moveFrom: p.moveFrom, moveTo: p.moveTo };
+    } else if (gameId === 'brick-breaker') {
       for (const k of ['left','right'] as const) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
       this.tokens--; this.seq=p.seq; this.lastInput=now;
       this.held={moveLeft:Boolean(p.left),moveRight:Boolean(p.right),moveUp:false,moveDown:false,shootPressed:false};
@@ -70,6 +79,11 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'blitz-chess') {
+      const m = this.chessMove;
+      this.chessMove = {};
+      return m;
+    }
     if (gameId === 'brick-breaker') {
       return { left: this.held.moveLeft, right: this.held.moveRight };
     }
@@ -100,6 +114,7 @@ export class LiveControls {
     this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
     this.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
     this.cellInput = {};
+    this.chessMove = {};
     this.dropPending = false;
   }
 }

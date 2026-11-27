@@ -13,6 +13,8 @@
     "./minesweeper-sprint/engine": "./minesweeper-sprint/engine.ts",
     "./minesweeper-sprint/constants": "./minesweeper-sprint/constants.ts",
     "./brick-breaker/engine": "./brick-breaker/engine.ts",
+    "./blitz-chess/engine": "./blitz-chess/engine.ts",
+    "./blitz-chess/constants": "./blitz-chess/constants.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -53,6 +55,10 @@
       "import": "./brick-breaker/index.ts",
       "default": "./brick-breaker/index.ts"
     },
+    "./blitz-chess": {
+      "import": "./blitz-chess/index.ts",
+      "default": "./blitz-chess/index.ts"
+    },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",
       "default": "./speed-trivia/index.ts"
@@ -63,6 +69,7 @@
     }
   },
   "dependencies": {
-    "@fugluck/shared": "*"
+    "@fugluck/shared": "*",
+    "chess.js": "^1.4.0"
   }
 }

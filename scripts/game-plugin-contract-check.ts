@@ -42,12 +42,13 @@ async function main() {
     "neon-snake",
     "minesweeper-sprint",
     "brick-breaker",
+    "blitz-chess",
     "speed-trivia",
     "tf-sprint",
   ];
 
   check(
-    "GAME_MANIFESTS contains all 11 registered games",
+    "GAME_MANIFESTS contains all 12 registered games",
     expectedIds.every((id) => GAME_MANIFESTS.some((m) => m.id === id)) &&
       GAME_MANIFESTS.length === expectedIds.length,
   );
@@ -59,16 +60,17 @@ async function main() {
   );
 
   check(
-    "Exactly 2048-blitz, brick-breaker, cyber-hopper, minesweeper-sprint, neon-snake, space-blaster, and stack-tower are Tournament Certified",
-    getCertifiedGameIds().sort().join(",") === "2048-blitz,brick-breaker,cyber-hopper,minesweeper-sprint,neon-snake,space-blaster,stack-tower",
+    "Exactly 2048-blitz, blitz-chess, brick-breaker, cyber-hopper, minesweeper-sprint, neon-snake, space-blaster, and stack-tower are Tournament Certified",
+    getCertifiedGameIds().sort().join(",") === "2048-blitz,blitz-chess,brick-breaker,cyber-hopper,minesweeper-sprint,neon-snake,space-blaster,stack-tower",
   );
 
   check(
     "getAvailableGenres derives non-empty unique genre list from manifests",
-    getAvailableGenres().length === 4 &&
+    getAvailableGenres().length === 5 &&
       getAvailableGenres().includes("arena-shooter") &&
       getAvailableGenres().includes("reflex-timing") &&
       getAvailableGenres().includes("runner") &&
+      getAvailableGenres().includes("turn-based-board") &&
       getAvailableGenres().includes("quiz"),
   );
 
@@ -119,7 +121,21 @@ async function main() {
     const snapshotTimes = new Map<number, number>([[1, 1000]]);
 
     const controls: AuthorityControls =
-      gameId === "brick-breaker"
+      gameId === "blitz-chess"
+        ? {
+            sessionId: "s1",
+            instanceId: "i1",
+            matchId: "m1",
+            gameId,
+            version: plugin.authorityVersion,
+            nonce: "n1",
+            epoch: 1,
+            seq: 1,
+            snapshot: 1,
+            moveFrom: "e2",
+            moveTo: "e4",
+          }
+        : gameId === "brick-breaker"
         ? {
             sessionId: "s1",
             instanceId: "i1",
@@ -250,7 +266,9 @@ async function main() {
     const snap = plugin.serializeSnapshot(stateA, baseSnapshot);
     check(
       `ServerGamePlugin '${gameId}' serializeSnapshot populates game-specific fields`,
-      gameId === "brick-breaker"
+      gameId === "blitz-chess"
+        ? typeof snap.chessFen === "string" && typeof snap.whiteClockTicks === "number" && typeof snap.blackClockTicks === "number"
+        : gameId === "brick-breaker"
         ? typeof snap.paddleX === "number" && typeof snap.ballX === "number" && Array.isArray(snap.bricks)
         : gameId === "minesweeper-sprint"
         ? Array.isArray(snap.visibleBoard) && snap.visibleBoard.length === 140 && typeof snap.ticksRemaining === "number"

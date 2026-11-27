@@ -173,6 +173,37 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'blitz-chess': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="86" y="16" width="148" height="148" rx="8" fill="#0d1422" stroke="#818cf8" strokeOpacity="0.55" strokeWidth="1.75" />
+      <g>
+        <rect x="94" y="24" width="33" height="33" fill="#1e2c44" />
+        <rect x="127" y="24" width="33" height="33" fill="#10192b" />
+        <rect x="160" y="24" width="33" height="33" fill="#1e2c44" />
+        <rect x="193" y="24" width="33" height="33" fill="#10192b" />
+        <rect x="94" y="57" width="33" height="33" fill="#10192b" />
+        <rect x="127" y="57" width="33" height="33" fill="#1e2c44" />
+        <rect x="160" y="57" width="33" height="33" fill="#10b981" fillOpacity="0.28" />
+        <rect x="193" y="57" width="33" height="33" fill="#1e2c44" />
+        <rect x="94" y="90" width="33" height="33" fill="#1e2c44" />
+        <rect x="127" y="90" width="33" height="33" fill="#10192b" />
+        <rect x="160" y="90" width="33" height="33" fill="#1e2c44" />
+        <rect x="193" y="90" width="33" height="33" fill="#10192b" />
+        <rect x="94" y="123" width="33" height="33" fill="#10192b" />
+        <rect x="127" y="123" width="33" height="33" fill="#1e2c44" />
+        <rect x="160" y="123" width="33" height="33" fill="#10192b" />
+        <rect x="193" y="123" width="33" height="33" fill="#1e2c44" />
+      </g>
+      <circle cx="176" cy="73" r="12" fill="#e2e8f0" stroke="#38bdf8" strokeWidth="1.75" />
+      <text x="176" y="79" textAnchor="middle" fill="#09101a" fontFamily="sans-serif" fontWeight="bold" fontSize="18">♘</text>
+      <circle cx="143" cy="40" r="12" fill="#111827" stroke="#ec4899" strokeWidth="1.75" />
+      <text x="143" y="46" textAnchor="middle" fill="#f8fafc" fontFamily="sans-serif" fontWeight="bold" fontSize="18">♚</text>
+      <circle cx="110" cy="139" r="12" fill="#e2e8f0" stroke="#38bdf8" strokeWidth="1.75" />
+      <text x="110" y="145" textAnchor="middle" fill="#09101a" fontFamily="sans-serif" fontWeight="bold" fontSize="18">♔</text>
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

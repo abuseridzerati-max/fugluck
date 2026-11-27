@@ -1,3 +1,5 @@
+import type { TurnBasedOutcome } from './games/turnBased';
+
 /** RV-001 v1: current controls and current state only; no input history. */
 export const AUTHORITY_VERSION = 'space-blaster-rv001-v1';
 export const CYBER_HOPPER_AUTHORITY_VERSION = 'cyber-hopper-rv001-v1';
@@ -6,6 +8,7 @@ export const BLITZ_2048_AUTHORITY_VERSION = '2048-blitz-rv001-v1';
 export const NEON_SNAKE_AUTHORITY_VERSION = 'neon-snake-rv001-v1';
 export const MINESWEEPER_SPRINT_AUTHORITY_VERSION = 'minesweeper-sprint-rv001-v1';
 export const BRICK_BREAKER_AUTHORITY_VERSION = 'brick-breaker-rv001-v1';
+export const BLITZ_CHESS_AUTHORITY_VERSION = 'blitz-chess-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -19,6 +22,7 @@ export interface AuthorityControls extends AuthorityBinding {
   drop?: boolean;
   moveUp?: boolean; moveDown?: boolean; moveLeft?: boolean; moveRight?: boolean;
   cellAction?: 'reveal' | 'flag'; cellCol?: number; cellRow?: number;
+  moveFrom?: string; moveTo?: string; resign?: boolean;
 }
 export interface CyberHopperObstacleSnapshot {
   id: number; x: number; y: number; width: number; height: number;
@@ -82,5 +86,16 @@ export interface AuthoritySnapshot {
   combo?: number;
   launchTicks?: number;
   trail?: Array<{ x: number; y: number }>;
+  chessFen?: string;
+  whiteClockTicks?: number;
+  blackClockTicks?: number;
+  lastMoveFrom?: string | null;
+  lastMoveTo?: string | null;
+  lastMoveSan?: string | null;
+  capturedByWhite?: string[];
+  capturedByBlack?: string[];
+  turnOutcome?: TurnBasedOutcome;
+  inCheck?: boolean;
+  turnNumber?: number;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }
