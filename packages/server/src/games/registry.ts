@@ -2,11 +2,13 @@ import { SpaceBlasterEngine } from "@fugluck/games/space-blaster/engine";
 import { CyberHopperEngine, type Obstacle as CyberHopperObstacle } from "@fugluck/games/cyber-hopper/engine";
 import { StackTowerEngine } from "@fugluck/games/stack-tower/engine";
 import { Blitz2048Engine } from "@fugluck/games/2048-blitz/engine";
+import { NeonSnakeEngine } from "@fugluck/games/neon-snake/engine";
 import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
+  NEON_SNAKE_AUTHORITY_VERSION,
   STACK_TOWER_AUTHORITY_VERSION,
   VIRTUAL_VIEWPORT,
   type AuthorityControls,
@@ -81,6 +83,17 @@ interface StackTowerServerState {
 
 interface Blitz2048ServerState {
   engine: Blitz2048Engine;
+  guard: ControlGuard;
+  movePulses: {
+    moveUp: boolean;
+    moveDown: boolean;
+    moveLeft: boolean;
+    moveRight: boolean;
+  };
+}
+
+interface NeonSnakeServerState {
+  engine: NeonSnakeEngine;
   guard: ControlGuard;
   movePulses: {
     moveUp: boolean;
@@ -438,6 +451,88 @@ const blitz2048ServerPlugin: ServerGamePlugin<Blitz2048ServerState> = {
   resolveTie: defaultDrawTieResolver,
 };
 
+const neonSnakeServerPlugin: ServerGamePlugin<NeonSnakeServerState> = {
+  gameId: "neon-snake",
+  authorityVersion: NEON_SNAKE_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "moveUp", "moveDown", "moveLeft", "moveRight"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): NeonSnakeServerState {
+    const engine = new NeonSnakeEngine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      movePulses: { moveUp: false, moveDown: false, moveLeft: false, moveRight: false },
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    for (const key of ["moveUp", "moveDown", "moveLeft", "moveRight"] as const) {
+      if (controls[key] !== undefined && typeof controls[key] !== "boolean") {
+        throw Error("INPUT_SHAPE");
+      }
+    }
+    state.guard.commit(controls.seq, now);
+    state.movePulses = {
+      moveUp: state.movePulses.moveUp || Boolean(controls.moveUp),
+      moveDown: state.movePulses.moveDown || Boolean(controls.moveDown),
+      moveLeft: state.movePulses.moveLeft || Boolean(controls.moveLeft),
+      moveRight: state.movePulses.moveRight || Boolean(controls.moveRight),
+    };
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+    }
+    const input = { ...state.movePulses };
+    state.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+    return Boolean(state.engine.update(dtSec, input));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      ticksRemaining: state.engine.ticksRemaining,
+      snake: state.engine.snake.map((s) => ({ x: s.x, y: s.y })),
+      snakeDirection: state.engine.direction,
+      food: { x: state.engine.food.x, y: state.engine.food.y },
+      bonusFood: state.engine.bonusFood ? { x: state.engine.bonusFood.x, y: state.engine.bonusFood.y } : null,
+      bonusFoodTicks: state.engine.bonusFoodTicks,
+      stepIntervalTicks: state.engine.stepIntervalTicks,
+      orbsEaten: state.engine.orbsEaten,
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -447,6 +542,7 @@ export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>
   "cyber-hopper": cyberHopperServerPlugin,
   "stack-tower": stackTowerServerPlugin,
   "2048-blitz": blitz2048ServerPlugin,
+  "neon-snake": neonSnakeServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

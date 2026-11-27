@@ -3,6 +3,7 @@ import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
+  NEON_SNAKE_AUTHORITY_VERSION,
   STACK_TOWER_AUTHORITY_VERSION,
 } from "../authority";
 import { FIXED_TIMESTEP_SEC } from "../fixedTimestepLoop";
@@ -120,6 +121,25 @@ export const GAME_MANIFESTS: readonly GameManifest[] = [
     thumbnail: "2048-blitz",
     modulePath: "./2048-blitz/index.ts",
     authorityVersion: BLITZ_2048_AUTHORITY_VERSION,
+    certificationScope: "LEVEL_3_CERTIFIED",
+    matchConfig: {
+      defaultDurationSec: 120,
+      tieBreaker: "draw",
+      minPlayers: 2,
+      maxPlayers: 2,
+    },
+  },
+  {
+    id: "neon-snake",
+    title: "Neon Snake",
+    tagline: "Deterministic neon arena snake with speed tiers & bonus orbs",
+    genre: "runner",
+    certified: true,
+    modes: ["practice", "casual", "tournament"],
+    i18nKeyPrefix: "games.neonSnake",
+    thumbnail: "neon-snake",
+    modulePath: "./neon-snake/index.ts",
+    authorityVersion: NEON_SNAKE_AUTHORITY_VERSION,
     certificationScope: "LEVEL_3_CERTIFIED",
     matchConfig: {
       defaultDurationSec: 120,

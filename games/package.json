@@ -9,6 +9,7 @@
     "./cyber-hopper/engine": "./cyber-hopper/engine.ts",
     "./stack-tower/engine": "./stack-tower/engine.ts",
     "./2048-blitz/engine": "./2048-blitz/engine.ts",
+    "./neon-snake/engine": "./neon-snake/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -36,6 +37,10 @@
     "./2048-blitz": {
       "import": "./2048-blitz/index.ts",
       "default": "./2048-blitz/index.ts"
+    },
+    "./neon-snake": {
+      "import": "./neon-snake/index.ts",
+      "default": "./neon-snake/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",

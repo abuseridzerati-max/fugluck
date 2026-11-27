@@ -89,6 +89,30 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'neon-snake': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="24" y="18" width="272" height="144" rx="8" fill="#0a101d" stroke="#10b981" strokeOpacity="0.45" strokeWidth="1.75" />
+      <g stroke="#162336" strokeWidth="1">
+        <path d="M64 18v144M104 18v144M144 18v144M184 18v144M224 18v144M264 18v144M24 54h272M24 90h272M24 126h272" />
+      </g>
+      <rect x="68" y="110" width="24" height="20" rx="4" fill="#06b6d4" />
+      <rect x="96" y="110" width="24" height="20" rx="4" fill="#10b981" />
+      <rect x="124" y="110" width="24" height="20" rx="4" fill="#06b6d4" />
+      <rect x="124" y="84" width="24" height="22" rx="4" fill="#10b981" />
+      <rect x="124" y="58" width="24" height="22" rx="4" fill="#06b6d4" />
+      <rect x="152" y="58" width="24" height="22" rx="4" fill="#10b981" />
+      <rect x="180" y="56" width="28" height="26" rx="5" fill="#34d399" stroke="#ffffff" strokeWidth="1.75" />
+      <rect x="197" y="62" width="4" height="4" fill="#070a10" />
+      <rect x="197" y="72" width="4" height="4" fill="#070a10" />
+      <circle cx="246" cy="69" r="13" fill="#ec4899" fillOpacity="0.28" />
+      <circle cx="246" cy="69" r="8" fill="#ec4899" />
+      <circle cx="243" cy="66" r="2.5" fill="#ffffff" />
+      <circle cx="238" cy="126" r="10" fill="#f59e0b" fillOpacity="0.26" stroke="#fde047" strokeWidth="1.5" />
+      <circle cx="238" cy="126" r="5" fill="#f59e0b" />
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

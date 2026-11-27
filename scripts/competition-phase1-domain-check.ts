@@ -152,7 +152,11 @@ check(
   "Seeded 2048 Blitz is classified as PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["2048-blitz"] === "PAID_COMPETITIVE_CANDIDATE",
 );
-check("Space Blaster, Cyber Hopper, Stack Tower, and Seeded 2048 Blitz are the Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 4);
+check(
+  "Neon Snake is classified as PAID_COMPETITIVE_CANDIDATE",
+  GAME_COMPETITION_ELIGIBILITY_REGISTRY["neon-snake"] === "PAID_COMPETITIVE_CANDIDATE",
+);
+check("Space Blaster, Cyber Hopper, Stack Tower, Seeded 2048 Blitz, and Neon Snake are the Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 5);
 
 // Strict invariant: NO game is marked PAID_COMPETITIVE_APPROVED in Phase 1
 const anyApproved = Object.values(GAME_COMPETITION_ELIGIBILITY_REGISTRY).some(

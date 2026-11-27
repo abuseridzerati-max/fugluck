@@ -3,6 +3,7 @@ export const AUTHORITY_VERSION = 'space-blaster-rv001-v1';
 export const CYBER_HOPPER_AUTHORITY_VERSION = 'cyber-hopper-rv001-v1';
 export const STACK_TOWER_AUTHORITY_VERSION = 'stack-tower-rv001-v1';
 export const BLITZ_2048_AUTHORITY_VERSION = '2048-blitz-rv001-v1';
+export const NEON_SNAKE_AUTHORITY_VERSION = 'neon-snake-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -55,5 +56,12 @@ export interface AuthoritySnapshot {
   moves?: number;
   bestTile?: number;
   ticksRemaining?: number;
+  snake?: Array<{ x: number; y: number }>;
+  snakeDirection?: 'up' | 'down' | 'left' | 'right';
+  food?: { x: number; y: number };
+  bonusFood?: { x: number; y: number } | null;
+  bonusFoodTicks?: number;
+  stepIntervalTicks?: number;
+  orbsEaten?: number;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

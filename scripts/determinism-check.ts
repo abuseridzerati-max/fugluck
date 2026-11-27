@@ -7,6 +7,7 @@ import { SpaceBlasterEngine } from "../games/space-blaster/engine.ts";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine.ts";
 import { StackTowerEngine } from "../games/stack-tower/engine.ts";
 import { Blitz2048Engine } from "../games/2048-blitz/engine.ts";
+import { NeonSnakeEngine } from "../games/neon-snake/engine.ts";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine.ts";
 import { TFSprintEngine } from "../games/tf-sprint/engine.ts";
 
@@ -67,6 +68,19 @@ sameSeedRun("2048-blitz", seed => {
   }
   return e;
 });
+sameSeedRun("neon-snake", seed => {
+  const e = new NeonSnakeEngine(seed);
+  for (let i=0; i<TICKS; i++) {
+    const phase = i % 120;
+    e.update(FIXED_TIMESTEP_SEC, {
+      moveDown: phase === 30,
+      moveLeft: phase === 60,
+      moveUp: phase === 90,
+      moveRight: phase === 0,
+    });
+  }
+  return e;
+});
 sameSeedRun("speed-trivia", seed => {
   const e = new SpeedTriviaEngine(seed);
   for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, {});
@@ -95,7 +109,7 @@ bounded.start();now+=5000;frame?.(now);
 check("single 5s frame stall is bounded to five catch-up ticks", bounded.tick<=5);bounded.stop();
 
 console.log("\nLong-run seeded engine determinism\n");
-for (const [name, Engine] of [["space-blaster",SpaceBlasterEngine],["cyber-hopper",CyberHopperEngine],["stack-tower",StackTowerEngine],["2048-blitz",Blitz2048Engine]] as const) {
+for (const [name, Engine] of [["space-blaster",SpaceBlasterEngine],["cyber-hopper",CyberHopperEngine],["stack-tower",StackTowerEngine],["2048-blitz",Blitz2048Engine],["neon-snake",NeonSnakeEngine]] as const) {
   const run=(seed:number)=>{const e=new Engine(seed);for(let i=0;i<5400;i++)e.update(FIXED_TIMESTEP_SEC,{});return JSON.stringify(e);};
   check(`${name}: 90-second fixed-step state is repeatable`,run(SEED)===run(SEED));
 }

@@ -4,6 +4,7 @@ import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import { CyberHopperEngine } from '@fugluck/games/cyber-hopper/engine'
 import { StackTowerEngine } from '@fugluck/games/stack-tower/engine'
 import { Blitz2048Engine } from '@fugluck/games/2048-blitz/engine'
+import { NeonSnakeEngine } from '@fugluck/games/neon-snake/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch, ApiError } from '../lib/api'
@@ -47,7 +48,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const finish=useRef(onComplete);finish.current=onComplete
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
-  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : 'Space Blaster'
+  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : gameId === 'neon-snake' ? 'Neon Snake' : 'Space Blaster'
   const syncBlasterControls = () => {
     let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
     for (const c of activePointers.current.values()) {
@@ -70,7 +71,9 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         ? new StackTowerEngine(1)
         : gameId === '2048-blitz'
           ? new Blitz2048Engine(1)
-          : new SpaceBlasterEngine(1)
+          : gameId === 'neon-snake'
+            ? new NeonSnakeEngine(1)
+            : new SpaceBlasterEngine(1)
     renderer.resize(1280, 720)
     const syncCanvasBacking = () => {
       const el = canvas.current
@@ -155,7 +158,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
       setCountdown(p.startAt?Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000)):0)
-      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
+      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':gameId==='neon-snake'?'neonSnakeControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
       if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
@@ -176,7 +179,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         const elapsed=performance.now()-diagnosticStarted
         controlEvidence.activeMs=elapsed
         if(elapsed<24000){
-          if(gameId==='2048-blitz'){
+          if(gameId==='2048-blitz'||gameId==='neon-snake'){
             const step=Math.floor(elapsed/500)%4
             const dir=step===0?'moveLeft':step===1?'moveDown':step===2?'moveRight':'moveUp'
             movePulses.current[dir]=true
@@ -198,7 +201,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
           }
         }else{diagnosticRequested.current=false;neutral()}
       }
-      if(gameId==='2048-blitz'){
+      if(gameId==='2048-blitz'||gameId==='neon-snake'){
         socket.volatile.emit('authority:controls',{
           ...binding.current,
           seq:++seq,
@@ -241,7 +244,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const key=(event:KeyboardEvent,down:boolean)=>{
       // Keep page actions operable with Enter/Space; game shortcuts only control the play surface.
       if(complete||!snapshot||snapshot.state!=='ACTIVE'||(event.target instanceof HTMLElement&&event.target.closest('button,a,input,summary,select,textarea')))return
-      if(gameId==='2048-blitz'){
+      if(gameId==='2048-blitz'||gameId==='neon-snake'){
         if(!down||event.repeat)return
         let handled=false
         if(event.key==='ArrowUp'||event.key==='w'||event.key==='W'){movePulses.current.moveUp=true;handled=true}
@@ -281,7 +284,21 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const draw=()=>{
       const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
       if(state&&ctx){
-        if(gameId==='2048-blitz'){
+        if(gameId==='neon-snake'){
+          Object.assign(renderer,{
+            tickCount:state.tickCount,
+            score:state.score,
+            gameOver:state.gameOver,
+            ticksRemaining:state.ticksRemaining??0,
+            snake:state.snake??[],
+            direction:state.snakeDirection??'right',
+            food:state.food??{x:20,y:9},
+            bonusFood:state.bonusFood??null,
+            bonusFoodTicks:state.bonusFoodTicks??0,
+            stepIntervalTicks:state.stepIntervalTicks??9,
+            orbsEaten:state.orbsEaten??0,
+          })
+        }else if(gameId==='2048-blitz'){
           Object.assign(renderer,{
             tickCount:state.tickCount,
             score:state.score,
@@ -373,26 +390,26 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       height={720}
       className="ac-game-surface"
       aria-label={t('competition.liveCanvas',{game:gameTitle})}
-      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz'||gameId==='neon-snake')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
       onPointerDown={gameId==='stack-tower' ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         dropPulse.current = true
         triggerSend.current?.()
-      } : (gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => {
+      } : (gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         if (swipeState.current.pointerId !== null) return
         swipeState.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, consumed: false }
         try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
       } : undefined}
-      onPointerMove={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => {
+      onPointerMove={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => {
         const s = swipeState.current
         if (!active || s.pointerId !== e.pointerId || s.consumed) return
         const dx = e.clientX - s.x, dy = e.clientY - s.y
         if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return
         s.consumed = true
-        if (gameId === '2048-blitz') {
+        if (gameId === '2048-blitz' || gameId === 'neon-snake') {
           if (Math.abs(dx) > Math.abs(dy)) movePulses.current[dx > 0 ? 'moveRight' : 'moveLeft'] = true
           else movePulses.current[dy > 0 ? 'moveDown' : 'moveUp'] = true
         } else {
@@ -401,12 +418,12 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         }
         triggerSend.current?.()
       } : undefined}
-      onPointerUp={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
-      onPointerCancel={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
-      onLostPointerCapture={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onPointerUp={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onPointerCancel={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onLostPointerCapture={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
     />
     {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
-      {gameId==='2048-blitz' ? (
+      {(gameId==='2048-blitz'||gameId==='neon-snake') ? (
         ([
           { key:'moveUp', label:`▲ ${t('competition.controls.up')} (W)` },
           { key:'moveDown', label:`▼ ${t('competition.controls.down')} (S)` },

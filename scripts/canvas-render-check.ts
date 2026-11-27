@@ -10,6 +10,7 @@ import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
 import { StackTowerEngine } from "../games/stack-tower/engine";
 import { Blitz2048Engine } from "../games/2048-blitz/engine";
+import { NeonSnakeEngine } from "../games/neon-snake/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -357,6 +358,41 @@ console.log("\nTest 3.76: Seeded 2048 Blitz 300-Frame Headless Canvas draw() Sui
   check("Seeded 2048 Blitz 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Seeded 2048 Blitz verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Seeded 2048 Blitz executes valid moves and merges deterministically", engine.moves > 0 && engine.score > 0 && engine.bestTile >= 4, `moves=${engine.moves}, score=${engine.score}, bestTile=${engine.bestTile}`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.77: Neon Snake 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.77: Neon Snake 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new NeonSnakeEngine(97531246);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      const phase = frame % 120;
+      engine.update(1 / 60, {
+        moveDown: phase === 30,
+        moveLeft: phase === 60,
+        moveUp: phase === 90,
+        moveRight: phase === 0,
+      });
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Neon Snake 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Neon Snake verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Neon Snake stays alive on square loop without false reversal collision", !engine.gameOver && engine.snake.length >= 4, `gameOver=${engine.gameOver}, len=${engine.snake.length}`);
 }
 
 // ---------------------------------------------------------------------------
