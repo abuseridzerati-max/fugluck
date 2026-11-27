@@ -1084,6 +1084,8 @@
     "resignConfirm": "დაადასტურეთ დანებება?",
     "waitingBoard": "დაფის სინქრონიზაცია...",
     "check": "ქიში",
+    "muteAudio": "ხმის გამორთვა",
+    "unmuteAudio": "ხმის ჩართვა",
     "outcomes": {
       "win": "გამარჯვება",
       "loss": "მარცხი",

@@ -56,43 +56,50 @@ export const PIECE_GLYPHS: Readonly<Record<string, string>> = {
   bp: "♟",
 };
 
+export const MATERIAL_VALUES: Readonly<Record<string, number>> = {
+  p: 1,
+  n: 3,
+  b: 3,
+  r: 5,
+  q: 9,
+};
+
 export const CHESS_COLORS = {
   bg: "#070a10",
-  boardFrame: "#0d1422",
-  boardBorder: "rgba(56, 189, 248, 0.45)",
-  lightSquare: "#1e2c44",
-  darkSquare: "#10192b",
-  selectedSquare: "rgba(56, 189, 248, 0.38)",
-  lastMoveSquare: "rgba(16, 185, 129, 0.28)",
-  legalDot: "rgba(52, 211, 153, 0.78)",
-  legalCaptureRing: "rgba(244, 63, 94, 0.78)",
-  checkGlow: "rgba(244, 63, 94, 0.55)",
-  whitePieceBg: "#e2e8f0",
-  whitePieceRim: "#38bdf8",
-  whitePieceText: "#09101a",
-  blackPieceBg: "#111827",
-  blackPieceRim: "#ec4899",
-  blackPieceText: "#f8fafc",
-  hudBg: "rgba(13, 20, 34, 0.92)",
-  hudBorder: "rgba(56, 189, 248, 0.3)",
-  activeClockBorder: "#10b981",
-  textPrimary: "#f8fafc",
-  textMuted: "#94a3b8",
-  timerNormal: "#10b981",
-  timerWarn: "#f59e0b",
-  timerCritical: "#f43f5e",
+  boardFrame: "#262421",
+  boardBorder: "rgba(255, 255, 255, 0.12)",
+  lightSquare: "#eeeed2",
+  darkSquare: "#769656",
+  selectedLight: "#f6f669",
+  selectedDark: "#baca44",
+  lastMoveLight: "#f6f669",
+  lastMoveDark: "#baca44",
+  legalDot: "rgba(0, 0, 0, 0.18)",
+  legalCaptureRing: "rgba(0, 0, 0, 0.20)",
+  checkGlow: "#ff3b30",
+  hudBg: "#262421",
+  hudCardBg: "#1e1d1a",
+  hudBorder: "rgba(255, 255, 255, 0.10)",
+  activeClockBg: "#ffffff",
+  activeClockText: "#1c1a18",
+  inactiveClockBg: "#2f2d2a",
+  inactiveClockText: "#9e9b95",
+  warnClockBg: "#b45309",
+  criticalClockBg: "#b91c1c",
+  textPrimary: "#f5f5f4",
+  textMuted: "#a8a29e",
+  accentGreen: "#81b64c",
 } as const;
 
 /**
- * Maps a client pointer coordinate on a letterboxed (object-fit: contain) 1280x720 canvas
- * into an algebraic chess square ("a1".."h8"), returning null if outside the board.
+ * Converts client pointer coordinates on a letterboxed 1280x720 canvas
+ * into virtual canvas coordinates (0..1280, 0..720).
  */
-export function clientPointToSquare(
+export function clientPointToVirtual(
   rect: { left: number; top: number; width: number; height: number },
   clientX: number,
   clientY: number,
-  orientation: "w" | "b" = "w",
-): string | null {
+): { vx: number; vy: number } | null {
   if (rect.width <= 0 || rect.height <= 0) return null;
   const targetRatio = VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
   const boxRatio = rect.width / rect.height;
@@ -114,9 +121,43 @@ export function clientPointToSquare(
 
   const vx = ((clientX - rect.left - offsetX) / drawW) * VIRTUAL_WIDTH;
   const vy = ((clientY - rect.top - offsetY) / drawH) * VIRTUAL_HEIGHT;
+  return { vx, vy };
+}
 
-  const visualCol = Math.floor((vx - BOARD_X) / SQUARE_SIZE);
-  const visualRow = Math.floor((vy - BOARD_Y) / SQUARE_SIZE);
+/**
+ * Maps an algebraic square ("a1".."h8") to top-left virtual canvas coordinates.
+ */
+export function squareToVisualCoords(
+  square: string,
+  orientation: "w" | "b" = "w",
+): { x: number; y: number } | null {
+  if (square.length < 2) return null;
+  const c = FILES.indexOf(square[0] as (typeof FILES)[number]);
+  const r = RANKS.indexOf(square[1] as (typeof RANKS)[number]);
+  if (c < 0 || r < 0) return null;
+  const vc = orientation === "b" ? BOARD_SQUARES - 1 - c : c;
+  const vr = orientation === "b" ? BOARD_SQUARES - 1 - r : r;
+  return {
+    x: BOARD_X + vc * SQUARE_SIZE,
+    y: BOARD_Y + vr * SQUARE_SIZE,
+  };
+}
+
+/**
+ * Maps a client pointer coordinate on a letterboxed (object-fit: contain) 1280x720 canvas
+ * into an algebraic chess square ("a1".."h8"), returning null if outside the board.
+ */
+export function clientPointToSquare(
+  rect: { left: number; top: number; width: number; height: number },
+  clientX: number,
+  clientY: number,
+  orientation: "w" | "b" = "w",
+): string | null {
+  const pt = clientPointToVirtual(rect, clientX, clientY);
+  if (!pt) return null;
+
+  const visualCol = Math.floor((pt.vx - BOARD_X) / SQUARE_SIZE);
+  const visualRow = Math.floor((pt.vy - BOARD_Y) / SQUARE_SIZE);
   if (visualCol < 0 || visualCol >= BOARD_SQUARES || visualRow < 0 || visualRow >= BOARD_SQUARES) return null;
 
   const col = orientation === "b" ? BOARD_SQUARES - 1 - visualCol : visualCol;

@@ -8,8 +8,8 @@ import {
   type GameModuleFactory,
   type GameOverPayload,
 } from "@fugluck/shared";
-import { clientPointToSquare } from "./constants";
-import { BlitzChessEngine, type BlitzChessInput } from "./engine";
+import { clientPointToSquare, clientPointToVirtual } from "./constants";
+import { BlitzChessEngine, chessSounds, type BlitzChessInput } from "./engine";
 
 const COUNTDOWN_STEPS = ["3", "2", "1", "GO!"];
 const COUNTDOWN_STEP_MS = 700;
@@ -22,6 +22,7 @@ export class BlitzChessModule extends EventTarget implements GameModule {
   private ctx: CanvasRenderingContext2D | null = null;
   private countdownEl: HTMLDivElement | null = null;
   private pauseOverlay: HTMLDivElement | null = null;
+  private muteBtn: HTMLButtonElement | null = null;
 
   private engine!: BlitzChessEngine;
   private resizeObserver: ResizeObserver | null = null;
@@ -35,6 +36,16 @@ export class BlitzChessModule extends EventTarget implements GameModule {
   private mode: GameMode = "practice";
 
   private pendingInput: BlitzChessInput = {};
+  private pointerDrag: {
+    pointerId: number;
+    from: string;
+    pieceColor: "w" | "b";
+    pieceType: string;
+    startX: number;
+    startY: number;
+    wasAlreadySelected: boolean;
+    dragging: boolean;
+  } | null = null;
 
   private clearInputs = () => {
     this.pendingInput = {};
@@ -57,6 +68,8 @@ export class BlitzChessModule extends EventTarget implements GameModule {
     if (e.code === "Escape") {
       this.engine.selectedSquare = null;
       this.engine.legalTargets = [];
+      this.engine.dragState = null;
+      this.pointerDrag = null;
     }
   };
 
@@ -67,12 +80,16 @@ export class BlitzChessModule extends EventTarget implements GameModule {
 
     if (typeof this.canvas.getBoundingClientRect !== "function") return;
     const rect = this.canvas.getBoundingClientRect();
-    const sq = clientPointToSquare(rect, e.clientX, e.clientY);
-    if (!sq) return;
+    const sq = clientPointToSquare(rect, e.clientX, e.clientY, this.engine.orientation);
+    if (!sq) {
+      this.engine.selectedSquare = null;
+      this.engine.legalTargets = [];
+      return;
+    }
 
     if (this.engine.getActiveTurn() !== "w") return;
 
-    // If a square is already selected and user tapped a legal destination, commit move
+    // Click-to-move: if a square is already selected and user tapped a legal destination, commit move
     if (this.engine.selectedSquare && this.engine.legalTargets.includes(sq)) {
       this.pendingInput = {
         moveFrom: this.engine.selectedSquare,
@@ -80,24 +97,111 @@ export class BlitzChessModule extends EventTarget implements GameModule {
       };
       this.engine.selectedSquare = null;
       this.engine.legalTargets = [];
+      this.engine.dragState = null;
+      this.pointerDrag = null;
       return;
     }
 
-    // Otherwise select tapped White piece (or deselect if clicking same/empty square)
-    if (this.engine.selectedSquare === sq) {
-      this.engine.selectedSquare = null;
-      this.engine.legalTargets = [];
-      return;
-    }
-
-    const targets = this.engine.getLegalTargetsForSquare(sq);
-    if (targets.length > 0) {
+    const targets = this.engine.getLegalTargetsForSquare(sq, "w");
+    const piece = this.engine.getPieceAt(sq);
+    if (targets.length > 0 && piece && piece.color === "w") {
+      const wasAlreadySelected = this.engine.selectedSquare === sq;
       this.engine.selectedSquare = sq;
       this.engine.legalTargets = targets;
+      this.pointerDrag = {
+        pointerId: e.pointerId,
+        from: sq,
+        pieceColor: piece.color,
+        pieceType: piece.type,
+        startX: e.clientX,
+        startY: e.clientY,
+        wasAlreadySelected,
+        dragging: false,
+      };
+      if (typeof this.canvas.setPointerCapture === "function") {
+        try {
+          this.canvas.setPointerCapture(e.pointerId);
+        } catch {
+          // Ignore capture errors
+        }
+      }
     } else {
       this.engine.selectedSquare = null;
       this.engine.legalTargets = [];
+      this.engine.dragState = null;
+      this.pointerDrag = null;
     }
+  };
+
+  private handleCanvasPointerMove = (e: PointerEvent) => {
+    const drag = this.pointerDrag;
+    if (!drag || drag.pointerId !== e.pointerId || !this.canvas) return;
+    if (typeof this.canvas.getBoundingClientRect !== "function") return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.dragging && Math.hypot(dx, dy) < 6) return;
+
+    drag.dragging = true;
+    const pt = clientPointToVirtual(this.canvas.getBoundingClientRect(), e.clientX, e.clientY);
+    if (pt) {
+      this.engine.dragState = {
+        from: drag.from,
+        pieceColor: drag.pieceColor,
+        pieceType: drag.pieceType,
+        vx: pt.vx,
+        vy: pt.vy,
+      };
+    }
+  };
+
+  private handleCanvasPointerUp = (e: PointerEvent) => {
+    const drag = this.pointerDrag;
+    if (!drag || drag.pointerId !== e.pointerId || !this.canvas) return;
+    this.pointerDrag = null;
+
+    if (typeof this.canvas.releasePointerCapture === "function") {
+      try {
+        this.canvas.releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignore release errors
+      }
+    }
+
+    const wasDragging = drag.dragging;
+    this.engine.dragState = null;
+
+    if (!wasDragging) {
+      // Short click on an already-selected square toggles it off
+      if (drag.wasAlreadySelected) {
+        this.engine.selectedSquare = null;
+        this.engine.legalTargets = [];
+      }
+      return;
+    }
+
+    if (typeof this.canvas.getBoundingClientRect !== "function") return;
+    const targetSq = clientPointToSquare(
+      this.canvas.getBoundingClientRect(),
+      e.clientX,
+      e.clientY,
+      this.engine.orientation,
+    );
+
+    if (targetSq && targetSq !== drag.from && this.engine.legalTargets.includes(targetSq)) {
+      this.engine.skipNextAnimation = true;
+      this.pendingInput = {
+        moveFrom: drag.from,
+        moveTo: targetSq,
+      };
+      this.engine.selectedSquare = null;
+      this.engine.legalTargets = [];
+    }
+  };
+
+  private handleCanvasPointerCancel = () => {
+    this.pointerDrag = null;
+    this.engine.dragState = null;
   };
 
   private handleVisibilityChange = () => {
@@ -130,6 +234,28 @@ export class BlitzChessModule extends EventTarget implements GameModule {
     this.ctx = this.canvas.getContext("2d");
 
     this.canvas.addEventListener("pointerdown", this.handleCanvasPointerDown);
+    this.canvas.addEventListener("pointermove", this.handleCanvasPointerMove);
+    this.canvas.addEventListener("pointerup", this.handleCanvasPointerUp);
+    this.canvas.addEventListener("pointercancel", this.handleCanvasPointerCancel);
+
+    this.muteBtn = document.createElement("button");
+    this.muteBtn.type = "button";
+    const syncMuteLabel = () => {
+      if (!this.muteBtn) return;
+      const muted = chessSounds.isMuted();
+      this.muteBtn.textContent = muted ? "🔇" : "🔊";
+      this.muteBtn.title = muted ? "Unmute chess audio" : "Mute chess audio";
+      if (typeof this.muteBtn.setAttribute === "function") {
+        this.muteBtn.setAttribute("aria-label", muted ? "Unmute chess audio" : "Mute chess audio");
+      }
+    };
+    syncMuteLabel();
+    this.muteBtn.style.cssText =
+      "position:absolute;top:12px;right:12px;z-index:6;width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:rgba(38,36,33,0.9);color:#f5f5f4;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;";
+    this.muteBtn.onclick = () => {
+      chessSounds.toggleMute();
+      syncMuteLabel();
+    };
 
     this.countdownEl = document.createElement("div");
     this.countdownEl.style.cssText =
@@ -147,6 +273,7 @@ export class BlitzChessModule extends EventTarget implements GameModule {
     this.pauseOverlay.appendChild(resumeBtn);
 
     this.root.appendChild(this.canvas);
+    if (this.muteBtn) this.root.appendChild(this.muteBtn);
     this.root.appendChild(this.countdownEl);
     this.root.appendChild(this.pauseOverlay);
     container.appendChild(this.root);
@@ -250,6 +377,10 @@ export class BlitzChessModule extends EventTarget implements GameModule {
     this.clearInputs();
     this.resizeObserver?.disconnect();
     this.canvas?.removeEventListener("pointerdown", this.handleCanvasPointerDown);
+    this.canvas?.removeEventListener("pointermove", this.handleCanvasPointerMove);
+    this.canvas?.removeEventListener("pointerup", this.handleCanvasPointerUp);
+    this.canvas?.removeEventListener("pointercancel", this.handleCanvasPointerCancel);
+    this.pointerDrag = null;
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("blur", this.clearInputs);
     document.removeEventListener("visibilitychange", this.handleVisibilityChange);

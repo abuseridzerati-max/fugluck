@@ -1,5 +1,7 @@
 import { Chess, type Move, type Square } from "chess.js";
 export { Chess };
+export { chessSounds } from "./sounds";
+export { preloadPieceSprites } from "./pieces";
 import {
   createSeededRandom,
   type RandomFn,
@@ -23,14 +25,72 @@ import {
   CLOCK_BONUS_PER_SEC,
   DRAW_BONUS_POINTS,
   FILES,
+  MATERIAL_VALUES,
   PANEL_W,
   PANEL_X,
   PIECE_GLYPHS,
   RANKS,
   SQUARE_SIZE,
+  squareToVisualCoords,
   VIRTUAL_HEIGHT,
   VIRTUAL_WIDTH,
 } from "./constants";
+import { drawChessPiece, preloadPieceSprites } from "./pieces";
+import { chessSounds } from "./sounds";
+
+export type ChessDragState = {
+  from: string;
+  pieceColor: "w" | "b";
+  pieceType: string;
+  vx: number;
+  vy: number;
+};
+
+type ChessMoveAnimation = {
+  from: string;
+  to: string;
+  pieceColor: "w" | "b";
+  pieceType: string;
+  startMs: number;
+  durationMs: number;
+};
+
+const MOVE_ANIM_DURATION_MS = 120;
+
+function nowMs(): number {
+  return typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  if (typeof ctx.quadraticCurveTo === "function") {
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+  } else {
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+  }
+  ctx.closePath();
+}
 
 export type ChessMovePayload = {
   from: string;
@@ -61,13 +121,19 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
   public capturedByBlack: string[] = [];
   public inCheck = false;
 
-  /** Client-only selection highlight & PvP perspective (do not affect deterministic simulation). */
+  /** Client-only selection, drag, animation & PvP perspective (do not affect deterministic simulation). */
   public selectedSquare: string | null = null;
   public legalTargets: string[] = [];
   public orientation: "w" | "b" = "w";
   public pvpMode = false;
-  public whiteLabel = "YOU (WHITE) · 3+0";
-  public blackLabel = "BLACK AI · 3+0";
+  public whiteLabel = "You (White)";
+  public blackLabel = "Black AI";
+  public dragState: ChessDragState | null = null;
+  public skipNextAnimation = false;
+
+  private animState: ChessMoveAnimation | null = null;
+  private lastAnimatedMoveKey = "";
+  private soundPlayedGameOver = false;
 
   private chess: Chess = new Chess();
   private lastHydratedFen = "";
@@ -80,6 +146,7 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
 
   constructor(seed: number) {
     this.seed = seed;
+    preloadPieceSprites();
     this.reset();
   }
 
@@ -104,6 +171,11 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     this.inCheck = false;
     this.selectedSquare = null;
     this.legalTargets = [];
+    this.dragState = null;
+    this.skipNextAnimation = false;
+    this.animState = null;
+    this.lastAnimatedMoveKey = "";
+    this.soundPlayedGameOver = false;
     this.aiDelayTicks = 0;
     this.chess = new Chess();
     this.lastHydratedFen = this.chess.fen();
@@ -116,6 +188,11 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
 
   public getActiveTurn(): "w" | "b" {
     return this.chess.turn();
+  }
+
+  public getPieceAt(square: string): { color: "w" | "b"; type: string } | null {
+    const piece = this.chess.get(square as Square);
+    return piece ? { color: piece.color, type: piece.type } : null;
   }
 
   /** Hydrates renderer state from an authoritative server snapshot without running engine.update. */
@@ -135,6 +212,9 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     inCheck?: boolean;
     turnNumber?: number;
   }): void {
+    const prevCapturedTotal = this.capturedByWhite.length + this.capturedByBlack.length;
+    const prevGameOver = this.gameOver;
+
     this.tickCount = snapshot.tickCount;
     this.score = snapshot.score;
     this.gameOver = snapshot.gameOver;
@@ -155,9 +235,45 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
         this.lastHydratedFen = snapshot.chessFen;
         this.selectedSquare = null;
         this.legalTargets = [];
+        this.dragState = null;
+
+        // Trigger smooth slide animation + audio for newly hydrated move
+        const moveKey = `${this.turnNumber}:${this.lastMoveFrom ?? ""}-${this.lastMoveTo ?? ""}`;
+        if (this.lastMoveFrom && this.lastMoveTo && moveKey !== this.lastAnimatedMoveKey) {
+          this.lastAnimatedMoveKey = moveKey;
+          const movedPiece = this.chess.get(this.lastMoveTo as Square);
+          if (movedPiece && !this.skipNextAnimation) {
+            this.animState = {
+              from: this.lastMoveFrom,
+              to: this.lastMoveTo,
+              pieceColor: movedPiece.color,
+              pieceType: movedPiece.type,
+              startMs: nowMs(),
+              durationMs: MOVE_ANIM_DURATION_MS,
+            };
+          }
+          this.skipNextAnimation = false;
+
+          const newCapturedTotal = this.capturedByWhite.length + this.capturedByBlack.length;
+          if (this.gameOver && !this.soundPlayedGameOver) {
+            this.soundPlayedGameOver = true;
+            chessSounds.playGameOver();
+          } else if (this.inCheck) {
+            chessSounds.playCheck();
+          } else if (newCapturedTotal > prevCapturedTotal) {
+            chessSounds.playCapture();
+          } else {
+            chessSounds.playMove();
+          }
+        }
       } catch {
         // Ignore malformed FEN
       }
+    }
+
+    if (this.gameOver && !prevGameOver && !this.soundPlayedGameOver) {
+      this.soundPlayedGameOver = true;
+      chessSounds.playGameOver();
     }
   }
 
@@ -246,6 +362,33 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     }
 
     this.evaluateTerminalState();
+
+    // Client-only slide animation & sound feedback (does not affect deterministic state)
+    const moveKey = `${this.turnNumber}:${move.from}-${move.to}`;
+    this.lastAnimatedMoveKey = moveKey;
+    if (!this.skipNextAnimation) {
+      this.animState = {
+        from: move.from,
+        to: move.to,
+        pieceColor: move.color,
+        pieceType: move.promotion ?? move.piece,
+        startMs: nowMs(),
+        durationMs: MOVE_ANIM_DURATION_MS,
+      };
+    }
+    this.skipNextAnimation = false;
+
+    if (this.gameOver && !this.soundPlayedGameOver) {
+      this.soundPlayedGameOver = true;
+      chessSounds.playGameOver();
+    } else if (this.inCheck) {
+      chessSounds.playCheck();
+    } else if (move.captured) {
+      chessSounds.playCapture();
+    } else {
+      chessSounds.playMove();
+    }
+
     return true;
   }
 
@@ -377,49 +520,109 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   }
 
-  private drawClockCard(
+  private computeMaterialAdvantage(): { whiteAdv: number; blackAdv: number } {
+    const whiteMat = this.capturedByWhite.reduce((sum, p) => sum + (MATERIAL_VALUES[p] ?? 0), 0);
+    const blackMat = this.capturedByBlack.reduce((sum, p) => sum + (MATERIAL_VALUES[p] ?? 0), 0);
+    return {
+      whiteAdv: Math.max(0, whiteMat - blackMat),
+      blackAdv: Math.max(0, blackMat - whiteMat),
+    };
+  }
+
+  private drawPlayerBar(
     ctx: CanvasRenderingContext2D,
     y: number,
     label: string,
     ticks: number,
     isActive: boolean,
+    captured: string[],
+    capturedPrefix: "w" | "b",
+    materialAdv: number,
+    sideBadgeColor: "w" | "b",
   ): void {
+    const cardH = 112;
     const secLeft = Math.ceil(ticks / 60);
-    const clockColor =
-      secLeft <= 10
-        ? CHESS_COLORS.timerCritical
-        : secLeft <= 30
-          ? CHESS_COLORS.timerWarn
-          : CHESS_COLORS.timerNormal;
+    const isCritical = secLeft <= 20;
+    const isWarn = secLeft <= 30 && !isCritical;
 
+    // Card container (rounded)
+    drawRoundedRect(ctx, PANEL_X, y, PANEL_W, cardH, 10);
     ctx.fillStyle = CHESS_COLORS.hudBg;
-    ctx.fillRect(PANEL_X, y, PANEL_W, 84);
-    ctx.strokeStyle = isActive ? CHESS_COLORS.activeClockBorder : CHESS_COLORS.hudBorder;
-    ctx.lineWidth = isActive ? 2.5 : 1.5;
-    ctx.strokeRect(PANEL_X, y, PANEL_W, 84);
+    ctx.fill();
+    ctx.strokeStyle = isActive ? CHESS_COLORS.accentGreen : CHESS_COLORS.hudBorder;
+    ctx.lineWidth = isActive ? 2 : 1.25;
+    ctx.stroke();
 
+    // Side color emblem
+    const emblemX = PANEL_X + 26;
+    const emblemY = y + 32;
+    ctx.fillStyle = sideBadgeColor === "w" ? "#f5f5f4" : "#1c1a18";
+    ctx.beginPath();
+    ctx.arc(emblemX, emblemY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = sideBadgeColor === "w" ? "#57534e" : "#a8a29e";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Player Name
     ctx.textAlign = "left";
-    ctx.fillStyle = isActive ? "#34d399" : CHESS_COLORS.textMuted;
-    ctx.font = "bold 14px monospace";
-    ctx.fillText(label, PANEL_X + 18, y + 28);
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = CHESS_COLORS.textPrimary;
+    ctx.font = "bold 17px sans-serif";
+    const truncatedLabel = label.length > 20 ? `${label.slice(0, 19)}…` : label;
+    ctx.fillText(truncatedLabel, PANEL_X + 46, y + 33);
 
-    ctx.fillStyle = clockColor;
-    ctx.font = "bold 34px monospace";
-    ctx.fillText(this.formatClock(ticks), PANEL_X + 18, y + 68);
+    // Digital Clock Pill (Chess.com style)
+    const clockW = 124;
+    const clockH = 44;
+    const clockX = PANEL_X + PANEL_W - clockW - 14;
+    const clockY = y + 12;
 
-    // Clock progress bar
-    const barX = PANEL_X + 165;
-    const barY = y + 48;
-    const barW = PANEL_W - 185;
-    const barH = 14;
-    const ratio = Math.max(0, Math.min(1, ticks / BLITZ_CLOCK_TICKS));
-    ctx.fillStyle = "#131d30";
-    ctx.fillRect(barX, barY, barW, barH);
-    ctx.fillStyle = clockColor;
-    ctx.fillRect(barX, barY, barW * ratio, barH);
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(barX, barY, barW, barH);
+    drawRoundedRect(ctx, clockX, clockY, clockW, clockH, 8);
+    if (isCritical && isActive) {
+      ctx.fillStyle = CHESS_COLORS.criticalClockBg;
+    } else if (isWarn && isActive) {
+      ctx.fillStyle = CHESS_COLORS.warnClockBg;
+    } else if (isActive) {
+      ctx.fillStyle = CHESS_COLORS.activeClockBg;
+    } else {
+      ctx.fillStyle = CHESS_COLORS.inactiveClockBg;
+    }
+    ctx.fill();
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = isCritical && isActive
+      ? "#ffffff"
+      : isWarn && isActive
+        ? "#ffffff"
+        : isActive
+          ? CHESS_COLORS.activeClockText
+          : CHESS_COLORS.inactiveClockText;
+    ctx.font = "bold 26px monospace";
+    ctx.fillText(this.formatClock(ticks), clockX + clockW / 2, clockY + clockH / 2 + 1);
+
+    // Captured pieces row + material advantage badge (+3)
+    const capY = y + 82;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    const capGlyphs = captured.map((p) => PIECE_GLYPHS[`${capturedPrefix}${p}`] ?? p).join("");
+    ctx.fillStyle = "#d6d3d1";
+    ctx.font = "19px sans-serif";
+    ctx.fillText(capGlyphs || "—", PANEL_X + 18, capY);
+
+    if (materialAdv > 0) {
+      const badgeX = PANEL_X + PANEL_W - 56;
+      drawRoundedRect(ctx, badgeX, capY - 12, 42, 24, 6);
+      ctx.fillStyle = "rgba(129, 182, 76, 0.22)";
+      ctx.fill();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#a3e635";
+      ctx.font = "bold 13px monospace";
+      ctx.fillText(`+${materialAdv}`, badgeX + 21, capY + 1);
+    }
+
+    ctx.textBaseline = "alphabetic";
   }
 
   public render(ctx: CanvasRenderingContext2D): void {
@@ -431,25 +634,42 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     ctx.save();
     ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
-    // 1. Background
+    // 1. Dark Arena Surround
     ctx.fillStyle = CHESS_COLORS.bg;
     ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
-    // 2. Board Outer Frame
+    // 2. Subtle Rounded Board Frame (Chess.com Tournament style)
+    drawRoundedRect(ctx, BOARD_X - 14, BOARD_Y - 14, BOARD_SIZE + 28, BOARD_SIZE + 28, 12);
     ctx.fillStyle = CHESS_COLORS.boardFrame;
-    ctx.fillRect(BOARD_X - 16, BOARD_Y - 16, BOARD_SIZE + 32, BOARD_SIZE + 32);
+    ctx.fill();
     ctx.strokeStyle = CHESS_COLORS.boardBorder;
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(BOARD_X - 16, BOARD_Y - 16, BOARD_SIZE + 32, BOARD_SIZE + 32);
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // 3. Render 8x8 Squares, Highlights & Pieces
+    // Advance / expire piece slide animation
+    let activeAnim: { from: string; to: string; pieceColor: "w" | "b"; pieceType: string; progress: number } | null = null;
+    if (this.animState) {
+      const elapsed = nowMs() - this.animState.startMs;
+      if (elapsed >= this.animState.durationMs) {
+        this.animState = null;
+      } else {
+        const rawT = Math.max(0, Math.min(1, elapsed / this.animState.durationMs));
+        const easedT = 1 - Math.pow(1 - rawT, 3); // smooth ease-out cubic
+        activeAnim = {
+          from: this.animState.from,
+          to: this.animState.to,
+          pieceColor: this.animState.pieceColor,
+          pieceType: this.animState.pieceType,
+          progress: easedT,
+        };
+      }
+    }
+
+    // 3. Render 8x8 Tournament Green Squares, Highlights, Coordinates & Static Pieces
     const boardMatrix = this.chess.board();
     const activeColor = this.chess.turn();
     const legalSet = new Set(this.legalTargets);
     const flipped = this.orientation === "b";
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
 
     for (let vr = 0; vr < BOARD_SQUARES; vr++) {
       for (let vc = 0; vc < BOARD_SQUARES; vc++) {
@@ -460,104 +680,136 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
         const sy = BOARD_Y + vr * SQUARE_SIZE;
         const isLight = (r + c) % 2 === 0;
 
+        // Base Tournament Green square
         ctx.fillStyle = isLight ? CHESS_COLORS.lightSquare : CHESS_COLORS.darkSquare;
         ctx.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
 
+        // Last-move highlight (#f6f669 on light / #baca44 on dark)
         if (sq === this.lastMoveFrom || sq === this.lastMoveTo) {
-          ctx.fillStyle = CHESS_COLORS.lastMoveSquare;
+          ctx.fillStyle = isLight ? CHESS_COLORS.lastMoveLight : CHESS_COLORS.lastMoveDark;
           ctx.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
         }
 
+        // Selected square highlight
         if (sq === this.selectedSquare) {
-          ctx.fillStyle = CHESS_COLORS.selectedSquare;
+          ctx.fillStyle = isLight ? CHESS_COLORS.selectedLight : CHESS_COLORS.selectedDark;
           ctx.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
         }
 
         const piece = boardMatrix[r]?.[c] ?? null;
 
-        // Red check glow under threatened king
+        // Soft radial red check highlight under threatened King
         if (this.inCheck && piece && piece.type === "k" && piece.color === activeColor) {
-          ctx.fillStyle = CHESS_COLORS.checkGlow;
-          ctx.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
+          const cx = sx + SQUARE_SIZE / 2;
+          const cy = sy + SQUARE_SIZE / 2;
+          if (typeof ctx.createRadialGradient === "function") {
+            const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, SQUARE_SIZE * 0.56);
+            grad.addColorStop(0, "rgba(255, 59, 48, 0.92)");
+            grad.addColorStop(0.65, "rgba(255, 59, 48, 0.45)");
+            grad.addColorStop(1, "rgba(255, 59, 48, 0)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
+          } else {
+            ctx.fillStyle = "rgba(255, 59, 48, 0.55)";
+            ctx.beginPath();
+            ctx.arc(cx, cy, SQUARE_SIZE * 0.44, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
-        // Legal destination indicator
+        // Inside-square coordinates (Chess.com style: opposite square color)
+        const coordColor = isLight ? CHESS_COLORS.darkSquare : CHESS_COLORS.lightSquare;
+        if (vc === 0) {
+          ctx.fillStyle = coordColor;
+          ctx.font = "bold 12px sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(RANKS[r], sx + 4, sy + 4);
+        }
+        if (vr === BOARD_SQUARES - 1) {
+          ctx.fillStyle = coordColor;
+          ctx.font = "bold 12px sans-serif";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(FILES[c], sx + SQUARE_SIZE - 4, sy + SQUARE_SIZE - 3);
+        }
+
+        // Legal destination indicators (dot for empty, hollow ring for capture)
         if (legalSet.has(sq)) {
           const cx = sx + SQUARE_SIZE / 2;
           const cy = sy + SQUARE_SIZE / 2;
           if (piece) {
             ctx.strokeStyle = CHESS_COLORS.legalCaptureRing;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 6;
             ctx.beginPath();
-            ctx.arc(cx, cy, SQUARE_SIZE * 0.42, 0, Math.PI * 2);
+            ctx.arc(cx, cy, SQUARE_SIZE * 0.43, 0, Math.PI * 2);
             ctx.stroke();
           } else {
             ctx.fillStyle = CHESS_COLORS.legalDot;
             ctx.beginPath();
-            ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+            ctx.arc(cx, cy, 11.5, 0, Math.PI * 2);
             ctx.fill();
           }
         }
 
-        // Piece medallion + crisp glyph
-        if (piece) {
-          const cx = sx + SQUARE_SIZE / 2;
-          const cy = sy + SQUARE_SIZE / 2;
-          const isWhite = piece.color === "w";
-          ctx.fillStyle = isWhite ? CHESS_COLORS.whitePieceBg : CHESS_COLORS.blackPieceBg;
-          ctx.beginPath();
-          ctx.arc(cx, cy, SQUARE_SIZE * 0.36, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = isWhite ? CHESS_COLORS.whitePieceRim : CHESS_COLORS.blackPieceRim;
-          ctx.lineWidth = 2.25;
-          ctx.stroke();
-
-          const glyph = PIECE_GLYPHS[`${piece.color}${piece.type}`] ?? piece.type.toUpperCase();
-          ctx.fillStyle = isWhite ? CHESS_COLORS.whitePieceText : CHESS_COLORS.blackPieceText;
-          ctx.font = "bold 36px sans-serif";
-          ctx.fillText(glyph, cx, cy + 2);
+        // Draw static piece (skip if currently dragged or mid-slide to this square)
+        const isDraggedOrigin = this.dragState?.from === sq;
+        const isAnimatingTarget = activeAnim?.to === sq;
+        if (piece && !isDraggedOrigin && !isAnimatingTarget) {
+          drawChessPiece(ctx, piece.color, piece.type, sx, sy, SQUARE_SIZE, 0.92, false);
         }
       }
     }
 
-    // 4. Algebraic Coordinates (Files a-h & Ranks 1-8)
-    ctx.fillStyle = CHESS_COLORS.textMuted;
-    ctx.font = "bold 13px monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for (let vc = 0; vc < BOARD_SQUARES; vc++) {
-      const fileIdx = flipped ? BOARD_SQUARES - 1 - vc : vc;
-      ctx.fillText(FILES[fileIdx], BOARD_X + vc * SQUARE_SIZE + SQUARE_SIZE / 2, BOARD_Y + BOARD_SIZE + 26);
+    // 4. Smoothly sliding animated piece
+    if (activeAnim) {
+      const fromPt = squareToVisualCoords(activeAnim.from, this.orientation);
+      const toPt = squareToVisualCoords(activeAnim.to, this.orientation);
+      if (fromPt && toPt) {
+        const ix = fromPt.x + (toPt.x - fromPt.x) * activeAnim.progress;
+        const iy = fromPt.y + (toPt.y - fromPt.y) * activeAnim.progress;
+        drawChessPiece(ctx, activeAnim.pieceColor, activeAnim.pieceType, ix, iy, SQUARE_SIZE, 0.92, false);
+      }
     }
-    for (let vr = 0; vr < BOARD_SQUARES; vr++) {
-      const rankIdx = flipped ? BOARD_SQUARES - 1 - vr : vr;
-      ctx.fillText(RANKS[rankIdx], BOARD_X - 28, BOARD_Y + vr * SQUARE_SIZE + SQUARE_SIZE / 2);
+
+    // 5. Floating dragged piece on top (slightly scaled + drop shadow)
+    if (this.dragState) {
+      const dx = this.dragState.vx - SQUARE_SIZE / 2;
+      const dy = this.dragState.vy - SQUARE_SIZE / 2;
+      drawChessPiece(ctx, this.dragState.pieceColor, this.dragState.pieceType, dx, dy, SQUARE_SIZE, 1.12, true);
     }
 
     ctx.textBaseline = "alphabetic";
 
-    // 5. Right-Side Arcade HUD Panel
+    // 6. Clean Chess.com-style Right-Side HUD
+    const { whiteAdv, blackAdv } = this.computeMaterialAdvantage();
+
+    // Top Opponent Bar
     const topLabel = flipped ? this.whiteLabel : this.blackLabel;
     const topTicks = flipped ? this.whiteClockTicks : this.blackClockTicks;
     const topActive = !this.gameOver && activeColor === (flipped ? "w" : "b");
-    this.drawClockCard(ctx, 64, topLabel, topTicks, topActive);
+    const topCaps = flipped ? this.capturedByWhite : this.capturedByBlack;
+    const topCapPrefix: "w" | "b" = flipped ? "b" : "w";
+    const topAdv = flipped ? whiteAdv : blackAdv;
+    const topColor: "w" | "b" = flipped ? "w" : "b";
+    this.drawPlayerBar(ctx, 64, topLabel, topTicks, topActive, topCaps, topCapPrefix, topAdv, topColor);
 
-    // Score & Status Card
-    ctx.fillStyle = CHESS_COLORS.hudBg;
-    ctx.fillRect(PANEL_X, 166, PANEL_W, 118);
+    // Center Match Info & Move Status Card
+    drawRoundedRect(ctx, PANEL_X, 198, PANEL_W, 324, 10);
+    ctx.fillStyle = CHESS_COLORS.hudCardBg;
+    ctx.fill();
     ctx.strokeStyle = CHESS_COLORS.hudBorder;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(PANEL_X, 166, PANEL_W, 118);
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
 
     ctx.textAlign = "left";
     ctx.fillStyle = CHESS_COLORS.textMuted;
-    ctx.font = "bold 13px monospace";
-    ctx.fillText(this.pvpMode ? "LIVE 1v1 BLITZ" : "TOURNAMENT SCORE", PANEL_X + 18, 192);
+    ctx.font = "bold 12px monospace";
+    ctx.fillText(this.pvpMode ? "LIVE 1v1 BLITZ · 3+0" : "TOURNAMENT SCORE · 3+0", PANEL_X + 20, 232);
 
-    ctx.fillStyle = "#34d399";
-    ctx.font = "bold 34px monospace";
-    ctx.fillText(this.pvpMode ? "3+0 PvP" : String(this.score), PANEL_X + 18, 232);
+    ctx.fillStyle = CHESS_COLORS.accentGreen;
+    ctx.font = "bold 36px monospace";
+    ctx.fillText(this.pvpMode ? "BLITZ CHESS" : String(this.score), PANEL_X + 20, 276);
 
     const isMyTurn = activeColor === this.orientation;
     const statusLabel = this.pvpMode
@@ -586,57 +838,54 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
             ? "YOUR TURN (WHITE)"
             : "AI THINKING (BLACK)";
 
-    ctx.fillStyle = this.inCheck ? "#f43f5e" : isMyTurn ? "#38bdf8" : "#f59e0b";
-    ctx.font = "bold 16px monospace";
-    ctx.fillText(statusLabel, PANEL_X + 18, 266);
-
-    // Captured Pieces Tray
-    ctx.fillStyle = CHESS_COLORS.hudBg;
-    ctx.fillRect(PANEL_X, 302, PANEL_W, 134);
-    ctx.strokeStyle = CHESS_COLORS.hudBorder;
+    // Turn status pill
+    drawRoundedRect(ctx, PANEL_X + 20, 298, PANEL_W - 40, 44, 8);
+    ctx.fillStyle = this.inCheck
+      ? "rgba(255, 59, 48, 0.2)"
+      : isMyTurn
+        ? "rgba(129, 182, 76, 0.2)"
+        : "rgba(255, 255, 255, 0.06)";
+    ctx.fill();
+    ctx.strokeStyle = this.inCheck ? "#ff3b30" : isMyTurn ? CHESS_COLORS.accentGreen : "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(PANEL_X, 302, PANEL_W, 134);
+    ctx.stroke();
 
-    const myCaps = flipped ? this.capturedByBlack : this.capturedByWhite;
-    const oppCaps = flipped ? this.capturedByWhite : this.capturedByBlack;
-    const myCapPrefix = flipped ? "w" : "b";
-    const oppCapPrefix = flipped ? "b" : "w";
+    ctx.fillStyle = this.inCheck ? "#fca5a5" : isMyTurn ? "#bef264" : "#d6d3d1";
+    ctx.font = "bold 16px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(statusLabel, PANEL_X + PANEL_W / 2, 321);
 
-    ctx.fillStyle = CHESS_COLORS.textMuted;
-    ctx.font = "bold 12px monospace";
-    ctx.fillText("CAPTURED BY YOU", PANEL_X + 18, 326);
-    const myCapGlyphs = myCaps.map((p) => PIECE_GLYPHS[`${myCapPrefix}${p}`] ?? p).join(" ");
-    ctx.fillStyle = "#f8fafc";
-    ctx.font = "22px sans-serif";
-    ctx.fillText(myCapGlyphs || "—", PANEL_X + 18, 356);
-
-    ctx.fillStyle = CHESS_COLORS.textMuted;
-    ctx.font = "bold 12px monospace";
-    ctx.fillText(this.pvpMode ? "CAPTURED BY OPPONENT" : "CAPTURED BY AI", PANEL_X + 18, 390);
-    const oppCapGlyphs = oppCaps.map((p) => PIECE_GLYPHS[`${oppCapPrefix}${p}`] ?? p).join(" ");
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = "22px sans-serif";
-    ctx.fillText(oppCapGlyphs || "—", PANEL_X + 18, 420);
-
-    // Last Move / Info Card
-    ctx.fillStyle = CHESS_COLORS.hudBg;
-    ctx.fillRect(PANEL_X, 454, PANEL_W, 100);
+    // Last Move Box
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    drawRoundedRect(ctx, PANEL_X + 20, 364, PANEL_W - 40, 134, 8);
+    ctx.fillStyle = "#262421";
+    ctx.fill();
     ctx.strokeStyle = CHESS_COLORS.hudBorder;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(PANEL_X, 454, PANEL_W, 100);
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     ctx.fillStyle = CHESS_COLORS.textMuted;
     ctx.font = "bold 12px monospace";
-    ctx.fillText(`MOVE #${Math.ceil(this.turnNumber / 2)} · LAST MOVE`, PANEL_X + 18, 480);
-    ctx.fillStyle = "#f8fafc";
-    ctx.font = "bold 24px monospace";
-    ctx.fillText(this.lastMoveSan ?? "Awaiting 1. ...", PANEL_X + 18, 518);
+    ctx.fillText(`MOVE #${Math.ceil(this.turnNumber / 2)} · LAST MOVE`, PANEL_X + 36, 394);
+    ctx.fillStyle = CHESS_COLORS.textPrimary;
+    ctx.font = "bold 30px monospace";
+    ctx.fillText(this.lastMoveSan ?? "Awaiting 1. ...", PANEL_X + 36, 438);
 
-    // Bottom (Local Player) Clock Card
+    ctx.fillStyle = CHESS_COLORS.textMuted;
+    ctx.font = "13px sans-serif";
+    ctx.fillText("Drag & drop or click pieces to move", PANEL_X + 36, 478);
+
+    // Bottom Local Player Bar
     const bottomLabel = flipped ? this.blackLabel : this.whiteLabel;
     const bottomTicks = flipped ? this.blackClockTicks : this.whiteClockTicks;
     const bottomActive = !this.gameOver && activeColor === (flipped ? "b" : "w");
-    this.drawClockCard(ctx, 572, bottomLabel, bottomTicks, bottomActive);
+    const bottomCaps = flipped ? this.capturedByBlack : this.capturedByWhite;
+    const bottomCapPrefix: "w" | "b" = flipped ? "w" : "b";
+    const bottomAdv = flipped ? blackAdv : whiteAdv;
+    const bottomColor: "w" | "b" = flipped ? "b" : "w";
+    this.drawPlayerBar(ctx, 544, bottomLabel, bottomTicks, bottomActive, bottomCaps, bottomCapPrefix, bottomAdv, bottomColor);
 
     ctx.restore();
   }

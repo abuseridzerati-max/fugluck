@@ -1092,6 +1092,8 @@
     "resignConfirm": "Точно сдаться?",
     "waitingBoard": "Синхронизация доски...",
     "check": "ШАХ",
+    "muteAudio": "Выключить звук",
+    "unmuteAudio": "Включить звук",
     "outcomes": {
       "win": "Победа",
       "loss": "Поражение",

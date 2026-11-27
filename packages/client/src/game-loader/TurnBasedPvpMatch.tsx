@@ -7,8 +7,8 @@ import {
   type TurnMatchErrorPayload,
   type TurnMatchStatePayload,
 } from '@fugluck/shared'
-import { BlitzChessEngine } from '@fugluck/games/blitz-chess/engine'
-import { clientPointToSquare } from '@fugluck/games/blitz-chess/constants'
+import { BlitzChessEngine, chessSounds } from '@fugluck/games/blitz-chess/engine'
+import { clientPointToSquare, clientPointToVirtual } from '@fugluck/games/blitz-chess/constants'
 
 type TurnBasedPvpMatchProps = {
   match: MatchedPayload
@@ -38,7 +38,18 @@ export function TurnBasedPvpMatch({
   const engineRef = useRef<BlitzChessEngine | null>(null)
   const latestStateRef = useRef<TurnMatchStatePayload | null>(null)
   const syncedAtLocalMsRef = useRef<number>(Date.now())
+  const pointerDragRef = useRef<{
+    pointerId: number
+    from: string
+    pieceColor: 'w' | 'b'
+    pieceType: string
+    startX: number
+    startY: number
+    wasAlreadySelected: boolean
+    dragging: boolean
+  } | null>(null)
   const [confirmResign, setConfirmResign] = useState(false)
+  const [muted, setMuted] = useState(() => chessSounds.isMuted())
 
   useEffect(() => {
     if (!state) {
@@ -70,8 +81,8 @@ export function TurnBasedPvpMatch({
 
     engine.pvpMode = true
     engine.orientation = state.yourSeat === 'p1' ? 'w' : 'b'
-    engine.whiteLabel = `${state.p1Username} (WHITE) · 3+0`
-    engine.blackLabel = `${state.p2Username} (BLACK) · 3+0`
+    engine.whiteLabel = state.p1Username
+    engine.blackLabel = state.p2Username
 
     engine.hydrateFromSnapshot({
       tickCount: state.turnNumber,
@@ -116,8 +127,8 @@ export function TurnBasedPvpMatch({
       }
       const lastMove = s.lastMove as { from?: string; to?: string; san?: string } | null
       engine.orientation = s.yourSeat === 'p1' ? 'w' : 'b'
-      engine.whiteLabel = `${s.p1Username} (WHITE) · 3+0`
-      engine.blackLabel = `${s.p2Username} (BLACK) · 3+0`
+      engine.whiteLabel = s.p1Username
+      engine.blackLabel = s.p2Username
       engine.hydrateFromSnapshot({
         tickCount: s.turnNumber,
         score: 0,
@@ -163,6 +174,7 @@ export function TurnBasedPvpMatch({
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!state || !isMyTurn) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     const engine = engineRef.current
     const canvas = canvasRef.current
     if (!engine || !canvas) return
@@ -171,25 +183,113 @@ export function TurnBasedPvpMatch({
     if (!sq) {
       engine.selectedSquare = null
       engine.legalTargets = []
+      engine.dragState = null
+      pointerDragRef.current = null
       return
     }
 
+    // Click-to-move: execute if tapping a legal destination square
     if (engine.selectedSquare && engine.legalTargets.includes(sq)) {
       const from = engine.selectedSquare
       engine.selectedSquare = null
       engine.legalTargets = []
+      engine.dragState = null
+      pointerDragRef.current = null
       onSendMove(match.matchId, { from, to: sq, promotion: 'q' })
       return
     }
 
     const targets = engine.getLegalTargetsForSquare(sq, orientation)
-    if (targets.length > 0) {
+    const piece = engine.getPieceAt(sq)
+    if (targets.length > 0 && piece && piece.color === orientation) {
+      const wasAlreadySelected = engine.selectedSquare === sq
       engine.selectedSquare = sq
       engine.legalTargets = targets
+      pointerDragRef.current = {
+        pointerId: e.pointerId,
+        from: sq,
+        pieceColor: piece.color,
+        pieceType: piece.type,
+        startX: e.clientX,
+        startY: e.clientY,
+        wasAlreadySelected,
+        dragging: false,
+      }
+      try {
+        canvas.setPointerCapture(e.pointerId)
+      } catch {
+        // Ignore capture errors
+      }
     } else {
       engine.selectedSquare = null
       engine.legalTargets = []
+      engine.dragState = null
+      pointerDragRef.current = null
     }
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = pointerDragRef.current
+    const engine = engineRef.current
+    const canvas = canvasRef.current
+    if (!drag || drag.pointerId !== e.pointerId || !engine || !canvas) return
+
+    if (!drag.dragging && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 6) return
+    drag.dragging = true
+
+    const pt = clientPointToVirtual(canvas.getBoundingClientRect(), e.clientX, e.clientY)
+    if (pt) {
+      engine.dragState = {
+        from: drag.from,
+        pieceColor: drag.pieceColor,
+        pieceType: drag.pieceType,
+        vx: pt.vx,
+        vy: pt.vy,
+      }
+    }
+  }
+
+  function handlePointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = pointerDragRef.current
+    const engine = engineRef.current
+    const canvas = canvasRef.current
+    if (!drag || drag.pointerId !== e.pointerId || !engine || !canvas) return
+    pointerDragRef.current = null
+
+    try {
+      canvas.releasePointerCapture(e.pointerId)
+    } catch {
+      // Ignore release errors
+    }
+
+    const wasDragging = drag.dragging
+    engine.dragState = null
+
+    if (!wasDragging) {
+      if (drag.wasAlreadySelected) {
+        engine.selectedSquare = null
+        engine.legalTargets = []
+      }
+      return
+    }
+
+    const targetSq = clientPointToSquare(canvas.getBoundingClientRect(), e.clientX, e.clientY, orientation)
+    if (targetSq && targetSq !== drag.from && engine.legalTargets.includes(targetSq)) {
+      engine.skipNextAnimation = true
+      engine.selectedSquare = null
+      engine.legalTargets = []
+      onSendMove(match.matchId, { from: drag.from, to: targetSq, promotion: 'q' })
+    }
+  }
+
+  function handlePointerCancel() {
+    pointerDragRef.current = null
+    if (engineRef.current) engineRef.current.dragState = null
+  }
+
+  function handleToggleMute() {
+    const nextMuted = chessSounds.toggleMute()
+    setMuted(nextMuted)
   }
 
   function handleResignClick() {
@@ -286,22 +386,38 @@ export function TurnBasedPvpMatch({
           )}
         </div>
 
-        <button
-          type="button"
-          className="ac-btn ac-btn--ghost"
-          disabled={isEnded}
-          onClick={handleResignClick}
-          style={{
-            padding: '4px 12px',
-            fontSize: '12px',
-            borderColor: confirmResign ? '#f43f5e' : 'rgba(244, 63, 94, 0.45)',
-            color: confirmResign ? '#fff' : '#fda4af',
-            background: confirmResign ? '#e11d48' : 'transparent',
-            opacity: isEnded ? 0.5 : 1,
-          }}
-        >
-          {confirmResign ? t('turnPvp.resignConfirm') : t('turnPvp.resign')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <button
+            type="button"
+            className="ac-btn ac-btn--ghost"
+            onClick={handleToggleMute}
+            title={muted ? t('turnPvp.unmuteAudio') : t('turnPvp.muteAudio')}
+            aria-label={muted ? t('turnPvp.unmuteAudio') : t('turnPvp.muteAudio')}
+            style={{
+              padding: '4px 10px',
+              fontSize: '14px',
+              minWidth: 36,
+            }}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+          <button
+            type="button"
+            className="ac-btn ac-btn--ghost"
+            disabled={isEnded}
+            onClick={handleResignClick}
+            style={{
+              padding: '4px 12px',
+              fontSize: '12px',
+              borderColor: confirmResign ? '#f43f5e' : 'rgba(244, 63, 94, 0.45)',
+              color: confirmResign ? '#fff' : '#fda4af',
+              background: confirmResign ? '#e11d48' : 'transparent',
+              opacity: isEnded ? 0.5 : 1,
+            }}
+          >
+            {confirmResign ? t('turnPvp.resignConfirm') : t('turnPvp.resign')}
+          </button>
+        </div>
       </div>
 
       {/* Board Stage */}
@@ -319,6 +435,9 @@ export function TurnBasedPvpMatch({
         <canvas
           ref={canvasRef}
           onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           style={{
             width: '100%',
             height: '100%',

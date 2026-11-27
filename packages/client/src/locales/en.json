@@ -1084,6 +1084,8 @@
     "resignConfirm": "Confirm Resign?",
     "waitingBoard": "Syncing live board...",
     "check": "CHECK",
+    "muteAudio": "Mute audio",
+    "unmuteAudio": "Unmute audio",
     "outcomes": {
       "win": "Victory",
       "loss": "Defeat",
