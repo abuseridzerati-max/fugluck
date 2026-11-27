@@ -1,8 +1,6 @@
 // Deterministic engine and fixed-step scheduler checks. Reproducibility is a
 // gameplay property only; this suite does not retain or reconstruct input histories.
 import { createFixedTimestepLoop, FIXED_TIMESTEP_SEC } from "@fugluck/shared";
-import { RunnerEngine } from "../games/neon-runner/engine.ts";
-import { DashEngine } from "../games/pixel-ninja-dash/engine.ts";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine.ts";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine.ts";
 import { StackTowerEngine } from "../games/stack-tower/engine.ts";
@@ -13,8 +11,6 @@ import { BrickBreakerEngine } from "../games/brick-breaker/engine.ts";
 import { BlitzChessEngine } from "../games/blitz-chess/engine.ts";
 import { Connect4Engine } from "../games/connect-4/engine.ts";
 import { CheckersEngine } from "../games/checkers/engine.ts";
-import { SpeedTriviaEngine } from "../games/speed-trivia/engine.ts";
-import { TFSprintEngine } from "../games/tf-sprint/engine.ts";
 
 const SEED = 424242;
 const TICKS = 600;
@@ -31,16 +27,6 @@ function sameSeedRun(name: string, run: (seed: number) => unknown) {
 
 console.log("Deterministic gameplay checks (no input recording or replay)\n");
 
-sameSeedRun("neon-runner", seed => {
-  const e = new RunnerEngine(seed); e.resize(1280, 720); e.reset();
-  for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, { jumpPressed:false, jumpReleased:false, slidePressed:false });
-  return e;
-});
-sameSeedRun("pixel-ninja-dash", seed => {
-  const e = new DashEngine(seed); e.resize(1280, 720); e.reset();
-  for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, { dashPressed:false });
-  return e;
-});
 sameSeedRun("space-blaster", seed => {
   const e = new SpaceBlasterEngine(seed);
   for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, { moveLeft:false, moveRight:false, moveUp:false, moveDown:false, shootPressed:false });
@@ -145,16 +131,6 @@ sameSeedRun("checkers", seed => {
     }
   }
   return e.getTurnState();
-});
-sameSeedRun("speed-trivia", seed => {
-  const e = new SpeedTriviaEngine(seed);
-  for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, {});
-  return e;
-});
-sameSeedRun("true-false-sprint", seed => {
-  const e = new TFSprintEngine(seed);
-  for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, {});
-  return e;
 });
 
 console.log("\nFixed-step scheduler boundaries\n");

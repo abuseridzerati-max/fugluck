@@ -33,8 +33,6 @@ async function main() {
   console.log("\n--- Game Plugin Contract & Registry Verification ---\n");
 
   const expectedIds = [
-    "neon-runner",
-    "pixel-ninja-dash",
     "space-blaster",
     "cyber-hopper",
     "stack-tower",
@@ -45,12 +43,10 @@ async function main() {
     "blitz-chess",
     "connect-4",
     "checkers",
-    "speed-trivia",
-    "tf-sprint",
   ];
 
   check(
-    "GAME_MANIFESTS contains all 14 registered games",
+    "GAME_MANIFESTS contains all 10 registered games",
     expectedIds.every((id) => GAME_MANIFESTS.some((m) => m.id === id)) &&
       GAME_MANIFESTS.length === expectedIds.length,
   );
@@ -68,12 +64,11 @@ async function main() {
 
   check(
     "getAvailableGenres derives non-empty unique genre list from manifests",
-    getAvailableGenres().length === 5 &&
+    getAvailableGenres().length === 4 &&
       getAvailableGenres().includes("arena-shooter") &&
       getAvailableGenres().includes("reflex-timing") &&
       getAvailableGenres().includes("runner") &&
-      getAvailableGenres().includes("turn-based-board") &&
-      getAvailableGenres().includes("quiz"),
+      getAvailableGenres().includes("turn-based-board"),
   );
 
   let clientValid = true;

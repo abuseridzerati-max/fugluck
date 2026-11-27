@@ -4,8 +4,6 @@
 // Run: npx tsx scripts/canvas-render-check.ts
 
 import { VIRTUAL_VIEWPORT } from "@fugluck/shared";
-import { RunnerEngine } from "../games/neon-runner/engine";
-import { DashEngine } from "../games/pixel-ninja-dash/engine";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
 import { StackTowerEngine } from "../games/stack-tower/engine";
@@ -16,10 +14,6 @@ import { BrickBreakerEngine } from "../games/brick-breaker/engine";
 import { BlitzChessEngine } from "../games/blitz-chess/engine";
 import { Connect4Engine } from "../games/connect-4/engine";
 import { CheckersEngine } from "../games/checkers/engine";
-import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
-import { renderSpeedTrivia } from "../games/speed-trivia/render";
-import { TFSprintEngine } from "../games/tf-sprint/engine";
-import { renderTFSprint } from "../games/tf-sprint/render";
 
 let failures = 0;
 let totalVerifiedDrawCalls = 0;
@@ -161,68 +155,6 @@ function calculateLetterboxDimensions(containerW: number, containerH: number) {
 
   check("Letterboxing maintains 16:9 logical aspect ratio across all viewports", mathPass);
   check("Virtual resolution matches canonical 1280x720 constant", VIRTUAL_VIEWPORT.width === 1280 && VIRTUAL_VIEWPORT.height === 720);
-}
-
-// ---------------------------------------------------------------------------
-// Test 2: Neon Runner 300-Frame Headless Canvas draw() Suite
-// ---------------------------------------------------------------------------
-console.log("\nTest 2: Neon Runner 300-Frame Headless Canvas draw() Suite\n");
-
-{
-  const mockCtx = createMockCanvasContext();
-  const engine = new RunnerEngine(424242);
-  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  engine.reset();
-
-  let thrownError: Error | null = null;
-  const initialCallCount = totalVerifiedDrawCalls;
-
-  try {
-    for (let frame = 0; frame < 300; frame++) {
-      engine.update(1 / 60, {
-        jumpPressed: frame % 40 === 0,
-        jumpReleased: false,
-        slidePressed: frame % 60 === 0,
-      });
-      engine.draw(mockCtx);
-    }
-  } catch (err) {
-    thrownError = err as Error;
-  }
-
-  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
-  check("Neon Runner 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
-  check("Neon Runner verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
-}
-
-// ---------------------------------------------------------------------------
-// Test 3: Pixel Ninja Dash 300-Frame Headless Canvas draw() Suite
-// ---------------------------------------------------------------------------
-console.log("\nTest 3: Pixel Ninja Dash 300-Frame Headless Canvas draw() Suite\n");
-
-{
-  const mockCtx = createMockCanvasContext();
-  const engine = new DashEngine(123456);
-  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  engine.reset();
-
-  let thrownError: Error | null = null;
-  const initialCallCount = totalVerifiedDrawCalls;
-
-  try {
-    for (let frame = 0; frame < 300; frame++) {
-      engine.update(1 / 60, {
-        dashPressed: frame % 30 === 0,
-      });
-      engine.draw(mockCtx);
-    }
-  } catch (err) {
-    thrownError = err as Error;
-  }
-
-  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
-  check("Pixel Ninja Dash 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
-  check("Pixel Ninja Dash verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
 }
 
 // ---------------------------------------------------------------------------
@@ -570,139 +502,6 @@ console.log("\nTest 3.82: Checkers 300-Frame Headless Canvas draw() Suite\n");
   check("Checkers 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Checkers verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Checkers executes player moves and deterministic AI responses", engine.turnNumber >= 4, `turnNumber=${engine.turnNumber}`);
-}
-
-// ---------------------------------------------------------------------------
-// Test 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Suite
-// ---------------------------------------------------------------------------
-console.log("\nTest 3.8: Speed Trivia Clash 300-Frame Headless Canvas draw() Suite\n");
-
-{
-  let maxYCoord = 0;
-  let minYCoord = Infinity;
-
-  const mockCtx = createMockCanvasContext();
-
-  const origFillRect = mockCtx.fillRect.bind(mockCtx);
-  const origStrokeRect = mockCtx.strokeRect.bind(mockCtx);
-  const origFillText = mockCtx.fillText.bind(mockCtx);
-
-  mockCtx.fillRect = function (x: number, y: number, w: number, h: number) {
-    if (w < VIRTUAL_VIEWPORT.width || h < VIRTUAL_VIEWPORT.height) {
-      minYCoord = Math.min(minYCoord, y);
-      maxYCoord = Math.max(maxYCoord, y + h);
-    }
-    return origFillRect(x, y, w, h);
-  };
-  mockCtx.strokeRect = function (x: number, y: number, w: number, h: number) {
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y + h);
-    return origStrokeRect(x, y, w, h);
-  };
-  mockCtx.roundRect = function (x: number, y: number, w: number, h: number) {
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y + h);
-    totalVerifiedDrawCalls++;
-  };
-  let categoryRendered = false;
-  mockCtx.fillText = function (text: string, x: number, y: number) {
-    if (text.includes("CATEGORY:")) categoryRendered = true;
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y);
-    return origFillText(text, x, y);
-  };
-
-  const engine = new SpeedTriviaEngine(12345678);
-  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  engine.reset();
-
-  const initialCallCount = totalVerifiedDrawCalls;
-  let thrownError: Error | null = null;
-
-  try {
-    const emptyInput = {};
-    for (let frame = 0; frame < 300; frame++) {
-      engine.update(1 / 60, emptyInput);
-      renderSpeedTrivia(mockCtx, engine);
-    }
-  } catch (err) {
-    thrownError = err as Error;
-  }
-
-  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
-  check("Speed Trivia Clash 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
-  check("Speed Trivia Clash verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
-  check("Speed Trivia Clash Category Header text renders prominently on top canvas header", categoryRendered);
-  check(
-    "Speed Trivia Clash UI rendering elements lie strictly within y in [0, 700] canonical bounds",
-    maxYCoord <= 700 && minYCoord >= 0,
-    `minY=${minYCoord}, maxY=${maxYCoord}`,
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Test 3.9: True / False Sprint 300-Frame Headless Canvas draw() Suite
-// ---------------------------------------------------------------------------
-console.log("\nTest 3.9: True / False Sprint 300-Frame Headless Canvas draw() Suite\n");
-
-{
-  let minYCoord = Infinity;
-  let maxYCoord = -Infinity;
-
-  const mockCtx = createMockCanvasContext();
-
-  const origFillRect = mockCtx.fillRect.bind(mockCtx);
-  const origStrokeRect = mockCtx.strokeRect.bind(mockCtx);
-  const origFillText = mockCtx.fillText.bind(mockCtx);
-
-  mockCtx.fillRect = function (x: number, y: number, w: number, h: number) {
-    if (w < VIRTUAL_VIEWPORT.width || h < VIRTUAL_VIEWPORT.height) {
-      minYCoord = Math.min(minYCoord, y);
-      maxYCoord = Math.max(maxYCoord, y + h);
-    }
-    return origFillRect(x, y, w, h);
-  };
-  mockCtx.strokeRect = function (x: number, y: number, w: number, h: number) {
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y + h);
-    return origStrokeRect(x, y, w, h);
-  };
-  mockCtx.roundRect = function (x: number, y: number, w: number, h: number) {
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y + h);
-    totalVerifiedDrawCalls++;
-  };
-  mockCtx.fillText = function (text: string, x: number, y: number) {
-    minYCoord = Math.min(minYCoord, y);
-    maxYCoord = Math.max(maxYCoord, y);
-    return origFillText(text, x, y);
-  };
-
-  const engine = new TFSprintEngine(88776655);
-  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
-  engine.reset();
-
-  const initialCallCount = totalVerifiedDrawCalls;
-  let thrownError: Error | null = null;
-
-  try {
-    const emptyInput = {};
-    for (let frame = 0; frame < 300; frame++) {
-      engine.update(1 / 60, emptyInput);
-      renderTFSprint(mockCtx, engine);
-    }
-  } catch (err) {
-    thrownError = err as Error;
-  }
-
-  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
-  check("True / False Sprint 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
-  check("True / False Sprint verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
-  check(
-    "True / False Sprint UI rendering elements lie strictly within y in [0, 700] canonical bounds",
-    maxYCoord <= 700 && minYCoord >= 0,
-    `minY=${minYCoord}, maxY=${maxYCoord}`,
-  );
 }
 
 // ---------------------------------------------------------------------------

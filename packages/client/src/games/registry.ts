@@ -24,8 +24,6 @@ function defineModulePlugin(
  * Add one entry here when registering a new game in GAME_MANIFESTS.
  */
 export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
-  "neon-runner": defineModulePlugin("neon-runner", () => import("@fugluck/games/neon-runner")),
-  "pixel-ninja-dash": defineModulePlugin("pixel-ninja-dash", () => import("@fugluck/games/pixel-ninja-dash")),
   "space-blaster": defineModulePlugin("space-blaster", () => import("@fugluck/games/space-blaster"), {
     competitionControlsKey: "competition.blasterControls",
   }),
@@ -56,8 +54,6 @@ export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
   "checkers": defineModulePlugin("checkers", () => import("@fugluck/games/checkers"), {
     competitionControlsKey: "competition.checkersControls",
   }),
-  "speed-trivia": defineModulePlugin("speed-trivia", () => import("@fugluck/games/speed-trivia")),
-  "tf-sprint": defineModulePlugin("tf-sprint", () => import("@fugluck/games/tf-sprint")),
 };
 
 export const CLIENT_GAME_PLUGIN_LIST: readonly ClientGamePlugin[] = GAME_MANIFESTS.map((manifest) => {

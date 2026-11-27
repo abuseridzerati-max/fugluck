@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { GAME_MANIFESTS } from '@fugluck/shared'
 import type {
   CompetitionTemplateAdmin,
   CompetitionInstanceAdminDetail,
 } from './adminTypes'
 
-const ELIGIBLE_GAMES = [
-  { id: 'space-blaster', name: 'Space Blaster' },
-  { id: 'pixel-ninja-dash', name: 'Pixel Ninja Dash' },
-  { id: 'cyber-hopper', name: 'Cyber Hopper' },
-  { id: 'neon-runner', name: 'Neon Runner' },
-]
+const ELIGIBLE_GAMES = GAME_MANIFESTS.map((m) => ({ id: m.id, name: m.title }))
 
 function formatGEL(minor: number): string {
   return `TEST ₾${(minor / 100).toFixed(2)}`

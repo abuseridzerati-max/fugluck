@@ -1,4 +1,5 @@
 import React from 'react'
+import { GAME_MANIFESTS } from '@fugluck/shared'
 import type {
   Tab,
   CompetitionOverviewMetrics,
@@ -418,10 +419,9 @@ export function CompetitionInstancesView({
           style={{ padding: '8px 12px', background: '#12131c', border: '1px solid #1e2030', color: '#fff', borderRadius: '6px', fontSize: '13px' }}
         >
           <option value="">All Games</option>
-          <option value="space-blaster">Space Blaster</option>
-          <option value="pixel-ninja-dash">Pixel Ninja Dash</option>
-          <option value="cyber-hopper">Cyber Hopper</option>
-          <option value="neon-runner">Neon Runner</option>
+          {GAME_MANIFESTS.map((m) => (
+            <option key={m.id} value={m.id}>{m.title}</option>
+          ))}
         </select>
 
         <button

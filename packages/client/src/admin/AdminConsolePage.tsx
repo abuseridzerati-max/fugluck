@@ -43,17 +43,12 @@ import {
   CompetitionEligibilityView,
   formatGEL,
 } from './CompetitionAdminViews'
-import type { AdminPermission } from '@fugluck/shared'
+import { GAME_MANIFESTS, type AdminPermission } from '@fugluck/shared'
 import AdminOperationsView from './AdminOperationsView'
 
 const GAME_OPTIONS = [
   { id: '', label: 'All Games' },
-  { id: 'neon-runner', label: 'Neon Runner' },
-  { id: 'pixel-ninja-dash', label: 'Pixel Ninja Dash' },
-  { id: 'space-blaster', label: 'Space Blaster' },
-  { id: 'cyber-hopper', label: 'Cyber Hopper' },
-  { id: 'speed-trivia', label: 'Speed Trivia Clash' },
-  { id: 'tf-sprint', label: 'True / False Sprint' },
+  ...GAME_MANIFESTS.map((m) => ({ id: m.id, label: m.title })),
 ]
 
 export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: () => void }) {

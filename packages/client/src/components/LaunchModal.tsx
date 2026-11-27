@@ -28,10 +28,6 @@ const DEFAULT_CONTROLS_HINT: Record<string, string> = {
   'blitz-chess': 'Click / Tap a piece, then a highlighted square · 3+0 Blitz live PvP or seeded AI',
   'connect-4': 'Click / Tap a column, keys 1–7, or Arrows + Space · Connect 4 in a row to win',
   'checkers': 'Click / Drag a piece to move or jump · Mandatory captures & multi-jumps · 3+0 Blitz',
-  'neon-runner': 'Space / Up Arrow to jump · Time leaps over neon obstacles for distance score',
-  'pixel-ninja-dash': 'Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly',
-  'speed-trivia': 'Click or press 1–4 to answer · 10 questions · Faster correct answers score more',
-  'tf-sprint': 'Click or press T / F (Left / Right) · Rapid-fire True or False sprint',
 }
 
 export default function LaunchModal({

@@ -127,22 +127,9 @@ check(
   "Space Blaster is classified as PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["space-blaster"] === "PAID_COMPETITIVE_CANDIDATE",
 );
-check("Pixel Ninja Dash is blocked from TEST GEL prize competitions", GAME_COMPETITION_CERTIFICATIONS["pixel-ninja-dash"].testGelCompetition === "NOT_CERTIFIED");
 check(
   "Cyber Hopper is classified as PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["cyber-hopper"] === "PAID_COMPETITIVE_CANDIDATE",
-);
-check(
-  "Neon Runner is blocked from TEST GEL prize competitions",
-  GAME_COMPETITION_CERTIFICATIONS["neon-runner"].testGelCompetition === "NOT_CERTIFIED",
-);
-check(
-  "Speed Trivia Clash is classified as COIN_COMPETITIVE",
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY["speed-trivia"] === "COIN_COMPETITIVE",
-);
-check(
-  "True / False Sprint is classified as COIN_COMPETITIVE",
-  GAME_COMPETITION_ELIGIBILITY_REGISTRY["tf-sprint"] === "COIN_COMPETITIVE",
 );
 check(
   "Stack Tower is classified as PAID_COMPETITIVE_CANDIDATE",
@@ -237,7 +224,7 @@ check(
 // Case C: Freeroll (64 players, 0 entry fee, ₾1,000 sponsored prize)
 const caseCTemplate: CompetitionTemplate = {
   id: "tmpl_case_c",
-  gameId: "pixel-ninja-dash",
+  gameId: "stack-tower",
   title: "Sponsored Freeroll 64",
   format: "TOURNAMENT_BRACKET",
   participantCapacity: 64,

@@ -29,7 +29,7 @@ for (const value of ["abc", "player_01", "A".repeat(20)]) {
 console.log("\nTEST GEL certification input boundaries");
 check("Space Blaster accepts its certified authority rules in sandbox", !rejects(() => assertGameEligibleForCompetition("space-blaster", { isSandbox: true, rulesVersion: AUTHORITY_VERSION, enabled: true })));
 check("Cyber Hopper accepts its certified authority rules in sandbox", !rejects(() => assertGameEligibleForCompetition("cyber-hopper", { isSandbox: true, rulesVersion: CYBER_HOPPER_AUTHORITY_VERSION, enabled: true })));
-for (const gameId of ["neon-runner", "pixel-ninja-dash", "speed-trivia", "tf-sprint", "unknown-game"]) {
+for (const gameId of ["unknown-game", "unregistered-game"]) {
   check(`${gameId} cannot create a TEST GEL competition`, rejects(() => assertGameEligibleForCompetition(gameId, { isSandbox: true, enabled: true })));
 }
 check("Space Blaster cannot enable a template with a mismatched rules version", rejects(() => assertGameEligibleForCompetition("space-blaster", { isSandbox: true, rulesVersion: "ch-1.0", enabled: true })));

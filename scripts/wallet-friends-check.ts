@@ -158,8 +158,6 @@ async function run() {
   check("Accepted friendship cannot be canceled through request cancellation endpoint (404)", mockCancelFriendRequest("usr_A", acceptedFriendshipAB).status === 404);
 
   // 8. Game Title Registry Resolution
-  check("getGameTitle resolves 'neon-runner'", getGameTitle("neon-runner") === "Neon Runner");
-  check("getGameTitle resolves 'pixel-ninja-dash'", getGameTitle("pixel-ninja-dash") === "Pixel Ninja Dash");
   check("getGameTitle resolves 'space-blaster'", getGameTitle("space-blaster") === "Space Blaster");
   check("getGameTitle resolves 'cyber-hopper'", getGameTitle("cyber-hopper") === "Cyber Hopper");
   check("getGameTitle resolves 'stack-tower'", getGameTitle("stack-tower") === "Stack Tower");
@@ -170,8 +168,6 @@ async function run() {
   check("getGameTitle resolves 'blitz-chess'", getGameTitle("blitz-chess") === "Blitz Chess");
   check("getGameTitle resolves 'connect-4'", getGameTitle("connect-4") === "Connect 4");
   check("getGameTitle resolves 'checkers'", getGameTitle("checkers") === "Checkers");
-  check("getGameTitle resolves 'speed-trivia'", getGameTitle("speed-trivia") === "Speed Trivia Clash");
-  check("getGameTitle resolves 'tf-sprint'", getGameTitle("tf-sprint") === "True / False Sprint");
   check("getGameTitle falls back to gameId for unknown id", getGameTitle("unknown-game") === "unknown-game");
 
   // 9. Wallet Transaction History Label Mapping & Isolation
@@ -207,16 +203,16 @@ async function run() {
   check("Wallet history sorts newest first", userAHistory[0].id === "e2" && userAHistory[1].id === "e1");
 
   // 11. Catalog Active Categories & Search Filtering
-  check("Catalog navFilters has exactly 6 active categories (no empty falling-block or hot)", navFilters.length === 6 && !navFilters.some((f) => (f.engine as string) === "falling-block" || (f.engine as string) === "hot"));
-  check("Active games contains 14 canonical playable games", activeGames.length === 14);
+  check("Catalog navFilters has exactly 5 active categories (no empty falling-block, hot, or quiz)", navFilters.length === 5 && !navFilters.some((f) => (f.engine as string) === "falling-block" || (f.engine as string) === "hot" || (f.engine as string) === "quiz"));
+  check("Active games contains 10 canonical certified playable games", activeGames.length === 10);
 
   function searchGames(query: string) {
     const q = query.trim().toLowerCase();
     return activeGames.filter((g) => g.title.toLowerCase().includes(q) || g.engine.toLowerCase().includes(q));
   }
 
-  check("Game search 'ninja' filters to Pixel Ninja Dash", searchGames("ninja").length === 1 && searchGames("ninja")[0].id === "pixel-ninja-dash");
-  check("Game search 'quiz' filters to Speed Trivia Clash and True / False Sprint", searchGames("quiz").length === 2);
+  check("Game search 'blaster' filters to Space Blaster", searchGames("blaster").length === 1 && searchGames("blaster")[0].id === "space-blaster");
+  check("Game search 'turn-based-board' filters to Blitz Chess, Connect 4, and Checkers", searchGames("turn-based-board").length === 3);
   check("Game search 'nonexistent' yields empty array", searchGames("nonexistent").length === 0);
 
   if (failures > 0) {

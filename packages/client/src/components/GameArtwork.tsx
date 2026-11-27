@@ -204,33 +204,6 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
-  'neon-runner': () => (
-    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
-      <rect width="320" height="180" fill="#080d16" />
-      <path d="M0 132h320" stroke="#10b981" strokeWidth="2" />
-      <path d="M0 148h320M0 166h320" stroke="#162336" strokeWidth="1.5" />
-      <path d="M40 132L8 180M100 132L82 180M160 132v48M220 132l18 48M280 132l32 48" stroke="#162336" strokeWidth="1.5" />
-      <rect x="196" y="88" width="16" height="44" rx="3" fill="#f43f5e" fillOpacity="0.25" stroke="#f43f5e" strokeWidth="2" />
-      <rect x="254" y="102" width="14" height="30" rx="3" fill="#f59e0b" fillOpacity="0.25" stroke="#f59e0b" strokeWidth="2" />
-      <path d="M64 116c24-44 58-52 94-26" stroke="#10b981" strokeWidth="2.5" strokeDasharray="6 6" strokeLinecap="round" />
-      <circle cx="116" cy="70" r="10" fill="#34d399" />
-      <path d="M104 86l18-6 14 14-12 16-14-6-16 14" stroke="#d1fae5" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-
-  'pixel-ninja-dash': () => (
-    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
-      <rect width="320" height="180" fill="#090d15" />
-      <circle cx="248" cy="48" r="24" fill="#f59e0b" fillOpacity="0.16" stroke="#f59e0b" strokeOpacity="0.5" strokeWidth="1.5" />
-      <path d="M0 134h96v46H0zM130 116h86v64h-86zM236 140h84v40h-84z" fill="#131c2b" stroke="#25344d" strokeWidth="1.5" />
-      <path d="M68 118l48-30 32 14" stroke="#a3e635" strokeWidth="3" strokeLinecap="round" strokeDasharray="5 5" />
-      <rect x="136" y="76" width="22" height="22" rx="5" fill="#10b981" />
-      <rect x="142" y="83" width="14" height="5" rx="2" fill="#04130d" />
-      <path d="M136 86l-20 4 14 6" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
-      <path d="M212 72l8 4-8 4-4 8-4-8-8-4 8-4 4-8 4 8Z" fill="#e2e8f0" opacity="0.85" />
-    </svg>
-  ),
-
   'connect-4': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#070a10" />
@@ -282,36 +255,10 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
       <path d="M135 110l-1-8 4 3 3.5-5 3.5 5 4-3-1 8h-13z" fill="#facc15" />
     </svg>
   ),
-
-  'speed-trivia': () => (
-    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
-      <rect width="320" height="180" fill="#08101a" />
-      <rect x="38" y="30" width="244" height="120" rx="12" fill="#0e1726" stroke="#22324a" strokeWidth="1.5" />
-      <rect x="56" y="46" width="146" height="10" rx="5" fill="#23344f" />
-      <rect x="218" y="44" width="46" height="14" rx="7" fill="#f59e0b" fillOpacity="0.22" stroke="#f59e0b" strokeWidth="1.5" />
-      <rect x="56" y="74" width="98" height="26" rx="6" fill="#10b981" fillOpacity="0.22" stroke="#10b981" strokeWidth="1.75" />
-      <rect x="166" y="74" width="98" height="26" rx="6" fill="#142033" stroke="#263854" strokeWidth="1.25" />
-      <rect x="56" y="110" width="98" height="26" rx="6" fill="#142033" stroke="#263854" strokeWidth="1.25" />
-      <rect x="166" y="110" width="98" height="26" rx="6" fill="#142033" stroke="#263854" strokeWidth="1.25" />
-      <path d="M70 87l5 5 11-11" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-
-  'tf-sprint': () => (
-    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
-      <rect width="320" height="180" fill="#080f18" />
-      <rect x="44" y="34" width="232" height="10" rx="5" fill="#162235" />
-      <rect x="44" y="34" width="148" height="10" rx="5" fill="#38bdf8" />
-      <rect x="44" y="62" width="106" height="84" rx="12" fill="#10b981" fillOpacity="0.16" stroke="#10b981" strokeWidth="2" />
-      <path d="M78 105l13 13 26-28" stroke="#34d399" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-      <rect x="170" y="62" width="106" height="84" rx="12" fill="#f43f5e" fillOpacity="0.14" stroke="#f43f5e" strokeWidth="2" />
-      <path d="M207 88l32 32m0-32l-32 32" stroke="#fb7185" strokeWidth="4.5" strokeLinecap="round" />
-    </svg>
-  ),
 }
 
 export default function GameArtwork({ gameId, thumbnailKey }: GameArtworkProps) {
   const key = thumbnailKey ?? getGameManifest(gameId)?.thumbnail ?? gameId
-  const render = ARTWORK_BY_KEY[key] ?? ARTWORK_BY_KEY['tf-sprint']
+  const render = ARTWORK_BY_KEY[key] ?? ARTWORK_BY_KEY['space-blaster']
   return <>{render()}</>
 }
