@@ -119,11 +119,6 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
         return;
       }
 
-      if (stake > 0 && !socket.data.isEmailVerified) {
-        socket.emit("queueError", { message: "Email verification is required for wagering matches." });
-        return;
-      }
-
       enqueue(payload.gameId, socket, currency, stake);
       const pair = tryPair(payload.gameId, currency, stake);
       if (pair) {

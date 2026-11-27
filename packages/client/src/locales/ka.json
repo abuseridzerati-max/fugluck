@@ -34,6 +34,8 @@
     "signupTitle": "რეგისტრაცია",
     "username": "მომხმარებლის სახელი",
     "password": "პაროლი",
+    "email": "ელ.ფოსტა",
+    "emailRequired": "გთხოვთ მიუთითოთ სწორი ელ.ფოსტის მისამართი.",
     "emailOptional": "ელ.ფოსტა (არასავალდებულო)",
     "submitLogin": "შესვლა",
     "submitSignup": "რეგისტრაცია",

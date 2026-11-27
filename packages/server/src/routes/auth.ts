@@ -9,13 +9,14 @@ import { disconnectUserSessions, revokeSession } from '../auth/session';
 import { signGuestTicket } from '../auth/jwt';
 import { attachSession, requireAuth } from "../auth/middleware";
 import { db } from "../db/client";
-import { emailVerificationTokens, passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
+import { passwordResetTokens, policyAcceptances, users, type User } from "../db/schema";
 import { ensureSignupGrant } from "../wallet/ledger";
 import { sandboxAccountingAdapter } from "../accounting";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../email/emailService";
+import { sendPasswordResetEmail } from "../email/emailService";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function hashToken(rawToken: string): string {
   return createHash("sha256").update(rawToken).digest("hex");
@@ -150,8 +151,10 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
     res.status(400).json({ error: passwordPolicy.error });
     return;
   }
-  if (email !== undefined && email !== null && (typeof email !== "string" || email.length > 255 || !email.includes("@"))) {
-    res.status(400).json({ error: "Email must be valid and under 255 characters." });
+
+  const normalizedEmail = typeof email === "string" ? email.trim() : "";
+  if (normalizedEmail.length === 0 || normalizedEmail.length > 255 || !EMAIL_PATTERN.test(normalizedEmail)) {
+    res.status(400).json({ error: "A valid email address is required." });
     return;
   }
 
@@ -178,27 +181,27 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
     return;
   }
 
-  if (email) {
-    const existingEmail = await db.query.users.findFirst({ where: eq(users.email, email.trim()) });
-    if (existingEmail) {
-      res.status(409).json({ error: "An account with that email already exists." });
-      return;
-    }
+  const existingEmail = await db.query.users.findFirst({ where: eq(users.email, normalizedEmail) });
+  if (existingEmail) {
+    res.status(409).json({ error: "An account with that email already exists." });
+    return;
   }
 
   const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
   const userAgent = (req.headers["user-agent"] as string) || null;
   const passwordHash = await hashPassword(password);
   const id = randomUUID();
+  const now = new Date();
 
   const [user] = await db
     .insert(users)
     .values({
       id,
       username,
-      email: email ? email.trim() : null,
+      email: normalizedEmail,
       passwordHash,
-      isEmailVerified: false,
+      isEmailVerified: true,
+      emailVerifiedAt: now,
     })
     .returning();
 
@@ -224,121 +227,24 @@ authRouter.post("/signup", authLimiter, async (req, res) => {
     },
   ]);
 
-  // Create registration email verification token (24-hour expiration)
-  const rawVerificationToken = randomUUID();
-  const tokenHash = hashToken(rawVerificationToken);
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-  await db.insert(emailVerificationTokens).values({
-    id: `evt_${randomUUID()}`,
-    userId: user.id,
-    tokenHash,
-    expiresAt,
-  });
-
-  // Dispatch transactional verification email if email provided
-  if (user.email) {
-    await sendVerificationEmail(user.email, user.username, rawVerificationToken).catch((err) => {
-      logger.error("[auth] Failed to dispatch verification email on signup:", err);
-    });
-  }
-
   setSessionCookie(res, user);
 
-  const responsePayload: Record<string, unknown> = {
+  res.status(201).json({
     user: await toPublicUser(user),
-    verificationMessage: "Verification email sent. Please verify your email to complete registration.",
-  };
-
-  // Only expose raw token in non-production environments for automated testing/dev
-  if (process.env.NODE_ENV !== "production") {
-    responsePayload.verificationToken = rawVerificationToken;
-  }
-
-  res.status(201).json(responsePayload);
+  });
 });
 
-authRouter.post("/verify-email", authLimiter, async (req, res) => {
-  const { token } = req.body ?? {};
-  if (typeof token !== "string" || token.trim().length === 0) {
-    res.status(400).json({ error: "Verification token is required." });
-    return;
-  }
-
-  const tokenHash = hashToken(token.trim());
-  const record = await db.query.emailVerificationTokens.findFirst({
-    where: eq(emailVerificationTokens.tokenHash, tokenHash),
-  });
-
-  if (!record) {
-    res.status(400).json({ error: "Invalid or expired verification token." });
-    return;
-  }
-
-  if (Date.now() > record.expiresAt.getTime()) {
-    await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, record.id));
-    res.status(400).json({ error: "Verification token has expired. Please request a new one." });
-    return;
-  }
-
-  const updatedUser = await db.transaction(async tx => {
-    const [consumed] = await tx.delete(emailVerificationTokens)
-      .where(and(eq(emailVerificationTokens.id, record.id), eq(emailVerificationTokens.tokenHash, tokenHash)))
-      .returning();
-    if (!consumed || consumed.expiresAt.getTime() <= Date.now()) return null;
-    const [updated] = await tx.update(users).set({ isEmailVerified: true, emailVerifiedAt: new Date() })
-      .where(eq(users.id, consumed.userId)).returning();
-    return updated;
-  });
-  if (!updatedUser) { res.status(400).json({ error: 'Invalid or expired verification token.' }); return; }
-
+// Email verification is temporarily disabled for beta; keep legacy endpoints harmlessly inert.
+authRouter.post("/verify-email", authLimiter, (_req, res) => {
   res.json({
-    message: "Email verified successfully.",
-    user: await toPublicUser(updatedUser),
+    message: "Email verification is not currently required.",
   });
 });
 
-authRouter.post("/resend-verification", resendLimiter, attachSession, async (req, res) => {
-  const { email } = req.body ?? {};
-
-  let user = null;
-  if (req.userId) {
-    user = await db.query.users.findFirst({ where: eq(users.id, req.userId) });
-  } else if (typeof email === "string" && email.trim().length > 0) {
-    user = await db.query.users.findFirst({ where: eq(users.email, email.trim()) });
-  }
-
-  let rawVerificationToken: string | undefined;
-  if (user && !user.isEmailVerified && user.email) {
-    // Delete any older verification tokens for this user
-    await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, user.id));
-
-    rawVerificationToken = randomUUID();
-    const tokenHash = hashToken(rawVerificationToken);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    await db.insert(emailVerificationTokens).values({
-      id: `evt_${randomUUID()}`,
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-    });
-
-    await sendVerificationEmail(user.email, user.username, rawVerificationToken).catch((err) => {
-      logger.error("[auth] Failed to dispatch verification email on resend:", err);
-    });
-  }
-
-  const responsePayload: Record<string, unknown> = {
-    message: "If that account exists and is unverified, a verification link has been sent.",
-  };
-
-  if (process.env.NODE_ENV !== "production" && rawVerificationToken) {
-    responsePayload.verificationToken = rawVerificationToken;
-  }
-
-  // Safe response regardless of account existence to prevent account enumeration
-  res.json(responsePayload);
+authRouter.post("/resend-verification", resendLimiter, (_req, res) => {
+  res.json({
+    message: "Email verification is not currently required.",
+  });
 });
 
 authRouter.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {

@@ -34,6 +34,8 @@
     "signupTitle": "Sign up",
     "username": "Username",
     "password": "Password",
+    "email": "Email Address",
+    "emailRequired": "Please enter a valid email address.",
     "emailOptional": "Email (optional)",
     "submitLogin": "Log in",
     "submitSignup": "Sign up",

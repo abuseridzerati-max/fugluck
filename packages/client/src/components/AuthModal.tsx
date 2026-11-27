@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { CoinIcon } from './icons'
 
-type AuthModalMode = 'login' | 'signup' | 'forgot-password' | 'verification-sent'
+type AuthModalMode = 'login' | 'signup' | 'forgot-password'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type AuthModalProps = {
   initialMode: 'login' | 'signup'
@@ -13,7 +15,7 @@ type AuthModalProps = {
 export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const { t } = useTranslation()
   const passwordFieldId=useId()
-  const { signUp, logIn, forgotPassword, resendVerification, error } = useAuth()
+  const { signUp, logIn, forgotPassword, error } = useAuth()
   const [mode, setMode] = useState<AuthModalMode>(initialMode)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -22,7 +24,6 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
-  const [resending, setResending] = useState(false)
 
   useEffect(() => {
     const prevTitle = document.title
@@ -39,17 +40,19 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
     setInfoMessage(null)
     try {
       if (mode === 'signup') {
+        const trimmedEmail = email.trim()
+        if (!trimmedEmail || !EMAIL_PATTERN.test(trimmedEmail)) {
+          setInfoMessage(t('auth.emailRequired'))
+          setSubmitting(false)
+          return
+        }
         if (!agreeToTerms) {
           setInfoMessage('You must agree to the Terms of Service and Privacy Policy.')
           setSubmitting(false)
           return
         }
-        await signUp(username, password, email || undefined)
-        if (email && email.trim().length > 0) {
-          setMode('verification-sent')
-        } else {
-          onClose()
-        }
+        await signUp(username, password, trimmedEmail)
+        onClose()
       } else if (mode === 'login') {
         await logIn(username, password)
         onClose()
@@ -64,19 +67,6 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
     }
   }
 
-  async function handleResendVerification() {
-    setResending(true)
-    setInfoMessage(null)
-    try {
-      const msg = await resendVerification(email || undefined)
-      setInfoMessage(msg || 'Verification email resent.')
-    } catch {
-      // Error handled by useAuth()
-    } finally {
-      setResending(false)
-    }
-  }
-
   return (
     <div
       role="dialog"
@@ -86,42 +76,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
       onClick={onClose}
     >
       <div className="ac-panel ac-modal-panel" style={{ maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
-        {mode === 'verification-sent' ? (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 44, marginBottom: 'var(--space-3)' }}>✉️</div>
-            <h2 style={{ margin: '0 0 var(--space-2)' }}>Check Your Email</h2>
-            <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-4)' }}>
-              We sent a verification link to <strong>{email}</strong>. Please check your inbox and verify your account to unlock account, casual matchmaking, and social features.
-            </p>
-
-            {infoMessage && (
-              <p style={{ color: 'var(--color-success, #00ff88)', fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-3)' }}>
-                {infoMessage}
-              </p>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                className="ac-btn ac-btn--primary"
-                style={{ padding: 'var(--space-3)' }}
-              >
-                Continue to Dashboard ▶
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resending}
-                className="ac-link--secondary"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 'var(--space-2)' }}
-              >
-                {resending ? 'Resending...' : 'Didn’t receive it? Resend Email'}
-              </button>
-            </div>
-          </div>
-        ) : mode === 'forgot-password' ? (
+        {mode === 'forgot-password' ? (
           <div>
             <h2 style={{ margin: '0 0 var(--space-2)' }}>Reset Password</h2>
             <p className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--space-4)' }}>
@@ -263,13 +218,17 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
               {mode === 'signup' && (
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-                    Email Address
+                    {t('auth.email')}
                   </span>
                   <input
+                    name="email"
+                    autoComplete="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
+                    required
+                    maxLength={255}
                     style={inputStyle}
                   />
                 </label>
@@ -324,10 +283,10 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
               <button
                 type="submit"
                 className="ac-btn ac-btn--primary"
-                disabled={submitting || (mode === 'signup' && !agreeToTerms)}
+                disabled={submitting || (mode === 'signup' && (!agreeToTerms || !email.trim()))}
                 style={{
-                  opacity: submitting || (mode === 'signup' && !agreeToTerms) ? 0.45 : 1,
-                  cursor: submitting || (mode === 'signup' && !agreeToTerms) ? 'not-allowed' : 'pointer',
+                  opacity: submitting || (mode === 'signup' && (!agreeToTerms || !email.trim())) ? 0.45 : 1,
+                  cursor: submitting || (mode === 'signup' && (!agreeToTerms || !email.trim())) ? 'not-allowed' : 'pointer',
                 }}
               >
                 {submitting

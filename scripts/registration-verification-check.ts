@@ -1,7 +1,9 @@
-// Comprehensive Registration Email Verification Test Script for Fugluck.
+// Registration Email Requirement & Beta Verification Bypass Check for Fugluck.
 // Run: npx tsx scripts/registration-verification-check.ts
 
 import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
 dotenv.config({ path: "packages/server/.env" });
 
 let failures = 0;
@@ -17,96 +19,48 @@ function check(label: string, pass: boolean, detail?: string) {
 
 console.log("registration-verification-check");
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSignupEmail(email: unknown): { valid: boolean; normalized?: string; error?: string } {
+  const normalized = typeof email === "string" ? email.trim() : "";
+  if (normalized.length === 0 || normalized.length > 255 || !EMAIL_PATTERN.test(normalized)) {
+    return { valid: false, error: "A valid email address is required." };
+  }
+  return { valid: true, normalized };
+}
+
 async function main() {
   // ---------------------------------------------------------------------------
-  // Test 1: Unverified Account Creation on Signup
+  // Test 1: Mandatory Email Validation on Signup
   // ---------------------------------------------------------------------------
-  console.log("\nTest 1: Unverified Account Creation on Signup");
+  console.log("\nTest 1: Mandatory Email Validation on Signup");
 
-  type MockUser = { id: string; username: string; email: string; isEmailVerified: boolean };
-  const newUser: MockUser = {
-    id: "usr_test_signup",
-    username: "new_player_99",
-    email: "newplayer@example.com",
-    isEmailVerified: false,
-  };
-
-  check("Signup creates account with isEmailVerified = false", newUser.isEmailVerified === false);
+  check("Missing email is rejected", !validateSignupEmail(undefined).valid);
+  check("Empty email is rejected", !validateSignupEmail("   ").valid);
+  check("Malformed email is rejected", !validateSignupEmail("not-an-email").valid);
+  check("Valid email is accepted and trimmed", validateSignupEmail("  player@example.com ").normalized === "player@example.com");
 
   // ---------------------------------------------------------------------------
-  // Test 2: Verification Token Validation & State Transition
+  // Test 2: Immediate Account Readiness (Beta Verification Bypass)
   // ---------------------------------------------------------------------------
-  console.log("\nTest 2: Verification Token Validation & State Transition");
+  console.log("\nTest 2: Immediate Account Readiness & Source Guard Audit");
 
-  type TokenRecord = { token: string; userId: string; expiresAt: number; used: boolean };
-  const mockTokenStore: TokenRecord[] = [
-    { token: "valid_token_123", userId: "usr_test_signup", expiresAt: Date.now() + 86400000, used: false },
-    { token: "expired_token_456", userId: "usr_test_signup", expiresAt: Date.now() - 1000, used: false },
-  ];
+  const authSource = fs.readFileSync(path.resolve("packages/server/src/routes/auth.ts"), "utf8");
+  const friendsSource = fs.readFileSync(path.resolve("packages/server/src/routes/friends.ts"), "utf8");
+  const matchmakingSource = fs.readFileSync(path.resolve("packages/server/src/matchmaking/index.ts"), "utf8");
+  const authModalSource = fs.readFileSync(path.resolve("packages/client/src/components/AuthModal.tsx"), "utf8");
 
-  function verifyEmail(token: string): { success: boolean; error?: string } {
-    const rec = mockTokenStore.find((t) => t.token === token);
-    if (!rec) return { success: false, error: "Invalid or expired verification token." };
-    if (Date.now() > rec.expiresAt) return { success: false, error: "Verification token has expired." };
-    if (rec.used) return { success: false, error: "Token already used." };
-
-    rec.used = true;
-    newUser.isEmailVerified = true;
-    return { success: true };
-  }
-
-  const invalidAttempt = verifyEmail("bogus_token");
-  check("Invalid token rejected", !invalidAttempt.success && invalidAttempt.error === "Invalid or expired verification token.");
-
-  const expiredAttempt = verifyEmail("expired_token_456");
-  check("Expired token rejected", !expiredAttempt.success && expiredAttempt.error === "Verification token has expired.");
-
-  const validAttempt = verifyEmail("valid_token_123");
-  check("Valid token marks account as isEmailVerified = true", validAttempt.success && newUser.isEmailVerified === true);
-
-  const reuseAttempt = verifyEmail("valid_token_123");
-  check("Reusing verified token is rejected", !reuseAttempt.success);
-
-  // ---------------------------------------------------------------------------
-  // Test 3: Unverified User Server Boundary Restriction
-  // ---------------------------------------------------------------------------
-  console.log("\nTest 3: Unverified User Server Boundary Restriction Guard");
-
-  function evaluateFeatureAccess(isVerified: boolean): { allowed: boolean; status: number } {
-    if (!isVerified) return { allowed: false, status: 403 };
-    return { allowed: true, status: 200 };
-  }
-
-  check("Unverified account restricted at server boundary (403 Forbidden)", !evaluateFeatureAccess(false).allowed && evaluateFeatureAccess(false).status === 403);
-  check("Verified account granted access (200 OK)", evaluateFeatureAccess(true).allowed && evaluateFeatureAccess(true).status === 200);
-
-  // ---------------------------------------------------------------------------
-  // Test 4: Resend Verification Rate Limiting & Non-Enumeration
-  // ---------------------------------------------------------------------------
-  console.log("\nTest 4: Resend Verification Rate Limiting & Safe Non-Enumeration");
-
-  let resendCount = 0;
-  function handleResend(email: string): { status: number; message: string } {
-    resendCount++;
-    if (resendCount > 3) {
-      return { status: 429, message: "Too many verification resend attempts. Please wait 15 minutes." };
-    }
-    return { status: 200, message: "If that account exists and is unverified, a verification link has been sent." };
-  }
-
-  const req1 = handleResend("test@example.com");
-  const req2 = handleResend("test@example.com");
-  const req3 = handleResend("test@example.com");
-  const req4 = handleResend("test@example.com");
-
-  check("Resend returns safe generic message to prevent account enumeration", req1.message.includes("If that account exists"));
-  check("Resend request 4 rejected by rate limiter (HTTP 429)", req4.status === 429);
+  check("Server signup requires valid email format", authSource.includes("A valid email address is required."));
+  check("Server signup sets isEmailVerified: true immediately", authSource.includes("isEmailVerified: true"));
+  check("Friends routes do not enforce requireEmailVerified", !friendsSource.includes("requireEmailVerified"));
+  check("Matchmaking queue does not block wagering on isEmailVerified", !matchmakingSource.includes("isEmailVerified"));
+  check("Client AuthModal removes Check Your Email verification gate", !authModalSource.includes("Check Your Email"));
 
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);
     process.exit(1);
   }
-  console.log(`\nAll registration email verification checks passed 100%.`);
+  console.log(`\nAll registration email checks passed 100%.`);
 }
 
 main().catch((err) => {
