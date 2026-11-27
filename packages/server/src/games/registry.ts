@@ -6,11 +6,13 @@ import { NeonSnakeEngine } from "@fugluck/games/neon-snake/engine";
 import { MinesweeperSprintEngine } from "@fugluck/games/minesweeper-sprint/engine";
 import { BrickBreakerEngine } from "@fugluck/games/brick-breaker/engine";
 import { BlitzChessEngine } from "@fugluck/games/blitz-chess/engine";
+import { Connect4Engine } from "@fugluck/games/connect-4/engine";
 import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   BLITZ_CHESS_AUTHORITY_VERSION,
   BRICK_BREAKER_AUTHORITY_VERSION,
+  CONNECT_4_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
   MINESWEEPER_SPRINT_AUTHORITY_VERSION,
@@ -134,6 +136,15 @@ interface BlitzChessServerState {
   pendingMove: {
     moveFrom?: string;
     moveTo?: string;
+    resign?: boolean;
+  };
+}
+
+interface Connect4ServerState {
+  engine: Connect4Engine;
+  guard: ControlGuard;
+  pendingMove: {
+    dropCol?: number;
     resign?: boolean;
   };
 }
@@ -833,6 +844,91 @@ const blitzChessServerPlugin: ServerGamePlugin<BlitzChessServerState> = {
   resolveTie: defaultDrawTieResolver,
 };
 
+const connect4ServerPlugin: ServerGamePlugin<Connect4ServerState> = {
+  gameId: "connect-4",
+  authorityVersion: CONNECT_4_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "dropCol", "resign"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): Connect4ServerState {
+    const engine = new Connect4Engine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      pendingMove: {},
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    if (controls.resign !== undefined && typeof controls.resign !== "boolean") {
+      throw Error("INPUT_SHAPE");
+    }
+    if (controls.dropCol !== undefined) {
+      if (typeof controls.dropCol !== "number" || !Number.isInteger(controls.dropCol) || controls.dropCol < 0 || controls.dropCol > 6) {
+        throw Error("INPUT_SHAPE");
+      }
+    }
+    state.guard.commit(controls.seq, now);
+    if (controls.resign) {
+      state.pendingMove = { resign: true };
+    } else if (controls.dropCol !== undefined) {
+      state.pendingMove = { dropCol: controls.dropCol };
+    }
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.pendingMove = {};
+    }
+    const input = state.pendingMove;
+    state.pendingMove = {};
+    return Boolean(state.engine.update(dtSec, input));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      c4Board: [...state.engine.board],
+      c4ActivePlayer: state.engine.activePlayer,
+      p1ClockTicks: state.engine.p1ClockTicks,
+      p2ClockTicks: state.engine.p2ClockTicks,
+      lastMoveCol: state.engine.lastMoveCol,
+      lastMoveRow: state.engine.lastMoveRow,
+      winningCells: [...state.engine.winningCells],
+      turnOutcome: state.engine.outcome,
+      turnNumber: state.engine.turnNumber,
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.pendingMove = {};
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -846,6 +942,7 @@ export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>
   "minesweeper-sprint": minesweeperSprintServerPlugin,
   "brick-breaker": brickBreakerServerPlugin,
   "blitz-chess": blitzChessServerPlugin,
+  "connect-4": connect4ServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

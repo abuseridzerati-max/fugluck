@@ -15,6 +15,8 @@
     "./brick-breaker/engine": "./brick-breaker/engine.ts",
     "./blitz-chess/engine": "./blitz-chess/engine.ts",
     "./blitz-chess/constants": "./blitz-chess/constants.ts",
+    "./connect-4/engine": "./connect-4/engine.ts",
+    "./connect-4/constants": "./connect-4/constants.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -58,6 +60,10 @@
     "./blitz-chess": {
       "import": "./blitz-chess/index.ts",
       "default": "./blitz-chess/index.ts"
+    },
+    "./connect-4": {
+      "import": "./connect-4/index.ts",
+      "default": "./connect-4/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",

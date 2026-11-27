@@ -14,6 +14,7 @@ import { NeonSnakeEngine } from "../games/neon-snake/engine";
 import { MinesweeperSprintEngine } from "../games/minesweeper-sprint/engine";
 import { BrickBreakerEngine } from "../games/brick-breaker/engine";
 import { BlitzChessEngine } from "../games/blitz-chess/engine";
+import { Connect4Engine } from "../games/connect-4/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -496,6 +497,44 @@ console.log("\nTest 3.80: Blitz Chess 300-Frame Headless Canvas draw() Suite\n")
   check("Blitz Chess 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Blitz Chess verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Blitz Chess executes player moves and deterministic AI responses", engine.turnNumber >= 4, `turnNumber=${engine.turnNumber}`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.81: Connect 4 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.81: Connect 4 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new Connect4Engine(77771111);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    const dropOrder = [3, 2, 4, 1, 5];
+    let dropIdx = 0;
+    for (let frame = 0; frame < 300; frame++) {
+      const shouldDrop = frame > 0 && frame % 55 === 0 && !engine.gameOver && engine.activePlayer === 1;
+      const col = dropOrder[dropIdx % dropOrder.length];
+      if (shouldDrop && engine.canDropInColumn(col)) {
+        dropIdx++;
+        engine.update(1 / 60, { dropCol: col });
+      } else {
+        engine.update(1 / 60, {});
+      }
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Connect 4 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Connect 4 verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Connect 4 executes player drops and deterministic AI responses", engine.turnNumber >= 4, `turnNumber=${engine.turnNumber}`);
 }
 
 // ---------------------------------------------------------------------------

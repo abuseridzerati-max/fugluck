@@ -268,6 +268,7 @@
     "minesweeperControls": "Click or tap cells to reveal safe tiles. Right-click, Shift+click, or switch to Flag Mode to mark mines.",
     "brickBreakerControls": "Use Left / Right arrow keys, A / D, or touch buttons to steer the paddle and clear brick waves.",
     "blitzChessControls": "Click or tap a White piece to highlight legal squares, then click or tap a destination square to move.",
+    "connect4Controls": "Click or tap any column (or press 1–7 / Arrows + Space) to drop a disc and connect 4 in a row.",
     "liveCanvas": "Live {{game}} competition",
     "leaveCompetition": "Leave Competition",
     "forfeit": "Forfeit competition",
@@ -941,7 +942,8 @@
       "neon-snake": "Arrows / WASD or Swipe to steer · Eat orbs to grow & grab timed bonus orbs",
       "minesweeper-sprint": "Click / Tap to reveal · Right-click, Shift+click, or Flag Mode to flag · 90s sprint",
       "brick-breaker": "Left / Right Arrows, A / D, or drag paddle · Chain brick combos & clear waves",
-      "blitz-chess": "Click / Tap a piece, then a highlighted square · 3+0 Blitz vs seeded tactical AI",
+      "blitz-chess": "Click / Tap a piece, then a highlighted square · 3+0 Blitz live PvP or seeded AI",
+      "connect-4": "Click / Tap a column, keys 1–7, or Arrows + Space · Connect 4 in a row to win",
       "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
       "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
       "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
@@ -1073,6 +1075,12 @@
       "description": "3+0 blitz chess — live 1v1 PvP or seeded tactical AI practice",
       "controls": "Click or tap a piece to view legal moves, then click or tap a highlighted destination square.",
       "rules": "Play official 3+0 Blitz Chess (180 seconds per side) live 1v1 against human opponents or practice against a deterministic seeded tactical AI."
+    },
+    "connect4": {
+      "title": "Connect 4",
+      "description": "Classic 7x6 tabletop Connect 4 — live 1v1 PvP or seeded tactical AI",
+      "controls": "Click or tap any column, press keys 1–7, or use Left/Right Arrows + Space/Enter to drop a disc.",
+      "rules": "Drop discs into the 7x6 grid to connect 4 in a row horizontally, vertically, or diagonally. Play live 1v1 with 60-second Blitz clocks or score points in tournaments (+40 per 3-in-a-row threat, +1,000 + clock bonus for victory, +250 for draw)."
     }
   },
   "turnPvp": {
@@ -1080,6 +1088,8 @@
     "opponentTurn": "Opponent's Turn",
     "playingAsWhite": "Playing as White",
     "playingAsBlack": "Playing as Black",
+    "playingAsRed": "Playing as Red",
+    "playingAsGold": "Playing as Gold",
     "resign": "Resign",
     "resignConfirm": "Confirm Resign?",
     "waitingBoard": "Syncing live board...",

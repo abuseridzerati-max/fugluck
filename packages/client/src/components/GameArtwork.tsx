@@ -231,6 +231,32 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'connect-4': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="66" y="24" width="188" height="136" rx="14" fill="#1d4ed8" stroke="#93c5fd" strokeOpacity="0.4" strokeWidth="2" />
+      <rect x="58" y="150" width="204" height="14" rx="5" fill="#1e3a8a" />
+      {[0, 1, 2, 3, 4, 5].map((c) =>
+        [0, 1, 2, 3].map((r) => (
+          <circle key={`${c}-${r}`} cx={86 + c * 29.5} cy={46 + r * 29} r="10.5" fill="#0b1120" />
+        )),
+      )}
+      <circle cx="86" cy="133" r="9.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.5" />
+      <circle cx="115.5" cy="133" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="145" cy="133" r="9.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.5" />
+      <circle cx="174.5" cy="133" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="115.5" cy="104" r="9.5" fill="#ef4444" stroke="#34d399" strokeWidth="2.5" />
+      <circle cx="145" cy="104" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="145" cy="75" r="9.5" fill="#ef4444" stroke="#34d399" strokeWidth="2.5" />
+      <circle cx="174.5" cy="104" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="174.5" cy="75" r="9.5" fill="#ef4444" stroke="#34d399" strokeWidth="2.5" />
+      <circle cx="204" cy="46" r="9.5" fill="#ef4444" stroke="#34d399" strokeWidth="2.5" />
+      <circle cx="204" cy="133" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="204" cy="104" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+      <circle cx="204" cy="75" r="9.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+    </svg>
+  ),
+
   'speed-trivia': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#08101a" />

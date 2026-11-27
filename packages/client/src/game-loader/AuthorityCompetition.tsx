@@ -10,6 +10,8 @@ import { clientPointToMineCell } from '@fugluck/games/minesweeper-sprint/constan
 import { BrickBreakerEngine } from '@fugluck/games/brick-breaker/engine'
 import { BlitzChessEngine } from '@fugluck/games/blitz-chess/engine'
 import { clientPointToSquare } from '@fugluck/games/blitz-chess/constants'
+import { Connect4Engine } from '@fugluck/games/connect-4/engine'
+import { clientPointToColumn, COLS as C4_COLS } from '@fugluck/games/connect-4/constants'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch, ApiError } from '../lib/api'
@@ -35,6 +37,8 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const pendingCell = useRef<{ action?: 'reveal' | 'flag'; col?: number; row?: number }>({})
   const pendingChessMove = useRef<{ moveFrom?: string; moveTo?: string; resign?: boolean }>({})
   const chessRendererRef = useRef<BlitzChessEngine | null>(null)
+  const pendingC4Move = useRef<{ dropCol?: number; resign?: boolean }>({})
+  const c4RendererRef = useRef<Connect4Engine | null>(null)
   const [mineMode, setMineMode] = useState<'reveal' | 'flag'>('reveal')
   const dropPulse = useRef(false)
   const swipeState = useRef<{ pointerId: number | null; x: number; y: number; consumed: boolean }>({ pointerId: null, x: 0, y: 0, consumed: false })
@@ -57,7 +61,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const finish=useRef(onComplete);finish.current=onComplete
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
-  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : gameId === 'neon-snake' ? 'Neon Snake' : gameId === 'minesweeper-sprint' ? 'Minesweeper Sprint' : gameId === 'brick-breaker' ? 'Brick Breaker' : gameId === 'blitz-chess' ? 'Blitz Chess' : 'Space Blaster'
+  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : gameId === 'neon-snake' ? 'Neon Snake' : gameId === 'minesweeper-sprint' ? 'Minesweeper Sprint' : gameId === 'brick-breaker' ? 'Brick Breaker' : gameId === 'blitz-chess' ? 'Blitz Chess' : gameId === 'connect-4' ? 'Connect 4' : 'Space Blaster'
   const syncBlasterControls = () => {
     let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
     for (const c of activePointers.current.values()) {
@@ -88,8 +92,11 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
                 ? new BrickBreakerEngine(1)
                 : gameId === 'blitz-chess'
                   ? new BlitzChessEngine(1)
-                  : new SpaceBlasterEngine(1)
+                  : gameId === 'connect-4'
+                    ? new Connect4Engine(1)
+                    : new SpaceBlasterEngine(1)
     chessRendererRef.current = renderer instanceof BlitzChessEngine ? renderer : null
+    c4RendererRef.current = renderer instanceof Connect4Engine ? renderer : null
     renderer.resize(1280, 720)
     const syncCanvasBacking = () => {
       const el = canvas.current
@@ -174,7 +181,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
       setCountdown(p.startAt?Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000)):0)
-      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':gameId==='neon-snake'?'neonSnakeControls':gameId==='minesweeper-sprint'?'minesweeperControls':gameId==='brick-breaker'?'brickBreakerControls':gameId==='blitz-chess'?'blitzChessControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
+      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':gameId==='neon-snake'?'neonSnakeControls':gameId==='minesweeper-sprint'?'minesweeperControls':gameId==='brick-breaker'?'brickBreakerControls':gameId==='blitz-chess'?'blitzChessControls':gameId==='connect-4'?'connect4Controls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
       if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
@@ -223,7 +230,16 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
           }
         }else{diagnosticRequested.current=false;neutral()}
       }
-      if(gameId==='blitz-chess'){
+      if(gameId==='connect-4'){
+        const m=pendingC4Move.current
+        pendingC4Move.current={}
+        socket.volatile.emit('authority:controls',{
+          ...binding.current,
+          seq:++seq,
+          snapshot:snapshot.seq,
+          ...(m.resign?{resign:true}:m.dropCol!==undefined?{dropCol:m.dropCol}:{}),
+        })
+      }else if(gameId==='blitz-chess'){
         const m=pendingChessMove.current
         pendingChessMove.current={}
         socket.volatile.emit('authority:controls',{
@@ -287,11 +303,21 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     triggerSend.current = sendControls
     const send=setInterval(sendControls,50)
     const retry=setInterval(()=>{if(pendingRecovery&&!complete&&socket.connected&&instanceId)socket.emit('authority:resume',{instanceId})},3000)
-    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};movePulses.current={moveUp:false,moveDown:false,moveLeft:false,moveRight:false};pendingCell.current={};pendingChessMove.current={};dropPulse.current=false;firePulse.current=false}
+    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};movePulses.current={moveUp:false,moveDown:false,moveLeft:false,moveRight:false};pendingCell.current={};pendingChessMove.current={};pendingC4Move.current={};dropPulse.current=false;firePulse.current=false}
     const visibility=()=>{if(document.hidden){neutral();diagnosticRequested.current=false}}
     const key=(event:KeyboardEvent,down:boolean)=>{
       // Keep page actions operable with Enter/Space; game shortcuts only control the play surface.
       if(complete||!snapshot||snapshot.state!=='ACTIVE'||(event.target instanceof HTMLElement&&event.target.closest('button,a,input,summary,select,textarea')))return
+      if(gameId==='connect-4'){
+        if(!down||event.repeat)return
+        const c4 = c4RendererRef.current
+        if (!c4) return
+        if(event.key==='ArrowLeft'||event.key==='a'||event.key==='A'){event.preventDefault();c4.hoverCol=(c4.hoverCol+C4_COLS-1)%C4_COLS}
+        else if(event.key==='ArrowRight'||event.key==='d'||event.key==='D'){event.preventDefault();c4.hoverCol=(c4.hoverCol+1)%C4_COLS}
+        else if(event.key===' '||event.key==='Enter'||event.key==='ArrowDown'){event.preventDefault();pendingC4Move.current={dropCol:c4.hoverCol};sendControls()}
+        else if(event.key>='1'&&event.key<='7'){const col=Number(event.key)-1;c4.hoverCol=col;pendingC4Move.current={dropCol:col};sendControls()}
+        return
+      }
       if(gameId==='minesweeper-sprint'){
         if(!down||event.repeat)return
         if(event.code==='KeyF'){event.preventDefault();setMineMode(m=>m==='reveal'?'flag':'reveal')}
@@ -337,7 +363,9 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const draw=()=>{
       const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
       if(state&&ctx){
-        if(gameId==='blitz-chess'&&renderer instanceof BlitzChessEngine){
+        if(gameId==='connect-4'&&renderer instanceof Connect4Engine){
+          renderer.hydrateFromSnapshot(state)
+        }else if(gameId==='blitz-chess'&&renderer instanceof BlitzChessEngine){
           renderer.hydrateFromSnapshot(state)
         }else if(gameId==='brick-breaker'){
           Object.assign(renderer,{
@@ -475,9 +503,19 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       height={720}
       className="ac-game-surface"
       aria-label={t('competition.liveCanvas',{game:gameTitle})}
-      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz'||gameId==='neon-snake'||gameId==='minesweeper-sprint'||gameId==='brick-breaker'||gameId==='blitz-chess')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz'||gameId==='neon-snake'||gameId==='minesweeper-sprint'||gameId==='brick-breaker'||gameId==='blitz-chess'||gameId==='connect-4')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
       onContextMenu={gameId==='minesweeper-sprint' ? e => e.preventDefault() : undefined}
-      onPointerDown={gameId==='blitz-chess' ? e => {
+      onPointerDown={gameId==='connect-4' ? e => {
+        if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
+        e.preventDefault()
+        const engine = c4RendererRef.current
+        if (!engine) return
+        const col = clientPointToColumn(e.currentTarget.getBoundingClientRect(), e.clientX, e.clientY)
+        if (col === null) return
+        engine.hoverCol = col
+        pendingC4Move.current = { dropCol: col }
+        triggerSend.current?.()
+      } : gameId==='blitz-chess' ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         const engine = chessRendererRef.current
@@ -519,7 +557,12 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         swipeState.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, consumed: false }
         try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
       } : undefined}
-      onPointerMove={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => {
+      onPointerMove={gameId==='connect-4' ? e => {
+        const engine = c4RendererRef.current
+        if (!active || !engine) return
+        const col = clientPointToColumn(e.currentTarget.getBoundingClientRect(), e.clientX, e.clientY)
+        if (col !== null) engine.hoverCol = col
+      } : (gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => {
         const s = swipeState.current
         if (!active || s.pointerId !== e.pointerId || s.consumed) return
         const dx = e.clientX - s.x, dy = e.clientY - s.y
@@ -539,7 +582,22 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       onLostPointerCapture={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
     />
     {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
-      {gameId==='blitz-chess' ? (
+      {gameId==='connect-4' ? (
+        ([0, 1, 2, 3, 4, 5, 6] as const).map(col => (
+          <button
+            key={col}
+            type="button"
+            className="ac-btn ac-btn--ghost"
+            disabled={!active}
+            style={{minWidth:42,minHeight:48,touchAction:'none',fontWeight:'bold'}}
+            onClick={() => {
+              if (c4RendererRef.current) c4RendererRef.current.hoverCol = col
+              pendingC4Move.current = { dropCol: col }
+              triggerSend.current?.()
+            }}
+          >{col + 1}</button>
+        ))
+      ) : gameId==='blitz-chess' ? (
         <button
           type="button"
           className="ac-btn ac-btn--ghost"

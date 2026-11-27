@@ -9,6 +9,8 @@ import {
 } from '@fugluck/shared'
 import { BlitzChessEngine, chessSounds } from '@fugluck/games/blitz-chess/engine'
 import { clientPointToSquare, clientPointToVirtual } from '@fugluck/games/blitz-chess/constants'
+import { Connect4Engine, connect4Sounds } from '@fugluck/games/connect-4/engine'
+import { clientPointToColumn, COLS } from '@fugluck/games/connect-4/constants'
 
 type TurnBasedPvpMatchProps = {
   match: MatchedPayload
@@ -34,8 +36,10 @@ export function TurnBasedPvpMatch({
   onSync,
 }: TurnBasedPvpMatchProps) {
   const { t } = useTranslation()
+  const isConnect4 = match.gameId === 'connect-4'
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const engineRef = useRef<BlitzChessEngine | null>(null)
+  const chessEngineRef = useRef<BlitzChessEngine | null>(null)
+  const c4EngineRef = useRef<Connect4Engine | null>(null)
   const latestStateRef = useRef<TurnMatchStatePayload | null>(null)
   const syncedAtLocalMsRef = useRef<number>(Date.now())
   const pointerDragRef = useRef<{
@@ -49,7 +53,7 @@ export function TurnBasedPvpMatch({
     dragging: boolean
   } | null>(null)
   const [confirmResign, setConfirmResign] = useState(false)
-  const [muted, setMuted] = useState(() => chessSounds.isMuted())
+  const [muted, setMuted] = useState(() => (isConnect4 ? connect4Sounds.isMuted() : chessSounds.isMuted()))
 
   useEffect(() => {
     if (!state) {
@@ -63,43 +67,105 @@ export function TurnBasedPvpMatch({
     return () => window.clearTimeout(timer)
   }, [confirmResign])
 
-  // Sync authoritative server state into the BlitzChessEngine renderer
-  useEffect(() => {
-    if (!state) return
-    latestStateRef.current = state
-    syncedAtLocalMsRef.current = Date.now()
+  function hydrateEngines(s: TurnMatchStatePayload, isOver: boolean) {
+    if (isConnect4) {
+      const engine = c4EngineRef.current
+      if (!engine) return
+      const boardState = s.boardState as {
+        board?: number[]
+        activePlayer?: 1 | 2
+        winningCells?: number[]
+      }
+      const lastMove = s.lastMove as { col?: number; row?: number } | null
+      engine.pvpMode = true
+      engine.localSeat = s.yourSeat === 'p1' ? 1 : 2
+      engine.p1Label = s.p1Username
+      engine.p2Label = s.p2Username
+      engine.hydrateFromSnapshot({
+        tickCount: s.turnNumber,
+        score: 0,
+        gameOver: isOver,
+        c4Board: boardState.board,
+        c4ActivePlayer: boardState.activePlayer ?? (s.activeTurn === 'p1' ? 1 : 2),
+        p1ClockTicks: msToTicks(s.p1ClockMs),
+        p2ClockTicks: msToTicks(s.p2ClockMs),
+        lastMoveCol: lastMove?.col ?? null,
+        lastMoveRow: lastMove?.row ?? null,
+        winningCells: Array.isArray(boardState.winningCells) ? boardState.winningCells : [],
+        turnNumber: s.turnNumber,
+      })
+      return
+    }
 
-    const engine = engineRef.current
+    const engine = chessEngineRef.current
     if (!engine) return
-
-    const boardState = state.boardState as {
+    const boardState = s.boardState as {
       fen?: string
       capturedByWhite?: string[]
       capturedByBlack?: string[]
     }
-    const lastMove = state.lastMove as { from?: string; to?: string; san?: string } | null
-
+    const lastMove = s.lastMove as { from?: string; to?: string; san?: string } | null
     engine.pvpMode = true
-    engine.orientation = state.yourSeat === 'p1' ? 'w' : 'b'
-    engine.whiteLabel = state.p1Username
-    engine.blackLabel = state.p2Username
-
+    engine.orientation = s.yourSeat === 'p1' ? 'w' : 'b'
+    engine.whiteLabel = s.p1Username
+    engine.blackLabel = s.p2Username
     engine.hydrateFromSnapshot({
-      tickCount: state.turnNumber,
+      tickCount: s.turnNumber,
       score: 0,
-      gameOver: Boolean(state.ended || ended),
+      gameOver: isOver,
       chessFen: boardState.fen,
-      whiteClockTicks: msToTicks(state.p1ClockMs),
-      blackClockTicks: msToTicks(state.p2ClockMs),
+      whiteClockTicks: msToTicks(s.p1ClockMs),
+      blackClockTicks: msToTicks(s.p2ClockMs),
       lastMoveFrom: lastMove?.from ?? null,
       lastMoveTo: lastMove?.to ?? null,
       lastMoveSan: lastMove?.san ?? null,
       capturedByWhite: Array.isArray(boardState.capturedByWhite) ? boardState.capturedByWhite : [],
       capturedByBlack: Array.isArray(boardState.capturedByBlack) ? boardState.capturedByBlack : [],
-      inCheck: Boolean(state.inCheck),
-      turnNumber: state.turnNumber,
+      inCheck: Boolean(s.inCheck),
+      turnNumber: s.turnNumber,
     })
-  }, [state, ended])
+  }
+
+  // Sync authoritative server state into the active engine renderer
+  useEffect(() => {
+    if (!state) return
+    latestStateRef.current = state
+    syncedAtLocalMsRef.current = Date.now()
+    hydrateEngines(state, Boolean(state.ended || ended))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, ended, isConnect4])
+
+  // Keyboard support for Connect 4 PvP (Arrows + Space/Enter or 1-7)
+  useEffect(() => {
+    if (!isConnect4) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const s = latestStateRef.current
+      const engine = c4EngineRef.current
+      if (!s || !engine || s.ended || ended) return
+      if (e.target instanceof HTMLElement && e.target.closest('button,input,textarea,select')) return
+
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        e.preventDefault()
+        engine.hoverCol = (engine.hoverCol + COLS - 1) % COLS
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        e.preventDefault()
+        engine.hoverCol = (engine.hoverCol + 1) % COLS
+      } else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') {
+        e.preventDefault()
+        if (s.activeTurn === s.yourSeat && engine.canDropInColumn(engine.hoverCol)) {
+          onSendMove(match.matchId, { col: engine.hoverCol })
+        }
+      } else if (e.key >= '1' && e.key <= '7') {
+        const col = Number(e.key) - 1
+        engine.hoverCol = col
+        if (s.activeTurn === s.yourSeat && engine.canDropInColumn(col)) {
+          onSendMove(match.matchId, { col })
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isConnect4, ended, match.matchId, onSendMove])
 
   // Mount canvas + 60fps render loop (smoothly ticks active clock between server syncs)
   useEffect(() => {
@@ -112,51 +178,52 @@ export function TurnBasedPvpMatch({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const engine = new BlitzChessEngine(match.seed)
-    engine.pvpMode = true
-    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
-    engineRef.current = engine
+    if (isConnect4) {
+      const engine = new Connect4Engine(match.seed)
+      engine.pvpMode = true
+      engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
+      c4EngineRef.current = engine
+      chessEngineRef.current = null
+    } else {
+      const engine = new BlitzChessEngine(match.seed)
+      engine.pvpMode = true
+      engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
+      chessEngineRef.current = engine
+      c4EngineRef.current = null
+    }
 
-    // Hydrate immediately if state already arrived before canvas mounted
     if (latestStateRef.current) {
-      const s = latestStateRef.current
-      const boardState = s.boardState as {
-        fen?: string
-        capturedByWhite?: string[]
-        capturedByBlack?: string[]
-      }
-      const lastMove = s.lastMove as { from?: string; to?: string; san?: string } | null
-      engine.orientation = s.yourSeat === 'p1' ? 'w' : 'b'
-      engine.whiteLabel = s.p1Username
-      engine.blackLabel = s.p2Username
-      engine.hydrateFromSnapshot({
-        tickCount: s.turnNumber,
-        score: 0,
-        gameOver: Boolean(s.ended),
-        chessFen: boardState.fen,
-        whiteClockTicks: msToTicks(s.p1ClockMs),
-        blackClockTicks: msToTicks(s.p2ClockMs),
-        lastMoveFrom: lastMove?.from ?? null,
-        lastMoveTo: lastMove?.to ?? null,
-        lastMoveSan: lastMove?.san ?? null,
-        capturedByWhite: Array.isArray(boardState.capturedByWhite) ? boardState.capturedByWhite : [],
-        capturedByBlack: Array.isArray(boardState.capturedByBlack) ? boardState.capturedByBlack : [],
-        inCheck: Boolean(s.inCheck),
-        turnNumber: s.turnNumber,
-      })
+      hydrateEngines(latestStateRef.current, Boolean(latestStateRef.current.ended))
     }
 
     let rafId = 0
     const renderFrame = () => {
       const s = latestStateRef.current
-      if (s && !s.ended) {
-        const elapsedMs = Math.max(0, Date.now() - syncedAtLocalMsRef.current)
-        const p1Ms = s.activeTurn === 'p1' ? Math.max(0, s.p1ClockMs - elapsedMs) : s.p1ClockMs
-        const p2Ms = s.activeTurn === 'p2' ? Math.max(0, s.p2ClockMs - elapsedMs) : s.p2ClockMs
-        engine.whiteClockTicks = msToTicks(p1Ms)
-        engine.blackClockTicks = msToTicks(p2Ms)
+      if (isConnect4) {
+        const engine = c4EngineRef.current
+        if (engine) {
+          if (s && !s.ended) {
+            const elapsedMs = Math.max(0, Date.now() - syncedAtLocalMsRef.current)
+            const p1Ms = s.activeTurn === 'p1' ? Math.max(0, s.p1ClockMs - elapsedMs) : s.p1ClockMs
+            const p2Ms = s.activeTurn === 'p2' ? Math.max(0, s.p2ClockMs - elapsedMs) : s.p2ClockMs
+            engine.p1ClockTicks = msToTicks(p1Ms)
+            engine.p2ClockTicks = msToTicks(p2Ms)
+          }
+          engine.render(ctx)
+        }
+      } else {
+        const engine = chessEngineRef.current
+        if (engine) {
+          if (s && !s.ended) {
+            const elapsedMs = Math.max(0, Date.now() - syncedAtLocalMsRef.current)
+            const p1Ms = s.activeTurn === 'p1' ? Math.max(0, s.p1ClockMs - elapsedMs) : s.p1ClockMs
+            const p2Ms = s.activeTurn === 'p2' ? Math.max(0, s.p2ClockMs - elapsedMs) : s.p2ClockMs
+            engine.whiteClockTicks = msToTicks(p1Ms)
+            engine.blackClockTicks = msToTicks(p2Ms)
+          }
+          engine.render(ctx)
+        }
       }
-      engine.render(ctx)
       rafId = window.requestAnimationFrame(renderFrame)
     }
 
@@ -164,9 +231,11 @@ export function TurnBasedPvpMatch({
 
     return () => {
       window.cancelAnimationFrame(rafId)
-      engineRef.current = null
+      chessEngineRef.current = null
+      c4EngineRef.current = null
     }
-  }, [match.seed])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match.seed, isConnect4])
 
   const isEnded = Boolean(state?.ended || ended)
   const isMyTurn = Boolean(state && !isEnded && state.activeTurn === state.yourSeat)
@@ -175,9 +244,23 @@ export function TurnBasedPvpMatch({
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!state || !isMyTurn) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    const engine = engineRef.current
     const canvas = canvasRef.current
-    if (!engine || !canvas) return
+    if (!canvas) return
+
+    if (isConnect4) {
+      const engine = c4EngineRef.current
+      if (!engine) return
+      const col = clientPointToColumn(canvas.getBoundingClientRect(), e.clientX, e.clientY)
+      if (col === null) return
+      engine.hoverCol = col
+      if (engine.canDropInColumn(col)) {
+        onSendMove(match.matchId, { col })
+      }
+      return
+    }
+
+    const engine = chessEngineRef.current
+    if (!engine) return
 
     const sq = clientPointToSquare(canvas.getBoundingClientRect(), e.clientX, e.clientY, orientation)
     if (!sq) {
@@ -188,7 +271,6 @@ export function TurnBasedPvpMatch({
       return
     }
 
-    // Click-to-move: execute if tapping a legal destination square
     if (engine.selectedSquare && engine.legalTargets.includes(sq)) {
       const from = engine.selectedSquare
       engine.selectedSquare = null
@@ -229,10 +311,20 @@ export function TurnBasedPvpMatch({
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    const drag = pointerDragRef.current
-    const engine = engineRef.current
     const canvas = canvasRef.current
-    if (!drag || drag.pointerId !== e.pointerId || !engine || !canvas) return
+    if (!canvas) return
+
+    if (isConnect4) {
+      const engine = c4EngineRef.current
+      if (!engine) return
+      const col = clientPointToColumn(canvas.getBoundingClientRect(), e.clientX, e.clientY)
+      if (col !== null) engine.hoverCol = col
+      return
+    }
+
+    const drag = pointerDragRef.current
+    const engine = chessEngineRef.current
+    if (!drag || drag.pointerId !== e.pointerId || !engine) return
 
     if (!drag.dragging && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 6) return
     drag.dragging = true
@@ -250,8 +342,9 @@ export function TurnBasedPvpMatch({
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (isConnect4) return
     const drag = pointerDragRef.current
-    const engine = engineRef.current
+    const engine = chessEngineRef.current
     const canvas = canvasRef.current
     if (!drag || drag.pointerId !== e.pointerId || !engine || !canvas) return
     pointerDragRef.current = null
@@ -284,11 +377,11 @@ export function TurnBasedPvpMatch({
 
   function handlePointerCancel() {
     pointerDragRef.current = null
-    if (engineRef.current) engineRef.current.dragState = null
+    if (chessEngineRef.current) chessEngineRef.current.dragState = null
   }
 
   function handleToggleMute() {
-    const nextMuted = chessSounds.toggleMute()
+    const nextMuted = isConnect4 ? connect4Sounds.toggleMute() : chessSounds.toggleMute()
     setMuted(nextMuted)
   }
 
@@ -312,6 +405,16 @@ export function TurnBasedPvpMatch({
 
   const endReasonText = ended ? t(`turnPvp.reasons.${ended.reason}`, { defaultValue: ended.reason }) : null
 
+  const seatBadgeText = !state
+    ? ''
+    : isConnect4
+      ? state.yourSeat === 'p1'
+        ? t('turnPvp.playingAsRed')
+        : t('turnPvp.playingAsGold')
+      : state.yourSeat === 'p1'
+        ? t('turnPvp.playingAsWhite')
+        : t('turnPvp.playingAsBlack')
+
   return (
     <div
       style={{
@@ -323,7 +426,7 @@ export function TurnBasedPvpMatch({
         overflow: 'hidden',
       }}
     >
-      {/* Top PvP Turn Status & Resign Bar */}
+      {/* Top PvP Turn Status, Audio & Resign Bar */}
       <div
         style={{
           display: 'flex',
@@ -346,12 +449,24 @@ export function TurnBasedPvpMatch({
                   fontWeight: 700,
                   padding: '3px 10px',
                   borderRadius: '999px',
-                  background: state.yourSeat === 'p1' ? 'rgba(226, 232, 240, 0.14)' : 'rgba(236, 72, 153, 0.16)',
-                  border: state.yourSeat === 'p1' ? '1px solid #38bdf8' : '1px solid #ec4899',
+                  background: isConnect4
+                    ? state.yourSeat === 'p1'
+                      ? 'rgba(239, 68, 68, 0.2)'
+                      : 'rgba(250, 204, 21, 0.2)'
+                    : state.yourSeat === 'p1'
+                      ? 'rgba(226, 232, 240, 0.14)'
+                      : 'rgba(236, 72, 153, 0.16)',
+                  border: isConnect4
+                    ? state.yourSeat === 'p1'
+                      ? '1px solid #ef4444'
+                      : '1px solid #facc15'
+                    : state.yourSeat === 'p1'
+                      ? '1px solid #38bdf8'
+                      : '1px solid #ec4899',
                   color: '#f8fafc',
                 }}
               >
-                {state.yourSeat === 'p1' ? t('turnPvp.playingAsWhite') : t('turnPvp.playingAsBlack')}
+                {seatBadgeText}
               </span>
               <span
                 style={{

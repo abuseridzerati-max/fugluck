@@ -7,6 +7,8 @@ import type {
   TurnMatchStatePayload,
 } from "@fugluck/shared";
 import { Chess } from "@fugluck/games/blitz-chess/engine";
+import { findDropRow, findWinningCells, isBoardFull } from "@fugluck/games/connect-4/engine";
+import { BOARD_CELLS, COLS } from "@fugluck/games/connect-4/constants";
 import type { MatchmakingSocket } from "./socketAuth";
 import { logger } from "../utils/safeLogger";
 
@@ -132,6 +134,83 @@ export const blitzChessPvpAdapter: TurnBasedPvpAdapter<BlitzChessPvpState, Recor
   },
 };
 
+type Connect4PvpState = {
+  board: number[];
+  activePlayer: 1 | 2;
+  turnNumber: number;
+  lastMoveCol: number | null;
+  lastMoveRow: number | null;
+  winningCells: number[];
+};
+
+export const connect4PvpAdapter: TurnBasedPvpAdapter<Connect4PvpState, Record<string, unknown>> = {
+  gameId: "connect-4",
+  initialClockMs: 60_000, // 60s Blitz per player
+  createInitialState(): Connect4PvpState {
+    return {
+      board: new Array<number>(BOARD_CELLS).fill(0),
+      activePlayer: 1,
+      turnNumber: 0,
+      lastMoveCol: null,
+      lastMoveRow: null,
+      winningCells: [],
+    };
+  },
+  getActiveTurn(state): TurnMatchSeat {
+    return state.activePlayer === 1 ? "p1" : "p2";
+  },
+  getTurnNumber(state): number {
+    return state.turnNumber;
+  },
+  applyMove(state, seat, rawMove) {
+    const expectedPlayer: 1 | 2 = seat === "p1" ? 1 : 2;
+    if (state.activePlayer !== expectedPlayer) {
+      return { ok: false, code: "NOT_YOUR_TURN", message: "Wait for your opponent to drop a disc." };
+    }
+
+    const col = typeof rawMove.col === "number" ? rawMove.col : Number.NaN;
+    if (!Number.isInteger(col) || col < 0 || col >= COLS) {
+      return { ok: false, code: "INVALID_COLUMN", message: "Column must be between 0 and 6." };
+    }
+
+    const row = findDropRow(state.board, col);
+    if (row < 0) {
+      return { ok: false, code: "COLUMN_FULL", message: "That column is already full." };
+    }
+
+    state.board[row * COLS + col] = expectedPlayer;
+    state.turnNumber += 1;
+    state.lastMoveCol = col;
+    state.lastMoveRow = row;
+
+    const winCells = findWinningCells(state.board, expectedPlayer);
+    if (winCells) {
+      state.winningCells = winCells;
+      return { ok: true, state, ended: { winnerSeat: seat, reason: "win" } };
+    }
+
+    if (isBoardFull(state.board)) {
+      return { ok: true, state, ended: { winnerSeat: null, reason: "draw" } };
+    }
+
+    state.activePlayer = expectedPlayer === 1 ? 2 : 1;
+    return { ok: true, state };
+  },
+  serializeState(state) {
+    return {
+      boardState: {
+        board: [...state.board],
+        activePlayer: state.activePlayer,
+        winningCells: [...state.winningCells],
+      },
+      lastMove:
+        state.lastMoveCol !== null && state.lastMoveRow !== null
+          ? { col: state.lastMoveCol, row: state.lastMoveRow }
+          : null,
+    };
+  },
+};
+
 type PvpSeatPlayer = {
   userId: string;
   username: string;
@@ -161,7 +240,7 @@ export class TurnBasedPvpRuntime {
   private readonly adapters = new Map<string, TurnBasedPvpAdapter<any, any>>();
   private readonly sessions = new Map<string, TurnBasedPvpSession>();
 
-  constructor(initialAdapters: TurnBasedPvpAdapter<any, any>[] = [blitzChessPvpAdapter]) {
+  constructor(initialAdapters: TurnBasedPvpAdapter<any, any>[] = [blitzChessPvpAdapter, connect4PvpAdapter]) {
     for (const adapter of initialAdapters) {
       this.registerAdapter(adapter);
     }

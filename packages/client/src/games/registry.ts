@@ -50,6 +50,9 @@ export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
   "blitz-chess": defineModulePlugin("blitz-chess", () => import("@fugluck/games/blitz-chess"), {
     competitionControlsKey: "competition.blitzChessControls",
   }),
+  "connect-4": defineModulePlugin("connect-4", () => import("@fugluck/games/connect-4"), {
+    competitionControlsKey: "competition.connect4Controls",
+  }),
   "speed-trivia": defineModulePlugin("speed-trivia", () => import("@fugluck/games/speed-trivia")),
   "tf-sprint": defineModulePlugin("tf-sprint", () => import("@fugluck/games/tf-sprint")),
 };
