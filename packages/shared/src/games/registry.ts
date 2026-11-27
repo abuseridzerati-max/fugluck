@@ -1,6 +1,7 @@
 import {
   AUTHORITY_CAP_TICKS,
   AUTHORITY_VERSION,
+  BLITZ_2048_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   STACK_TOWER_AUTHORITY_VERSION,
 } from "../authority";
@@ -103,6 +104,25 @@ export const GAME_MANIFESTS: readonly GameManifest[] = [
     certificationScope: "LEVEL_3_CERTIFIED",
     matchConfig: {
       defaultDurationSec: DEFAULT_AUTHORITY_DURATION_SEC,
+      tieBreaker: "draw",
+      minPlayers: 2,
+      maxPlayers: 2,
+    },
+  },
+  {
+    id: "2048-blitz",
+    title: "Seeded 2048 Blitz",
+    tagline: "120-second seeded 4x4 tile-merging blitz",
+    genre: "reflex-timing",
+    certified: true,
+    modes: ["practice", "casual", "tournament"],
+    i18nKeyPrefix: "games.blitz2048",
+    thumbnail: "2048-blitz",
+    modulePath: "./2048-blitz/index.ts",
+    authorityVersion: BLITZ_2048_AUTHORITY_VERSION,
+    certificationScope: "LEVEL_3_CERTIFIED",
+    matchConfig: {
+      defaultDurationSec: 120,
       tieBreaker: "draw",
       minPlayers: 2,
       maxPlayers: 2,

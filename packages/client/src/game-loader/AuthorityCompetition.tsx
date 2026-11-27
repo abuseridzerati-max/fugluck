@@ -3,6 +3,7 @@ import { io, type Socket } from 'socket.io-client'
 import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import { CyberHopperEngine } from '@fugluck/games/cyber-hopper/engine'
 import { StackTowerEngine } from '@fugluck/games/stack-tower/engine'
+import { Blitz2048Engine } from '@fugluck/games/2048-blitz/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch, ApiError } from '../lib/api'
@@ -24,6 +25,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const keyControls = useRef({ left:false,right:false,up:false,down:false,fire:false })
   const activePointers = useRef(new Map<number, 'left'|'right'|'up'|'down'|'fire'>())
   const hopPulses = useRef({ hopUp:false,hopDown:false,hopLeft:false,hopRight:false })
+  const movePulses = useRef({ moveUp:false,moveDown:false,moveLeft:false,moveRight:false })
   const dropPulse = useRef(false)
   const swipeState = useRef<{ pointerId: number | null; x: number; y: number; consumed: boolean }>({ pointerId: null, x: 0, y: 0, consumed: false })
   const [status,setStatus] = useState('connecting')
@@ -45,7 +47,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const finish=useRef(onComplete);finish.current=onComplete
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
-  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : 'Space Blaster'
+  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : 'Space Blaster'
   const syncBlasterControls = () => {
     let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
     for (const c of activePointers.current.values()) {
@@ -66,7 +68,9 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       ? new CyberHopperEngine(1)
       : gameId === 'stack-tower'
         ? new StackTowerEngine(1)
-        : new SpaceBlasterEngine(1)
+        : gameId === '2048-blitz'
+          ? new Blitz2048Engine(1)
+          : new SpaceBlasterEngine(1)
     renderer.resize(1280, 720)
     const syncCanvasBacking = () => {
       const el = canvas.current
@@ -151,7 +155,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
       setCountdown(p.startAt?Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000)):0)
-      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
+      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
       if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
@@ -172,7 +176,12 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         const elapsed=performance.now()-diagnosticStarted
         controlEvidence.activeMs=elapsed
         if(elapsed<24000){
-          if(gameId==='stack-tower'){
+          if(gameId==='2048-blitz'){
+            const step=Math.floor(elapsed/500)%4
+            const dir=step===0?'moveLeft':step===1?'moveDown':step===2?'moveRight':'moveUp'
+            movePulses.current[dir]=true
+            if(controlEvidence.directions.at(-1)!==dir)controlEvidence.directions.push(dir)
+          }else if(gameId==='stack-tower'){
             if(Math.floor(elapsed/900)>controlEvidence.directions.length){
               dropPulse.current=true
               controlEvidence.directions.push('drop')
@@ -189,7 +198,18 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
           }
         }else{diagnosticRequested.current=false;neutral()}
       }
-      if(gameId==='stack-tower'){
+      if(gameId==='2048-blitz'){
+        socket.volatile.emit('authority:controls',{
+          ...binding.current,
+          seq:++seq,
+          snapshot:snapshot.seq,
+          moveUp:movePulses.current.moveUp,
+          moveDown:movePulses.current.moveDown,
+          moveLeft:movePulses.current.moveLeft,
+          moveRight:movePulses.current.moveRight,
+        })
+        movePulses.current={moveUp:false,moveDown:false,moveLeft:false,moveRight:false}
+      }else if(gameId==='stack-tower'){
         socket.volatile.emit('authority:controls',{
           ...binding.current,
           seq:++seq,
@@ -216,11 +236,21 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     triggerSend.current = sendControls
     const send=setInterval(sendControls,50)
     const retry=setInterval(()=>{if(pendingRecovery&&!complete&&socket.connected&&instanceId)socket.emit('authority:resume',{instanceId})},3000)
-    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};dropPulse.current=false;firePulse.current=false}
+    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};movePulses.current={moveUp:false,moveDown:false,moveLeft:false,moveRight:false};dropPulse.current=false;firePulse.current=false}
     const visibility=()=>{if(document.hidden){neutral();diagnosticRequested.current=false}}
     const key=(event:KeyboardEvent,down:boolean)=>{
       // Keep page actions operable with Enter/Space; game shortcuts only control the play surface.
       if(complete||!snapshot||snapshot.state!=='ACTIVE'||(event.target instanceof HTMLElement&&event.target.closest('button,a,input,summary,select,textarea')))return
+      if(gameId==='2048-blitz'){
+        if(!down||event.repeat)return
+        let handled=false
+        if(event.key==='ArrowUp'||event.key==='w'||event.key==='W'){movePulses.current.moveUp=true;handled=true}
+        else if(event.key==='ArrowDown'||event.key==='s'||event.key==='S'){movePulses.current.moveDown=true;handled=true}
+        else if(event.key==='ArrowLeft'||event.key==='a'||event.key==='A'){movePulses.current.moveLeft=true;handled=true}
+        else if(event.key==='ArrowRight'||event.key==='d'||event.key==='D'){movePulses.current.moveRight=true;handled=true}
+        if(handled){event.preventDefault();sendControls()}
+        return
+      }
       if(gameId==='stack-tower'){
         if(!down||event.repeat)return
         if(event.key===' '||event.key==='Enter'||event.key==='ArrowDown'){
@@ -251,7 +281,19 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const draw=()=>{
       const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
       if(state&&ctx){
-        if(gameId==='stack-tower'){
+        if(gameId==='2048-blitz'){
+          Object.assign(renderer,{
+            tickCount:state.tickCount,
+            score:state.score,
+            gameOver:state.gameOver,
+            board:state.board??[],
+            mergeFlash:state.mergeFlash??[],
+            spawnFlash:state.spawnFlash??[],
+            moves:state.moves??0,
+            bestTile:state.bestTile??0,
+            ticksRemaining:state.ticksRemaining??0,
+          })
+        }else if(gameId==='stack-tower'){
           Object.assign(renderer,{
             tickCount:state.tickCount,
             score:state.score,
@@ -331,35 +373,52 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       height={720}
       className="ac-game-surface"
       aria-label={t('competition.liveCanvas',{game:gameTitle})}
-      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:gameId==='stack-tower'?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
       onPointerDown={gameId==='stack-tower' ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         dropPulse.current = true
         triggerSend.current?.()
-      } : gameId==='cyber-hopper' ? e => {
+      } : (gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         if (swipeState.current.pointerId !== null) return
         swipeState.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, consumed: false }
         try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
       } : undefined}
-      onPointerMove={gameId==='cyber-hopper' ? e => {
+      onPointerMove={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => {
         const s = swipeState.current
         if (!active || s.pointerId !== e.pointerId || s.consumed) return
         const dx = e.clientX - s.x, dy = e.clientY - s.y
         if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return
         s.consumed = true
-        if (Math.abs(dx) > Math.abs(dy)) hopPulses.current[dx > 0 ? 'hopRight' : 'hopLeft'] = true
-        else hopPulses.current[dy > 0 ? 'hopDown' : 'hopUp'] = true
+        if (gameId === '2048-blitz') {
+          if (Math.abs(dx) > Math.abs(dy)) movePulses.current[dx > 0 ? 'moveRight' : 'moveLeft'] = true
+          else movePulses.current[dy > 0 ? 'moveDown' : 'moveUp'] = true
+        } else {
+          if (Math.abs(dx) > Math.abs(dy)) hopPulses.current[dx > 0 ? 'hopRight' : 'hopLeft'] = true
+          else hopPulses.current[dy > 0 ? 'hopDown' : 'hopUp'] = true
+        }
         triggerSend.current?.()
       } : undefined}
-      onPointerUp={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
-      onPointerCancel={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
-      onLostPointerCapture={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onPointerUp={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onPointerCancel={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onLostPointerCapture={(gameId==='cyber-hopper' || gameId==='2048-blitz') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
     />
     {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
-      {gameId==='stack-tower' ? (
+      {gameId==='2048-blitz' ? (
+        ([
+          { key:'moveUp', label:`▲ ${t('competition.controls.up')} (W)` },
+          { key:'moveDown', label:`▼ ${t('competition.controls.down')} (S)` },
+          { key:'moveLeft', label:`◀ ${t('competition.controls.left')} (A)` },
+          { key:'moveRight', label:`▶ ${t('competition.controls.right')} (D)` },
+        ] as const).map(btn=><button key={btn.key} type="button" className="ac-btn ac-btn--ghost" disabled={!active} style={{minWidth:76,minHeight:48,touchAction:'none',fontWeight:'bold'}}
+          onClick={e=>{if(e.detail===0){movePulses.current[btn.key]=true;triggerSend.current?.()}}}
+          onPointerDown={e=>{e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch{/* ignore */};movePulses.current[btn.key]=true;triggerSend.current?.()}}
+          onPointerUp={()=>{}}
+          onLostPointerCapture={()=>{}}
+          onPointerCancel={()=>{}}>{btn.label}</button>)
+      ) : gameId==='stack-tower' ? (
         <button
           type="button"
           className="ac-btn ac-btn--primary"

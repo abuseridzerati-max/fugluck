@@ -19,13 +19,24 @@ export class LiveControls {
   seq = -1; private tokens = 12; private refill = 0; lastInput = -Infinity;
   held = { moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false };
   hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+  movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
   dropPending = false;
   accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === 'stack-tower') {
+    if (gameId === '2048-blitz') {
+      const moveKeys = ['moveUp','moveDown','moveLeft','moveRight'] as const;
+      for (const k of moveKeys) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      this.movePulses = {
+        moveUp: this.movePulses.moveUp || Boolean(p.moveUp),
+        moveDown: this.movePulses.moveDown || Boolean(p.moveDown),
+        moveLeft: this.movePulses.moveLeft || Boolean(p.moveLeft),
+        moveRight: this.movePulses.moveRight || Boolean(p.moveRight),
+      };
+    } else if (gameId === 'stack-tower') {
       if (p.drop !== undefined && typeof p.drop !== 'boolean') throw Error('INPUT_SHAPE');
       this.tokens--; this.seq=p.seq; this.lastInput=now;
       this.dropPending = this.dropPending || Boolean(p.drop);
@@ -47,6 +58,11 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === '2048-blitz') {
+      const moves = { ...this.movePulses };
+      this.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+      return moves;
+    }
     if (gameId === 'stack-tower') {
       const drop = this.dropPending;
       this.dropPending = false;
@@ -62,6 +78,7 @@ export class LiveControls {
   neutral() {
     this.held={moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false};
     this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+    this.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
     this.dropPending = false;
   }
 }

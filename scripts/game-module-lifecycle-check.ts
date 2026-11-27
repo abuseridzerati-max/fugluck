@@ -7,6 +7,8 @@ import { CyberHopperModule } from '../games/cyber-hopper';
 import { CyberHopperEngine } from '../games/cyber-hopper/engine';
 import { StackTowerModule } from '../games/stack-tower';
 import { StackTowerEngine } from '../games/stack-tower/engine';
+import { Blitz2048Module } from '../games/2048-blitz';
+import { Blitz2048Engine } from '../games/2048-blitz/engine';
 import { SpeedTriviaModule } from '../games/speed-trivia';
 import { SpeedTriviaEngine } from '../games/speed-trivia/engine';
 
@@ -69,6 +71,7 @@ try {
     ['space-blaster', SpaceBlasterModule, SpaceBlasterEngine],
     ['cyber-hopper', CyberHopperModule, CyberHopperEngine],
     ['stack-tower', StackTowerModule, StackTowerEngine],
+    ['2048-blitz', Blitz2048Module, Blitz2048Engine],
     ['speed-trivia', SpeedTriviaModule, SpeedTriviaEngine],
   ] as const) {
     const calls: number[][] = [];

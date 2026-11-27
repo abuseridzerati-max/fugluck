@@ -8,6 +8,7 @@
     "./space-blaster/engine": "./space-blaster/engine.ts",
     "./cyber-hopper/engine": "./cyber-hopper/engine.ts",
     "./stack-tower/engine": "./stack-tower/engine.ts",
+    "./2048-blitz/engine": "./2048-blitz/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -31,6 +32,10 @@
     "./stack-tower": {
       "import": "./stack-tower/index.ts",
       "default": "./stack-tower/index.ts"
+    },
+    "./2048-blitz": {
+      "import": "./2048-blitz/index.ts",
+      "default": "./2048-blitz/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",

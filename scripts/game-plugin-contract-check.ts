@@ -38,12 +38,13 @@ async function main() {
     "space-blaster",
     "cyber-hopper",
     "stack-tower",
+    "2048-blitz",
     "speed-trivia",
     "tf-sprint",
   ];
 
   check(
-    "GAME_MANIFESTS contains all 7 registered games",
+    "GAME_MANIFESTS contains all 8 registered games",
     expectedIds.every((id) => GAME_MANIFESTS.some((m) => m.id === id)) &&
       GAME_MANIFESTS.length === expectedIds.length,
   );
@@ -55,8 +56,8 @@ async function main() {
   );
 
   check(
-    "Exactly space-blaster, cyber-hopper, and stack-tower are Tournament Certified",
-    getCertifiedGameIds().sort().join(",") === "cyber-hopper,space-blaster,stack-tower",
+    "Exactly 2048-blitz, cyber-hopper, space-blaster, and stack-tower are Tournament Certified",
+    getCertifiedGameIds().sort().join(",") === "2048-blitz,cyber-hopper,space-blaster,stack-tower",
   );
 
   check(
@@ -115,7 +116,20 @@ async function main() {
     const snapshotTimes = new Map<number, number>([[1, 1000]]);
 
     const controls: AuthorityControls =
-      gameId === "stack-tower"
+      gameId === "2048-blitz"
+        ? {
+            sessionId: "s1",
+            instanceId: "i1",
+            matchId: "m1",
+            gameId,
+            version: plugin.authorityVersion,
+            nonce: "n1",
+            epoch: 1,
+            seq: 1,
+            snapshot: 1,
+            moveLeft: true,
+          }
+        : gameId === "stack-tower"
         ? {
             sessionId: "s1",
             instanceId: "i1",
@@ -191,7 +205,9 @@ async function main() {
     const snap = plugin.serializeSnapshot(stateA, baseSnapshot);
     check(
       `ServerGamePlugin '${gameId}' serializeSnapshot populates game-specific fields`,
-      gameId === "stack-tower"
+      gameId === "2048-blitz"
+        ? Array.isArray(snap.board) && snap.board.length === 16 && typeof snap.ticksRemaining === "number"
+        : gameId === "stack-tower"
         ? Array.isArray(snap.tower) && Boolean(snap.activeBlock) && typeof snap.cameraY === "number"
         : gameId === "cyber-hopper"
           ? typeof snap.gridX === "number" && typeof snap.gridY === "number" && Array.isArray(snap.obstacles)

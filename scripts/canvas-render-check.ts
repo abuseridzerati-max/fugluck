@@ -9,6 +9,7 @@ import { DashEngine } from "../games/pixel-ninja-dash/engine";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
 import { StackTowerEngine } from "../games/stack-tower/engine";
+import { Blitz2048Engine } from "../games/2048-blitz/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -321,6 +322,41 @@ console.log("\nTest 3.75: Stack Tower 300-Frame Headless Canvas draw() Suite\n")
   check("Stack Tower 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Stack Tower verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Stack Tower places blocks and scores deterministically", engine.blocksPlaced > 0 && engine.score > 0, `blocks=${engine.blocksPlaced}, score=${engine.score}`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.76: Seeded 2048 Blitz 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.76: Seeded 2048 Blitz 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new Blitz2048Engine(13572468);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      const phase = frame % 20;
+      engine.update(1 / 60, {
+        moveLeft: phase === 0,
+        moveDown: phase === 5,
+        moveRight: phase === 10,
+        moveUp: phase === 15,
+      });
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Seeded 2048 Blitz 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Seeded 2048 Blitz verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Seeded 2048 Blitz executes valid moves and merges deterministically", engine.moves > 0 && engine.score > 0 && engine.bestTile >= 4, `moves=${engine.moves}, score=${engine.score}, bestTile=${engine.bestTile}`);
 }
 
 // ---------------------------------------------------------------------------

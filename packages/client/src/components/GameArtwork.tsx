@@ -69,6 +69,26 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  '2048-blitz': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="86" y="16" width="148" height="148" rx="10" fill="#0d1422" stroke="#38bdf8" strokeOpacity="0.45" strokeWidth="1.75" />
+      <rect x="96" y="26" width="30" height="30" rx="5" fill="#17253b" stroke="#38bdf8" strokeWidth="1.2" />
+      <rect x="131" y="26" width="30" height="30" rx="5" fill="#132f3a" stroke="#06b6d4" strokeWidth="1.2" />
+      <rect x="166" y="26" width="30" height="30" rx="5" fill="#0d352d" stroke="#10b981" strokeWidth="1.2" />
+      <rect x="201" y="26" width="24" height="30" rx="5" fill="#131d30" />
+      <rect x="96" y="61" width="30" height="30" rx="5" fill="#131d30" />
+      <rect x="131" y="61" width="30" height="30" rx="5" fill="#3a2710" stroke="#f59e0b" strokeWidth="1.5" />
+      <rect x="166" y="61" width="30" height="30" rx="5" fill="#3f1224" stroke="#f43f5e" strokeWidth="1.5" />
+      <rect x="201" y="61" width="24" height="30" rx="5" fill="#291445" stroke="#a855f7" strokeWidth="1.5" />
+      <rect x="96" y="96" width="65" height="58" rx="7" fill="#0f3a36" stroke="#34d399" strokeWidth="2" />
+      <text x="128" y="131" textAnchor="middle" fill="#ffffff" fontFamily="monospace" fontWeight="bold" fontSize="18">2048</text>
+      <rect x="166" y="96" width="30" height="30" rx="5" fill="#1d1b4b" stroke="#6366f1" strokeWidth="1.5" />
+      <rect x="201" y="96" width="24" height="30" rx="5" fill="#3b1236" stroke="#ec4899" strokeWidth="1.5" />
+      <rect x="166" y="131" width="59" height="23" rx="5" fill="#131d30" stroke="#10b981" strokeOpacity="0.6" strokeWidth="1.2" />
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

@@ -21,6 +21,7 @@ const DEFAULT_CONTROLS_HINT: Record<string, string> = {
   'space-blaster': 'WASD / Arrows to steer · Space to shoot · Survive & destroy waves (3 min cap)',
   'cyber-hopper': 'WASD / Arrows to hop lanes · Dodge hovercars · Reach the top zone to score',
   'stack-tower': 'Space / Enter / Down Arrow or Tap to drop · Align perfectly for combo bonus',
+  '2048-blitz': 'Arrows / WASD or Swipe to merge tiles · 120s seeded blitz · Highest score wins',
   'neon-runner': 'Space / Up Arrow to jump · Time leaps over neon obstacles for distance score',
   'pixel-ninja-dash': 'Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly',
   'speed-trivia': 'Click or press 1–4 to answer · 10 questions · Faster correct answers score more',
