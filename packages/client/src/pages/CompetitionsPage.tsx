@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getCertifiedGameManifests, type CompetitionTemplate } from '@fugluck/shared'
+import { getCertifiedGameManifests } from '@fugluck/shared'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import CompetitionCatalog from '../components/CompetitionCatalog'
 import LeaderboardPanel from '../components/LeaderboardPanel'
-import MyCompetitions from '../components/MyCompetitions'
 import RecentWinnersFeed from '../components/RecentWinnersFeed'
 import { useAuth } from '../auth/AuthContext'
 import { apiFetch } from '../lib/api'
@@ -25,7 +24,7 @@ export default function CompetitionsPage({
   onNavigateFriends,
   onNavigateWallet,
   onNavigateLeaderboards,
-  onLaunchCompetition,
+  onNavigateHistory,
   onNavigatePolicy,
 }: {
   onNavigateHome: () => void
@@ -33,7 +32,7 @@ export default function CompetitionsPage({
   onNavigateFriends: () => void
   onNavigateWallet: () => void
   onNavigateLeaderboards?: () => void
-  onLaunchCompetition: (gameId: string, template: CompetitionTemplate) => void
+  onNavigateHistory?: () => void
   onNavigatePolicy?: (path: string) => void
 }) {
   const { t, i18n } = useTranslation()
@@ -88,6 +87,7 @@ export default function CompetitionsPage({
           setGame('all')
         }}
         onNavigateLeaderboards={onNavigateLeaderboards}
+        onNavigateHistory={onNavigateHistory}
       />
       <main className="competition-page ac-main">
         <header className="competition-heading">
@@ -186,7 +186,6 @@ export default function CompetitionsPage({
             </div>
 
             <CompetitionCatalog currency={activeMode} gameId={game === 'all' ? undefined : game} onShowAll={() => setGame('all')} />
-            <MyCompetitions onLaunch={(template) => onLaunchCompetition(template.gameId, template)} />
           </>
         )}
       </main>

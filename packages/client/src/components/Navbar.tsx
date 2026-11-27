@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
 import LanguageSwitcher from './LanguageSwitcher'
-import { BrandMarkIcon, CoinIcon, GamepadIcon, TrophyIcon } from './icons'
+import { BrandMarkIcon, CoinIcon, GamepadIcon, HistoryIcon, TrophyIcon } from './icons'
 
 type NavbarProps = {
   onNavigateHome: () => void
@@ -14,7 +14,8 @@ type NavbarProps = {
   onNavigateWallet?: () => void
   onNavigateCompetitions?: () => void
   onNavigateLeaderboards?: () => void
-  activePage?: 'home' | 'competitions' | 'leaderboards' | 'wallet' | 'profile' | 'friends'
+  onNavigateHistory?: () => void
+  activePage?: 'home' | 'competitions' | 'leaderboards' | 'wallet' | 'profile' | 'friends' | 'history'
 }
 
 export default function Navbar({
@@ -24,6 +25,7 @@ export default function Navbar({
   onNavigateWallet,
   onNavigateCompetitions,
   onNavigateLeaderboards,
+  onNavigateHistory,
   activePage,
 }: NavbarProps) {
   const { t } = useTranslation()
@@ -151,6 +153,19 @@ export default function Navbar({
                       onNavigateProfile()
                     }}
                   />
+                  <MenuItem
+                    label={t('navigation.history')}
+                    icon={<HistoryIcon size={14} />}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      if (onNavigateHistory) {
+                        onNavigateHistory()
+                      } else {
+                        window.history.pushState(null, '', '/history')
+                        window.dispatchEvent(new PopStateEvent('popstate'))
+                      }
+                    }}
+                  />
                   {onNavigateWallet && (
                     <MenuItem
                       label={t('navigation.wallet', { defaultValue: 'Wallet & Sandbox' })}
@@ -217,10 +232,12 @@ export default function Navbar({
 
 function MenuItem({
   label,
+  icon,
   onClick,
   danger = false,
 }: {
   label: string
+  icon?: ReactNode
   onClick: () => void
   danger?: boolean
 }) {
@@ -229,9 +246,11 @@ function MenuItem({
       type="button"
       role="menuitem"
       className={`ac-nav__menu-item${danger ? ' ac-nav__menu-item--danger' : ''}`}
+      style={icon ? { display: 'flex', alignItems: 'center', gap: 8 } : undefined}
       onClick={onClick}
     >
-      {label}
+      {icon}
+      <span>{label}</span>
     </button>
   )
 }

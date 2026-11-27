@@ -16,6 +16,7 @@
   "navigation": {
     "home": "Home",
     "profile": "Profile",
+    "history": "History",
     "friends": "Friends",
     "wallet": "Wallet",
     "settings": "Settings",
@@ -138,6 +139,7 @@
   "meta": {
     "titleHome": "Fugluck — Home",
     "titleProfile": "Fugluck — Profile",
+    "titleHistory": "Fugluck — History",
     "titleFriends": "Fugluck — Friends",
     "titleWallet": "Fugluck — Wallet",
     "titleSettings": "Fugluck — Settings",
@@ -1114,5 +1116,9 @@
       "disconnect": "Opponent Disconnected",
       "win": "Match Complete"
     }
+  },
+  "historyPage": {
+    "title": "Competition History",
+    "subtitle": "Track your active entries, completed brackets, and past competition results."
   }
 }

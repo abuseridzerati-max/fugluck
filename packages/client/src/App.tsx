@@ -14,6 +14,7 @@ const GameLoader = lazy(() => import('./game-loader/GameLoader'))
 const MatchLoader = lazy(() => import('./game-loader/MatchLoader'))
 const AdminConsolePage = lazy(() => import('./admin/AdminConsolePage'))
 const CompetitionsPage = lazy(() => import('./pages/CompetitionsPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'))
@@ -65,6 +66,7 @@ type PolicySlug = (typeof POLICY_SLUGS)[number]
 type View =
   | 'home'
   | 'competitions'
+  | 'history'
   | 'leaderboards'
   | 'profile'
   | 'friends'
@@ -124,6 +126,7 @@ function getViewFromPath(pathname: string): View {
   const cleanPath = pathname.replace(/\/$/, '') || '/'
   if (cleanPath === '/' || cleanPath === '/home') return 'home'
   if (cleanPath === '/competitions') return 'competitions'
+  if (cleanPath === '/history') return 'history'
   if (cleanPath === '/leaderboards') return 'leaderboards'
   if (cleanPath === '/profile') return 'profile'
   if (cleanPath === '/friends') return 'friends'
@@ -155,6 +158,8 @@ function getPathForView(view: View): string {
   switch (view) {
     case 'competitions':
       return '/competitions'
+    case 'history':
+      return '/history'
     case 'leaderboards':
       return '/leaderboards'
     case 'profile':
@@ -235,7 +240,7 @@ function AppShell() {
   // If unauthenticated and navigating to protected player views, show login modal and remember destination.
   // /admin owns its separate operator login and must never be obscured by the player AuthModal.
   useEffect(() => {
-    const protectedViews: View[] = ['profile', 'friends', 'wallet']
+    const protectedViews: View[] = ['profile', 'friends', 'wallet', 'history']
     if (!user && protectedViews.includes(view)) {
       setPendingRedirectView(view)
       setAuthModalMode('login')
@@ -257,6 +262,8 @@ function AppShell() {
     switch (targetView) {
       case 'competitions':
         return 'Competitions | Fugluck'
+      case 'history':
+        return t('meta.titleHistory')
       case 'leaderboards':
         return 'Leaderboards | Fugluck'
       case 'profile':
@@ -485,6 +492,18 @@ function AppShell() {
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
           onNavigateLeaderboards={() => navigateTo('leaderboards')}
+          onNavigateHistory={() => navigateTo('history')}
+          onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
+        />
+      ) : view === 'history' ? (
+        <HistoryPage
+          onNavigateHome={() => navigateTo('home')}
+          onNavigateProfile={() => navigateTo('profile')}
+          onNavigateFriends={() => navigateTo('friends')}
+          onNavigateWallet={() => navigateTo('wallet')}
+          onNavigateCompetitions={() => navigateToCompetitions()}
+          onNavigateLeaderboards={() => navigateTo('leaderboards')}
+          onNavigateHistory={() => navigateTo('history')}
           onLaunchCompetition={handleLaunchCompetition}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />

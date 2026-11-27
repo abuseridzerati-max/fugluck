@@ -16,6 +16,7 @@
   "navigation": {
     "home": "მთავარი",
     "profile": "პროფილი",
+    "history": "ისტორია",
     "friends": "მეგობრები",
     "wallet": "საფულე",
     "settings": "პარამეტრები",
@@ -138,6 +139,7 @@
   "meta": {
     "titleHome": "Fugluck — მთავარი",
     "titleProfile": "Fugluck — პროფილი",
+    "titleHistory": "Fugluck — ისტორია",
     "titleFriends": "Fugluck — მეგობრები",
     "titleWallet": "Fugluck — საფულე",
     "titleSettings": "Fugluck — პარამეტრები",
@@ -1114,5 +1116,9 @@
       "disconnect": "მეტოქე გაითიშა",
       "win": "მატჩი დასრულდა"
     }
+  },
+  "historyPage": {
+    "title": "შეჯიბრებების ისტორია",
+    "subtitle": "თვალი ადევნეთ აქტიურ რეგისტრაციებს, დასრულებულ ბადეებსა და შედეგებს."
   }
 }

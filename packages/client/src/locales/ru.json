@@ -16,6 +16,7 @@
   "navigation": {
     "home": "Главная",
     "profile": "Профиль",
+    "history": "История",
     "friends": "Друзья",
     "wallet": "Кошелек",
     "settings": "Настройки",
@@ -142,6 +143,7 @@
   "meta": {
     "titleHome": "Fugluck — Главная",
     "titleProfile": "Fugluck — Профиль",
+    "titleHistory": "Fugluck — История",
     "titleFriends": "Fugluck — Друзья",
     "titleWallet": "Fugluck — Кошелек",
     "titleSettings": "Fugluck — Настройки",
@@ -1122,5 +1124,9 @@
       "disconnect": "Соперник отключился",
       "win": "Матч завершён"
     }
+  },
+  "historyPage": {
+    "title": "История соревнований",
+    "subtitle": "Отслеживайте активные заявки, завершённые сетки и прошлые результаты соревнований."
   }
 }
