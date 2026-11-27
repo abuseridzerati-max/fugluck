@@ -165,6 +165,57 @@ export type CompetitionErrorPayload = {
   message: string;
 };
 
+export type TurnMatchSeat = "p1" | "p2";
+
+export type TurnMatchEndReason =
+  | "checkmate"
+  | "timeout"
+  | "resignation"
+  | "draw"
+  | "stalemate"
+  | "disconnect"
+  | "win";
+
+export type TurnMatchStatePayload = {
+  matchId: string;
+  gameId: string;
+  yourSeat: TurnMatchSeat;
+  activeTurn: TurnMatchSeat;
+  turnNumber: number;
+  p1Username: string;
+  p2Username: string;
+  p1ClockMs: number;
+  p2ClockMs: number;
+  serverTimeMs: number;
+  boardState: Record<string, unknown>;
+  lastMove: Record<string, unknown> | null;
+  inCheck?: boolean;
+  ended?: boolean;
+};
+
+export type TurnMatchMovePayload = {
+  matchId: string;
+  move: Record<string, unknown>;
+};
+
+export type TurnMatchResignPayload = {
+  matchId: string;
+};
+
+export type TurnMatchEndedPayload = {
+  matchId: string;
+  gameId: string;
+  winnerSeat: TurnMatchSeat | null;
+  reason: TurnMatchEndReason;
+  finalState: TurnMatchStatePayload;
+};
+
+export type TurnMatchErrorPayload = {
+  matchId: string;
+  code: string;
+  message: string;
+};
+
 export interface ClientToServerEvents {
   'authority:ready': (payload: AuthorityBinding) => void;
   'authority:controls': (payload: AuthorityControls) => void;
@@ -187,6 +238,9 @@ export interface ClientToServerEvents {
   "competition:join"?: (payload: JoinCompetitionPayload) => void;
   joinCompetition?: (payload: JoinCompetitionPayload) => void;
   "competition:cancel"?: (payload: { instanceId: string }) => void;
+  "turn_match:move": (payload: TurnMatchMovePayload) => void;
+  "turn_match:resign": (payload: TurnMatchResignPayload) => void;
+  "turn_match:sync": (payload: { matchId: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -214,4 +268,7 @@ export interface ServerToClientEvents {
   "competition:matched"?: (payload: CompetitionMatchedPayload) => void;
   "competition:error"?: (payload: CompetitionErrorPayload) => void;
   "competition:cancelled"?: (payload: { instanceId: string; reason: string }) => void;
+  "turn_match:state": (payload: TurnMatchStatePayload) => void;
+  "turn_match:ended": (payload: TurnMatchEndedPayload) => void;
+  "turn_match:error": (payload: TurnMatchErrorPayload) => void;
 }

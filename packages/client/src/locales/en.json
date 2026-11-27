@@ -1070,9 +1070,33 @@
     },
     "blitzChess": {
       "title": "Blitz Chess",
-      "description": "3+0 blitz chess vs deterministic seeded tactical AI",
-      "controls": "Click or tap a White piece to view legal moves, then click or tap a highlighted destination square.",
-      "rules": "Play official 3+0 Blitz Chess (180 seconds per side) as White against a deterministic seeded tactical AI. Score points from captures, checks, remaining clock bonus, and +1,000 for Checkmate victory. Flagging or losing ends the run with 0 points."
+      "description": "3+0 blitz chess — live 1v1 PvP or seeded tactical AI practice",
+      "controls": "Click or tap a piece to view legal moves, then click or tap a highlighted destination square.",
+      "rules": "Play official 3+0 Blitz Chess (180 seconds per side) live 1v1 against human opponents or practice against a deterministic seeded tactical AI."
+    }
+  },
+  "turnPvp": {
+    "yourTurn": "Your Turn",
+    "opponentTurn": "Opponent's Turn",
+    "playingAsWhite": "Playing as White",
+    "playingAsBlack": "Playing as Black",
+    "resign": "Resign",
+    "resignConfirm": "Confirm Resign?",
+    "waitingBoard": "Syncing live board...",
+    "check": "CHECK",
+    "outcomes": {
+      "win": "Victory",
+      "loss": "Defeat",
+      "draw": "Draw"
+    },
+    "reasons": {
+      "checkmate": "Checkmate",
+      "timeout": "Time Expired",
+      "resignation": "Resignation",
+      "draw": "Draw",
+      "stalemate": "Stalemate",
+      "disconnect": "Opponent Disconnected",
+      "win": "Match Complete"
     }
   }
 }

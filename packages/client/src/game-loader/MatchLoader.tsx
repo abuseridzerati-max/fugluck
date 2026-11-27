@@ -13,6 +13,9 @@ import { canNativeShare, copyTextToClipboard } from '../lib/clipboard'
 import { useMatchSocket, type MatchSocketMode, type RematchState } from '../matchmaking/useMatchSocket'
 import { apiFetch } from '../lib/api'
 import { AuthorityCompetition } from './AuthorityCompetition'
+import { TurnBasedPvpMatch } from './TurnBasedPvpMatch'
+
+const TURN_BASED_PVP_GAMES = new Set(['blitz-chess'])
 
 type MatchLoaderProps = {
   createModule: GameModuleFactory
@@ -86,8 +89,14 @@ function LegacyMatchLoader({
     guestLinkCode,
     rematchState,
     competitionWaiting,
+    turnMatchState,
+    turnMatchEnded,
+    turnMatchError,
     cancelCompetition,
     submitScore,
+    sendTurnMove,
+    resignTurnMatch,
+    syncTurnMatch,
     reportVisibilityHidden,
     requestRematch,
     declineRematch,
@@ -145,11 +154,15 @@ function LegacyMatchLoader({
     if (phase.kind !== 'countdown') return
 
     if (phase.count <= 0) {
+      const matchInfo = phase.match
+      if (TURN_BASED_PVP_GAMES.has(gameId)) {
+        setPhase({ kind: 'playing', match: matchInfo })
+        return
+      }
       const container = containerRef.current
       if (!container) return
       const mod = createModule()
       moduleRef.current = mod
-      const matchInfo = phase.match
       mod.addEventListener('gameOver', ((e: Event) => {
         const payload = (e as CustomEvent<GameOverPayload>).detail
         submitScore({
@@ -171,7 +184,7 @@ function LegacyMatchLoader({
       setPhase((prev) => (prev.kind === 'countdown' ? { ...prev, count: prev.count - 1 } : prev))
     }, COUNTDOWN_STEP_MS)
     return () => clearTimeout(timeoutId)
-  }, [phase, createModule, submitScore])
+  }, [phase, createModule, submitScore, gameId])
 
   const { refreshUser } = useAuth()
 
@@ -279,6 +292,18 @@ function LegacyMatchLoader({
 
       <div className="ac-game-shell__stage">
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+
+        {phase.kind === 'playing' && TURN_BASED_PVP_GAMES.has(gameId) && (
+          <TurnBasedPvpMatch
+            match={phase.match}
+            state={turnMatchState}
+            ended={turnMatchEnded}
+            error={turnMatchError}
+            onSendMove={sendTurnMove}
+            onResign={resignTurnMatch}
+            onSync={syncTurnMatch}
+          />
+        )}
 
         {phase.kind === 'queued' && (
           <Overlay>

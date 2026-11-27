@@ -27,6 +27,13 @@ export type {
   RespondInvitePayload,
   ServerToClientEvents,
   SubmitScorePayload,
+  TurnMatchEndedPayload,
+  TurnMatchEndReason,
+  TurnMatchErrorPayload,
+  TurnMatchMovePayload,
+  TurnMatchResignPayload,
+  TurnMatchSeat,
+  TurnMatchStatePayload,
   VisibilityHiddenPayload,
 } from "./matchmaking";
 export type { Currency, WalletBalances } from "./wallet";

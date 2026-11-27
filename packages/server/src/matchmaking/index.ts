@@ -31,6 +31,7 @@ import {
 import { getOnlineSocket, registerPresence, unregisterPresence } from "./presence";
 import { enqueue, generateSeed, getPublicQueueState, isValidGameId, setOnQueueChange, tryPair } from "./queue";
 import { socketAuthMiddleware, guardSocketSession, type MatchmakingSocket, type MatchmakingSocketData } from "./socketAuth";
+import { turnBasedPvpRuntime } from "./turnBasedPvp";
 
 import { checkSocketRateLimit } from "../utils/rateLimiter";
 import { socketIoCorsOptions, isOriginAllowed } from "../config/cors";
@@ -69,10 +70,17 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
   const closeSockets = io.close.bind(io);
   io.close = (...args: Parameters<typeof io.close>) => {
     authority.close();
+    turnBasedPvpRuntime.close();
     return closeSockets(...args);
   };
-  io.engine.on('close', () => authority.close());
-  httpServer.once('close', () => authority.close());
+  io.engine.on('close', () => {
+    authority.close();
+    turnBasedPvpRuntime.close();
+  });
+  httpServer.once('close', () => {
+    authority.close();
+    turnBasedPvpRuntime.close();
+  });
   io.use(socketAuthMiddleware);
 
   setOnQueueChange(() => {
@@ -287,6 +295,21 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
     socket.on("submitScore", (payload) => {
       if (!checkSocketRateLimit(socket.id, "submitScore", 2, 5_000)) return;
       submitScore(socket, payload);
+    });
+
+    socket.on("turn_match:move", (payload) => {
+      if (!checkSocketRateLimit(socket.id, "turn_match:move", 20, 5_000)) return;
+      turnBasedPvpRuntime.handleMove(socket, payload);
+    });
+
+    socket.on("turn_match:resign", (payload) => {
+      if (!checkSocketRateLimit(socket.id, "turn_match:resign", 4, 10_000)) return;
+      turnBasedPvpRuntime.handleResign(socket, payload);
+    });
+
+    socket.on("turn_match:sync", (payload) => {
+      if (!checkSocketRateLimit(socket.id, "turn_match:sync", 10, 10_000)) return;
+      turnBasedPvpRuntime.handleSync(socket, payload);
     });
 
     // Evidence only — no match state or outcome impact. See PROGRESS.md's

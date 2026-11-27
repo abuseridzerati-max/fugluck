@@ -1,4 +1,5 @@
 import { Chess, type Move, type Square } from "chess.js";
+export { Chess };
 import {
   createSeededRandom,
   type RandomFn,
@@ -60,9 +61,13 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
   public capturedByBlack: string[] = [];
   public inCheck = false;
 
-  /** Client-only selection highlight (does not affect deterministic simulation). */
+  /** Client-only selection highlight & PvP perspective (do not affect deterministic simulation). */
   public selectedSquare: string | null = null;
   public legalTargets: string[] = [];
+  public orientation: "w" | "b" = "w";
+  public pvpMode = false;
+  public whiteLabel = "YOU (WHITE) · 3+0";
+  public blackLabel = "BLACK AI · 3+0";
 
   private chess: Chess = new Chess();
   private lastHydratedFen = "";
@@ -156,10 +161,10 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     }
   }
 
-  public getLegalTargetsForSquare(square: string): string[] {
-    if (this.gameOver || this.chess.turn() !== "w") return [];
+  public getLegalTargetsForSquare(square: string, allowedColor: "w" | "b" = this.orientation): string[] {
+    if (this.gameOver || this.chess.turn() !== allowedColor) return [];
     const piece = this.chess.get(square as Square);
-    if (!piece || piece.color !== "w") return [];
+    if (!piece || piece.color !== allowedColor) return [];
     const moves = this.chess.moves({ square: square as Square, verbose: true });
     return [...new Set(moves.map((m) => m.to))];
   }
@@ -441,15 +446,18 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     const boardMatrix = this.chess.board();
     const activeColor = this.chess.turn();
     const legalSet = new Set(this.legalTargets);
+    const flipped = this.orientation === "b";
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    for (let r = 0; r < BOARD_SQUARES; r++) {
-      for (let c = 0; c < BOARD_SQUARES; c++) {
+    for (let vr = 0; vr < BOARD_SQUARES; vr++) {
+      for (let vc = 0; vc < BOARD_SQUARES; vc++) {
+        const r = flipped ? BOARD_SQUARES - 1 - vr : vr;
+        const c = flipped ? BOARD_SQUARES - 1 - vc : vc;
         const sq = `${FILES[c]}${RANKS[r]}`;
-        const sx = BOARD_X + c * SQUARE_SIZE;
-        const sy = BOARD_Y + r * SQUARE_SIZE;
+        const sx = BOARD_X + vc * SQUARE_SIZE;
+        const sy = BOARD_Y + vr * SQUARE_SIZE;
         const isLight = (r + c) % 2 === 0;
 
         ctx.fillStyle = isLight ? CHESS_COLORS.lightSquare : CHESS_COLORS.darkSquare;
@@ -518,17 +526,22 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     ctx.font = "bold 13px monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    for (let c = 0; c < BOARD_SQUARES; c++) {
-      ctx.fillText(FILES[c], BOARD_X + c * SQUARE_SIZE + SQUARE_SIZE / 2, BOARD_Y + BOARD_SIZE + 26);
+    for (let vc = 0; vc < BOARD_SQUARES; vc++) {
+      const fileIdx = flipped ? BOARD_SQUARES - 1 - vc : vc;
+      ctx.fillText(FILES[fileIdx], BOARD_X + vc * SQUARE_SIZE + SQUARE_SIZE / 2, BOARD_Y + BOARD_SIZE + 26);
     }
-    for (let r = 0; r < BOARD_SQUARES; r++) {
-      ctx.fillText(RANKS[r], BOARD_X - 28, BOARD_Y + r * SQUARE_SIZE + SQUARE_SIZE / 2);
+    for (let vr = 0; vr < BOARD_SQUARES; vr++) {
+      const rankIdx = flipped ? BOARD_SQUARES - 1 - vr : vr;
+      ctx.fillText(RANKS[rankIdx], BOARD_X - 28, BOARD_Y + vr * SQUARE_SIZE + SQUARE_SIZE / 2);
     }
 
     ctx.textBaseline = "alphabetic";
 
     // 5. Right-Side Arcade HUD Panel
-    this.drawClockCard(ctx, 64, "BLACK AI · 3+0", this.blackClockTicks, !this.gameOver && activeColor === "b");
+    const topLabel = flipped ? this.whiteLabel : this.blackLabel;
+    const topTicks = flipped ? this.whiteClockTicks : this.blackClockTicks;
+    const topActive = !this.gameOver && activeColor === (flipped ? "w" : "b");
+    this.drawClockCard(ctx, 64, topLabel, topTicks, topActive);
 
     // Score & Status Card
     ctx.fillStyle = CHESS_COLORS.hudBg;
@@ -540,29 +553,40 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     ctx.textAlign = "left";
     ctx.fillStyle = CHESS_COLORS.textMuted;
     ctx.font = "bold 13px monospace";
-    ctx.fillText("TOURNAMENT SCORE", PANEL_X + 18, 192);
+    ctx.fillText(this.pvpMode ? "LIVE 1v1 BLITZ" : "TOURNAMENT SCORE", PANEL_X + 18, 192);
 
     ctx.fillStyle = "#34d399";
     ctx.font = "bold 34px monospace";
-    ctx.fillText(String(this.score), PANEL_X + 18, 232);
+    ctx.fillText(this.pvpMode ? "3+0 PvP" : String(this.score), PANEL_X + 18, 232);
 
-    const statusLabel = this.gameOver
-      ? this.outcome === "player_win"
-        ? "CHECKMATE! YOU WIN"
-        : this.outcome === "opponent_flag"
-          ? "OPPONENT FLAGGED! WIN"
-          : this.outcome === "draw"
-            ? "DRAW"
-            : "MATCH ENDED"
-      : this.inCheck
-        ? activeColor === "w"
-          ? "CHECK! YOUR TURN"
-          : "CHECK! AI THINKING"
-        : activeColor === "w"
-          ? "YOUR TURN (WHITE)"
-          : "AI THINKING (BLACK)";
+    const isMyTurn = activeColor === this.orientation;
+    const statusLabel = this.pvpMode
+      ? this.gameOver
+        ? "MATCH ENDED"
+        : this.inCheck
+          ? isMyTurn
+            ? "CHECK! YOUR TURN"
+            : "CHECK! OPPONENT'S TURN"
+          : isMyTurn
+            ? `YOUR TURN (${this.orientation === "w" ? "WHITE" : "BLACK"})`
+            : `OPPONENT'S TURN (${this.orientation === "w" ? "BLACK" : "WHITE"})`
+      : this.gameOver
+        ? this.outcome === "player_win"
+          ? "CHECKMATE! YOU WIN"
+          : this.outcome === "opponent_flag"
+            ? "OPPONENT FLAGGED! WIN"
+            : this.outcome === "draw"
+              ? "DRAW"
+              : "MATCH ENDED"
+        : this.inCheck
+          ? activeColor === "w"
+            ? "CHECK! YOUR TURN"
+            : "CHECK! AI THINKING"
+          : activeColor === "w"
+            ? "YOUR TURN (WHITE)"
+            : "AI THINKING (BLACK)";
 
-    ctx.fillStyle = this.inCheck ? "#f43f5e" : activeColor === "w" ? "#38bdf8" : "#f59e0b";
+    ctx.fillStyle = this.inCheck ? "#f43f5e" : isMyTurn ? "#38bdf8" : "#f59e0b";
     ctx.font = "bold 16px monospace";
     ctx.fillText(statusLabel, PANEL_X + 18, 266);
 
@@ -573,21 +597,26 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     ctx.lineWidth = 1.5;
     ctx.strokeRect(PANEL_X, 302, PANEL_W, 134);
 
-    ctx.fillStyle = CHESS_COLORS.textMuted;
-    ctx.font = "bold 12px monospace";
-    ctx.fillText("CAPTURED BY YOU", PANEL_X + 18, 326);
-    const whiteCaps = this.capturedByWhite.map((p) => PIECE_GLYPHS[`b${p}`] ?? p).join(" ");
-    ctx.fillStyle = "#f8fafc";
-    ctx.font = "22px sans-serif";
-    ctx.fillText(whiteCaps || "—", PANEL_X + 18, 356);
+    const myCaps = flipped ? this.capturedByBlack : this.capturedByWhite;
+    const oppCaps = flipped ? this.capturedByWhite : this.capturedByBlack;
+    const myCapPrefix = flipped ? "w" : "b";
+    const oppCapPrefix = flipped ? "b" : "w";
 
     ctx.fillStyle = CHESS_COLORS.textMuted;
     ctx.font = "bold 12px monospace";
-    ctx.fillText("CAPTURED BY AI", PANEL_X + 18, 390);
-    const blackCaps = this.capturedByBlack.map((p) => PIECE_GLYPHS[`w${p}`] ?? p).join(" ");
+    ctx.fillText("CAPTURED BY YOU", PANEL_X + 18, 326);
+    const myCapGlyphs = myCaps.map((p) => PIECE_GLYPHS[`${myCapPrefix}${p}`] ?? p).join(" ");
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "22px sans-serif";
+    ctx.fillText(myCapGlyphs || "—", PANEL_X + 18, 356);
+
+    ctx.fillStyle = CHESS_COLORS.textMuted;
+    ctx.font = "bold 12px monospace";
+    ctx.fillText(this.pvpMode ? "CAPTURED BY OPPONENT" : "CAPTURED BY AI", PANEL_X + 18, 390);
+    const oppCapGlyphs = oppCaps.map((p) => PIECE_GLYPHS[`${oppCapPrefix}${p}`] ?? p).join(" ");
     ctx.fillStyle = "#cbd5e1";
     ctx.font = "22px sans-serif";
-    ctx.fillText(blackCaps || "—", PANEL_X + 18, 420);
+    ctx.fillText(oppCapGlyphs || "—", PANEL_X + 18, 420);
 
     // Last Move / Info Card
     ctx.fillStyle = CHESS_COLORS.hudBg;
@@ -603,8 +632,11 @@ export class BlitzChessEngine implements TurnBasedEngine<string, ChessMovePayloa
     ctx.font = "bold 24px monospace";
     ctx.fillText(this.lastMoveSan ?? "Awaiting 1. ...", PANEL_X + 18, 518);
 
-    // Player (White) Clock Card
-    this.drawClockCard(ctx, 572, "YOU (WHITE) · 3+0", this.whiteClockTicks, !this.gameOver && activeColor === "w");
+    // Bottom (Local Player) Clock Card
+    const bottomLabel = flipped ? this.blackLabel : this.whiteLabel;
+    const bottomTicks = flipped ? this.blackClockTicks : this.whiteClockTicks;
+    const bottomActive = !this.gameOver && activeColor === (flipped ? "b" : "w");
+    this.drawClockCard(ctx, 572, bottomLabel, bottomTicks, bottomActive);
 
     ctx.restore();
   }

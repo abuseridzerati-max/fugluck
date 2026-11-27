@@ -91,6 +91,7 @@ export function clientPointToSquare(
   rect: { left: number; top: number; width: number; height: number },
   clientX: number,
   clientY: number,
+  orientation: "w" | "b" = "w",
 ): string | null {
   if (rect.width <= 0 || rect.height <= 0) return null;
   const targetRatio = VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
@@ -114,9 +115,12 @@ export function clientPointToSquare(
   const vx = ((clientX - rect.left - offsetX) / drawW) * VIRTUAL_WIDTH;
   const vy = ((clientY - rect.top - offsetY) / drawH) * VIRTUAL_HEIGHT;
 
-  const col = Math.floor((vx - BOARD_X) / SQUARE_SIZE);
-  const row = Math.floor((vy - BOARD_Y) / SQUARE_SIZE);
-  if (col < 0 || col >= BOARD_SQUARES || row < 0 || row >= BOARD_SQUARES) return null;
+  const visualCol = Math.floor((vx - BOARD_X) / SQUARE_SIZE);
+  const visualRow = Math.floor((vy - BOARD_Y) / SQUARE_SIZE);
+  if (visualCol < 0 || visualCol >= BOARD_SQUARES || visualRow < 0 || visualRow >= BOARD_SQUARES) return null;
+
+  const col = orientation === "b" ? BOARD_SQUARES - 1 - visualCol : visualCol;
+  const row = orientation === "b" ? BOARD_SQUARES - 1 - visualRow : visualRow;
 
   return `${FILES[col]}${RANKS[row]}`;
 }

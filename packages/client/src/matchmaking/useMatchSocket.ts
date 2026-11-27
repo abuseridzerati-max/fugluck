@@ -7,6 +7,9 @@ import type {
   RematchOfferedPayload,
   ServerToClientEvents,
   SubmitScorePayload,
+  TurnMatchEndedPayload,
+  TurnMatchErrorPayload,
+  TurnMatchStatePayload,
 } from '@fugluck/shared'
 import { io, type Socket } from 'socket.io-client'
 import { API_URL } from '../lib/api'
@@ -47,8 +50,14 @@ export type UseMatchSocketResult = {
   guestLinkCode: string | null
   rematchState: RematchState
   competitionWaiting: CompetitionWaitingState | null
+  turnMatchState: TurnMatchStatePayload | null
+  turnMatchEnded: TurnMatchEndedPayload | null
+  turnMatchError: TurnMatchErrorPayload | null
   cancelCompetition: () => void
   submitScore: (payload: SubmitScorePayload) => void
+  sendTurnMove: (matchId: string, move: Record<string, unknown>) => void
+  resignTurnMatch: (matchId: string) => void
+  syncTurnMatch: (matchId: string) => void
   // Evidence-only, fire-and-forget — see PROGRESS.md's freeze-frame Known
   // Gaps entry. No-ops if there's no active match yet (nothing to report
   // against).
@@ -74,6 +83,9 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
   const [guestLinkCode, setGuestLinkCode] = useState<string | null>(null)
   const [rematchState, setRematchState] = useState<RematchState>({ kind: 'idle' })
   const [competitionWaiting, setCompetitionWaiting] = useState<CompetitionWaitingState | null>(null)
+  const [turnMatchState, setTurnMatchState] = useState<TurnMatchStatePayload | null>(null)
+  const [turnMatchEnded, setTurnMatchEnded] = useState<TurnMatchEndedPayload | null>(null)
+  const [turnMatchError, setTurnMatchError] = useState<TurnMatchErrorPayload | null>(null)
 
   useEffect(() => {
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
@@ -211,8 +223,25 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       setWaitingLabel(null)
       setRematchState({ kind: 'idle' })
       setResolution(null)
+      setTurnMatchState(null)
+      setTurnMatchEnded(null)
+      setTurnMatchError(null)
       resolutionMatchIdRef.current = null
       setMatch(payload)
+    })
+
+    socket.on('turn_match:state', (payload) => {
+      setTurnMatchError(null)
+      setTurnMatchState(payload)
+    })
+
+    socket.on('turn_match:ended', (payload) => {
+      setTurnMatchEnded(payload)
+      setTurnMatchState(payload.finalState)
+    })
+
+    socket.on('turn_match:error', (payload) => {
+      setTurnMatchError(payload)
     })
 
     socket.on('matchResolved', (payload) => {
@@ -291,6 +320,18 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     socketRef.current?.emit('submitScore', payload)
   }, [])
 
+  const sendTurnMove = useCallback((matchId: string, move: Record<string, unknown>) => {
+    socketRef.current?.emit('turn_match:move', { matchId, move })
+  }, [])
+
+  const resignTurnMatch = useCallback((matchId: string) => {
+    socketRef.current?.emit('turn_match:resign', { matchId })
+  }, [])
+
+  const syncTurnMatch = useCallback((matchId: string) => {
+    socketRef.current?.emit('turn_match:sync', { matchId })
+  }, [])
+
   const reportVisibilityHidden = useCallback((matchId: string) => {
     socketRef.current?.emit('visibilityHidden', { matchId })
   }, [])
@@ -341,8 +382,14 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     guestLinkCode,
     rematchState,
     competitionWaiting,
+    turnMatchState,
+    turnMatchEnded,
+    turnMatchError,
     cancelCompetition,
     submitScore,
+    sendTurnMove,
+    resignTurnMatch,
+    syncTurnMatch,
     reportVisibilityHidden,
     requestRematch,
     declineRematch,

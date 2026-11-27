@@ -1,6 +1,6 @@
 import { logger } from '../utils/safeLogger';
 import { randomUUID } from "node:crypto";
-import type { PlayerResult, SubmitScorePayload } from "@fugluck/shared";
+import type { PlayerResult, SubmitScorePayload, TurnMatchEndReason, TurnMatchSeat } from "@fugluck/shared";
 import { asc, eq, or, sql } from "drizzle-orm";
 import { determineDisconnectOutcome, determineMatchOutcome, type SidedSubmission } from "../validation/matchOutcome";
 import { db } from "../db/client";
@@ -13,6 +13,7 @@ import {
 } from "../wallet/ledger";
 import type { MatchmakingSocket } from "./socketAuth";
 import { generateSeed, removeFromQueue, type QueueEntry } from "./queue";
+import { turnBasedPvpRuntime } from "./turnBasedPvp";
 
 let historyTableEnsured = false;
 export async function ensureMatchesHistoryTable() {
@@ -214,6 +215,7 @@ function endMatch(matchId: string): MatchState | undefined {
 
   matches.delete(matchId);
   for (const player of match.players) socketToMatch.delete(player.socket);
+  turnBasedPvpRuntime.cleanupSession(matchId);
   return match;
 }
 
@@ -454,6 +456,18 @@ export async function createMatch(
     socketToMatch.set(b.socket, matchId);
     a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
     b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
+
+    if (turnBasedPvpRuntime.isSupported(gameId)) {
+      turnBasedPvpRuntime.startSession({
+        matchId,
+        gameId,
+        seed,
+        p1: { userId: a.userId, username: a.username, socket: a.socket },
+        p2: { userId: b.userId, username: b.username, socket: b.socket },
+        onComplete: (winnerSeat, reason) => resolveTurnBasedMatch(matchId, winnerSeat, reason),
+      });
+    }
+
     return matchId;
   } catch (err) {
     logger.error(`[matches] Match creation/escrow failed for ${matchId}:`, err);
@@ -464,6 +478,29 @@ export async function createMatch(
     b.socket.emit("queueError", { message });
     return null;
   }
+}
+
+export async function resolveTurnBasedMatch(
+  matchId: string,
+  winnerSeat: TurnMatchSeat | null,
+  reason: TurnMatchEndReason,
+): Promise<void> {
+  const match = matches.get(matchId);
+  if (!match) return;
+
+  const [p1, p2] = match.players;
+  if (winnerSeat === "p1") {
+    p1.result = { score: 1, reason };
+    p2.result = { score: 0, reason };
+  } else if (winnerSeat === "p2") {
+    p1.result = { score: 0, reason };
+    p2.result = { score: 1, reason };
+  } else {
+    p1.result = { score: 1, reason };
+    p2.result = { score: 1, reason };
+  }
+
+  await emitResolved(match);
 }
 
 export async function submitScore(socket: MatchmakingSocket, payload: SubmitScorePayload): Promise<void> {
@@ -558,6 +595,7 @@ export function handleReconnect(userId: string, newSocket: MatchmakingSocket): b
         seed: match.seed,
         opponentUsername: opponent.username,
       });
+      turnBasedPvpRuntime.rebindSocket(matchId, userId, newSocket);
       return true;
     }
   }
