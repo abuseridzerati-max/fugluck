@@ -1,5 +1,6 @@
 .public-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--color-bg, #0b0c14);
@@ -73,7 +74,7 @@
 .public-doc__toc { position: sticky; top: 1rem; color: #cbd5e1; }
 .public-doc__toc details { border-left: 1px solid rgba(255,255,255,.18); padding-left: 1rem; }
 .public-doc__toc summary { margin-bottom: .75rem; color: #fff; font-weight: 700; cursor: pointer; }
-.public-doc__toc nav { display: flex; flex-direction: column; gap: .5rem; max-height: calc(100vh - 7rem); overflow: auto; }
+.public-doc__toc nav { display: flex; flex-direction: column; gap: .5rem; max-height: calc(100vh - 7rem); max-height: calc(100dvh - 7rem); overflow: auto; }
 .public-doc__toc a { font-size: .8125rem; line-height: 1.45; text-decoration: none; }
 .public-doc__related { margin-top: 2rem; }
 .public-doc__related ul { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; padding-left: 1.25rem; }
@@ -127,7 +128,7 @@
   .public-doc__layout { display: flex; flex-direction: column-reverse; gap: 1.25rem; }
   .public-doc__toc { position: static; width: 100%; }
   .public-doc__toc details { border: 1px solid rgba(255,255,255,.16); border-radius: .35rem; padding: .75rem; }
-  .public-doc__toc nav { max-height: 40vh; }
+  .public-doc__toc nav { max-height: 40vh; max-height: 40dvh; }
   .public-doc__summary { font-size: 1.05rem; }
   .public-doc__body { font-size: .975rem; }
 }

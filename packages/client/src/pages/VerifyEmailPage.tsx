@@ -51,16 +51,7 @@ export default function VerifyEmailPage({ onNavigateHome, onNavigateLogin }: Ver
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-6)',
-        background: 'var(--color-bg)',
-      }}
-    >
+    <div className="ac-fullscreen-center">
       <div
         className="ac-panel"
         style={{

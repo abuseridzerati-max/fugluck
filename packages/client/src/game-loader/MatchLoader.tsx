@@ -59,8 +59,8 @@ export default function MatchLoader(props: MatchLoaderProps) {
       return <AuthorityCompetition gameId={props.gameId} templateId={props.matchMode.templateId} template={props.matchMode.template} onExit={props.onExit} onComplete={props.onMatchResolved} />
     }
     return (
-      <main role="alert" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, color: '#f8fafc', background: '#090b12', textAlign: 'center' }}>
-        <div><h1>Competition gameplay unavailable</h1><p>This game is not certified for TEST GEL competitions.</p><button type="button" onClick={props.onExit}>Back to competitions</button></div>
+      <main role="alert" className="ac-fullscreen-center" style={{ textAlign: 'center' }}>
+        <div><h1>Competition gameplay unavailable</h1><p>This game is not certified for TEST GEL competitions.</p><button type="button" className="ac-btn ac-btn--primary" onClick={props.onExit}>Back to competitions</button></div>
       </main>
     )
   }
@@ -262,44 +262,27 @@ function LegacyMatchLoader({
   }, [phase, rematchState, requestRematch, declineRematch, onFindNewOpponent])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--color-bg)',
-        zIndex: 50,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'var(--space-3) var(--space-5)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+    <div className="ac-game-shell">
+      <div className="ac-game-shell__header">
+        <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {gameTitle} · {modeLabel}
         </span>
         <button
           type="button"
           className="ac-btn ac-btn--ghost"
           onClick={handleLeave}
-          style={{ padding: 'var(--space-1) var(--space-4)' }}
+          style={{ padding: 'var(--space-1) var(--space-4)', flexShrink: 0 }}
         >
           Exit
         </button>
       </div>
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div className="ac-game-shell__stage">
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
 
         {phase.kind === 'queued' && (
           <Overlay>
-            <div className="ac-panel" style={{ textAlign: 'center', minWidth: 320, maxWidth: 440, padding: 'var(--space-6)' }}>
+            <div className="ac-panel ac-modal-panel" style={{ textAlign: 'center', width: '100%', maxWidth: 440, padding: 'var(--space-6)' }}>
               {matchMode.kind === 'competition' ? (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-2)' }}>
@@ -622,7 +605,9 @@ function Overlay({ children }: { children: ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 'max(var(--space-4), var(--safe-top)) max(var(--space-4), var(--safe-right)) max(var(--space-4), var(--safe-bottom)) max(var(--space-4), var(--safe-left))',
         background: 'color-mix(in srgb, var(--color-bg) 75%, transparent)',
+        boxSizing: 'border-box',
       }}
     >
       {children}
@@ -734,10 +719,10 @@ function ResolvedPanel({
   return (
     <Overlay>
       <div
-        className="ac-panel"
+        className="ac-panel ac-modal-panel"
         style={{
           textAlign: 'center',
-          minWidth: 340,
+          width: '100%',
           maxWidth: 460,
           padding: 'var(--space-6)',
           boxShadow: 'var(--shadow-elevate-hover)',

@@ -81,16 +81,7 @@ export default function ResetPasswordPage({ onNavigateHome, onNavigateLogin }: R
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-6)',
-        background: 'var(--color-bg)',
-      }}
-    >
+    <div className="ac-fullscreen-center">
       <div
         className="ac-panel"
         style={{

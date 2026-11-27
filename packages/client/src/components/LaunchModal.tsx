@@ -70,23 +70,12 @@ export default function LaunchModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${gameTitle} Launch Options`}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(4, 7, 12, 0.8)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 'var(--space-4)',
-          zIndex: 50,
-        }}
+        className="ac-modal-backdrop"
         onClick={onClose}
       >
         <div
-          className="ac-panel"
+          className="ac-panel ac-modal-panel"
           style={{
-            width: '100%',
             maxWidth: 520,
             padding: 'var(--space-5)',
             border: '1px solid var(--color-border-strong)',
@@ -96,14 +85,14 @@ export default function LaunchModal({
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
+            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)', minWidth: 0, overflowWrap: 'anywhere' }}>
               {showCoinsLobby ? `${t('launch.casualTitle', { defaultValue: 'CASUAL' })} — ${gameTitle}` : gameTitle}
             </h2>
             <button
               type="button"
               className="ac-btn ac-btn--ghost ac-btn--sm"
               onClick={onClose}
-              style={{ minWidth: 36, padding: 0 }}
+              style={{ minWidth: 44, minHeight: 44, padding: 0, flexShrink: 0 }}
               aria-label={t('common.close', { defaultValue: 'Close' })}
             >
               ✕
@@ -147,8 +136,10 @@ export default function LaunchModal({
                   borderRadius: 'var(--radius-sm)',
                   marginBottom: 'var(--space-4)',
                   display: 'flex',
+                  flexWrap: 'wrap',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: 'var(--space-2)',
                 }}
               >
                 <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
@@ -169,7 +160,7 @@ export default function LaunchModal({
                 </strong>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
                 {COIN_STAKE_OPTIONS.map((amount) => {
                   const canAfford = amount === 0 || (Boolean(user) && currentCoinBalance >= amount)
                   const isSelected = selectedCoinStake === amount && !customInput
@@ -189,12 +180,15 @@ export default function LaunchModal({
                         gap: 2,
                         padding: 'var(--space-2)',
                         minHeight: 44,
+                        minWidth: 0,
+                        whiteSpace: 'normal',
+                        textAlign: 'center',
                         fontFamily: 'var(--font-mono)',
                       }}
                     >
                       <span>{amount === 0 ? 'Free (0)' : `${amount.toLocaleString()}`}</span>
                       {!canAfford && (
-                        <span style={{ fontSize: '10px', color: 'var(--color-danger)' }}>
+                        <span style={{ fontSize: '10px', lineHeight: 1.15, overflowWrap: 'anywhere', color: 'var(--color-danger)' }}>
                           {user ? t('game.tooLow', { defaultValue: 'Too low' }) : t('launch.signUpRequired', { defaultValue: 'Sign up' })}
                         </span>
                       )}
@@ -245,7 +239,7 @@ export default function LaunchModal({
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <div className="ac-modal-footer">
                 <button
                   type="button"
                   className="ac-btn ac-btn--ghost"
@@ -253,7 +247,7 @@ export default function LaunchModal({
                     setShowCoinsLobby(false)
                     setCustomInput('')
                   }}
-                  style={{ flex: 1 }}
+                  style={{ flex: '1 1 110px', minHeight: 44 }}
                 >
                   ← {t('common.back', { defaultValue: 'Back' })}
                 </button>
@@ -266,7 +260,7 @@ export default function LaunchModal({
                     onLaunchCoinsMatch?.(selectedCoinStake)
                     onClose()
                   }}
-                  style={{ flex: 2 }}
+                  style={{ flex: '2 1 180px', minHeight: 44 }}
                 >
                   {selectedCoinStake === 0
                     ? t('launch.queueFree', { defaultValue: 'Enter Free Queue' })
@@ -327,7 +321,15 @@ export default function LaunchModal({
                   onLaunchInviteLink()
                   onClose()
                 }}
-                style={{ fontSize: 'var(--font-size-xs)', width: '100%', borderStyle: 'dashed' }}
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  width: '100%',
+                  minHeight: 44,
+                  borderStyle: 'dashed',
+                  whiteSpace: 'normal',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                }}
               >
                 {t('launch.friendLinkBtn', { defaultValue: 'Create Instant Friend Challenge Link' })}
               </button>

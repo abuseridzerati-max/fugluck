@@ -14,6 +14,9 @@ const COUNTDOWN_STEPS = ["3", "2", "1", "GO!"];
 const COUNTDOWN_STEP_MS = 700;
 
 type ModuleState = "idle" | "countdown" | "running" | "paused" | "ended";
+type HopDirection = "hopUp" | "hopDown" | "hopLeft" | "hopRight";
+
+const SWIPE_THRESHOLD_PX = 24;
 
 export class CyberHopperModule extends EventTarget implements GameModule {
   private root: HTMLDivElement | null = null;
@@ -41,7 +44,31 @@ export class CyberHopperModule extends EventTarget implements GameModule {
     hopLeft: false,
     hopRight: false,
   };
+  private swipePointerId: number | null = null;
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+  private swipeConsumed = false;
 
+  private clearInputs = () => {
+    this.input.hopUp = false;
+    this.input.hopDown = false;
+    this.input.hopLeft = false;
+    this.input.hopRight = false;
+    this.swipePointerId = null;
+    this.swipeConsumed = false;
+  };
+
+  private syncCanvasResolution() {
+    if (!this.canvas) return;
+    const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2);
+    const targetW = Math.round(VIRTUAL_VIEWPORT.width * dpr);
+    const targetH = Math.round(VIRTUAL_VIEWPORT.height * dpr);
+    if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+      this.canvas.width = targetW;
+      this.canvas.height = targetH;
+    }
+    this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") {
@@ -60,15 +87,86 @@ export class CyberHopperModule extends EventTarget implements GameModule {
   };
 
   private handleVisibilityChange = () => {
-    if (document.hidden && this.state === "running") {
-      if (this.mode === "match") {
-        this.endRun("backgrounded");
-        this.dispatchEvent(new CustomEvent("visibilityHidden", { detail: { matchForfeited: true } }));
-      } else {
-        this.pause();
+    if (document.hidden) {
+      this.clearInputs();
+      if (this.state === "running") {
+        if (this.mode === "match") {
+          this.endRun("backgrounded");
+          this.dispatchEvent(new CustomEvent("visibilityHidden", { detail: { matchForfeited: true } }));
+        } else {
+          this.pause();
+        }
       }
     }
   };
+
+  private handleCanvasPointerDown = (e: PointerEvent) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    if (this.swipePointerId !== null) return;
+    this.swipePointerId = e.pointerId;
+    this.swipeStartX = e.clientX;
+    this.swipeStartY = e.clientY;
+    this.swipeConsumed = false;
+    try {
+      this.canvas?.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore if pointer capture is unavailable
+    }
+  };
+
+  private handleCanvasPointerMove = (e: PointerEvent) => {
+    if (this.swipePointerId !== e.pointerId || this.swipeConsumed) return;
+    const dx = e.clientX - this.swipeStartX;
+    const dy = e.clientY - this.swipeStartY;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX && Math.abs(dy) < SWIPE_THRESHOLD_PX) return;
+    this.swipeConsumed = true;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) this.input.hopRight = true;
+      else this.input.hopLeft = true;
+    } else if (dy > 0) {
+      this.input.hopDown = true;
+    } else {
+      this.input.hopUp = true;
+    }
+  };
+
+  private handleCanvasPointerEnd = (e: PointerEvent) => {
+    if (this.swipePointerId === e.pointerId) {
+      this.swipePointerId = null;
+      this.swipeConsumed = false;
+    }
+  };
+
+  private createHopButton(label: string, ariaLabel: string, dir: HopDirection, extraClass: string): HTMLButtonElement {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `ac-touch-btn ${extraClass}`;
+    btn.textContent = label;
+    if (typeof btn.setAttribute === "function") {
+      btn.setAttribute("aria-label", ariaLabel);
+    }
+
+    const release = () => {
+      btn.classList?.remove("is-pressed");
+    };
+
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      try {
+        btn.setPointerCapture?.(e.pointerId);
+      } catch {
+        // Ignore if pointer capture is unavailable
+      }
+      btn.classList?.add("is-pressed");
+      this.input[dir] = true;
+    });
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    btn.addEventListener("lostpointercapture", release);
+
+    return btn;
+  }
 
   init(container: HTMLElement, mode: GameMode, _opponentSocket: WebSocket | null, seed: number): void {
     this.seed = seed;
@@ -76,19 +174,25 @@ export class CyberHopperModule extends EventTarget implements GameModule {
     this.engine = new CyberHopperEngine(this.seed);
 
     this.root = document.createElement("div");
-    this.root.className = "cyber-hopper-root";
+    this.root.className = "cyber-hopper-root ac-game-surface";
     this.root.style.cssText =
-      "position:relative;width:100%;height:100%;background:#060913;overflow:hidden;user-select:none;";
+      "position:relative;width:100%;height:100%;background:#060913;overflow:hidden;display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;";
 
     this.canvas = document.createElement("canvas");
-    this.canvas.width = VIRTUAL_VIEWPORT.width;
-    this.canvas.height = VIRTUAL_VIEWPORT.height;
-    this.canvas.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;";
+    this.canvas.style.cssText =
+      "display:block;flex:1;min-height:0;width:100%;height:100%;object-fit:contain;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;";
     this.ctx = this.canvas.getContext("2d");
+
+    // Swipe-to-hop directly on the canvas stage for intuitive touch play
+    this.canvas.addEventListener("pointerdown", this.handleCanvasPointerDown);
+    this.canvas.addEventListener("pointermove", this.handleCanvasPointerMove);
+    this.canvas.addEventListener("pointerup", this.handleCanvasPointerEnd);
+    this.canvas.addEventListener("pointercancel", this.handleCanvasPointerEnd);
+    this.canvas.addEventListener("lostpointercapture", this.handleCanvasPointerEnd);
 
     this.hud = document.createElement("div");
     this.hud.style.cssText =
-      "position:absolute;top:16px;left:24px;font-family:monospace;font-size:24px;font-weight:bold;color:#00ff66;pointer-events:none;";
+      "position:absolute;top:12px;left:16px;font-family:monospace;font-size:20px;font-weight:bold;color:#00ff66;pointer-events:none;";
     this.hud.textContent = "SCORE 0";
 
     this.countdownEl = document.createElement("div");
@@ -97,34 +201,50 @@ export class CyberHopperModule extends EventTarget implements GameModule {
 
     this.pauseOverlay = document.createElement("div");
     this.pauseOverlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,9,19,0.85);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;";
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,9,19,0.85);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;z-index:10;";
     this.pauseOverlay.innerHTML = `<h2 style="font-size:36px;margin:0;">GAME PAUSED</h2>`;
     const resumeBtn = document.createElement("button");
     resumeBtn.textContent = "RESUME";
     resumeBtn.style.cssText =
-      "padding:12px 24px;font-size:18px;font-weight:bold;background:#00ff66;color:#060913;border:none;border-radius:6px;cursor:pointer;";
+      "padding:12px 24px;min-height:44px;font-size:18px;font-weight:bold;background:#00ff66;color:#060913;border:none;border-radius:6px;cursor:pointer;";
     resumeBtn.onclick = () => this.resume();
     this.pauseOverlay.appendChild(resumeBtn);
+
+    const touchDock = document.createElement("div");
+    touchDock.className = "ac-touch-dock ac-touch-dock--hopper";
+    if (typeof touchDock.setAttribute === "function") {
+      touchDock.setAttribute("aria-label", "Touch controls");
+    }
+
+    const dpad = document.createElement("div");
+    dpad.className = "ac-touch-dpad ac-touch-dpad--hopper";
+    dpad.appendChild(this.createHopButton("▲", "Hop Up", "hopUp", "ac-touch-dpad__up"));
+    dpad.appendChild(this.createHopButton("◀", "Hop Left", "hopLeft", "ac-touch-dpad__left"));
+    dpad.appendChild(this.createHopButton("▶", "Hop Right", "hopRight", "ac-touch-dpad__right"));
+    dpad.appendChild(this.createHopButton("▼", "Hop Down", "hopDown", "ac-touch-dpad__down"));
+    touchDock.appendChild(dpad);
 
     this.root.appendChild(this.canvas);
     this.root.appendChild(this.hud);
     this.root.appendChild(this.countdownEl);
+    this.root.appendChild(touchDock);
     this.root.appendChild(this.pauseOverlay);
     container.appendChild(this.root);
 
+    this.syncCanvasResolution();
     this.resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+          this.syncCanvasResolution();
         }
       }
     });
     this.resizeObserver.observe(container);
 
     window.addEventListener("keydown", this.handleKeyDown);
+    window.addEventListener("blur", this.clearInputs);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
-    this.engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
   }
 
   start(): void {
@@ -212,8 +332,15 @@ export class CyberHopperModule extends EventTarget implements GameModule {
     this.fixedLoop = null;
     if (this.countdownTimeoutId !== null) clearTimeout(this.countdownTimeoutId);
     if (this.forfeitConfirmTimeoutId !== null) clearTimeout(this.forfeitConfirmTimeoutId);
+    this.clearInputs();
     this.resizeObserver?.disconnect();
+    this.canvas?.removeEventListener("pointerdown", this.handleCanvasPointerDown);
+    this.canvas?.removeEventListener("pointermove", this.handleCanvasPointerMove);
+    this.canvas?.removeEventListener("pointerup", this.handleCanvasPointerEnd);
+    this.canvas?.removeEventListener("pointercancel", this.handleCanvasPointerEnd);
+    this.canvas?.removeEventListener("lostpointercapture", this.handleCanvasPointerEnd);
     window.removeEventListener("keydown", this.handleKeyDown);
+    window.removeEventListener("blur", this.clearInputs);
     document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     this.root?.remove();
   }

@@ -82,20 +82,10 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
       role="dialog"
       aria-modal="true"
       aria-label={mode === 'signup' ? t('auth.signupTitle') : t('auth.loginTitle')}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(4, 7, 12, 0.8)',
-        backdropFilter: 'blur(6px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-4)',
-        zIndex: 100,
-      }}
+      className="ac-modal-backdrop ac-modal-backdrop--high"
       onClick={onClose}
     >
-      <div className="ac-panel" style={{ width: '100%', maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
+      <div className="ac-panel ac-modal-panel" style={{ maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
         {mode === 'verification-sent' ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 44, marginBottom: 'var(--space-3)' }}>✉️</div>
@@ -198,7 +188,7 @@ export default function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 onClick={onClose}
                 aria-label={t('common.close', { defaultValue: 'Close' })}
                 className="ac-btn ac-btn--ghost"
-                style={{ padding: '4px 10px', minWidth: 36, minHeight: 36 }}
+                style={{ padding: 0, minWidth: 44, minHeight: 44, flexShrink: 0 }}
               >
                 ×
               </button>

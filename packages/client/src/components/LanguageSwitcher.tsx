@@ -82,15 +82,12 @@ export default function LanguageSwitcher() {
     <div
       ref={containerRef}
       onKeyDown={handleKeyDown}
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-      }}
+      className="ac-lang"
     >
       <button
         ref={buttonRef}
         type="button"
+        className="ac-lang__btn"
         onClick={() => {
           setIsOpen((prev) => !prev)
           if (!isOpen) {
@@ -103,42 +100,6 @@ export default function LanguageSwitcher() {
         aria-controls={isOpen ? listboxId : undefined}
         aria-label={t('navigation.selectLanguage', { defaultValue: 'Select language' })}
         title={currentOption.label}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          height: '32px',
-          padding: '0 8px',
-          background: isOpen ? 'var(--color-surface-raised)' : 'rgba(255, 255, 255, 0.04)',
-          border: isOpen ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-full, 9999px)',
-          color: 'var(--color-text)',
-          cursor: 'pointer',
-          transition: 'all 0.15s ease',
-          outline: 'none',
-          boxShadow: isOpen ? 'var(--focus-ring)' : 'none',
-          userSelect: 'none',
-        }}
-        onMouseEnter={(e) => {
-          if (!isOpen) {
-            e.currentTarget.style.borderColor = 'var(--color-border-strong)'
-            e.currentTarget.style.background = 'var(--color-surface-raised)'
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!isOpen) {
-            e.currentTarget.style.borderColor = 'var(--color-border)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'
-          }
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.boxShadow = 'var(--focus-ring)'
-        }}
-        onBlur={(e) => {
-          if (!isOpen) {
-            e.currentTarget.style.boxShadow = 'none'
-          }
-        }}
       >
         <LanguageFlag code={currentLang} width={18} height={12} />
         <svg
@@ -162,24 +123,8 @@ export default function LanguageSwitcher() {
           id={listboxId}
           ref={menuRef}
           role="listbox"
+          className="ac-lang__menu"
           aria-label={t('navigation.selectLanguage', { defaultValue: 'Select language' })}
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
-            margin: 0,
-            padding: '4px',
-            listStyle: 'none',
-            minWidth: '150px',
-            background: 'var(--color-surface, #121218)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md, 12px)',
-            boxShadow: 'var(--shadow-elevate, 0 8px 30px rgba(0, 0, 0, 0.45))',
-            zIndex: 100,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-          }}
         >
           {SUPPORTED_LANGUAGES.map((lang, index) => {
             const isSelected = currentLang === lang.code
@@ -192,24 +137,7 @@ export default function LanguageSwitcher() {
                 aria-selected={isSelected}
                 onClick={() => handleLanguageChange(lang.code)}
                 onMouseEnter={() => setFocusedIndex(index)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm, 8px)',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-xs, 12px)',
-                  fontWeight: isSelected ? 'var(--font-weight-bold, 700)' : 'var(--font-weight-medium, 500)',
-                  color: isSelected ? 'var(--color-on-accent)' : 'var(--color-text)',
-                  background: isSelected
-                    ? 'var(--color-primary)'
-                    : isFocused
-                    ? 'var(--color-surface-raised)'
-                    : 'transparent',
-                  transition: 'background 0.12s ease, color 0.12s ease',
-                  userSelect: 'none',
-                }}
+                className={`ac-lang__option${isSelected ? ' ac-lang__option--selected' : isFocused ? ' ac-lang__option--focused' : ''}`}
               >
                 <LanguageFlag code={lang.code} width={18} height={12} />
                 <span style={{ flex: 1, whiteSpace: 'nowrap' }}>{lang.label}</span>

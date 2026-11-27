@@ -28,17 +28,8 @@ export default function InviteLanding({
         : 'Checking that this invite is still live…'
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-6)',
-        background: 'var(--color-bg)',
-      }}
-    >
-      <div className="ac-panel" style={{ textAlign: 'center', minWidth: 320, maxWidth: 440, padding: 'var(--space-6)' }}>
+    <div className="ac-fullscreen-center">
+      <div className="ac-panel" style={{ textAlign: 'center', width: '100%', maxWidth: 440, padding: 'var(--space-6)' }}>
         <h1 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--font-size-xl)' }}>{heading}</h1>
         <p className="ac-text-muted" style={{ margin: '0 0 var(--space-5)', fontSize: 'var(--font-size-sm)' }}>
           {body}

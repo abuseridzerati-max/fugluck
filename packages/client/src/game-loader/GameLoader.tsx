@@ -79,39 +79,22 @@ export default function GameLoader({ createModule, gameTitle, onExit, onPlayMatc
   }, [result])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--color-bg)',
-        zIndex: 50,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'var(--space-3) var(--space-5)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+    <div className="ac-game-shell">
+      <div className="ac-game-shell__header">
+        <span className="ac-text-muted" style={{ fontSize: 'var(--font-size-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {gameTitle} · Practice
         </span>
         <button
           type="button"
           className="ac-btn ac-btn--ghost"
           onClick={onExit}
-          style={{ padding: 'var(--space-1) var(--space-4)' }}
+          style={{ padding: 'var(--space-1) var(--space-4)', flexShrink: 0 }}
         >
           Exit
         </button>
       </div>
 
-      <div ref={containerRef} style={{ flex: 1, position: 'relative' }} />
+      <div ref={containerRef} className="ac-game-shell__stage" />
 
       {result && (
         <div
@@ -121,15 +104,16 @@ export default function GameLoader({ createModule, gameTitle, onExit, onPlayMatc
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            padding: 'max(var(--space-4), var(--safe-top)) max(var(--space-4), var(--safe-right)) max(var(--space-4), var(--safe-bottom)) max(var(--space-4), var(--safe-left))',
             background: 'rgba(10,10,15,0.82)',
             backdropFilter: 'blur(6px)',
           }}
         >
           <div
-            className="ac-panel"
+            className="ac-panel ac-modal-panel"
             style={{
               textAlign: 'center',
-              minWidth: 320,
+              width: '100%',
               maxWidth: 420,
               padding: 'var(--space-6)',
               boxShadow: 'var(--shadow-elevate-hover)',

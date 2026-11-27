@@ -59,7 +59,20 @@ export function createModulePluginComponent(
         };
       }, [mode, matchContext.seed, matchContext.opponentSocket]);
 
-      return <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }} />;
+      return (
+        <div
+          ref={containerRef}
+          className="ac-game-surface"
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            touchAction: "none",
+            userSelect: "none",
+            overscrollBehavior: "none",
+          }}
+        />
+      );
     };
 
     return { default: ModulePluginComponent };

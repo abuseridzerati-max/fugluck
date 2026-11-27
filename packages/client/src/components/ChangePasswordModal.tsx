@@ -71,39 +71,29 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(10,10,15,0.75)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-        padding: 'var(--space-4)',
-      }}
+      className="ac-modal-backdrop ac-modal-backdrop--high"
       onClick={handleClose}
     >
       <div
-        className="ac-panel"
+        className="ac-panel ac-modal-panel"
         style={{
-          width: '100%',
           maxWidth: 420,
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>🔒 Change Password</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+          <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)', minWidth: 0 }}>🔒 Change Password</h2>
           <button
             type="button"
             onClick={handleClose}
+            aria-label="Close"
+            className="ac-btn ac-btn--ghost"
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text-muted)',
-              fontSize: 'var(--font-size-lg)',
-              cursor: 'pointer',
-              padding: 'var(--space-1)',
+              minWidth: 44,
+              minHeight: 44,
+              padding: 0,
+              flexShrink: 0,
             }}
           >
             ✕
@@ -211,7 +201,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
               </p>
             )}
 
-            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <div className="ac-modal-footer" style={{ marginTop: 'var(--space-2)' }}>
               <button
                 type="button"
                 onClick={handleClose}

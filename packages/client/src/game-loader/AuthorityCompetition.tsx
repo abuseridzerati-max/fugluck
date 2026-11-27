@@ -20,7 +20,10 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const binding = useRef<AuthorityBinding | null>(null)
   const waitingInstance = useRef<string | null>(null)
   const controls = useRef({ left:false,right:false,up:false,down:false,fire:false })
+  const keyControls = useRef({ left:false,right:false,up:false,down:false,fire:false })
+  const activePointers = useRef(new Map<number, 'left'|'right'|'up'|'down'|'fire'>())
   const hopPulses = useRef({ hopUp:false,hopDown:false,hopLeft:false,hopRight:false })
+  const swipeState = useRef<{ pointerId: number | null; x: number; y: number; consumed: boolean }>({ pointerId: null, x: 0, y: 0, consumed: false })
   const [status,setStatus] = useState('connecting')
   const [countdown,setCountdown] = useState(0)
   const [instance,setInstance] = useState<PlayerCompetition|null>(null)
@@ -41,9 +44,37 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
   const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : 'Space Blaster'
+  const syncBlasterControls = () => {
+    let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
+    for (const c of activePointers.current.values()) {
+      if (c === 'left') pLeft = true
+      else if (c === 'right') pRight = true
+      else if (c === 'up') pUp = true
+      else if (c === 'down') pDown = true
+      else if (c === 'fire') pFire = true
+    }
+    controls.current.left = keyControls.current.left || pLeft
+    controls.current.right = keyControls.current.right || pRight
+    controls.current.up = keyControls.current.up || pUp
+    controls.current.down = keyControls.current.down || pDown
+    controls.current.fire = keyControls.current.fire || pFire
+  }
   useEffect(()=>{
     const renderer = gameId === 'cyber-hopper' ? new CyberHopperEngine(1) : new SpaceBlasterEngine(1)
     renderer.resize(1280, 720)
+    const syncCanvasBacking = () => {
+      const el = canvas.current
+      if (!el) return
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const targetW = Math.round(1280 * dpr)
+      const targetH = Math.round(720 * dpr)
+      if (el.width !== targetW || el.height !== targetH) {
+        el.width = targetW
+        el.height = targetH
+      }
+    }
+    syncCanvasBacking()
+    window.addEventListener('resize', syncCanvasBacking)
     const storageKey=`authority:${templateId}`
     let instanceId:string|null=sessionStorage.getItem(storageKey), seq=0, snapshot:AuthoritySnapshot|null=null, complete=false, pendingRecovery=false
     let presentation=new AuthorityPresentation(), animation=0, diagnosticStarted=0, lastStatus=''
@@ -166,7 +197,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     triggerSend.current = sendControls
     const send=setInterval(sendControls,50)
     const retry=setInterval(()=>{if(pendingRecovery&&!complete&&socket.connected&&instanceId)socket.emit('authority:resume',{instanceId})},3000)
-    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};firePulse.current=false}
+    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};firePulse.current=false}
     const visibility=()=>{if(document.hidden){neutral();diagnosticRequested.current=false}}
     const key=(event:KeyboardEvent,down:boolean)=>{
       // Keep page actions operable with Enter/Space; game shortcuts only control the play surface.
@@ -183,7 +214,8 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       const map:Record<string,'left'|'right'|'up'|'down'|'fire'>={ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',' ':'fire'}
       const control=map[event.key];if(!control)return;event.preventDefault()
-      controls.current[control]=down
+      keyControls.current[control]=down
+      syncBlasterControls()
       if(control==='fire'&&down&&!event.repeat)firePulse.current=true
     }
     const keydown=(e:KeyboardEvent)=>key(e,true),keyup=(e:KeyboardEvent)=>key(e,false)
@@ -225,7 +257,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const poll=setInterval(()=>{if(!document.hidden)void readInstance()},5000)
     if(instanceId)void readInstance()
     socket.connect()
-    return()=>{disposed=true;reading?.abort();ticketRequest?.abort();refreshInstance.current=null;triggerSend.current=null;clearInterval(poll);clearInterval(send);clearInterval(retry);clearInterval(diagnosticTimer);observer?.disconnect();cancelAnimationFrame(animation);neutral();socket.disconnect();binding.current=null;window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral);document.removeEventListener('visibilitychange',visibility)}
+    return()=>{disposed=true;reading?.abort();ticketRequest?.abort();refreshInstance.current=null;triggerSend.current=null;clearInterval(poll);clearInterval(send);clearInterval(retry);clearInterval(diagnosticTimer);observer?.disconnect();cancelAnimationFrame(animation);neutral();socket.disconnect();binding.current=null;window.removeEventListener('resize',syncCanvasBacking);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',neutral);document.removeEventListener('visibilitychange',visibility)}
   },[templateId,gameId])
   const terms=instance??template
   const preparing=hasSession&&!active&&!terminal&&(status==='starting'||status==='countdown')
@@ -247,29 +279,57 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       {instance&&<CompetitionPlayerSlots joined={instance.currentParticipants} capacity={instance.participantCapacity}/>}
       <p role="status">{t(`competition.${status}`,{count:countdown})}</p>
     </div>:<p role="status">{t(`competition.${status}`,{count:countdown,amount:moneyLabel(terms?.entryFeeMinor??0,terms?.currency)})}</p>}
-    <canvas hidden={!hasSession||terminal||preparing} ref={canvas} width={1280} height={720} aria-label={t('competition.liveCanvas',{game:gameTitle})} style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:gameId==='cyber-hopper'?'#060913':'#080d19'}} />
-    {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls">
+    <canvas
+      hidden={!hasSession||terminal||preparing}
+      ref={canvas}
+      width={1280}
+      height={720}
+      className="ac-game-surface"
+      aria-label={t('competition.liveCanvas',{game:gameTitle})}
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      onPointerDown={gameId==='cyber-hopper' ? e => {
+        if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
+        e.preventDefault()
+        if (swipeState.current.pointerId !== null) return
+        swipeState.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, consumed: false }
+        try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
+      } : undefined}
+      onPointerMove={gameId==='cyber-hopper' ? e => {
+        const s = swipeState.current
+        if (!active || s.pointerId !== e.pointerId || s.consumed) return
+        const dx = e.clientX - s.x, dy = e.clientY - s.y
+        if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return
+        s.consumed = true
+        if (Math.abs(dx) > Math.abs(dy)) hopPulses.current[dx > 0 ? 'hopRight' : 'hopLeft'] = true
+        else hopPulses.current[dy > 0 ? 'hopDown' : 'hopUp'] = true
+        triggerSend.current?.()
+      } : undefined}
+      onPointerUp={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onPointerCancel={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+      onLostPointerCapture={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
+    />
+    {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
       {gameId==='cyber-hopper' ? (
         ([
           { key:'hopUp', label:`▲ ${t('competition.controls.up')} (W)` },
           { key:'hopDown', label:`▼ ${t('competition.controls.down')} (S)` },
           { key:'hopLeft', label:`◀ ${t('competition.controls.left')} (A)` },
           { key:'hopRight', label:`▶ ${t('competition.controls.right')} (D)` },
-        ] as const).map(btn=><button key={btn.key} disabled={!active} style={{minWidth:80,minHeight:48,touchAction:'none',fontWeight:'bold'}}
+        ] as const).map(btn=><button key={btn.key} type="button" className="ac-btn ac-btn--ghost" disabled={!active} style={{minWidth:76,minHeight:48,touchAction:'none',fontWeight:'bold'}}
           onClick={e=>{if(e.detail===0){hopPulses.current[btn.key]=true;triggerSend.current?.()}}}
-          onPointerDown={e=>{e.preventDefault();hopPulses.current[btn.key]=true;triggerSend.current?.()}}
+          onPointerDown={e=>{e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch{/* ignore */};hopPulses.current[btn.key]=true;triggerSend.current?.()}}
           onPointerUp={()=>{}}
           onLostPointerCapture={()=>{}}
           onPointerCancel={()=>{}}>{btn.label}</button>)
       ) : (
-        (['left','up','down','right','fire'] as const).map(control=><button key={control} disabled={!active} style={{minWidth:60,minHeight:48,touchAction:'none'}}
-          onKeyDown={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();controls.current[control]=true;if(control==='fire')firePulse.current=true;triggerSend.current?.()}}}
-          onKeyUp={e=>{if(e.key===' '||e.key==='Enter')controls.current[control]=false}}
-          onBlur={()=>{controls.current[control]=false}}
-          onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);controls.current[control]=true;if(control==='fire')firePulse.current=true}}
-          onPointerUp={()=>{controls.current[control]=false}}
-          onLostPointerCapture={()=>{controls.current[control]=false}}
-          onPointerCancel={()=>{controls.current[control]=false}}>{t(`competition.controls.${control}`)}</button>)
+        (['left','up','down','right','fire'] as const).map(control=><button key={control} type="button" className={`ac-btn ${control==='fire'?'ac-btn--primary':'ac-btn--ghost'}`} disabled={!active} style={{minWidth:control==='fire'?84:60,minHeight:48,touchAction:'none'}}
+          onKeyDown={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();keyControls.current[control]=true;syncBlasterControls();if(control==='fire')firePulse.current=true;triggerSend.current?.()}}}
+          onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){keyControls.current[control]=false;syncBlasterControls()}}}
+          onBlur={()=>{keyControls.current[control]=false;syncBlasterControls()}}
+          onPointerDown={e=>{e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch{/* ignore */};activePointers.current.set(e.pointerId,control);syncBlasterControls();if(control==='fire')firePulse.current=true}}
+          onPointerUp={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}
+          onLostPointerCapture={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}
+          onPointerCancel={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}>{t(`competition.controls.${control}`)}</button>)
       )}
     </div>}
     {active&&<button type="button" className="ac-btn ac-btn--secondary" onClick={()=>{if(binding.current)connection.current?.emit('authority:forfeit',binding.current)}}>{t('competition.forfeit')}</button>}

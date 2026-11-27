@@ -207,8 +207,10 @@ export class CyberHopperEngine {
   }
 
   public render(ctx: CanvasRenderingContext2D): void {
-    const scaleX = this.width / VIRTUAL_WIDTH;
-    const scaleY = this.height / VIRTUAL_HEIGHT;
+    const backingW = ctx.canvas?.width && ctx.canvas.width > 0 ? ctx.canvas.width : this.width;
+    const backingH = ctx.canvas?.height && ctx.canvas.height > 0 ? ctx.canvas.height : this.height;
+    const scaleX = backingW / VIRTUAL_WIDTH;
+    const scaleY = backingH / VIRTUAL_HEIGHT;
 
     ctx.save();
     ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);

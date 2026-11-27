@@ -427,7 +427,7 @@ function AppShell() {
       onAcceptInvite={handleAcceptInvite}
       enabled={!restoringActiveMatch && (!activeGame || activeGame.mode === 'practice')}
     >
-      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', color: 'var(--color-text-muted)' }}>Loading…</div>}>
+      <Suspense fallback={<div className="ac-fullscreen-center" style={{ color: 'var(--color-text-muted)' }}>Loading…</div>}>
       {activeGame?.mode === 'practice' ? (
         <GameLoader
           key={activeGame.id}

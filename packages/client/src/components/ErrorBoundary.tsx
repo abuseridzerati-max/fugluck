@@ -16,7 +16,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, Er
   render() {
     if (this.state.hasError) {
       return (
-        <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+        <main className="ac-fullscreen-center">
           <div className="ac-panel" style={{ maxWidth: 440, padding: '24px', textAlign: 'center' }}>
             <h1 style={{ margin: '0 0 8px', fontSize: '20px' }}>Something went wrong</h1>
             <p className="ac-text-muted" style={{ margin: '0 0 16px', fontSize: '14px' }}>
