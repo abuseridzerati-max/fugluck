@@ -257,6 +257,32 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'checkers': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="74" y="16" width="172" height="148" rx="10" fill="#2b1d14" stroke="#f0d9b5" strokeOpacity="0.28" strokeWidth="2" />
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2, 3].map((c) => (
+          <rect
+            key={`${r}-${c}`}
+            x={86 + c * 37}
+            y={26 + r * 32}
+            width="37"
+            height="32"
+            fill={(r + c) % 2 === 0 ? '#f0d9b5' : '#b58863'}
+          />
+        )),
+      )}
+      <circle cx="141.5" cy="42" r="12" fill="#27272a" stroke="#09090b" strokeWidth="2" />
+      <circle cx="215.5" cy="42" r="12" fill="#27272a" stroke="#09090b" strokeWidth="2" />
+      <circle cx="178.5" cy="74" r="12" fill="#27272a" stroke="#09090b" strokeWidth="2" />
+      <circle cx="104.5" cy="138" r="12" fill="#dc2626" stroke="#991b1b" strokeWidth="2" />
+      <circle cx="178.5" cy="138" r="12" fill="#dc2626" stroke="#991b1b" strokeWidth="2" />
+      <circle cx="141.5" cy="106" r="13" fill="#dc2626" stroke="#facc15" strokeWidth="2.5" />
+      <path d="M135 110l-1-8 4 3 3.5-5 3.5 5 4-3-1 8h-13z" fill="#facc15" />
+    </svg>
+  ),
+
   'speed-trivia': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#08101a" />

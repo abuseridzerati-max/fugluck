@@ -15,6 +15,7 @@ import { MinesweeperSprintEngine } from "../games/minesweeper-sprint/engine";
 import { BrickBreakerEngine } from "../games/brick-breaker/engine";
 import { BlitzChessEngine } from "../games/blitz-chess/engine";
 import { Connect4Engine } from "../games/connect-4/engine";
+import { CheckersEngine } from "../games/checkers/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -535,6 +536,40 @@ console.log("\nTest 3.81: Connect 4 300-Frame Headless Canvas draw() Suite\n");
   check("Connect 4 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Connect 4 verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Connect 4 executes player drops and deterministic AI responses", engine.turnNumber >= 4, `turnNumber=${engine.turnNumber}`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.82: Checkers 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.82: Checkers 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new CheckersEngine(88882222);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      if (frame > 0 && frame % 55 === 0 && !engine.gameOver && engine.activePlayer === 1) {
+        const move = engine.getFirstLegalP1Move();
+        engine.update(1 / 60, move ? { from: move.from, to: move.to } : {});
+      } else {
+        engine.update(1 / 60, {});
+      }
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Checkers 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Checkers verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Checkers executes player moves and deterministic AI responses", engine.turnNumber >= 4, `turnNumber=${engine.turnNumber}`);
 }
 
 // ---------------------------------------------------------------------------

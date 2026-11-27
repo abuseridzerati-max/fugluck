@@ -10,6 +10,7 @@ export const MINESWEEPER_SPRINT_AUTHORITY_VERSION = 'minesweeper-sprint-rv001-v1
 export const BRICK_BREAKER_AUTHORITY_VERSION = 'brick-breaker-rv001-v1';
 export const BLITZ_CHESS_AUTHORITY_VERSION = 'blitz-chess-rv001-v1';
 export const CONNECT_4_AUTHORITY_VERSION = 'connect-4-rv001-v1';
+export const CHECKERS_AUTHORITY_VERSION = 'checkers-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -25,6 +26,7 @@ export interface AuthorityControls extends AuthorityBinding {
   cellAction?: 'reveal' | 'flag'; cellCol?: number; cellRow?: number;
   moveFrom?: string; moveTo?: string; resign?: boolean;
   dropCol?: number;
+  chkFrom?: number; chkTo?: number;
 }
 export interface CyberHopperObstacleSnapshot {
   id: number; x: number; y: number; width: number; height: number;
@@ -106,5 +108,11 @@ export interface AuthoritySnapshot {
   lastMoveCol?: number | null;
   lastMoveRow?: number | null;
   winningCells?: number[];
+  chkBoard?: number[];
+  chkActivePlayer?: 1 | 2;
+  chkChainFromIdx?: number | null;
+  chkQuietHalfMoves?: number;
+  chkLastMoveFrom?: number | null;
+  chkLastMoveTo?: number | null;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

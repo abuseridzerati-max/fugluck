@@ -19,6 +19,8 @@ import { BlitzChessModule } from '../games/blitz-chess';
 import { BlitzChessEngine } from '../games/blitz-chess/engine';
 import { Connect4Module } from '../games/connect-4';
 import { Connect4Engine } from '../games/connect-4/engine';
+import { CheckersModule } from '../games/checkers';
+import { CheckersEngine } from '../games/checkers/engine';
 import { SpeedTriviaModule } from '../games/speed-trivia';
 import { SpeedTriviaEngine } from '../games/speed-trivia/engine';
 
@@ -87,6 +89,7 @@ try {
     ['brick-breaker', BrickBreakerModule, BrickBreakerEngine],
     ['blitz-chess', BlitzChessModule, BlitzChessEngine],
     ['connect-4', Connect4Module, Connect4Engine],
+    ['checkers', CheckersModule, CheckersEngine],
     ['speed-trivia', SpeedTriviaModule, SpeedTriviaEngine],
   ] as const) {
     const calls: number[][] = [];

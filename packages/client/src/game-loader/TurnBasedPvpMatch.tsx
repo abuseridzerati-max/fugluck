@@ -11,6 +11,8 @@ import { BlitzChessEngine, chessSounds } from '@fugluck/games/blitz-chess/engine
 import { clientPointToSquare, clientPointToVirtual } from '@fugluck/games/blitz-chess/constants'
 import { Connect4Engine, connect4Sounds } from '@fugluck/games/connect-4/engine'
 import { clientPointToColumn, COLS } from '@fugluck/games/connect-4/constants'
+import { CheckersEngine, checkersSounds, ownerOfPiece } from '@fugluck/games/checkers/engine'
+import { clientPointToCheckersIndex } from '@fugluck/games/checkers/constants'
 
 type TurnBasedPvpMatchProps = {
   match: MatchedPayload
@@ -37,9 +39,11 @@ export function TurnBasedPvpMatch({
 }: TurnBasedPvpMatchProps) {
   const { t } = useTranslation()
   const isConnect4 = match.gameId === 'connect-4'
+  const isCheckers = match.gameId === 'checkers'
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const chessEngineRef = useRef<BlitzChessEngine | null>(null)
   const c4EngineRef = useRef<Connect4Engine | null>(null)
+  const chkEngineRef = useRef<CheckersEngine | null>(null)
   const latestStateRef = useRef<TurnMatchStatePayload | null>(null)
   const syncedAtLocalMsRef = useRef<number>(Date.now())
   const pointerDragRef = useRef<{
@@ -52,8 +56,19 @@ export function TurnBasedPvpMatch({
     wasAlreadySelected: boolean
     dragging: boolean
   } | null>(null)
+  const chkDragRef = useRef<{
+    pointerId: number
+    from: number
+    piece: number
+    startX: number
+    startY: number
+    wasAlreadySelected: boolean
+    dragging: boolean
+  } | null>(null)
   const [confirmResign, setConfirmResign] = useState(false)
-  const [muted, setMuted] = useState(() => (isConnect4 ? connect4Sounds.isMuted() : chessSounds.isMuted()))
+  const [muted, setMuted] = useState(() =>
+    isConnect4 ? connect4Sounds.isMuted() : isCheckers ? checkersSounds.isMuted() : chessSounds.isMuted(),
+  )
 
   useEffect(() => {
     if (!state) {
@@ -68,6 +83,37 @@ export function TurnBasedPvpMatch({
   }, [confirmResign])
 
   function hydrateEngines(s: TurnMatchStatePayload, isOver: boolean) {
+    if (isCheckers) {
+      const engine = chkEngineRef.current
+      if (!engine) return
+      const boardState = s.boardState as {
+        board?: number[]
+        activePlayer?: 1 | 2
+        chainFromIdx?: number | null
+        quietHalfMoves?: number
+      }
+      const lastMove = s.lastMove as { from?: number; to?: number } | null
+      engine.pvpMode = true
+      engine.orientation = s.yourSeat === 'p1' ? 1 : 2
+      engine.p1Label = s.p1Username
+      engine.p2Label = s.p2Username
+      engine.hydrateFromSnapshot({
+        tickCount: s.turnNumber,
+        score: 0,
+        gameOver: isOver,
+        chkBoard: boardState.board,
+        chkActivePlayer: boardState.activePlayer ?? (s.activeTurn === 'p1' ? 1 : 2),
+        chkChainFromIdx: boardState.chainFromIdx ?? null,
+        chkQuietHalfMoves: boardState.quietHalfMoves ?? 0,
+        p1ClockTicks: msToTicks(s.p1ClockMs),
+        p2ClockTicks: msToTicks(s.p2ClockMs),
+        chkLastMoveFrom: lastMove?.from ?? null,
+        chkLastMoveTo: lastMove?.to ?? null,
+        turnNumber: s.turnNumber,
+      })
+      return
+    }
+
     if (isConnect4) {
       const engine = c4EngineRef.current
       if (!engine) return
@@ -178,18 +224,27 @@ export function TurnBasedPvpMatch({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    if (isConnect4) {
+    if (isCheckers) {
+      const engine = new CheckersEngine(match.seed)
+      engine.pvpMode = true
+      engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
+      chkEngineRef.current = engine
+      c4EngineRef.current = null
+      chessEngineRef.current = null
+    } else if (isConnect4) {
       const engine = new Connect4Engine(match.seed)
       engine.pvpMode = true
       engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
       c4EngineRef.current = engine
       chessEngineRef.current = null
+      chkEngineRef.current = null
     } else {
       const engine = new BlitzChessEngine(match.seed)
       engine.pvpMode = true
       engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height)
       chessEngineRef.current = engine
       c4EngineRef.current = null
+      chkEngineRef.current = null
     }
 
     if (latestStateRef.current) {
@@ -199,7 +254,19 @@ export function TurnBasedPvpMatch({
     let rafId = 0
     const renderFrame = () => {
       const s = latestStateRef.current
-      if (isConnect4) {
+      if (isCheckers) {
+        const engine = chkEngineRef.current
+        if (engine) {
+          if (s && !s.ended) {
+            const elapsedMs = Math.max(0, Date.now() - syncedAtLocalMsRef.current)
+            const p1Ms = s.activeTurn === 'p1' ? Math.max(0, s.p1ClockMs - elapsedMs) : s.p1ClockMs
+            const p2Ms = s.activeTurn === 'p2' ? Math.max(0, s.p2ClockMs - elapsedMs) : s.p2ClockMs
+            engine.p1ClockTicks = msToTicks(p1Ms)
+            engine.p2ClockTicks = msToTicks(p2Ms)
+          }
+          engine.render(ctx)
+        }
+      } else if (isConnect4) {
         const engine = c4EngineRef.current
         if (engine) {
           if (s && !s.ended) {
@@ -233,9 +300,10 @@ export function TurnBasedPvpMatch({
       window.cancelAnimationFrame(rafId)
       chessEngineRef.current = null
       c4EngineRef.current = null
+      chkEngineRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match.seed, isConnect4])
+  }, [match.seed, isConnect4, isCheckers])
 
   const isEnded = Boolean(state?.ended || ended)
   const isMyTurn = Boolean(state && !isEnded && state.activeTurn === state.yourSeat)
@@ -246,6 +314,58 @@ export function TurnBasedPvpMatch({
     if (e.pointerType === 'mouse' && e.button !== 0) return
     const canvas = canvasRef.current
     if (!canvas) return
+
+    if (isCheckers) {
+      const engine = chkEngineRef.current
+      if (!engine) return
+      const mySeat: 1 | 2 = state.yourSeat === 'p1' ? 1 : 2
+      const idx = clientPointToCheckersIndex(canvas.getBoundingClientRect(), e.clientX, e.clientY, mySeat)
+      if (idx === null) {
+        engine.selectedIdx = null
+        engine.legalTargets = []
+        engine.dragState = null
+        chkDragRef.current = null
+        return
+      }
+
+      if (engine.selectedIdx !== null && engine.legalTargets.includes(idx)) {
+        const from = engine.selectedIdx
+        engine.selectedIdx = null
+        engine.legalTargets = []
+        engine.dragState = null
+        chkDragRef.current = null
+        onSendMove(match.matchId, { from, to: idx })
+        return
+      }
+
+      const piece = engine.board[idx] ?? 0
+      const targets = engine.getLegalTargetsForIndex(idx, mySeat)
+      if (targets.length > 0 && ownerOfPiece(piece) === mySeat) {
+        const wasAlreadySelected = engine.selectedIdx === idx
+        engine.selectedIdx = idx
+        engine.legalTargets = targets
+        chkDragRef.current = {
+          pointerId: e.pointerId,
+          from: idx,
+          piece,
+          startX: e.clientX,
+          startY: e.clientY,
+          wasAlreadySelected,
+          dragging: false,
+        }
+        try {
+          canvas.setPointerCapture(e.pointerId)
+        } catch {
+          // Ignore capture errors
+        }
+      } else {
+        engine.selectedIdx = null
+        engine.legalTargets = []
+        engine.dragState = null
+        chkDragRef.current = null
+      }
+      return
+    }
 
     if (isConnect4) {
       const engine = c4EngineRef.current
@@ -314,6 +434,19 @@ export function TurnBasedPvpMatch({
     const canvas = canvasRef.current
     if (!canvas) return
 
+    if (isCheckers) {
+      const drag = chkDragRef.current
+      const engine = chkEngineRef.current
+      if (!drag || drag.pointerId !== e.pointerId || !engine) return
+      if (!drag.dragging && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 6) return
+      drag.dragging = true
+      const pt = clientPointToVirtual(canvas.getBoundingClientRect(), e.clientX, e.clientY)
+      if (pt) {
+        engine.dragState = { from: drag.from, piece: drag.piece, vx: pt.vx, vy: pt.vy }
+      }
+      return
+    }
+
     if (isConnect4) {
       const engine = c4EngineRef.current
       if (!engine) return
@@ -342,6 +475,36 @@ export function TurnBasedPvpMatch({
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (isCheckers) {
+      const drag = chkDragRef.current
+      const engine = chkEngineRef.current
+      const canvas = canvasRef.current
+      if (!drag || drag.pointerId !== e.pointerId || !engine || !canvas) return
+      chkDragRef.current = null
+      try {
+        canvas.releasePointerCapture(e.pointerId)
+      } catch {
+        // Ignore release errors
+      }
+      const wasDragging = drag.dragging
+      engine.dragState = null
+      if (!wasDragging) {
+        if (drag.wasAlreadySelected && engine.chainFromIdx === null) {
+          engine.selectedIdx = null
+          engine.legalTargets = []
+        }
+        return
+      }
+      const mySeat: 1 | 2 = state?.yourSeat === 'p2' ? 2 : 1
+      const targetIdx = clientPointToCheckersIndex(canvas.getBoundingClientRect(), e.clientX, e.clientY, mySeat)
+      if (targetIdx !== null && targetIdx !== drag.from && engine.legalTargets.includes(targetIdx)) {
+        engine.skipNextAnimation = true
+        engine.selectedIdx = null
+        engine.legalTargets = []
+        onSendMove(match.matchId, { from: drag.from, to: targetIdx })
+      }
+      return
+    }
     if (isConnect4) return
     const drag = pointerDragRef.current
     const engine = chessEngineRef.current
@@ -377,11 +540,17 @@ export function TurnBasedPvpMatch({
 
   function handlePointerCancel() {
     pointerDragRef.current = null
+    chkDragRef.current = null
     if (chessEngineRef.current) chessEngineRef.current.dragState = null
+    if (chkEngineRef.current) chkEngineRef.current.dragState = null
   }
 
   function handleToggleMute() {
-    const nextMuted = isConnect4 ? connect4Sounds.toggleMute() : chessSounds.toggleMute()
+    const nextMuted = isConnect4
+      ? connect4Sounds.toggleMute()
+      : isCheckers
+        ? checkersSounds.toggleMute()
+        : chessSounds.toggleMute()
     setMuted(nextMuted)
   }
 
@@ -407,13 +576,17 @@ export function TurnBasedPvpMatch({
 
   const seatBadgeText = !state
     ? ''
-    : isConnect4
+    : isCheckers
       ? state.yourSeat === 'p1'
         ? t('turnPvp.playingAsRed')
-        : t('turnPvp.playingAsGold')
-      : state.yourSeat === 'p1'
-        ? t('turnPvp.playingAsWhite')
         : t('turnPvp.playingAsBlack')
+      : isConnect4
+        ? state.yourSeat === 'p1'
+          ? t('turnPvp.playingAsRed')
+          : t('turnPvp.playingAsGold')
+        : state.yourSeat === 'p1'
+          ? t('turnPvp.playingAsWhite')
+          : t('turnPvp.playingAsBlack')
 
   return (
     <div

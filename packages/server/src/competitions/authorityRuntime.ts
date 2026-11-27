@@ -23,13 +23,22 @@ export class LiveControls {
   cellInput: { action?: 'reveal' | 'flag'; col?: number; row?: number } = {};
   chessMove: { moveFrom?: string; moveTo?: string; resign?: boolean } = {};
   c4Move: { dropCol?: number; resign?: boolean } = {};
+  chkMove: { from?: number; to?: number; resign?: boolean } = {};
   dropPending = false;
   accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === 'connect-4') {
+    if (gameId === 'checkers') {
+      if (p.resign !== undefined && typeof p.resign !== 'boolean') throw Error('INPUT_SHAPE');
+      if (p.chkFrom !== undefined || p.chkTo !== undefined) {
+        if (typeof p.chkFrom !== 'number' || typeof p.chkTo !== 'number' || !Number.isInteger(p.chkFrom) || !Number.isInteger(p.chkTo) || p.chkFrom < 0 || p.chkFrom >= 64 || p.chkTo < 0 || p.chkTo >= 64) throw Error('INPUT_SHAPE');
+      }
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      if (p.resign) this.chkMove = { resign: true };
+      else if (p.chkFrom !== undefined && p.chkTo !== undefined) this.chkMove = { from: p.chkFrom, to: p.chkTo };
+    } else if (gameId === 'connect-4') {
       if (p.resign !== undefined && typeof p.resign !== 'boolean') throw Error('INPUT_SHAPE');
       if (p.dropCol !== undefined && (typeof p.dropCol !== 'number' || !Number.isInteger(p.dropCol) || p.dropCol < 0 || p.dropCol > 6)) throw Error('INPUT_SHAPE');
       this.tokens--; this.seq=p.seq; this.lastInput=now;
@@ -86,6 +95,11 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'checkers') {
+      const m = this.chkMove;
+      this.chkMove = {};
+      return m;
+    }
     if (gameId === 'connect-4') {
       const m = this.c4Move;
       this.c4Move = {};
@@ -128,6 +142,7 @@ export class LiveControls {
     this.cellInput = {};
     this.chessMove = {};
     this.c4Move = {};
+    this.chkMove = {};
     this.dropPending = false;
   }
 }

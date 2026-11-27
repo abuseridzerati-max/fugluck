@@ -9,6 +9,11 @@ import type {
 import { Chess } from "@fugluck/games/blitz-chess/engine";
 import { findDropRow, findWinningCells, isBoardFull } from "@fugluck/games/connect-4/engine";
 import { BOARD_CELLS, COLS } from "@fugluck/games/connect-4/constants";
+import {
+  applyCheckersMovePure,
+  createInitialCheckersBoard,
+  evaluateCheckersTerminal,
+} from "@fugluck/games/checkers/engine";
 import type { MatchmakingSocket } from "./socketAuth";
 import { logger } from "../utils/safeLogger";
 
@@ -211,6 +216,88 @@ export const connect4PvpAdapter: TurnBasedPvpAdapter<Connect4PvpState, Record<st
   },
 };
 
+type CheckersPvpState = {
+  board: number[];
+  activePlayer: 1 | 2;
+  chainFromIdx: number | null;
+  quietHalfMoves: number;
+  turnNumber: number;
+  lastMoveFrom: number | null;
+  lastMoveTo: number | null;
+};
+
+export const checkersPvpAdapter: TurnBasedPvpAdapter<CheckersPvpState, Record<string, unknown>> = {
+  gameId: "checkers",
+  initialClockMs: 180_000, // 3+0 Blitz per player
+  createInitialState(): CheckersPvpState {
+    return {
+      board: createInitialCheckersBoard(),
+      activePlayer: 1,
+      chainFromIdx: null,
+      quietHalfMoves: 0,
+      turnNumber: 0,
+      lastMoveFrom: null,
+      lastMoveTo: null,
+    };
+  },
+  getActiveTurn(state): TurnMatchSeat {
+    return state.activePlayer === 1 ? "p1" : "p2";
+  },
+  getTurnNumber(state): number {
+    return state.turnNumber;
+  },
+  applyMove(state, seat, rawMove) {
+    const expectedPlayer: 1 | 2 = seat === "p1" ? 1 : 2;
+    if (state.activePlayer !== expectedPlayer) {
+      return { ok: false, code: "NOT_YOUR_TURN", message: "Wait for your opponent to move." };
+    }
+
+    const from = typeof rawMove.from === "number" ? rawMove.from : Number.NaN;
+    const to = typeof rawMove.to === "number" ? rawMove.to : Number.NaN;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from >= 64 || to < 0 || to >= 64) {
+      return { ok: false, code: "INVALID_MOVE", message: "Move requires valid board indices." };
+    }
+
+    const res = applyCheckersMovePure(state.board, expectedPlayer, state.chainFromIdx, from, to);
+    if (!res.ok) return res;
+
+    state.turnNumber += 1;
+    state.lastMoveFrom = from;
+    state.lastMoveTo = to;
+    state.quietHalfMoves = res.captured || res.crowned ? 0 : state.quietHalfMoves + 1;
+    state.activePlayer = res.nextPlayer;
+    state.chainFromIdx = res.nextChainFromIdx;
+
+    const terminal = evaluateCheckersTerminal(
+      state.board,
+      state.activePlayer,
+      state.chainFromIdx,
+      state.quietHalfMoves,
+    );
+    if (terminal.ended) {
+      const winnerSeat: TurnMatchSeat | null =
+        terminal.winner === 1 ? "p1" : terminal.winner === 2 ? "p2" : null;
+      return { ok: true, state, ended: { winnerSeat, reason: terminal.reason } };
+    }
+
+    return { ok: true, state };
+  },
+  serializeState(state) {
+    return {
+      boardState: {
+        board: [...state.board],
+        activePlayer: state.activePlayer,
+        chainFromIdx: state.chainFromIdx,
+        quietHalfMoves: state.quietHalfMoves,
+      },
+      lastMove:
+        state.lastMoveFrom !== null && state.lastMoveTo !== null
+          ? { from: state.lastMoveFrom, to: state.lastMoveTo }
+          : null,
+    };
+  },
+};
+
 type PvpSeatPlayer = {
   userId: string;
   username: string;
@@ -240,7 +327,13 @@ export class TurnBasedPvpRuntime {
   private readonly adapters = new Map<string, TurnBasedPvpAdapter<any, any>>();
   private readonly sessions = new Map<string, TurnBasedPvpSession>();
 
-  constructor(initialAdapters: TurnBasedPvpAdapter<any, any>[] = [blitzChessPvpAdapter, connect4PvpAdapter]) {
+  constructor(
+    initialAdapters: TurnBasedPvpAdapter<any, any>[] = [
+      blitzChessPvpAdapter,
+      connect4PvpAdapter,
+      checkersPvpAdapter,
+    ],
+  ) {
     for (const adapter of initialAdapters) {
       this.registerAdapter(adapter);
     }

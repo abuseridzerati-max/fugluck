@@ -15,7 +15,7 @@ import { apiFetch } from '../lib/api'
 import { AuthorityCompetition } from './AuthorityCompetition'
 import { TurnBasedPvpMatch } from './TurnBasedPvpMatch'
 
-const TURN_BASED_PVP_GAMES = new Set(['blitz-chess', 'connect-4'])
+const TURN_BASED_PVP_GAMES = new Set(['blitz-chess', 'connect-4', 'checkers'])
 
 type MatchLoaderProps = {
   createModule: GameModuleFactory

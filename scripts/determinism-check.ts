@@ -12,6 +12,7 @@ import { MinesweeperSprintEngine } from "../games/minesweeper-sprint/engine.ts";
 import { BrickBreakerEngine } from "../games/brick-breaker/engine.ts";
 import { BlitzChessEngine } from "../games/blitz-chess/engine.ts";
 import { Connect4Engine } from "../games/connect-4/engine.ts";
+import { CheckersEngine } from "../games/checkers/engine.ts";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine.ts";
 import { TFSprintEngine } from "../games/tf-sprint/engine.ts";
 
@@ -133,6 +134,18 @@ sameSeedRun("connect-4", seed => {
   }
   return e.getTurnState();
 });
+sameSeedRun("checkers", seed => {
+  const e = new CheckersEngine(seed);
+  for (let i=0; i<TICKS; i++) {
+    if (i > 0 && i % 50 === 0 && !e.gameOver && e.activePlayer === 1) {
+      const m = e.getFirstLegalP1Move();
+      e.update(FIXED_TIMESTEP_SEC, m ? { from: m.from, to: m.to } : {});
+    } else {
+      e.update(FIXED_TIMESTEP_SEC, {});
+    }
+  }
+  return e.getTurnState();
+});
 sameSeedRun("speed-trivia", seed => {
   const e = new SpeedTriviaEngine(seed);
   for (let i=0; i<TICKS; i++) e.update(FIXED_TIMESTEP_SEC, {});
@@ -161,7 +174,7 @@ bounded.start();now+=5000;frame?.(now);
 check("single 5s frame stall is bounded to five catch-up ticks", bounded.tick<=5);bounded.stop();
 
 console.log("\nLong-run seeded engine determinism\n");
-for (const [name, Engine] of [["space-blaster",SpaceBlasterEngine],["cyber-hopper",CyberHopperEngine],["stack-tower",StackTowerEngine],["2048-blitz",Blitz2048Engine],["neon-snake",NeonSnakeEngine],["minesweeper-sprint",MinesweeperSprintEngine],["brick-breaker",BrickBreakerEngine],["blitz-chess",BlitzChessEngine],["connect-4",Connect4Engine]] as const) {
+for (const [name, Engine] of [["space-blaster",SpaceBlasterEngine],["cyber-hopper",CyberHopperEngine],["stack-tower",StackTowerEngine],["2048-blitz",Blitz2048Engine],["neon-snake",NeonSnakeEngine],["minesweeper-sprint",MinesweeperSprintEngine],["brick-breaker",BrickBreakerEngine],["blitz-chess",BlitzChessEngine],["connect-4",Connect4Engine],["checkers",CheckersEngine]] as const) {
   const run=(seed:number)=>{const e=new Engine(seed);for(let i=0;i<5400;i++)e.update(FIXED_TIMESTEP_SEC,{});return JSON.stringify(e);};
   check(`${name}: 90-second fixed-step state is repeatable`,run(SEED)===run(SEED));
 }

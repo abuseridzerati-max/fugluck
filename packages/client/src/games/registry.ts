@@ -53,6 +53,9 @@ export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
   "connect-4": defineModulePlugin("connect-4", () => import("@fugluck/games/connect-4"), {
     competitionControlsKey: "competition.connect4Controls",
   }),
+  "checkers": defineModulePlugin("checkers", () => import("@fugluck/games/checkers"), {
+    competitionControlsKey: "competition.checkersControls",
+  }),
   "speed-trivia": defineModulePlugin("speed-trivia", () => import("@fugluck/games/speed-trivia")),
   "tf-sprint": defineModulePlugin("tf-sprint", () => import("@fugluck/games/tf-sprint")),
 };

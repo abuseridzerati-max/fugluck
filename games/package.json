@@ -17,6 +17,8 @@
     "./blitz-chess/constants": "./blitz-chess/constants.ts",
     "./connect-4/engine": "./connect-4/engine.ts",
     "./connect-4/constants": "./connect-4/constants.ts",
+    "./checkers/engine": "./checkers/engine.ts",
+    "./checkers/constants": "./checkers/constants.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -64,6 +66,10 @@
     "./connect-4": {
       "import": "./connect-4/index.ts",
       "default": "./connect-4/index.ts"
+    },
+    "./checkers": {
+      "import": "./checkers/index.ts",
+      "default": "./checkers/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",

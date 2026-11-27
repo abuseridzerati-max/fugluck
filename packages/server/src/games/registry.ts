@@ -7,11 +7,13 @@ import { MinesweeperSprintEngine } from "@fugluck/games/minesweeper-sprint/engin
 import { BrickBreakerEngine } from "@fugluck/games/brick-breaker/engine";
 import { BlitzChessEngine } from "@fugluck/games/blitz-chess/engine";
 import { Connect4Engine } from "@fugluck/games/connect-4/engine";
+import { CheckersEngine } from "@fugluck/games/checkers/engine";
 import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   BLITZ_CHESS_AUTHORITY_VERSION,
   BRICK_BREAKER_AUTHORITY_VERSION,
+  CHECKERS_AUTHORITY_VERSION,
   CONNECT_4_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
@@ -145,6 +147,16 @@ interface Connect4ServerState {
   guard: ControlGuard;
   pendingMove: {
     dropCol?: number;
+    resign?: boolean;
+  };
+}
+
+interface CheckersServerState {
+  engine: CheckersEngine;
+  guard: ControlGuard;
+  pendingMove: {
+    from?: number;
+    to?: number;
     resign?: boolean;
   };
 }
@@ -929,6 +941,101 @@ const connect4ServerPlugin: ServerGamePlugin<Connect4ServerState> = {
   resolveTie: defaultDrawTieResolver,
 };
 
+const checkersServerPlugin: ServerGamePlugin<CheckersServerState> = {
+  gameId: "checkers",
+  authorityVersion: CHECKERS_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "chkFrom", "chkTo", "resign"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): CheckersServerState {
+    const engine = new CheckersEngine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      pendingMove: {},
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    if (controls.resign !== undefined && typeof controls.resign !== "boolean") {
+      throw Error("INPUT_SHAPE");
+    }
+    if (controls.chkFrom !== undefined || controls.chkTo !== undefined) {
+      if (
+        typeof controls.chkFrom !== "number" ||
+        typeof controls.chkTo !== "number" ||
+        !Number.isInteger(controls.chkFrom) ||
+        !Number.isInteger(controls.chkTo) ||
+        controls.chkFrom < 0 ||
+        controls.chkFrom >= 64 ||
+        controls.chkTo < 0 ||
+        controls.chkTo >= 64
+      ) {
+        throw Error("INPUT_SHAPE");
+      }
+    }
+    state.guard.commit(controls.seq, now);
+    if (controls.resign) {
+      state.pendingMove = { resign: true };
+    } else if (controls.chkFrom !== undefined && controls.chkTo !== undefined) {
+      state.pendingMove = { from: controls.chkFrom, to: controls.chkTo };
+    }
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.pendingMove = {};
+    }
+    const input = state.pendingMove;
+    state.pendingMove = {};
+    return Boolean(state.engine.update(dtSec, input));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      chkBoard: [...state.engine.board],
+      chkActivePlayer: state.engine.activePlayer,
+      chkChainFromIdx: state.engine.chainFromIdx,
+      chkQuietHalfMoves: state.engine.quietHalfMoves,
+      p1ClockTicks: state.engine.p1ClockTicks,
+      p2ClockTicks: state.engine.p2ClockTicks,
+      chkLastMoveFrom: state.engine.lastMoveFrom,
+      chkLastMoveTo: state.engine.lastMoveTo,
+      turnOutcome: state.engine.outcome,
+      turnNumber: state.engine.turnNumber,
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.pendingMove = {};
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -943,6 +1050,7 @@ export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>
   "brick-breaker": brickBreakerServerPlugin,
   "blitz-chess": blitzChessServerPlugin,
   "connect-4": connect4ServerPlugin,
+  "checkers": checkersServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

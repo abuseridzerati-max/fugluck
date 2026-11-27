@@ -269,6 +269,7 @@
     "brickBreakerControls": "Use Left / Right arrow keys, A / D, or touch buttons to steer the paddle and clear brick waves.",
     "blitzChessControls": "Click or tap a White piece to highlight legal squares, then click or tap a destination square to move.",
     "connect4Controls": "Click or tap any column (or press 1–7 / Arrows + Space) to drop a disc and connect 4 in a row.",
+    "checkersControls": "Click or drag a piece to move diagonally or jump opponent pieces. Captures and multi-jumps are mandatory.",
     "liveCanvas": "Live {{game}} competition",
     "leaveCompetition": "Leave Competition",
     "forfeit": "Forfeit competition",
@@ -944,6 +945,7 @@
       "brick-breaker": "Left / Right Arrows, A / D, or drag paddle · Chain brick combos & clear waves",
       "blitz-chess": "Click / Tap a piece, then a highlighted square · 3+0 Blitz live PvP or seeded AI",
       "connect-4": "Click / Tap a column, keys 1–7, or Arrows + Space · Connect 4 in a row to win",
+      "checkers": "Click / Drag a piece to move or jump · Mandatory captures & multi-jumps · 3+0 Blitz",
       "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
       "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
       "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
@@ -1081,6 +1083,12 @@
       "description": "Classic 7x6 tabletop Connect 4 — live 1v1 PvP or seeded tactical AI",
       "controls": "Click or tap any column, press keys 1–7, or use Left/Right Arrows + Space/Enter to drop a disc.",
       "rules": "Drop discs into the 7x6 grid to connect 4 in a row horizontally, vertically, or diagonally. Play live 1v1 with 60-second Blitz clocks or score points in tournaments (+40 per 3-in-a-row threat, +1,000 + clock bonus for victory, +250 for draw)."
+    },
+    "checkers": {
+      "title": "Checkers",
+      "description": "Classic 8x8 tabletop Checkers — live 1v1 PvP or seeded tactical AI",
+      "controls": "Click or drag a piece to a highlighted diagonal square. Captures and multi-jump chains are mandatory.",
+      "rules": "Play official 8x8 Checkers (3+0 Blitz clocks) live 1v1 against human opponents or against a seeded tactical AI. Reach the back rank to crown a King (+150 pts), capture pieces (+80 pts), and win (+1,000 + clock bonus)."
     }
   },
   "turnPvp": {

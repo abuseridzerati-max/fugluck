@@ -172,7 +172,11 @@ check(
   "connect-4 is marked PAID_COMPETITIVE_CANDIDATE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["connect-4"] === "PAID_COMPETITIVE_CANDIDATE",
 );
-check("Space Blaster, Cyber Hopper, Stack Tower, Seeded 2048 Blitz, Neon Snake, Minesweeper Sprint, Brick Breaker, Blitz Chess, and Connect 4 are the Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 9);
+check(
+  "checkers is marked PAID_COMPETITIVE_CANDIDATE",
+  GAME_COMPETITION_ELIGIBILITY_REGISTRY["checkers"] === "PAID_COMPETITIVE_CANDIDATE",
+);
+check("Space Blaster, Cyber Hopper, Stack Tower, Seeded 2048 Blitz, Neon Snake, Minesweeper Sprint, Brick Breaker, Blitz Chess, Connect 4, and Checkers are the Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 10);
 
 // Strict invariant: NO game is marked PAID_COMPETITIVE_APPROVED in Phase 1
 const anyApproved = Object.values(GAME_COMPETITION_ELIGIBILITY_REGISTRY).some(
