@@ -162,6 +162,7 @@ async function run() {
   check("getGameTitle resolves 'pixel-ninja-dash'", getGameTitle("pixel-ninja-dash") === "Pixel Ninja Dash");
   check("getGameTitle resolves 'space-blaster'", getGameTitle("space-blaster") === "Space Blaster");
   check("getGameTitle resolves 'cyber-hopper'", getGameTitle("cyber-hopper") === "Cyber Hopper");
+  check("getGameTitle resolves 'stack-tower'", getGameTitle("stack-tower") === "Stack Tower");
   check("getGameTitle resolves 'speed-trivia'", getGameTitle("speed-trivia") === "Speed Trivia Clash");
   check("getGameTitle resolves 'tf-sprint'", getGameTitle("tf-sprint") === "True / False Sprint");
   check("getGameTitle falls back to gameId for unknown id", getGameTitle("unknown-game") === "unknown-game");
@@ -200,7 +201,7 @@ async function run() {
 
   // 11. Catalog Active Categories & Search Filtering
   check("Catalog navFilters has exactly 5 active categories (no empty falling-block or hot)", navFilters.length === 5 && !navFilters.some((f) => (f.engine as string) === "falling-block" || (f.engine as string) === "hot"));
-  check("Active games contains 6 canonical playable games", activeGames.length === 6);
+  check("Active games contains 7 canonical playable games", activeGames.length === 7);
 
   function searchGames(query: string) {
     const q = query.trim().toLowerCase();

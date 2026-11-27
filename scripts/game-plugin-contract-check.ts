@@ -37,12 +37,13 @@ async function main() {
     "pixel-ninja-dash",
     "space-blaster",
     "cyber-hopper",
+    "stack-tower",
     "speed-trivia",
     "tf-sprint",
   ];
 
   check(
-    "GAME_MANIFESTS contains all 6 existing games",
+    "GAME_MANIFESTS contains all 7 registered games",
     expectedIds.every((id) => GAME_MANIFESTS.some((m) => m.id === id)) &&
       GAME_MANIFESTS.length === expectedIds.length,
   );
@@ -54,8 +55,8 @@ async function main() {
   );
 
   check(
-    "Exactly space-blaster and cyber-hopper remain Tournament Certified",
-    getCertifiedGameIds().sort().join(",") === "cyber-hopper,space-blaster",
+    "Exactly space-blaster, cyber-hopper, and stack-tower are Tournament Certified",
+    getCertifiedGameIds().sort().join(",") === "cyber-hopper,space-blaster,stack-tower",
   );
 
   check(
@@ -114,7 +115,7 @@ async function main() {
     const snapshotTimes = new Map<number, number>([[1, 1000]]);
 
     const controls: AuthorityControls =
-      gameId === "cyber-hopper"
+      gameId === "stack-tower"
         ? {
             sessionId: "s1",
             instanceId: "i1",
@@ -125,24 +126,37 @@ async function main() {
             epoch: 1,
             seq: 1,
             snapshot: 1,
-            hopUp: true,
+            drop: false,
           }
-        : {
-            sessionId: "s1",
-            instanceId: "i1",
-            matchId: "m1",
-            gameId,
-            version: plugin.authorityVersion,
-            nonce: "n1",
-            epoch: 1,
-            seq: 1,
-            snapshot: 1,
-            left: false,
-            right: true,
-            up: false,
-            down: false,
-            fire: true,
-          };
+        : gameId === "cyber-hopper"
+          ? {
+              sessionId: "s1",
+              instanceId: "i1",
+              matchId: "m1",
+              gameId,
+              version: plugin.authorityVersion,
+              nonce: "n1",
+              epoch: 1,
+              seq: 1,
+              snapshot: 1,
+              hopUp: true,
+            }
+          : {
+              sessionId: "s1",
+              instanceId: "i1",
+              matchId: "m1",
+              gameId,
+              version: plugin.authorityVersion,
+              nonce: "n1",
+              epoch: 1,
+              seq: 1,
+              snapshot: 1,
+              left: false,
+              right: true,
+              up: false,
+              down: false,
+              fire: true,
+            };
 
     plugin.applyInput(stateA, controls, 1050, snapshotTimes);
     plugin.applyInput(stateB, controls, 1050, snapshotTimes);
@@ -177,9 +191,11 @@ async function main() {
     const snap = plugin.serializeSnapshot(stateA, baseSnapshot);
     check(
       `ServerGamePlugin '${gameId}' serializeSnapshot populates game-specific fields`,
-      gameId === "cyber-hopper"
-        ? typeof snap.gridX === "number" && typeof snap.gridY === "number" && Array.isArray(snap.obstacles)
-        : typeof snap.shipX === "number" && typeof snap.shipY === "number" && Array.isArray(snap.bullets),
+      gameId === "stack-tower"
+        ? Array.isArray(snap.tower) && Boolean(snap.activeBlock) && typeof snap.cameraY === "number"
+        : gameId === "cyber-hopper"
+          ? typeof snap.gridX === "number" && typeof snap.gridY === "number" && Array.isArray(snap.obstacles)
+          : typeof snap.shipX === "number" && typeof snap.shipY === "number" && Array.isArray(snap.bullets),
     );
 
     check(

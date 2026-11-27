@@ -262,6 +262,7 @@
     "connectionDelayed": "Connection delayed. Waiting for an update…",
     "hopperControls": "Use arrow keys, WASD, or touch buttons to hop. Avoid the hovercars.",
     "blasterControls": "Use arrow keys or WASD to move. Hold Space or Fire to shoot.",
+    "stackTowerControls": "Press Space, Enter, Down Arrow, or tap to drop each neon block on the tower.",
     "liveCanvas": "Live {{game}} competition",
     "leaveCompetition": "Leave Competition",
     "forfeit": "Forfeit competition",
@@ -320,7 +321,8 @@
       "down": "Down",
       "left": "Left",
       "right": "Right",
-      "fire": "Fire"
+      "fire": "Fire",
+      "drop": "DROP"
     },
     "emptyGame": "No {{game}} competitions available right now.",
     "showAll": "Show All",
@@ -925,6 +927,7 @@
     "controls": {
       "space-blaster": "WASD / Arrows to steer · Space to shoot · Survive & destroy waves (3 min cap)",
       "cyber-hopper": "WASD / Arrows to hop lanes · Dodge hovercars · Reach the top zone to score",
+      "stack-tower": "Space / Enter / Down Arrow or Tap to drop · Align perfectly for combo bonus",
       "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
       "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
       "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
@@ -1019,5 +1022,13 @@
     "sending": "Sending...",
     "sendLinkBtn": "Send Reset Link",
     "backToLogin": "← Back to Log In"
+  },
+  "games": {
+    "stackTower": {
+      "title": "Stack Tower",
+      "description": "Precision neon block stacking with perfect-drop combos",
+      "controls": "Press Space, Enter, Down Arrow, or tap anywhere to drop the moving block.",
+      "rules": "Drop each oscillating block cleanly onto the tower. Overhangs are sliced off; perfect drops keep full width and build streak bonus points. Missing completely ends the run."
+    }
   }
 }

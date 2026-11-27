@@ -1,6 +1,7 @@
 /** RV-001 v1: current controls and current state only; no input history. */
 export const AUTHORITY_VERSION = 'space-blaster-rv001-v1';
 export const CYBER_HOPPER_AUTHORITY_VERSION = 'cyber-hopper-rv001-v1';
+export const STACK_TOWER_AUTHORITY_VERSION = 'stack-tower-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -11,10 +12,20 @@ export interface AuthorityControls extends AuthorityBinding {
   seq: number; snapshot: number;
   left?: boolean; right?: boolean; up?: boolean; down?: boolean; fire?: boolean;
   hopUp?: boolean; hopDown?: boolean; hopLeft?: boolean; hopRight?: boolean;
+  drop?: boolean;
 }
 export interface CyberHopperObstacleSnapshot {
   id: number; x: number; y: number; width: number; height: number;
   direction: 1 | -1; color: string; active?: boolean; laneIndex?: number; speed?: number;
+}
+export interface StackTowerBlockSnapshot {
+  level: number; x: number; width: number; color: string;
+}
+export interface StackTowerActiveBlockSnapshot extends StackTowerBlockSnapshot {
+  direction: 1 | -1; speed: number;
+}
+export interface StackTowerFallingPieceSnapshot {
+  x: number; y: number; width: number; height: number; vy: number; vx: number; color: string; alpha: number;
 }
 export interface AuthoritySnapshot {
   sessionId: string; epoch: number; createdAt: number; emittedAt: number;
@@ -25,5 +36,16 @@ export interface AuthoritySnapshot {
   asteroids?: Array<{ id: number; x: number; y: number; vx: number; vy: number; radius: number; active: boolean }>;
   gridX?: number; gridY?: number; roundsCompleted?: number;
   obstacles?: CyberHopperObstacleSnapshot[];
+  tower?: StackTowerBlockSnapshot[];
+  activeBlock?: StackTowerActiveBlockSnapshot;
+  fallingPieces?: StackTowerFallingPieceSnapshot[];
+  cameraY?: number;
+  blocksPlaced?: number;
+  perfectStreak?: number;
+  maxStreak?: number;
+  perfectPulseTicks?: number;
+  lastPulseX?: number;
+  lastPulseWidth?: number;
+  lastPulseLevel?: number;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

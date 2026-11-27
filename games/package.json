@@ -7,6 +7,7 @@
   "exports": {
     "./space-blaster/engine": "./space-blaster/engine.ts",
     "./cyber-hopper/engine": "./cyber-hopper/engine.ts",
+    "./stack-tower/engine": "./stack-tower/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -26,6 +27,10 @@
     "./cyber-hopper": {
       "import": "./cyber-hopper/index.ts",
       "default": "./cyber-hopper/index.ts"
+    },
+    "./stack-tower": {
+      "import": "./stack-tower/index.ts",
+      "default": "./stack-tower/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",

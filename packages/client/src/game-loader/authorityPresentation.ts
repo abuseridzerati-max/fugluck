@@ -106,6 +106,12 @@ export class AuthorityPresentation {
     if (a.obstacles && b.obstacles) {
       out.obstacles = positions(a.obstacles, b.obstacles)
     }
+    if (a.activeBlock && b.activeBlock && a.activeBlock.level === b.activeBlock.level) {
+      out.activeBlock = { ...b.activeBlock, x: lerp(a.activeBlock.x, b.activeBlock.x) }
+    }
+    if (a.cameraY !== undefined && b.cameraY !== undefined) {
+      out.cameraY = lerp(a.cameraY, b.cameraY)
+    }
     return out
   }
 }

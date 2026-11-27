@@ -5,6 +5,8 @@ import { SpaceBlasterModule } from '../games/space-blaster';
 import { SpaceBlasterEngine } from '../games/space-blaster/engine';
 import { CyberHopperModule } from '../games/cyber-hopper';
 import { CyberHopperEngine } from '../games/cyber-hopper/engine';
+import { StackTowerModule } from '../games/stack-tower';
+import { StackTowerEngine } from '../games/stack-tower/engine';
 import { SpeedTriviaModule } from '../games/speed-trivia';
 import { SpeedTriviaEngine } from '../games/speed-trivia/engine';
 
@@ -66,6 +68,7 @@ try {
   for (const [name, Module, Engine] of [
     ['space-blaster', SpaceBlasterModule, SpaceBlasterEngine],
     ['cyber-hopper', CyberHopperModule, CyberHopperEngine],
+    ['stack-tower', StackTowerModule, StackTowerEngine],
     ['speed-trivia', SpeedTriviaModule, SpeedTriviaEngine],
   ] as const) {
     const calls: number[][] = [];

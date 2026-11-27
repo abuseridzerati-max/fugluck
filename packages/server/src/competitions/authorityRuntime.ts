@@ -19,12 +19,17 @@ export class LiveControls {
   seq = -1; private tokens = 12; private refill = 0; lastInput = -Infinity;
   held = { moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false };
   hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+  dropPending = false;
   accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === 'cyber-hopper') {
+    if (gameId === 'stack-tower') {
+      if (p.drop !== undefined && typeof p.drop !== 'boolean') throw Error('INPUT_SHAPE');
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      this.dropPending = this.dropPending || Boolean(p.drop);
+    } else if (gameId === 'cyber-hopper') {
       const hopKeys = ['hopUp','hopDown','hopLeft','hopRight'] as const;
       for (const k of hopKeys) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
       this.tokens--; this.seq=p.seq; this.lastInput=now;
@@ -42,6 +47,11 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'stack-tower') {
+      const drop = this.dropPending;
+      this.dropPending = false;
+      return { drop };
+    }
     if (gameId === 'cyber-hopper') {
       const hops = { ...this.hopPulses };
       this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
@@ -52,6 +62,7 @@ export class LiveControls {
   neutral() {
     this.held={moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false};
     this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
+    this.dropPending = false;
   }
 }
 interface Player {

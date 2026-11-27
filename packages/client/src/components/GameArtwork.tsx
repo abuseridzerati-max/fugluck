@@ -52,6 +52,23 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'stack-tower': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <g stroke="#18263a" strokeWidth="1">
+        <path d="M80 0v180M160 0v180M240 0v180M0 45h320M0 90h320M0 135h320" />
+      </g>
+      <rect x="92" y="142" width="136" height="38" fill="#1e293b" stroke="#38bdf8" strokeWidth="1.5" />
+      <rect x="96" y="122" width="128" height="18" rx="2" fill="#10b981" stroke="#d1fae5" strokeWidth="1.2" />
+      <rect x="104" y="102" width="112" height="18" rx="2" fill="#06b6d4" stroke="#cffafe" strokeWidth="1.2" />
+      <rect x="110" y="82" width="100" height="18" rx="2" fill="#8b5cf6" stroke="#ede9fe" strokeWidth="1.2" />
+      <rect x="114" y="62" width="92" height="18" rx="2" fill="#ec4899" stroke="#fce7f3" strokeWidth="1.2" />
+      <rect x="148" y="34" width="92" height="18" rx="2" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.75" />
+      <path d="M114 54v14M206 54v14" stroke="#34d399" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.7" />
+      <rect x="220" y="108" width="22" height="14" rx="2" fill="#ec4899" opacity="0.45" transform="rotate(18 220 108)" />
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

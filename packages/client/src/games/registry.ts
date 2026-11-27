@@ -32,6 +32,9 @@ export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
   "cyber-hopper": defineModulePlugin("cyber-hopper", () => import("@fugluck/games/cyber-hopper"), {
     competitionControlsKey: "competition.hopperControls",
   }),
+  "stack-tower": defineModulePlugin("stack-tower", () => import("@fugluck/games/stack-tower"), {
+    competitionControlsKey: "competition.stackTowerControls",
+  }),
   "speed-trivia": defineModulePlugin("speed-trivia", () => import("@fugluck/games/speed-trivia")),
   "tf-sprint": defineModulePlugin("tf-sprint", () => import("@fugluck/games/tf-sprint")),
 };

@@ -1,4 +1,9 @@
-import { AUTHORITY_CAP_TICKS, AUTHORITY_VERSION, CYBER_HOPPER_AUTHORITY_VERSION } from "../authority";
+import {
+  AUTHORITY_CAP_TICKS,
+  AUTHORITY_VERSION,
+  CYBER_HOPPER_AUTHORITY_VERSION,
+  STACK_TOWER_AUTHORITY_VERSION,
+} from "../authority";
 import { FIXED_TIMESTEP_SEC } from "../fixedTimestepLoop";
 import type { GameGenre, GameManifest } from "./contract";
 
@@ -76,6 +81,25 @@ export const GAME_MANIFESTS: readonly GameManifest[] = [
     thumbnail: "cyber-hopper",
     modulePath: "./cyber-hopper/index.ts",
     authorityVersion: CYBER_HOPPER_AUTHORITY_VERSION,
+    certificationScope: "LEVEL_3_CERTIFIED",
+    matchConfig: {
+      defaultDurationSec: DEFAULT_AUTHORITY_DURATION_SEC,
+      tieBreaker: "draw",
+      minPlayers: 2,
+      maxPlayers: 2,
+    },
+  },
+  {
+    id: "stack-tower",
+    title: "Stack Tower",
+    tagline: "Precision neon block stacking with perfect-drop combos",
+    genre: "reflex-timing",
+    certified: true,
+    modes: ["practice", "casual", "tournament"],
+    i18nKeyPrefix: "games.stackTower",
+    thumbnail: "stack-tower",
+    modulePath: "./stack-tower/index.ts",
+    authorityVersion: STACK_TOWER_AUTHORITY_VERSION,
     certificationScope: "LEVEL_3_CERTIFIED",
     matchConfig: {
       defaultDurationSec: DEFAULT_AUTHORITY_DURATION_SEC,

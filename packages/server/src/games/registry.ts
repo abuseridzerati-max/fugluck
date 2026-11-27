@@ -1,9 +1,11 @@
 import { SpaceBlasterEngine } from "@fugluck/games/space-blaster/engine";
 import { CyberHopperEngine, type Obstacle as CyberHopperObstacle } from "@fugluck/games/cyber-hopper/engine";
+import { StackTowerEngine } from "@fugluck/games/stack-tower/engine";
 import {
   AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
+  STACK_TOWER_AUTHORITY_VERSION,
   VIRTUAL_VIEWPORT,
   type AuthorityControls,
   type AuthoritySnapshot,
@@ -67,6 +69,12 @@ interface CyberHopperServerState {
     hopLeft: boolean;
     hopRight: boolean;
   };
+}
+
+interface StackTowerServerState {
+  engine: StackTowerEngine;
+  guard: ControlGuard;
+  dropPending: boolean;
 }
 
 function defaultDrawTieResolver(_playerA: ServerTieCandidate, _playerB: ServerTieCandidate): string | null {
@@ -237,6 +245,106 @@ const cyberHopperServerPlugin: ServerGamePlugin<CyberHopperServerState> = {
   resolveTie: defaultDrawTieResolver,
 };
 
+const stackTowerServerPlugin: ServerGamePlugin<StackTowerServerState> = {
+  gameId: "stack-tower",
+  authorityVersion: STACK_TOWER_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "drop"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): StackTowerServerState {
+    const engine = new StackTowerEngine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      dropPending: false,
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    if (controls.drop !== undefined && typeof controls.drop !== "boolean") {
+      throw Error("INPUT_SHAPE");
+    }
+    state.guard.commit(controls.seq, now);
+    state.dropPending = state.dropPending || Boolean(controls.drop);
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.dropPending = false;
+    }
+    const input = { drop: state.dropPending };
+    state.dropPending = false;
+    return Boolean(state.engine.update(dtSec, input));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    const visibleTower = state.engine.tower.slice(-24).map((b) => ({
+      level: b.level,
+      x: Math.round(b.x * 10) / 10,
+      width: Math.round(b.width * 10) / 10,
+      color: b.color,
+    }));
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      tower: visibleTower,
+      activeBlock: {
+        level: state.engine.activeBlock.level,
+        x: Math.round(state.engine.activeBlock.x * 10) / 10,
+        width: Math.round(state.engine.activeBlock.width * 10) / 10,
+        direction: state.engine.activeBlock.direction,
+        speed: Math.round(state.engine.activeBlock.speed * 10) / 10,
+        color: state.engine.activeBlock.color,
+      },
+      fallingPieces: state.engine.fallingPieces.slice(-6).map((p) => ({
+        x: Math.round(p.x * 10) / 10,
+        y: Math.round(p.y * 10) / 10,
+        width: Math.round(p.width * 10) / 10,
+        height: p.height,
+        vy: Math.round(p.vy),
+        vx: Math.round(p.vx),
+        color: p.color,
+        alpha: Math.round(p.alpha * 100) / 100,
+      })),
+      cameraY: Math.round(state.engine.cameraY * 10) / 10,
+      blocksPlaced: state.engine.blocksPlaced,
+      perfectStreak: state.engine.perfectStreak,
+      maxStreak: state.engine.maxStreak,
+      perfectPulseTicks: state.engine.perfectPulseTicks,
+      lastPulseX: Math.round(state.engine.lastPulseX * 10) / 10,
+      lastPulseWidth: Math.round(state.engine.lastPulseWidth * 10) / 10,
+      lastPulseLevel: state.engine.lastPulseLevel,
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.dropPending = false;
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -244,6 +352,7 @@ const cyberHopperServerPlugin: ServerGamePlugin<CyberHopperServerState> = {
 export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>> = {
   "space-blaster": spaceBlasterServerPlugin,
   "cyber-hopper": cyberHopperServerPlugin,
+  "stack-tower": stackTowerServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

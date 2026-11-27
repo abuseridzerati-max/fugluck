@@ -20,7 +20,7 @@ export async function readTournamentCatalog(templates:CompetitionTemplate[],view
     return {...template,participantCapacity:row.terms.capacity,entryFeeMinor:row.terms.entryMinor,currency:'GEL',
       prizes:[{id:`public_${template.id}`,templateId:template.id,placement:1,amountMinor:row.terms.prizeMinor,currency:'GEL'}],
       tournament:{product:row.product,cycle,eligibility,...progress,nextPromoCycle:next('PROMO'),nextGiftCycle:next('GIFT')}} as CompetitionTemplate;
-  }).sort((a,b)=>['space-blaster','cyber-hopper'].indexOf(a.gameId)-['space-blaster','cyber-hopper'].indexOf(b.gameId)||productOrder[a.tournament!.product]-productOrder[b.tournament!.product]||a.participantCapacity-b.participantCapacity);
+  }).sort((a,b)=>['space-blaster','cyber-hopper','stack-tower'].indexOf(a.gameId)-['space-blaster','cyber-hopper','stack-tower'].indexOf(b.gameId)||productOrder[a.tournament!.product]-productOrder[b.tournament!.product]||a.participantCapacity-b.participantCapacity);
 }
 
 export async function readCoinTournamentCatalog(templates:CompetitionTemplate[],viewerId?:string) {
@@ -32,7 +32,7 @@ export async function readCoinTournamentCatalog(templates:CompetitionTemplate[],
     return {...template,participantCapacity:row.terms.capacity,entryFeeMinor:row.terms.entryMinor,currency:'COINS',
       prizes:[{id:`public_${template.id}`,templateId:template.id,placement:1,amountMinor:row.terms.prizeMinor,currency:'COINS'}],
       tournament:{product:'STANDARD',cycle:null,eligibility,promosEnabled:false,promo:emptyTrack,gift:emptyTrack,nextPromoCycle:null,nextGiftCycle:null}} as CompetitionTemplate;
-  }).sort((a,b)=>['space-blaster','cyber-hopper'].indexOf(a.gameId)-['space-blaster','cyber-hopper'].indexOf(b.gameId)||a.participantCapacity-b.participantCapacity);
+  }).sort((a,b)=>['space-blaster','cyber-hopper','stack-tower'].indexOf(a.gameId)-['space-blaster','cyber-hopper','stack-tower'].indexOf(b.gameId)||a.participantCapacity-b.participantCapacity);
 }
 
 export async function readCatalogRooms(templateIds: string[], viewerId?: string) {

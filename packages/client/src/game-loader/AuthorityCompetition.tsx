@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { SpaceBlasterEngine } from '@fugluck/games/space-blaster/engine'
 import { CyberHopperEngine } from '@fugluck/games/cyber-hopper/engine'
+import { StackTowerEngine } from '@fugluck/games/stack-tower/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch, ApiError } from '../lib/api'
@@ -23,6 +24,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const keyControls = useRef({ left:false,right:false,up:false,down:false,fire:false })
   const activePointers = useRef(new Map<number, 'left'|'right'|'up'|'down'|'fire'>())
   const hopPulses = useRef({ hopUp:false,hopDown:false,hopLeft:false,hopRight:false })
+  const dropPulse = useRef(false)
   const swipeState = useRef<{ pointerId: number | null; x: number; y: number; consumed: boolean }>({ pointerId: null, x: 0, y: 0, consumed: false })
   const [status,setStatus] = useState('connecting')
   const [countdown,setCountdown] = useState(0)
@@ -43,7 +45,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const finish=useRef(onComplete);finish.current=onComplete
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
-  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : 'Space Blaster'
+  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : 'Space Blaster'
   const syncBlasterControls = () => {
     let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
     for (const c of activePointers.current.values()) {
@@ -60,7 +62,11 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     controls.current.fire = keyControls.current.fire || pFire
   }
   useEffect(()=>{
-    const renderer = gameId === 'cyber-hopper' ? new CyberHopperEngine(1) : new SpaceBlasterEngine(1)
+    const renderer = gameId === 'cyber-hopper'
+      ? new CyberHopperEngine(1)
+      : gameId === 'stack-tower'
+        ? new StackTowerEngine(1)
+        : new SpaceBlasterEngine(1)
     renderer.resize(1280, 720)
     const syncCanvasBacking = () => {
       const el = canvas.current
@@ -145,7 +151,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
       setCountdown(p.startAt?Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000)):0)
-      say(p.state==='COMPLETED'?'runComplete':playing?gameId==='cyber-hopper'?'hopperControls':'blasterControls':p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
+      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
       if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
@@ -166,7 +172,12 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         const elapsed=performance.now()-diagnosticStarted
         controlEvidence.activeMs=elapsed
         if(elapsed<24000){
-          if(gameId==='cyber-hopper'){
+          if(gameId==='stack-tower'){
+            if(Math.floor(elapsed/900)>controlEvidence.directions.length){
+              dropPulse.current=true
+              controlEvidence.directions.push('drop')
+            }
+          }else if(gameId==='cyber-hopper'){
             const step=Math.floor(elapsed/800)%4
             const dir=step===0?'hopUp':step===1?'hopRight':step===2?'hopUp':'hopLeft'
             hopPulses.current[dir]=true
@@ -178,7 +189,15 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
           }
         }else{diagnosticRequested.current=false;neutral()}
       }
-      if(gameId==='cyber-hopper'){
+      if(gameId==='stack-tower'){
+        socket.volatile.emit('authority:controls',{
+          ...binding.current,
+          seq:++seq,
+          snapshot:snapshot.seq,
+          drop:dropPulse.current,
+        })
+        dropPulse.current=false
+      }else if(gameId==='cyber-hopper'){
         socket.volatile.emit('authority:controls',{
           ...binding.current,
           seq:++seq,
@@ -197,11 +216,20 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     triggerSend.current = sendControls
     const send=setInterval(sendControls,50)
     const retry=setInterval(()=>{if(pendingRecovery&&!complete&&socket.connected&&instanceId)socket.emit('authority:resume',{instanceId})},3000)
-    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};firePulse.current=false}
+    const neutral=()=>{controls.current={left:false,right:false,up:false,down:false,fire:false};keyControls.current={left:false,right:false,up:false,down:false,fire:false};activePointers.current.clear();swipeState.current={pointerId:null,x:0,y:0,consumed:false};hopPulses.current={hopUp:false,hopDown:false,hopLeft:false,hopRight:false};dropPulse.current=false;firePulse.current=false}
     const visibility=()=>{if(document.hidden){neutral();diagnosticRequested.current=false}}
     const key=(event:KeyboardEvent,down:boolean)=>{
       // Keep page actions operable with Enter/Space; game shortcuts only control the play surface.
       if(complete||!snapshot||snapshot.state!=='ACTIVE'||(event.target instanceof HTMLElement&&event.target.closest('button,a,input,summary,select,textarea')))return
+      if(gameId==='stack-tower'){
+        if(!down||event.repeat)return
+        if(event.key===' '||event.key==='Enter'||event.key==='ArrowDown'){
+          event.preventDefault()
+          dropPulse.current=true
+          sendControls()
+        }
+        return
+      }
       if(gameId==='cyber-hopper'){
         if(!down||event.repeat)return
         let handled=false
@@ -223,7 +251,24 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const draw=()=>{
       const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
       if(state&&ctx){
-        if(gameId==='cyber-hopper'){
+        if(gameId==='stack-tower'){
+          Object.assign(renderer,{
+            tickCount:state.tickCount,
+            score:state.score,
+            gameOver:state.gameOver,
+            tower:state.tower??[],
+            activeBlock:state.activeBlock,
+            fallingPieces:state.fallingPieces??[],
+            cameraY:state.cameraY??0,
+            blocksPlaced:state.blocksPlaced??0,
+            perfectStreak:state.perfectStreak??0,
+            maxStreak:state.maxStreak??0,
+            perfectPulseTicks:state.perfectPulseTicks??0,
+            lastPulseX:state.lastPulseX??0,
+            lastPulseWidth:state.lastPulseWidth??0,
+            lastPulseLevel:state.lastPulseLevel??0,
+          })
+        }else if(gameId==='cyber-hopper'){
           Object.assign(renderer,{
             tickCount:state.tickCount,
             score:state.score,
@@ -286,8 +331,13 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       height={720}
       className="ac-game-surface"
       aria-label={t('competition.liveCanvas',{game:gameTitle})}
-      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
-      onPointerDown={gameId==='cyber-hopper' ? e => {
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:gameId==='stack-tower'?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      onPointerDown={gameId==='stack-tower' ? e => {
+        if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
+        e.preventDefault()
+        dropPulse.current = true
+        triggerSend.current?.()
+      } : gameId==='cyber-hopper' ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0)) return
         e.preventDefault()
         if (swipeState.current.pointerId !== null) return
@@ -309,7 +359,16 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       onLostPointerCapture={gameId==='cyber-hopper' ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
     />
     {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
-      {gameId==='cyber-hopper' ? (
+      {gameId==='stack-tower' ? (
+        <button
+          type="button"
+          className="ac-btn ac-btn--primary"
+          disabled={!active}
+          style={{minWidth:160,minHeight:52,touchAction:'none',fontWeight:'bold',letterSpacing:'0.08em'}}
+          onClick={e=>{if(e.detail===0){dropPulse.current=true;triggerSend.current?.()}}}
+          onPointerDown={e=>{e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch{/* ignore */};dropPulse.current=true;triggerSend.current?.()}}
+        >{t('competition.controls.drop')}</button>
+      ) : gameId==='cyber-hopper' ? (
         ([
           { key:'hopUp', label:`▲ ${t('competition.controls.up')} (W)` },
           { key:'hopDown', label:`▼ ${t('competition.controls.down')} (S)` },

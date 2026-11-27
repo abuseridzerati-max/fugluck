@@ -144,7 +144,11 @@ check(
   "True / False Sprint is classified as COIN_COMPETITIVE",
   GAME_COMPETITION_ELIGIBILITY_REGISTRY["tf-sprint"] === "COIN_COMPETITIVE",
 );
-check("Space Blaster and Cyber Hopper are the only Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 2);
+check(
+  "Stack Tower is classified as PAID_COMPETITIVE_CANDIDATE",
+  GAME_COMPETITION_ELIGIBILITY_REGISTRY["stack-tower"] === "PAID_COMPETITIVE_CANDIDATE",
+);
+check("Space Blaster, Cyber Hopper, and Stack Tower are the Level 3-certified games", Object.values(GAME_COMPETITION_CERTIFICATIONS).filter((entry) => entry.testGelCompetition === "LEVEL_3_CERTIFIED").length === 3);
 
 // Strict invariant: NO game is marked PAID_COMPETITIVE_APPROVED in Phase 1
 const anyApproved = Object.values(GAME_COMPETITION_ELIGIBILITY_REGISTRY).some(

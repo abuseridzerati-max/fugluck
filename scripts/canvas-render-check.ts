@@ -8,6 +8,7 @@ import { RunnerEngine } from "../games/neon-runner/engine";
 import { DashEngine } from "../games/pixel-ninja-dash/engine";
 import { SpaceBlasterEngine } from "../games/space-blaster/engine";
 import { CyberHopperEngine } from "../games/cyber-hopper/engine";
+import { StackTowerEngine } from "../games/stack-tower/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -289,6 +290,37 @@ console.log("\nTest 3.7: Cyber Hopper 300-Frame Headless Canvas draw() Suite\n")
   const callsInRun = totalVerifiedDrawCalls - initialCallCount;
   check("Cyber Hopper 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Cyber Hopper verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.75: Stack Tower 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.75: Stack Tower 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new StackTowerEngine(24681357);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      const top = engine.tower[engine.tower.length - 1];
+      const shouldDrop = !engine.gameOver && Math.abs(engine.activeBlock.x - top.x) <= 6;
+      engine.update(1 / 60, { drop: shouldDrop });
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Stack Tower 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Stack Tower verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Stack Tower places blocks and scores deterministically", engine.blocksPlaced > 0 && engine.score > 0, `blocks=${engine.blocksPlaced}, score=${engine.score}`);
 }
 
 // ---------------------------------------------------------------------------
