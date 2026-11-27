@@ -12,6 +12,7 @@ import { StackTowerEngine } from "../games/stack-tower/engine";
 import { Blitz2048Engine } from "../games/2048-blitz/engine";
 import { NeonSnakeEngine } from "../games/neon-snake/engine";
 import { MinesweeperSprintEngine } from "../games/minesweeper-sprint/engine";
+import { BrickBreakerEngine } from "../games/brick-breaker/engine";
 import { SpeedTriviaEngine } from "../games/speed-trivia/engine";
 import { renderSpeedTrivia } from "../games/speed-trivia/render";
 import { TFSprintEngine } from "../games/tf-sprint/engine";
@@ -428,6 +429,38 @@ console.log("\nTest 3.78: Minesweeper Sprint 300-Frame Headless Canvas draw() Su
   check("Minesweeper Sprint 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
   check("Minesweeper Sprint verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
   check("Minesweeper Sprint reveals safe cells and scores deterministically", engine.score > 0 && engine.safeCellsRemaining < 118, `score=${engine.score}, safeLeft=${engine.safeCellsRemaining}`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 3.79: Brick Breaker 300-Frame Headless Canvas draw() Suite
+// ---------------------------------------------------------------------------
+console.log("\nTest 3.79: Brick Breaker 300-Frame Headless Canvas draw() Suite\n");
+
+{
+  const mockCtx = createMockCanvasContext();
+  const engine = new BrickBreakerEngine(55667788);
+  engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+  engine.reset();
+
+  const initialCallCount = totalVerifiedDrawCalls;
+  let thrownError: Error | null = null;
+
+  try {
+    for (let frame = 0; frame < 300; frame++) {
+      engine.update(1 / 60, {
+        left: engine.ballX < engine.paddleX - 6,
+        right: engine.ballX > engine.paddleX + 6,
+      });
+      engine.render(mockCtx);
+    }
+  } catch (err) {
+    thrownError = err as Error;
+  }
+
+  const callsInRun = totalVerifiedDrawCalls - initialCallCount;
+  check("Brick Breaker 300 frames execute with 0 thrown exceptions", thrownError === null, thrownError?.message);
+  check("Brick Breaker verified draw calls > 1,000 without NaN/Infinity", callsInRun > 1000, `Recorded ${callsInRun} calls`);
+  check("Brick Breaker tracks paddle, hits bricks, and scores deterministically", engine.score > 0 && engine.lives > 0, `score=${engine.score}, lives=${engine.lives}`);
 }
 
 // ---------------------------------------------------------------------------

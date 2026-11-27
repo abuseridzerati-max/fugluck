@@ -150,6 +150,29 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'brick-breaker': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="26" y="14" width="268" height="152" rx="8" fill="#0a101d" stroke="#38bdf8" strokeOpacity="0.45" strokeWidth="1.75" />
+      <rect x="42" y="28" width="44" height="14" rx="2" fill="#7c3aed" stroke="#ddd6fe" strokeWidth="1.2" />
+      <rect x="92" y="28" width="44" height="14" rx="2" fill="#7c3aed" stroke="#ddd6fe" strokeWidth="1.2" />
+      <rect x="142" y="28" width="44" height="14" rx="2" fill="#7c3aed" stroke="#ddd6fe" strokeWidth="1.2" />
+      <rect x="192" y="28" width="44" height="14" rx="2" fill="#7c3aed" stroke="#ddd6fe" strokeWidth="1.2" />
+      <rect x="242" y="28" width="36" height="14" rx="2" fill="#7c3aed" stroke="#ddd6fe" strokeWidth="1.2" />
+      <rect x="42" y="48" width="44" height="14" rx="2" fill="#ec4899" stroke="#fbcfe8" strokeWidth="1.2" />
+      <rect x="92" y="48" width="44" height="14" rx="2" fill="#ec4899" stroke="#fbcfe8" strokeWidth="1.2" />
+      <rect x="192" y="48" width="44" height="14" rx="2" fill="#ec4899" stroke="#fbcfe8" strokeWidth="1.2" />
+      <rect x="242" y="48" width="36" height="14" rx="2" fill="#ec4899" stroke="#fbcfe8" strokeWidth="1.2" />
+      <rect x="42" y="68" width="44" height="14" rx="2" fill="#06b6d4" stroke="#cffafe" strokeWidth="1.2" />
+      <rect x="142" y="68" width="44" height="14" rx="2" fill="#10b981" stroke="#d1fae5" strokeWidth="1.2" />
+      <rect x="242" y="68" width="36" height="14" rx="2" fill="#06b6d4" stroke="#cffafe" strokeWidth="1.2" />
+      <path d="M168 140L198 106L164 82" stroke="#38bdf8" strokeOpacity="0.45" strokeWidth="2.5" strokeDasharray="5 5" strokeLinecap="round" />
+      <circle cx="198" cy="106" r="10" fill="#38bdf8" fillOpacity="0.3" />
+      <circle cx="198" cy="106" r="6" fill="#ffffff" />
+      <rect x="116" y="144" width="88" height="12" rx="4" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

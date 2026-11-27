@@ -7,6 +7,7 @@ import { Blitz2048Engine } from '@fugluck/games/2048-blitz/engine'
 import { NeonSnakeEngine } from '@fugluck/games/neon-snake/engine'
 import { MinesweeperSprintEngine } from '@fugluck/games/minesweeper-sprint/engine'
 import { clientPointToMineCell } from '@fugluck/games/minesweeper-sprint/constants'
+import { BrickBreakerEngine } from '@fugluck/games/brick-breaker/engine'
 import type { AuthorityBinding, AuthoritySnapshot, ClientToServerEvents, ServerToClientEvents, CompetitionTemplate } from '@fugluck/shared'
 import { useTranslation } from 'react-i18next'
 import { API_URL, apiFetch, ApiError } from '../lib/api'
@@ -52,7 +53,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
   const finish=useRef(onComplete);finish.current=onComplete
   const cancelled=useRef(onCancelled);cancelled.current=onCancelled
   const triggerSend = useRef<(()=>void)|null>(null)
-  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : gameId === 'neon-snake' ? 'Neon Snake' : gameId === 'minesweeper-sprint' ? 'Minesweeper Sprint' : 'Space Blaster'
+  const gameTitle = gameId === 'cyber-hopper' ? 'Cyber Hopper' : gameId === 'stack-tower' ? 'Stack Tower' : gameId === '2048-blitz' ? 'Seeded 2048 Blitz' : gameId === 'neon-snake' ? 'Neon Snake' : gameId === 'minesweeper-sprint' ? 'Minesweeper Sprint' : gameId === 'brick-breaker' ? 'Brick Breaker' : 'Space Blaster'
   const syncBlasterControls = () => {
     let pLeft = false, pRight = false, pUp = false, pDown = false, pFire = false
     for (const c of activePointers.current.values()) {
@@ -79,7 +80,9 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
             ? new NeonSnakeEngine(1)
             : gameId === 'minesweeper-sprint'
               ? new MinesweeperSprintEngine(1)
-              : new SpaceBlasterEngine(1)
+              : gameId === 'brick-breaker'
+                ? new BrickBreakerEngine(1)
+                : new SpaceBlasterEngine(1)
     renderer.resize(1280, 720)
     const syncCanvasBacking = () => {
       const el = canvas.current
@@ -164,7 +167,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       }
       else if(['COMPLETED','VOIDED','FORFEITED'].includes(p.state)){controlEvidence.terminalState=p.state;neutral()}
       setCountdown(p.startAt?Math.max(0,Math.ceil((p.startAt-p.serverTime)/1000)):0)
-      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':gameId==='neon-snake'?'neonSnakeControls':gameId==='minesweeper-sprint'?'minesweeperControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
+      say(p.state==='COMPLETED'?'runComplete':playing?(gameId==='cyber-hopper'?'hopperControls':gameId==='stack-tower'?'stackTowerControls':gameId==='2048-blitz'?'blitz2048Controls':gameId==='neon-snake'?'neonSnakeControls':gameId==='minesweeper-sprint'?'minesweeperControls':gameId==='brick-breaker'?'brickBreakerControls':'blasterControls'):p.state==='VOIDED'?'recovering':p.startAt?'countdown':'starting')
     })
     socket.on('authority:outcome',p=>{
       if(p.matchId&&binding.current&&p.matchId!==binding.current.matchId)return
@@ -185,7 +188,11 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
         const elapsed=performance.now()-diagnosticStarted
         controlEvidence.activeMs=elapsed
         if(elapsed<24000){
-          if(gameId==='minesweeper-sprint'){
+          if(gameId==='brick-breaker'){
+            const direction=Math.floor(elapsed/1500)%2===0?'left':'right'
+            controls.current={left:direction==='left',right:direction==='right',up:false,down:false,fire:false}
+            if(controlEvidence.directions.at(-1)!==direction)controlEvidence.directions.push(direction)
+          }else if(gameId==='minesweeper-sprint'){
             // Diagnostic mode skips blind mine clicks; regular pointer clicks drive gameplay.
           }else if(gameId==='2048-blitz'||gameId==='neon-snake'){
             const step=Math.floor(elapsed/500)%4
@@ -209,7 +216,15 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
           }
         }else{diagnosticRequested.current=false;neutral()}
       }
-      if(gameId==='minesweeper-sprint'){
+      if(gameId==='brick-breaker'){
+        socket.volatile.emit('authority:controls',{
+          ...binding.current,
+          seq:++seq,
+          snapshot:snapshot.seq,
+          left:controls.current.left,
+          right:controls.current.right,
+        })
+      }else if(gameId==='minesweeper-sprint'){
         const cell=pendingCell.current
         pendingCell.current={}
         socket.volatile.emit('authority:controls',{
@@ -306,7 +321,25 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
     const draw=()=>{
       const state=presentation.visual(performance.now()),ctx=canvas.current?.getContext('2d')
       if(state&&ctx){
-        if(gameId==='minesweeper-sprint'){
+        if(gameId==='brick-breaker'){
+          Object.assign(renderer,{
+            tickCount:state.tickCount,
+            score:state.score,
+            gameOver:state.gameOver,
+            ticksRemaining:state.ticksRemaining??0,
+            paddleX:state.paddleX??640,
+            ballX:state.ballX??640,
+            ballY:state.ballY??644,
+            ballVx:state.ballVx??0,
+            ballVy:state.ballVy??0,
+            bricks:state.bricks??[],
+            lives:state.lives??3,
+            wave:state.wave??1,
+            combo:state.combo??0,
+            launchTicks:state.launchTicks??0,
+            trail:state.trail??[],
+          })
+        }else if(gameId==='minesweeper-sprint'){
           Object.assign(renderer,{
             tickCount:state.tickCount,
             score:state.score,
@@ -424,7 +457,7 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       height={720}
       className="ac-game-surface"
       aria-label={t('competition.liveCanvas',{game:gameTitle})}
-      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz'||gameId==='neon-snake'||gameId==='minesweeper-sprint')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
+      style={{width:'100%',aspectRatio:'16 / 9',objectFit:'contain',background:(gameId==='stack-tower'||gameId==='2048-blitz'||gameId==='neon-snake'||gameId==='minesweeper-sprint'||gameId==='brick-breaker')?'#070a10':gameId==='cyber-hopper'?'#060913':'#080d19',display:(!hasSession||terminal||preparing)?'none':'block'}}
       onContextMenu={gameId==='minesweeper-sprint' ? e => e.preventDefault() : undefined}
       onPointerDown={gameId==='minesweeper-sprint' ? e => {
         if (!active || (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2)) return
@@ -466,7 +499,16 @@ export function AuthorityCompetition({ gameId = 'space-blaster', templateId, tem
       onLostPointerCapture={(gameId==='cyber-hopper' || gameId==='2048-blitz' || gameId==='neon-snake') ? e => { if (swipeState.current.pointerId === e.pointerId) swipeState.current.pointerId = null } : undefined}
     />
     {hasSession&&!terminal&&!preparing&&<div className="competition-play-controls ac-game-surface">
-      {gameId==='minesweeper-sprint' ? (
+      {gameId==='brick-breaker' ? (
+        (['left','right'] as const).map(control=><button key={control} type="button" className="ac-btn ac-btn--ghost" disabled={!active} style={{minWidth:110,minHeight:52,touchAction:'none',fontWeight:'bold'}}
+          onKeyDown={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();keyControls.current[control]=true;syncBlasterControls();triggerSend.current?.()}}}
+          onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){keyControls.current[control]=false;syncBlasterControls()}}}
+          onBlur={()=>{keyControls.current[control]=false;syncBlasterControls()}}
+          onPointerDown={e=>{e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch{/* ignore */};activePointers.current.set(e.pointerId,control);syncBlasterControls()}}
+          onPointerUp={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}
+          onLostPointerCapture={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}
+          onPointerCancel={e=>{if(activePointers.current.delete(e.pointerId))syncBlasterControls()}}>{control==='left'?`◀ ${t('competition.controls.left')}`:`${t('competition.controls.right')} ▶`}</button>)
+      ) : gameId==='minesweeper-sprint' ? (
         <button
           type="button"
           className={`ac-btn ${mineMode==='flag'?'ac-btn--secondary':'ac-btn--primary'}`}

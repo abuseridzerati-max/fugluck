@@ -27,7 +27,11 @@ export class LiveControls {
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === 'minesweeper-sprint') {
+    if (gameId === 'brick-breaker') {
+      for (const k of ['left','right'] as const) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      this.held={moveLeft:Boolean(p.left),moveRight:Boolean(p.right),moveUp:false,moveDown:false,shootPressed:false};
+    } else if (gameId === 'minesweeper-sprint') {
       if (p.cellAction !== undefined) {
         if (p.cellAction !== 'reveal' && p.cellAction !== 'flag') throw Error('INPUT_SHAPE');
         if (typeof p.cellCol !== 'number' || typeof p.cellRow !== 'number' || !Number.isInteger(p.cellCol) || !Number.isInteger(p.cellRow)) throw Error('INPUT_SHAPE');
@@ -66,6 +70,9 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'brick-breaker') {
+      return { left: this.held.moveLeft, right: this.held.moveRight };
+    }
     if (gameId === 'minesweeper-sprint') {
       const cell = this.cellInput;
       this.cellInput = {};

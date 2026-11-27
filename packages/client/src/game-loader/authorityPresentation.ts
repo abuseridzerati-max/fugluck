@@ -112,6 +112,13 @@ export class AuthorityPresentation {
     if (a.cameraY !== undefined && b.cameraY !== undefined) {
       out.cameraY = lerp(a.cameraY, b.cameraY)
     }
+    if (a.paddleX !== undefined && b.paddleX !== undefined) {
+      out.paddleX = lerp(a.paddleX, b.paddleX)
+    }
+    if (a.ballX !== undefined && b.ballX !== undefined && a.ballY !== undefined && b.ballY !== undefined) {
+      out.ballX = lerp(a.ballX, b.ballX)
+      out.ballY = lerp(a.ballY, b.ballY)
+    }
     return out
   }
 }

@@ -24,6 +24,7 @@ const DEFAULT_CONTROLS_HINT: Record<string, string> = {
   '2048-blitz': 'Arrows / WASD or Swipe to merge tiles · 120s seeded blitz · Highest score wins',
   'neon-snake': 'Arrows / WASD or Swipe to steer · Eat orbs to grow & grab timed bonus orbs',
   'minesweeper-sprint': 'Click / Tap to reveal · Right-click, Shift+click, or Flag Mode to flag · 90s sprint',
+  'brick-breaker': 'Left / Right Arrows, A / D, or drag paddle · Chain brick combos & clear waves',
   'neon-runner': 'Space / Up Arrow to jump · Time leaps over neon obstacles for distance score',
   'pixel-ninja-dash': 'Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly',
   'speed-trivia': 'Click or press 1–4 to answer · 10 questions · Faster correct answers score more',

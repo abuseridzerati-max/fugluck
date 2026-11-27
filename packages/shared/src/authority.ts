@@ -5,6 +5,7 @@ export const STACK_TOWER_AUTHORITY_VERSION = 'stack-tower-rv001-v1';
 export const BLITZ_2048_AUTHORITY_VERSION = '2048-blitz-rv001-v1';
 export const NEON_SNAKE_AUTHORITY_VERSION = 'neon-snake-rv001-v1';
 export const MINESWEEPER_SPRINT_AUTHORITY_VERSION = 'minesweeper-sprint-rv001-v1';
+export const BRICK_BREAKER_AUTHORITY_VERSION = 'brick-breaker-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -70,5 +71,16 @@ export interface AuthoritySnapshot {
   flagsPlaced?: number;
   detonatedIdx?: number;
   boardCleared?: boolean;
+  paddleX?: number;
+  ballX?: number;
+  ballY?: number;
+  ballVx?: number;
+  ballVy?: number;
+  bricks?: Array<{ id: number; x: number; y: number; width: number; height: number; hp: number; maxHp: number; color: string }>;
+  lives?: number;
+  wave?: number;
+  combo?: number;
+  launchTicks?: number;
+  trail?: Array<{ x: number; y: number }>;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

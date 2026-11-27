@@ -4,9 +4,11 @@ import { StackTowerEngine } from "@fugluck/games/stack-tower/engine";
 import { Blitz2048Engine } from "@fugluck/games/2048-blitz/engine";
 import { NeonSnakeEngine } from "@fugluck/games/neon-snake/engine";
 import { MinesweeperSprintEngine } from "@fugluck/games/minesweeper-sprint/engine";
+import { BrickBreakerEngine } from "@fugluck/games/brick-breaker/engine";
 import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
+  BRICK_BREAKER_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
   MINESWEEPER_SPRINT_AUTHORITY_VERSION,
@@ -112,6 +114,15 @@ interface MinesweeperServerState {
     action?: "reveal" | "flag";
     col?: number;
     row?: number;
+  };
+}
+
+interface BrickBreakerServerState {
+  engine: BrickBreakerEngine;
+  guard: ControlGuard;
+  held: {
+    left: boolean;
+    right: boolean;
   };
 }
 
@@ -634,6 +645,88 @@ const minesweeperSprintServerPlugin: ServerGamePlugin<MinesweeperServerState> = 
   resolveTie: defaultDrawTieResolver,
 };
 
+const brickBreakerServerPlugin: ServerGamePlugin<BrickBreakerServerState> = {
+  gameId: "brick-breaker",
+  authorityVersion: BRICK_BREAKER_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "left", "right"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): BrickBreakerServerState {
+    const engine = new BrickBreakerEngine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      held: { left: false, right: false },
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    for (const key of ["left", "right"] as const) {
+      if (controls[key] !== undefined && typeof controls[key] !== "boolean") {
+        throw Error("INPUT_SHAPE");
+      }
+    }
+    state.guard.commit(controls.seq, now);
+    state.held = {
+      left: Boolean(controls.left),
+      right: Boolean(controls.right),
+    };
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.held = { left: false, right: false };
+    }
+    return Boolean(state.engine.update(dtSec, { ...state.held }));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      ticksRemaining: state.engine.ticksRemaining,
+      paddleX: Math.round(state.engine.paddleX * 10) / 10,
+      ballX: Math.round(state.engine.ballX * 10) / 10,
+      ballY: Math.round(state.engine.ballY * 10) / 10,
+      ballVx: Math.round(state.engine.ballVx),
+      ballVy: Math.round(state.engine.ballVy),
+      bricks: state.engine.bricks.filter((b) => b.hp > 0).map((b) => ({ ...b })),
+      lives: state.engine.lives,
+      wave: state.engine.wave,
+      combo: state.engine.combo,
+      launchTicks: state.engine.launchTicks,
+      trail: state.engine.trail.map((pt) => ({ x: Math.round(pt.x), y: Math.round(pt.y) })),
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.held = { left: false, right: false };
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -645,6 +738,7 @@ export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>
   "2048-blitz": blitz2048ServerPlugin,
   "neon-snake": neonSnakeServerPlugin,
   "minesweeper-sprint": minesweeperSprintServerPlugin,
+  "brick-breaker": brickBreakerServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

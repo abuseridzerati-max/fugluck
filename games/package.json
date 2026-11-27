@@ -12,6 +12,7 @@
     "./neon-snake/engine": "./neon-snake/engine.ts",
     "./minesweeper-sprint/engine": "./minesweeper-sprint/engine.ts",
     "./minesweeper-sprint/constants": "./minesweeper-sprint/constants.ts",
+    "./brick-breaker/engine": "./brick-breaker/engine.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -47,6 +48,10 @@
     "./minesweeper-sprint": {
       "import": "./minesweeper-sprint/index.ts",
       "default": "./minesweeper-sprint/index.ts"
+    },
+    "./brick-breaker": {
+      "import": "./brick-breaker/index.ts",
+      "default": "./brick-breaker/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",
