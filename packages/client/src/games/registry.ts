@@ -41,6 +41,9 @@ export const CLIENT_GAME_PLUGINS: Readonly<Record<string, ClientGamePlugin>> = {
   "neon-snake": defineModulePlugin("neon-snake", () => import("@fugluck/games/neon-snake"), {
     competitionControlsKey: "competition.neonSnakeControls",
   }),
+  "minesweeper-sprint": defineModulePlugin("minesweeper-sprint", () => import("@fugluck/games/minesweeper-sprint"), {
+    competitionControlsKey: "competition.minesweeperControls",
+  }),
   "speed-trivia": defineModulePlugin("speed-trivia", () => import("@fugluck/games/speed-trivia")),
   "tf-sprint": defineModulePlugin("tf-sprint", () => import("@fugluck/games/tf-sprint")),
 };

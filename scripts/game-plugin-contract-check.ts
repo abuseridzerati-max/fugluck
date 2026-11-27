@@ -40,12 +40,13 @@ async function main() {
     "stack-tower",
     "2048-blitz",
     "neon-snake",
+    "minesweeper-sprint",
     "speed-trivia",
     "tf-sprint",
   ];
 
   check(
-    "GAME_MANIFESTS contains all 9 registered games",
+    "GAME_MANIFESTS contains all 10 registered games",
     expectedIds.every((id) => GAME_MANIFESTS.some((m) => m.id === id)) &&
       GAME_MANIFESTS.length === expectedIds.length,
   );
@@ -57,8 +58,8 @@ async function main() {
   );
 
   check(
-    "Exactly 2048-blitz, cyber-hopper, neon-snake, space-blaster, and stack-tower are Tournament Certified",
-    getCertifiedGameIds().sort().join(",") === "2048-blitz,cyber-hopper,neon-snake,space-blaster,stack-tower",
+    "Exactly 2048-blitz, cyber-hopper, minesweeper-sprint, neon-snake, space-blaster, and stack-tower are Tournament Certified",
+    getCertifiedGameIds().sort().join(",") === "2048-blitz,cyber-hopper,minesweeper-sprint,neon-snake,space-blaster,stack-tower",
   );
 
   check(
@@ -117,7 +118,22 @@ async function main() {
     const snapshotTimes = new Map<number, number>([[1, 1000]]);
 
     const controls: AuthorityControls =
-      gameId === "neon-snake"
+      gameId === "minesweeper-sprint"
+        ? {
+            sessionId: "s1",
+            instanceId: "i1",
+            matchId: "m1",
+            gameId,
+            version: plugin.authorityVersion,
+            nonce: "n1",
+            epoch: 1,
+            seq: 1,
+            snapshot: 1,
+            cellAction: "flag",
+            cellCol: 0,
+            cellRow: 0,
+          }
+        : gameId === "neon-snake"
         ? {
             sessionId: "s1",
             instanceId: "i1",
@@ -219,7 +235,9 @@ async function main() {
     const snap = plugin.serializeSnapshot(stateA, baseSnapshot);
     check(
       `ServerGamePlugin '${gameId}' serializeSnapshot populates game-specific fields`,
-      gameId === "neon-snake"
+      gameId === "minesweeper-sprint"
+        ? Array.isArray(snap.visibleBoard) && snap.visibleBoard.length === 140 && typeof snap.ticksRemaining === "number"
+        : gameId === "neon-snake"
         ? Array.isArray(snap.snake) && snap.snake.length >= 4 && Boolean(snap.food) && typeof snap.ticksRemaining === "number"
         : gameId === "2048-blitz"
         ? Array.isArray(snap.board) && snap.board.length === 16 && typeof snap.ticksRemaining === "number"

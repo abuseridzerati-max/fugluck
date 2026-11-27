@@ -11,6 +11,8 @@ import { Blitz2048Module } from '../games/2048-blitz';
 import { Blitz2048Engine } from '../games/2048-blitz/engine';
 import { NeonSnakeModule } from '../games/neon-snake';
 import { NeonSnakeEngine } from '../games/neon-snake/engine';
+import { MinesweeperSprintModule } from '../games/minesweeper-sprint';
+import { MinesweeperSprintEngine } from '../games/minesweeper-sprint/engine';
 import { SpeedTriviaModule } from '../games/speed-trivia';
 import { SpeedTriviaEngine } from '../games/speed-trivia/engine';
 
@@ -75,6 +77,7 @@ try {
     ['stack-tower', StackTowerModule, StackTowerEngine],
     ['2048-blitz', Blitz2048Module, Blitz2048Engine],
     ['neon-snake', NeonSnakeModule, NeonSnakeEngine],
+    ['minesweeper-sprint', MinesweeperSprintModule, MinesweeperSprintEngine],
     ['speed-trivia', SpeedTriviaModule, SpeedTriviaEngine],
   ] as const) {
     const calls: number[][] = [];

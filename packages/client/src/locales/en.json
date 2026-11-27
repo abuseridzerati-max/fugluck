@@ -265,6 +265,7 @@
     "stackTowerControls": "Press Space, Enter, Down Arrow, or tap to drop each neon block on the tower.",
     "blitz2048Controls": "Use arrow keys, WASD, swipe, or D-pad to slide and merge tiles before the 120s blitz ends.",
     "neonSnakeControls": "Use arrow keys, WASD, swipe, or D-pad to steer the snake. Eat orbs and avoid walls or your tail.",
+    "minesweeperControls": "Click or tap cells to reveal safe tiles. Right-click, Shift+click, or switch to Flag Mode to mark mines.",
     "liveCanvas": "Live {{game}} competition",
     "leaveCompetition": "Leave Competition",
     "forfeit": "Forfeit competition",
@@ -324,7 +325,9 @@
       "left": "Left",
       "right": "Right",
       "fire": "Fire",
-      "drop": "DROP"
+      "drop": "DROP",
+      "digMode": "MODE: DIG",
+      "flagMode": "MODE: FLAG"
     },
     "emptyGame": "No {{game}} competitions available right now.",
     "showAll": "Show All",
@@ -932,6 +935,7 @@
       "stack-tower": "Space / Enter / Down Arrow or Tap to drop · Align perfectly for combo bonus",
       "2048-blitz": "Arrows / WASD or Swipe to merge tiles · 120s seeded blitz · Highest score wins",
       "neon-snake": "Arrows / WASD or Swipe to steer · Eat orbs to grow & grab timed bonus orbs",
+      "minesweeper-sprint": "Click / Tap to reveal · Right-click, Shift+click, or Flag Mode to flag · 90s sprint",
       "neon-runner": "Space / Up Arrow to jump · Time leaps over neon obstacles for distance score",
       "pixel-ninja-dash": "Space / Up Arrow to jump & double-jump · Chain rooftop gaps cleanly",
       "speed-trivia": "Click or press 1–4 to answer · 10 questions · Faster correct answers score more",
@@ -1045,6 +1049,12 @@
       "description": "Deterministic neon arena snake with speed tiers & bonus orbs",
       "controls": "Use Arrow keys, WASD, swipe on canvas, or the on-screen D-pad to steer.",
       "rules": "Collect neon orbs to grow (+100 pts) and speed up. Every 5th orb spawns a timed bonus orb (+300 pts). Avoid walls and your own tail until the 120-second timer expires."
+    },
+    "minesweeperSprint": {
+      "title": "Minesweeper Sprint",
+      "description": "90-second seeded minefield sprint with fair safe starts",
+      "controls": "Left-click or tap to reveal cells. Right-click, Shift+click, press F, or tap MODE to toggle Flag Mode.",
+      "rules": "Clear safe cells on a seeded 14x10 minefield (+50 pts per safe cell revealed). Every match opens a guaranteed-safe starting pocket. Clearing the board awards +500 pts plus a speed bonus; hitting a mine or running out of time ends the run."
     }
   }
 }

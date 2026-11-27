@@ -20,13 +20,21 @@ export class LiveControls {
   held = { moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false };
   hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
   movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+  cellInput: { action?: 'reveal' | 'flag'; col?: number; row?: number } = {};
   dropPending = false;
   accept(p: AuthorityControls, now: number, snapshotTimes: Map<number,number>, gameId = 'space-blaster') {
     if (!Number.isSafeInteger(p.seq) || p.seq <= this.seq) throw Error('INPUT_SEQUENCE');
     if (!Number.isSafeInteger(p.snapshot) || now-(snapshotTimes.get(p.snapshot)??-Infinity)>500) throw Error('INPUT_STALE');
     this.tokens=Math.min(12,this.tokens+Math.max(0,now-this.refill)*0.06); this.refill=now;
     if (this.tokens<1) throw Error('INPUT_RATE');
-    if (gameId === '2048-blitz' || gameId === 'neon-snake') {
+    if (gameId === 'minesweeper-sprint') {
+      if (p.cellAction !== undefined) {
+        if (p.cellAction !== 'reveal' && p.cellAction !== 'flag') throw Error('INPUT_SHAPE');
+        if (typeof p.cellCol !== 'number' || typeof p.cellRow !== 'number' || !Number.isInteger(p.cellCol) || !Number.isInteger(p.cellRow)) throw Error('INPUT_SHAPE');
+      }
+      this.tokens--; this.seq=p.seq; this.lastInput=now;
+      if (p.cellAction) this.cellInput = { action: p.cellAction, col: p.cellCol, row: p.cellRow };
+    } else if (gameId === '2048-blitz' || gameId === 'neon-snake') {
       const moveKeys = ['moveUp','moveDown','moveLeft','moveRight'] as const;
       for (const k of moveKeys) if (p[k] !== undefined && typeof p[k] !== 'boolean') throw Error('INPUT_SHAPE');
       this.tokens--; this.seq=p.seq; this.lastInput=now;
@@ -58,6 +66,11 @@ export class LiveControls {
   }
   take(now: number, gameId = 'space-blaster') {
     if (now-this.lastInput>250) this.neutral();
+    if (gameId === 'minesweeper-sprint') {
+      const cell = this.cellInput;
+      this.cellInput = {};
+      return cell;
+    }
     if (gameId === '2048-blitz' || gameId === 'neon-snake') {
       const moves = { ...this.movePulses };
       this.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
@@ -79,6 +92,7 @@ export class LiveControls {
     this.held={moveLeft:false,moveRight:false,moveUp:false,moveDown:false,shootPressed:false};
     this.hopPulses = { hopUp: false, hopDown: false, hopLeft: false, hopRight: false };
     this.movePulses = { moveUp: false, moveDown: false, moveLeft: false, moveRight: false };
+    this.cellInput = {};
     this.dropPending = false;
   }
 }

@@ -3,6 +3,7 @@ import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
+  MINESWEEPER_SPRINT_AUTHORITY_VERSION,
   NEON_SNAKE_AUTHORITY_VERSION,
   STACK_TOWER_AUTHORITY_VERSION,
 } from "../authority";
@@ -143,6 +144,25 @@ export const GAME_MANIFESTS: readonly GameManifest[] = [
     certificationScope: "LEVEL_3_CERTIFIED",
     matchConfig: {
       defaultDurationSec: 120,
+      tieBreaker: "draw",
+      minPlayers: 2,
+      maxPlayers: 2,
+    },
+  },
+  {
+    id: "minesweeper-sprint",
+    title: "Minesweeper Sprint",
+    tagline: "90-second seeded minefield sprint with fair safe starts",
+    genre: "reflex-timing",
+    certified: true,
+    modes: ["practice", "casual", "tournament"],
+    i18nKeyPrefix: "games.minesweeperSprint",
+    thumbnail: "minesweeper-sprint",
+    modulePath: "./minesweeper-sprint/index.ts",
+    authorityVersion: MINESWEEPER_SPRINT_AUTHORITY_VERSION,
+    certificationScope: "LEVEL_3_CERTIFIED",
+    matchConfig: {
+      defaultDurationSec: 90,
       tieBreaker: "draw",
       minPlayers: 2,
       maxPlayers: 2,

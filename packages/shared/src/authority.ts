@@ -4,6 +4,7 @@ export const CYBER_HOPPER_AUTHORITY_VERSION = 'cyber-hopper-rv001-v1';
 export const STACK_TOWER_AUTHORITY_VERSION = 'stack-tower-rv001-v1';
 export const BLITZ_2048_AUTHORITY_VERSION = '2048-blitz-rv001-v1';
 export const NEON_SNAKE_AUTHORITY_VERSION = 'neon-snake-rv001-v1';
+export const MINESWEEPER_SPRINT_AUTHORITY_VERSION = 'minesweeper-sprint-rv001-v1';
 export const AUTHORITY_CAP_TICKS = 180 * 60;
 export type AuthorityState = 'CREATED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'FORFEITED' | 'VOIDED' | 'EXPIRED';
 export interface AuthorityBinding {
@@ -16,6 +17,7 @@ export interface AuthorityControls extends AuthorityBinding {
   hopUp?: boolean; hopDown?: boolean; hopLeft?: boolean; hopRight?: boolean;
   drop?: boolean;
   moveUp?: boolean; moveDown?: boolean; moveLeft?: boolean; moveRight?: boolean;
+  cellAction?: 'reveal' | 'flag'; cellCol?: number; cellRow?: number;
 }
 export interface CyberHopperObstacleSnapshot {
   id: number; x: number; y: number; width: number; height: number;
@@ -63,5 +65,10 @@ export interface AuthoritySnapshot {
   bonusFoodTicks?: number;
   stepIntervalTicks?: number;
   orbsEaten?: number;
+  visibleBoard?: number[];
+  safeCellsRemaining?: number;
+  flagsPlaced?: number;
+  detonatedIdx?: number;
+  boardCleared?: boolean;
 }
 export interface AuthorityOutcome { instanceId: string; matchId?:string; status: string; reason: string; winnerUserId: string | null; yourScore?: number }

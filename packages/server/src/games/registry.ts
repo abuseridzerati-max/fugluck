@@ -3,11 +3,13 @@ import { CyberHopperEngine, type Obstacle as CyberHopperObstacle } from "@fugluc
 import { StackTowerEngine } from "@fugluck/games/stack-tower/engine";
 import { Blitz2048Engine } from "@fugluck/games/2048-blitz/engine";
 import { NeonSnakeEngine } from "@fugluck/games/neon-snake/engine";
+import { MinesweeperSprintEngine } from "@fugluck/games/minesweeper-sprint/engine";
 import {
   AUTHORITY_VERSION,
   BLITZ_2048_AUTHORITY_VERSION,
   CYBER_HOPPER_AUTHORITY_VERSION,
   GAME_MANIFESTS,
+  MINESWEEPER_SPRINT_AUTHORITY_VERSION,
   NEON_SNAKE_AUTHORITY_VERSION,
   STACK_TOWER_AUTHORITY_VERSION,
   VIRTUAL_VIEWPORT,
@@ -100,6 +102,16 @@ interface NeonSnakeServerState {
     moveDown: boolean;
     moveLeft: boolean;
     moveRight: boolean;
+  };
+}
+
+interface MinesweeperServerState {
+  engine: MinesweeperSprintEngine;
+  guard: ControlGuard;
+  pendingCell: {
+    action?: "reveal" | "flag";
+    col?: number;
+    row?: number;
   };
 }
 
@@ -533,6 +545,95 @@ const neonSnakeServerPlugin: ServerGamePlugin<NeonSnakeServerState> = {
   resolveTie: defaultDrawTieResolver,
 };
 
+const minesweeperSprintServerPlugin: ServerGamePlugin<MinesweeperServerState> = {
+  gameId: "minesweeper-sprint",
+  authorityVersion: MINESWEEPER_SPRINT_AUTHORITY_VERSION,
+  allowedControlKeys: [...BASE_CONTROL_KEYS, "cellAction", "cellCol", "cellRow"],
+  defaultReferenceEntryMinor: 400,
+
+  createState(seed: number): MinesweeperServerState {
+    const engine = new MinesweeperSprintEngine(seed);
+    engine.resize(VIRTUAL_VIEWPORT.width, VIRTUAL_VIEWPORT.height);
+    return {
+      engine,
+      guard: new ControlGuard(),
+      pendingCell: {},
+    };
+  },
+
+  applyInput(state, controls, now, snapshotTimes) {
+    state.guard.validateAndConsume(controls, now, snapshotTimes);
+    if (controls.cellAction !== undefined) {
+      if (controls.cellAction !== "reveal" && controls.cellAction !== "flag") {
+        throw Error("INPUT_SHAPE");
+      }
+      if (
+        typeof controls.cellCol !== "number" ||
+        typeof controls.cellRow !== "number" ||
+        !Number.isInteger(controls.cellCol) ||
+        !Number.isInteger(controls.cellRow)
+      ) {
+        throw Error("INPUT_SHAPE");
+      }
+    }
+    state.guard.commit(controls.seq, now);
+    if (controls.cellAction) {
+      state.pendingCell = {
+        action: controls.cellAction,
+        col: controls.cellCol,
+        row: controls.cellRow,
+      };
+    }
+  },
+
+  tick(state, dtSec, now) {
+    if (now - state.guard.lastInput > 250) {
+      state.pendingCell = {};
+    }
+    const input = state.pendingCell;
+    state.pendingCell = {};
+    return Boolean(state.engine.update(dtSec, input));
+  },
+
+  getScore(state) {
+    return state.engine.score;
+  },
+
+  getTickCount(state) {
+    return state.engine.tickCount;
+  },
+
+  isFinished(state, capTicks) {
+    return state.engine.gameOver || state.engine.tickCount >= capTicks;
+  },
+
+  serializeSnapshot(state, base): AuthoritySnapshot {
+    return {
+      ...base,
+      tickCount: state.engine.tickCount,
+      score: state.engine.score,
+      gameOver: state.engine.gameOver,
+      ticksRemaining: state.engine.ticksRemaining,
+      visibleBoard: [...state.engine.visibleBoard],
+      safeCellsRemaining: state.engine.safeCellsRemaining,
+      flagsPlaced: state.engine.flagsPlaced,
+      detonatedIdx: state.engine.detonatedIdx,
+      boardCleared: state.engine.boardCleared,
+    };
+  },
+
+  resetControls(state, resetSession = false) {
+    state.pendingCell = {};
+    if (resetSession) state.guard = new ControlGuard();
+  },
+
+  getLastInputAt(state) {
+    return state.guard.lastInput;
+  },
+
+  resolveTie: defaultDrawTieResolver,
+};
+
 /**
  * Single server-side registry of certified authoritative game plugins.
  * Every game with `certified: true` in `GAME_MANIFESTS` MUST have an entry here.
@@ -543,6 +644,7 @@ export const SERVER_GAME_PLUGINS: Readonly<Record<string, ServerGamePlugin<any>>
   "stack-tower": stackTowerServerPlugin,
   "2048-blitz": blitz2048ServerPlugin,
   "neon-snake": neonSnakeServerPlugin,
+  "minesweeper-sprint": minesweeperSprintServerPlugin,
 };
 
 export function getServerGamePlugin(gameId: string): ServerGamePlugin<any> | undefined {

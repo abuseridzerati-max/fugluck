@@ -113,6 +113,43 @@ const ARTWORK_BY_KEY: Readonly<Record<string, () => ReactNode>> = {
     </svg>
   ),
 
+  'minesweeper-sprint': () => (
+    <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
+      <rect width="320" height="180" fill="#070a10" />
+      <rect x="44" y="18" width="232" height="144" rx="8" fill="#0b1220" stroke="#38bdf8" strokeOpacity="0.45" strokeWidth="1.75" />
+      <g>
+        <rect x="56" y="30" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="75" y="54" textAnchor="middle" fill="#38bdf8" fontFamily="monospace" fontWeight="bold" fontSize="18">1</text>
+        <rect x="98" y="30" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="117" y="54" textAnchor="middle" fill="#34d399" fontFamily="monospace" fontWeight="bold" fontSize="18">2</text>
+        <rect x="140" y="30" width="38" height="36" rx="4" fill="#281e12" stroke="#f59e0b" strokeWidth="1.5" />
+        <path d="M154 38v20m0-20 14 6-14 6" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="182" y="30" width="38" height="36" rx="4" fill="#162238" stroke="#38bdf8" strokeOpacity="0.35" strokeWidth="1.2" />
+        <rect x="224" y="30" width="38" height="36" rx="4" fill="#162238" stroke="#38bdf8" strokeOpacity="0.35" strokeWidth="1.2" />
+
+        <rect x="56" y="72" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <rect x="98" y="72" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="117" y="96" textAnchor="middle" fill="#f43f5e" fontFamily="monospace" fontWeight="bold" fontSize="18">3</text>
+        <rect x="140" y="72" width="38" height="36" rx="4" fill="#5c1426" stroke="#f43f5e" strokeWidth="1.75" />
+        <circle cx="159" cy="90" r="10" fill="#f43f5e" fillOpacity="0.35" />
+        <circle cx="159" cy="90" r="6" fill="#f43f5e" />
+        <circle cx="157" cy="88" r="2" fill="#ffffff" />
+        <rect x="182" y="72" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="201" y="96" textAnchor="middle" fill="#38bdf8" fontFamily="monospace" fontWeight="bold" fontSize="18">1</text>
+        <rect x="224" y="72" width="38" height="36" rx="4" fill="#162238" stroke="#38bdf8" strokeOpacity="0.35" strokeWidth="1.2" />
+
+        <rect x="56" y="114" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <rect x="98" y="114" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="117" y="138" textAnchor="middle" fill="#38bdf8" fontFamily="monospace" fontWeight="bold" fontSize="18">1</text>
+        <rect x="140" y="114" width="38" height="36" rx="4" fill="#0d1526" stroke="#1e293b" strokeWidth="1.2" />
+        <text x="159" y="138" textAnchor="middle" fill="#34d399" fontFamily="monospace" fontWeight="bold" fontSize="18">2</text>
+        <rect x="182" y="114" width="38" height="36" rx="4" fill="#281e12" stroke="#f59e0b" strokeWidth="1.5" />
+        <path d="M196 122v20m0-20 14 6-14 6" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="224" y="114" width="38" height="36" rx="4" fill="#162238" stroke="#38bdf8" strokeOpacity="0.35" strokeWidth="1.2" />
+      </g>
+    </svg>
+  ),
+
   'neon-runner': () => (
     <svg viewBox="0 0 320 180" fill="none" className="ac-game-art" aria-hidden="true">
       <rect width="320" height="180" fill="#080d16" />

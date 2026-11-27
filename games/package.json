@@ -10,6 +10,8 @@
     "./stack-tower/engine": "./stack-tower/engine.ts",
     "./2048-blitz/engine": "./2048-blitz/engine.ts",
     "./neon-snake/engine": "./neon-snake/engine.ts",
+    "./minesweeper-sprint/engine": "./minesweeper-sprint/engine.ts",
+    "./minesweeper-sprint/constants": "./minesweeper-sprint/constants.ts",
     ".": {
       "import": "./registry.ts",
       "default": "./registry.ts"
@@ -41,6 +43,10 @@
     "./neon-snake": {
       "import": "./neon-snake/index.ts",
       "default": "./neon-snake/index.ts"
+    },
+    "./minesweeper-sprint": {
+      "import": "./minesweeper-sprint/index.ts",
+      "default": "./minesweeper-sprint/index.ts"
     },
     "./speed-trivia": {
       "import": "./speed-trivia/index.ts",
