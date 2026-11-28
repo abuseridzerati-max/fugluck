@@ -19,6 +19,11 @@ export function unregisterPresence(socket: MatchmakingSocket): void {
   if (current === socket) online.delete(socket.data.userId);
 }
 
+export type OnlinePresenceEntry = {
+  userId: string;
+  username: string;
+};
+
 export function getOnlineSocket(userId: string): MatchmakingSocket | undefined {
   const socket = online.get(userId);
   if (!socket || !socket.connected) {
@@ -26,4 +31,19 @@ export function getOnlineSocket(userId: string): MatchmakingSocket | undefined {
     return undefined;
   }
   return socket;
+}
+
+export function getOnlinePresenceSnapshot(): OnlinePresenceEntry[] {
+  const entries: OnlinePresenceEntry[] = [];
+  for (const [userId, socket] of online.entries()) {
+    if (!socket.connected) {
+      online.delete(userId);
+      continue;
+    }
+    entries.push({
+      userId,
+      username: socket.data.username,
+    });
+  }
+  return entries;
 }

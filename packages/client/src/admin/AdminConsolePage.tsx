@@ -19,6 +19,7 @@ import type {
   SandboxFundingGrantAdmin,
   GameEligibilityAdminItem,
   AdminOperationsData,
+  AdminLiveSnapshot,
 } from './adminTypes'
 import { GrantTestFundsModal, TestFundingHistoryView, UserDetailDrawer } from './AdminFirstIncrementViews'
 import './adminConsole.css'
@@ -45,6 +46,7 @@ import {
 } from './CompetitionAdminViews'
 import { GAME_MANIFESTS, type AdminPermission } from '@fugluck/shared'
 import AdminOperationsView from './AdminOperationsView'
+import AdminLiveView from './AdminLiveView'
 
 const GAME_OPTIONS = [
   { id: '', label: 'All Games' },
@@ -97,6 +99,8 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
   const [gameEligibility, setGameEligibility] = useState<GameEligibilityAdminItem[]>([])
   const [operationsData, setOperationsData] = useState<AdminOperationsData | null>(null)
+  const [liveData, setLiveData] = useState<AdminLiveSnapshot | null>(null)
+  const [liveLoading, setLiveLoading] = useState(false)
 
   // Tab 1: Dashboard
   const [metrics, setMetrics] = useState<Metrics | null>(null)
@@ -478,6 +482,24 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     }
   }, [])
 
+  const fetchLive = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) {
+      setLiveLoading(true)
+      setErrorMessage(null)
+    }
+    try {
+      const snapshot = await apiFetch<AdminLiveSnapshot>('/api/admin/live')
+      setLiveData(snapshot)
+      if (!silent) setErrorMessage(null)
+    } catch (e: any) {
+      if (!silent) {
+        setErrorMessage(e instanceof ApiError ? e.message : 'Failed to load live monitor snapshot.')
+      }
+    } finally {
+      if (!silent) setLiveLoading(false)
+    }
+  }, [])
+
   // Competition Action Handlers
   const handleCreateTemplate = async (params: any) => {
     await apiFetch('/api/admin/competitions/templates', {
@@ -575,6 +597,31 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
     if (activeTab === 'ledger') fetchLedger(1)
     if (activeTab === 'audit') fetchAudit(1)
   }, [activeTab, isAdminAuthenticated])
+
+  // Auto-poll Live Now monitor every 5s while the tab is open
+  useEffect(() => {
+    if (!isAdminAuthenticated || activeTab !== 'live') return
+    let cancelled = false
+    let inFlight = false
+    const poll = async (silent: boolean) => {
+      if (cancelled || inFlight) return
+      inFlight = true
+      try {
+        await fetchLive({ silent })
+      } finally {
+        inFlight = false
+      }
+    }
+    void poll(false)
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return
+      void poll(true)
+    }, 5_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [activeTab, isAdminAuthenticated, fetchLive])
 
   // ---------------------------------------------------------------------------
   // Action Handlers
@@ -1010,6 +1057,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
                 fetchSandboxLedger()
               }
               if (activeTab === 'competitions_eligibility') fetchGameEligibility()
+              if (activeTab === 'live') void fetchLive({ silent: false })
               if (activeTab === 'operations') fetchOperations()
               if (activeTab === 'test_funding') fetchFundingGrants()
               if (activeTab === 'dashboard') fetchDashboard()
@@ -1062,7 +1110,7 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
             <NavButton id="ledger" active={activeTab} setActive={setActiveTab} label="Ledger" />
             <NavButton id="competitions_accounting" active={activeTab} setActive={setActiveTab} label="Reconciliation" />
           </div>
-          <div className="admin-nav-group"><span>LIVE OPERATIONS</span><NavButton id="operations" active={activeTab} setActive={setActiveTab} label="Operations / Health" /><NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Instances" /></div>
+          <div className="admin-nav-group"><span>LIVE OPERATIONS</span><NavButton id="live" active={activeTab} setActive={setActiveTab} label="Live Now" /><NavButton id="operations" active={activeTab} setActive={setActiveTab} label="Operations / Health" /><NavButton id="competitions_instances" active={activeTab} setActive={setActiveTab} label="Instances" /></div>
           <div className="admin-nav-group"><span>RECORDS</span><NavButton id="audit" active={activeTab} setActive={setActiveTab} label="Audit Log" /><NavButton id="matches" active={activeTab} setActive={setActiveTab} label="Legacy Matches" /></div>
         </nav>
         <main className="admin-main">
@@ -1120,6 +1168,14 @@ export default function AdminConsolePage({ onNavigateHome }: { onNavigateHome: (
 
         {activeTab === 'competitions_eligibility' && (
           <CompetitionEligibilityView games={gameEligibility} />
+        )}
+
+        {activeTab === 'live' && (
+          <AdminLiveView
+            data={liveData}
+            loading={liveLoading}
+            onRefresh={() => void fetchLive({ silent: false })}
+          />
         )}
 
         {activeTab === 'operations' && (

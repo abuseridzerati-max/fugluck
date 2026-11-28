@@ -299,7 +299,7 @@ export function handleRespondInvite(
   inFlightMatchUsers.add(b.userId);
 
   const launchMatch = createMatchOverrideForTests ?? createMatch;
-  void launchMatch(invite.gameId, a, b, generateSeed()).finally(() => {
+  void launchMatch(invite.gameId, a, b, generateSeed(), undefined, "Friend").finally(() => {
     inFlightMatchUsers.delete(a.userId);
     inFlightMatchUsers.delete(b.userId);
   });
@@ -429,7 +429,7 @@ function startGuestMatch(link: GuestInviteLink, guest: MatchmakingSocket): void 
   inFlightMatchUsers.add(b.userId);
 
   const launchMatch = createMatchOverrideForTests ?? createMatch;
-  void launchMatch(gameId, a, b, generateSeed()).finally(() => {
+  void launchMatch(gameId, a, b, generateSeed(), undefined, "Friend").finally(() => {
     inFlightMatchUsers.delete(a.userId);
     inFlightMatchUsers.delete(b.userId);
   });

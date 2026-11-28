@@ -332,11 +332,121 @@ async function main() {
   check("Admin permissions list only contains active wallet grant permissions", ALL_ADMIN_PERMISSIONS.includes("WALLET_GRANT_COINS") && ALL_ADMIN_PERMISSIONS.filter((p) => p.startsWith("WALLET_GRANT_")).length === 1);
   check("Active admin ledger sample contains zero non-COINS entries", ledgerSample.every((l) => l.currency === "COINS"));
 
+  // ---------------------------------------------------------------------------
+  // Test 15: Read-Only Live Monitor Snapshot (GET /api/admin/live)
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 15: Read-Only Live Monitor Snapshot (GET /api/admin/live)");
+
+  const { readFileSync } = await import("node:fs");
+  const { buildLiveMonitorSnapshot } = await import("../packages/server/src/matchmaking/liveMonitor.ts");
+
+  const fixedNowMs = Date.parse("2026-11-28T20:00:00.000Z");
+  const liveSnapshot = buildLiveMonitorSnapshot({
+    nowMs: fixedNowMs,
+    onlinePresence: [
+      { userId: "u_idle", username: "IdlePlayer" },
+      { userId: "u_queued", username: "QueuePlayer" },
+      { userId: "u_match_a", username: "MatchPlayerA" },
+      { userId: "u_match_b", username: "MatchPlayerB" },
+    ],
+    queueEntries: [
+      {
+        userId: "u_queued",
+        username: "QueuePlayer",
+        gameId: "neon-snake",
+        queuedAt: fixedNowMs - 18_000,
+      },
+    ],
+    activeMatches: [
+      {
+        matchId: "match_friend_1",
+        gameId: "space-blaster",
+        mode: "Friend",
+        players: [
+          { userId: "u_match_a", username: "MatchPlayerA" },
+          { userId: "u_match_b", username: "MatchPlayerB" },
+        ],
+        startedAt: new Date(fixedNowMs - 45_000).toISOString(),
+        elapsedSeconds: 45,
+      },
+    ],
+    activeAuthorityMatches: [
+      {
+        matchId: "match_tourney_1",
+        gameId: "cyber-hopper",
+        mode: "Tournament",
+        players: [
+          { userId: "u_t1", username: "BracketOne" },
+          { userId: "u_t2", username: "BracketTwo" },
+        ],
+        startedAt: new Date(fixedNowMs - 120_000).toISOString(),
+        elapsedSeconds: 120,
+      },
+    ],
+  });
+
+  check("Live snapshot exposes ISO timestamp", liveSnapshot.timestamp === "2026-11-28T20:00:00.000Z");
+  check(
+    "Live snapshot summary counts match arrays",
+    liveSnapshot.summary.onlineUsersCount === 4 &&
+      liveSnapshot.summary.activeMatchesCount === 2 &&
+      liveSnapshot.summary.queuedPlayersCount === 1,
+  );
+  const byUserId = new Map(liveSnapshot.onlineUsers.map((u) => [u.userId, u]));
+  check(
+    "Online users derive in_match, queued, and idle statuses with gameId",
+    byUserId.get("u_match_a")?.status === "in_match" &&
+      byUserId.get("u_match_a")?.gameId === "space-blaster" &&
+      byUserId.get("u_queued")?.status === "queued" &&
+      byUserId.get("u_queued")?.gameId === "neon-snake" &&
+      byUserId.get("u_idle")?.status === "idle" &&
+      byUserId.get("u_idle")?.gameId === null,
+  );
+  check(
+    "Active matches include Friend and Tournament modes with elapsed seconds",
+    liveSnapshot.activeMatches.length === 2 &&
+      liveSnapshot.activeMatches[0].matchId === "match_tourney_1" &&
+      liveSnapshot.activeMatches[0].mode === "Tournament" &&
+      liveSnapshot.activeMatches[0].elapsedSeconds === 120 &&
+      liveSnapshot.activeMatches[1].matchId === "match_friend_1" &&
+      liveSnapshot.activeMatches[1].mode === "Friend" &&
+      liveSnapshot.activeMatches[1].elapsedSeconds === 45,
+  );
+  check(
+    "Queued players expose userId, username, gameId, and ISO queuedAt",
+    liveSnapshot.queuedPlayers.length === 1 &&
+      liveSnapshot.queuedPlayers[0].userId === "u_queued" &&
+      liveSnapshot.queuedPlayers[0].gameId === "neon-snake" &&
+      liveSnapshot.queuedPlayers[0].queuedAt === "2026-11-28T19:59:42.000Z",
+  );
+  const serializedLive = JSON.stringify(liveSnapshot);
+  const forbiddenKeys = ["email", "password", "passwordHash", "token", "socketId", "clientIp", "ipAddress"];
+  check(
+    "Live snapshot excludes sensitive fields (tokens, emails, passwords, IPs)",
+    forbiddenKeys.every((key) => !serializedLive.includes(`"${key}"`)),
+  );
+
+  const adminRouteSrc = readFileSync("packages/server/src/routes/admin.ts", "utf8");
+  const ownerGuardIdx = adminRouteSrc.indexOf("adminRouter.use(requireOwnerAdmin);");
+  const liveRouteIdx = adminRouteSrc.indexOf('adminRouter.get("/live"');
+  check(
+    "GET /api/admin/live is registered below requireOwnerAdmin guard",
+    ownerGuardIdx > 0 && liveRouteIdx > ownerGuardIdx,
+  );
+
+  const adminConsoleSrc = readFileSync("packages/client/src/admin/AdminConsolePage.tsx", "utf8");
+  check(
+    "Admin Console Live Now tab polls /api/admin/live every 5s and clears interval on cleanup",
+    adminConsoleSrc.includes("/api/admin/live") &&
+      adminConsoleSrc.includes("5_000") &&
+      adminConsoleSrc.includes("clearInterval"),
+  );
+
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);
     process.exit(1);
   }
-  console.log(`\nAll 14 admin console test suites passed 100%.`);
+  console.log(`\nAll 15 admin console test suites passed 100%.`);
 }
 
 main().catch((err) => {

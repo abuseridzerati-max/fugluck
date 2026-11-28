@@ -14,6 +14,7 @@ import { adminAuditLogs, ledgerEntries, matchesHistory, matchSettlements, users 
 import { SIGNUP_COIN_GRANT } from "@fugluck/shared";
 import { ensureMatchSettlementsTable, getBalances, lockWalletUsers } from "../wallet/ledger";
 import { getActiveMatchesSummary } from "../matchmaking/matches";
+import { buildLiveMonitorSnapshot } from "../matchmaking/liveMonitor";
 import { createRateLimiterMiddleware } from "../utils/rateLimiter";
 import { competitionAdminRouter } from "./adminCompetitions";
 import { getOperationsTelemetry } from "../competitions/operationsTelemetry";
@@ -24,7 +25,7 @@ import { readMigrationIdentity } from '../config/migrationIdentity';
 
 const adminLimiter = createRateLimiterMiddleware({
   windowMs: 60 * 1000,
-  maxRequests: 30,
+  maxRequests: 60,
   message: "Too many administrative requests. Please wait a moment.",
 });
 
@@ -964,6 +965,11 @@ adminRouter.post("/wallet/reset-coins-all", requirePermission("WALLET_GRANT_COIN
     logger.error("[admin] Global coin reset error:", err);
     res.status(500).json({ error: "Failed to run global coin reset due to an internal error." });
   }
+});
+
+adminRouter.get("/live", requirePermission("ADMIN_VIEW_AUDIT"), (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json(buildLiveMonitorSnapshot());
 });
 
 adminRouter.get("/operations", requirePermission("ADMIN_VIEW_AUDIT"), async (_req, res) => {

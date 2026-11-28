@@ -24,6 +24,13 @@
 .admin-nav-item.is-active { color: #fbbf24; background: #1b1d29; border-color: #343747; font-weight: 750; }
 .admin-main { flex: 1; min-width: 0; max-width: 1700px; padding: 24px; margin: 0 auto; }
 .admin-main table th { position: sticky; top: 0; z-index: 1; background: #0f1017; }
+.admin-live-table-wrap { width: 100%; overflow-x: auto; }
+.admin-live-dot { width: 10px; height: 10px; border-radius: 999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation: adminLivePulse 2s infinite; flex-shrink: 0; }
+@keyframes adminLivePulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
 @media (max-width: 1050px) {
   .admin-header { flex-wrap: wrap; }
   .admin-global-search { order: 5; flex-basis: 100%; max-width: none; }

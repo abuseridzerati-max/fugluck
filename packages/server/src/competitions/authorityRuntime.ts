@@ -152,7 +152,7 @@ interface Player {
   disconnectedAt:number|null; snapshots:Map<number,number>; snapshotSeq:number; pending:Promise<void>; readyPendingEpoch?:number;
 }
 interface Run {
-  id:string; instanceId:string; matchId:string; gameId:string; version:string; plugin:ServerGamePlugin<any>; players:Player[]; created:number;
+  id:string; instanceId:string; matchId:string; gameId:string; version:string; plugin:ServerGamePlugin<any>; players:Player[]; created:number; createdWallMs:number;
   bracketMatchId?:string; readyMs:number;
   startAt:number|null; deadline:number|null; startMono:number|null; ticks:number; snapshot:number;
   stopped:boolean; starting:boolean; leaseConfirmed:number; lastSnapshot:number; lastSnapshotPublished?:number;
@@ -160,6 +160,37 @@ interface Run {
   metrics:{ activeLeaseMaxMs:number; waitingLeaseMaxMs:number; finalizingLeaseMaxMs:number; maxSnapshotGapMs:number; controls:number; maxTickMs:number; startMs:number; snapshotMs:number; maxSnapshotMs:number; snapshots:number; bindMaxMs:number; resultWriteMaxMs:number };
   timer:ReturnType<typeof setInterval>;
 }
+const activeAuthorityRuntimes = new Set<AuthorityRuntime>();
+
+export function getActiveAuthorityMatchesLive(nowMs = Date.now()) {
+  const results: Array<{
+    matchId: string;
+    gameId: string;
+    mode: "Tournament" | "Competition";
+    players: Array<{ userId: string; username: string }>;
+    startedAt: string;
+    elapsedSeconds: number;
+  }> = [];
+  for (const runtime of activeAuthorityRuntimes) {
+    for (const r of runtime.runs.values()) {
+      if (r.stopped) continue;
+      const startedAtMs = r.startAt ?? r.createdWallMs;
+      results.push({
+        matchId: r.matchId,
+        gameId: r.gameId,
+        mode: r.bracketMatchId ? "Tournament" : "Competition",
+        players: r.players.map((p) => ({
+          userId: p.userId,
+          username: p.socket?.data.username ?? getOnlineSocket(p.userId)?.data.username ?? p.userId,
+        })),
+        startedAt: new Date(startedAtMs).toISOString(),
+        elapsedSeconds: Math.max(0, Math.floor((nowMs - startedAtMs) / 1000)),
+      });
+    }
+  }
+  return results;
+}
+
 export class AuthorityRuntime {
   readonly runs=new Map<string,Run>();
   readonly metrics={ticks:0,tickMs:0,maxTickMs:0,snapshots:0,bytes:0,maxLeaseRoundtripMs:0};
@@ -171,6 +202,7 @@ export class AuthorityRuntime {
   private catalogAt=0;
   private coinCatalogAt=0;
   constructor(readonly store=new AuthorityStore(), readonly options:AuthorityOptions={}) {
+    activeAuthorityRuntimes.add(this);
     this.leaseTimer=setInterval(()=>{
       if(this.renewing||!this.runs.size)return;
       this.renewing=true;const sent=performance.now(),runs=[...this.runs.values()];
@@ -313,7 +345,7 @@ export class AuthorityRuntime {
     const plugin=getServerGamePlugin(record.gameId);
     if(!plugin)throw Error('AUTHORITY_UNSUPPORTED');
     const now=performance.now();
-    const r:Run={...record,gameId:record.gameId,version:record.version,plugin,players:record.sessions.map(s=>({ ...s,state:'CREATED',gameState:plugin.createState(record.seed),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
+    const r:Run={...record,gameId:record.gameId,version:record.version,plugin,players:record.sessions.map(s=>({ ...s,state:'CREATED',gameState:plugin.createState(record.seed),disconnectedAt:now,snapshots:new Map(),snapshotSeq:0,pending:Promise.resolve() })),created:now,createdWallMs:Date.now(),startAt:null,deadline:null,startMono:null,ticks:0,snapshot:0,stopped:false,starting:false,leaseConfirmed:now,lastSnapshot:now,delivery:{generated:0,emitAttempts:0,backpressure:0,bytes:0,maxBytes:0,maxCreationToEmitMs:0,transports:{}},metrics:{activeLeaseMaxMs:0,waitingLeaseMaxMs:0,finalizingLeaseMaxMs:0,maxSnapshotGapMs:0,controls:0,maxTickMs:0,startMs:0,snapshotMs:0,maxSnapshotMs:0,snapshots:0,bindMaxMs:0,resultWriteMaxMs:0},timer:null!};
     this.runs.set(bracketMatchId?record.matchId:instanceId,r);
     r.timer=setInterval(()=>this.tick(r),4); r.timer.unref();
     for(const p of r.players) { const socket=getOnlineSocket(p.userId); if(socket) await this.bind(r,p,socket); }
@@ -427,6 +459,7 @@ export class AuthorityRuntime {
   private closed=false;
   close() {
     if(this.closed)return;this.closed=true;
+    activeAuthorityRuntimes.delete(this);
     logger.info('[authority] runtime metrics',JSON.stringify({...this.metrics,averageRunTickMs:this.metrics.ticks?this.metrics.tickMs/this.metrics.ticks:0}));
     clearInterval(this.recoveryTimer);clearInterval(this.leaseTimer);
     for(const r of this.runs.values()){r.stopped=true;clearInterval(r.timer);}

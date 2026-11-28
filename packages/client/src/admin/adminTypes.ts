@@ -3,6 +3,7 @@ import type { AdminRole } from '@fugluck/shared'
 
 export type Tab =
   | 'dashboard'
+  | 'live'
   | 'users'
   | 'matches'
   | 'ledger'
@@ -369,4 +370,41 @@ export type AdminOperationsData = {
   accounting: { discrepancyMinor: number; reconciled: boolean } | null
   databaseRegionStatus: string
   sourceErrors: string[]
+}
+
+export type LiveUserStatus = 'idle' | 'queued' | 'in_match'
+
+export type LiveOnlineUser = {
+  userId: string
+  username: string
+  status: LiveUserStatus
+  gameId: string | null
+}
+
+export type LiveActiveMatch = {
+  matchId: string
+  gameId: string
+  mode: 'PvP' | 'Friend' | 'Tournament' | 'Competition'
+  players: Array<{ userId: string; username: string }>
+  startedAt: string
+  elapsedSeconds: number
+}
+
+export type LiveQueuedPlayer = {
+  userId: string
+  username: string
+  gameId: string
+  queuedAt: string
+}
+
+export type AdminLiveSnapshot = {
+  timestamp: string
+  summary: {
+    onlineUsersCount: number
+    activeMatchesCount: number
+    queuedPlayersCount: number
+  }
+  onlineUsers: LiveOnlineUser[]
+  activeMatches: LiveActiveMatch[]
+  queuedPlayers: LiveQueuedPlayer[]
 }

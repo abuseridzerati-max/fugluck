@@ -86,9 +86,22 @@ type MatchPlayer = {
   result: SubmittedResult | null;
 };
 
+export type LiveMatchMode = "PvP" | "Friend" | "Tournament" | "Competition";
+
+export type LiveActiveMatchRecord = {
+  matchId: string;
+  gameId: string;
+  mode: LiveMatchMode;
+  players: Array<{ userId: string; username: string }>;
+  startedAt: string;
+  elapsedSeconds: number;
+};
+
 type MatchState = {
   id: string;
   gameId: string;
+  mode: LiveMatchMode;
+  startedAt: number;
   seed: number;
   currency: "COINS";
   stake: number;
@@ -385,6 +398,7 @@ export async function createMatch(
   b: QueueEntry,
   seed: number,
   requestedMatchId?: string,
+  mode: LiveMatchMode = "PvP",
 ): Promise<string | null> {
   if (a.currency !== "COINS" || b.currency !== "COINS" || a.currency !== b.currency || a.stake !== b.stake) {
     a.socket.emit("queueError", { message: "Only matching casual Coins settings are supported." });
@@ -399,13 +413,16 @@ export async function createMatch(
   const stake = isGuestMatch ? 0 : (a.stake ?? 0);
 
   logger.info(
-    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch} currency=${currency} stake=${stake}`,
+    `[matchmaking] DIAGNOSTIC createMatch: gameId=${gameId} seed=${seed} a=${a.username} b=${b.username} guestMatch=${isGuestMatch} currency=${currency} stake=${stake} mode=${mode}`,
   );
 
   const matchId = requestedMatchId ?? randomUUID();
+  const startedAtMs = Date.now();
   const match: MatchState = {
     id: matchId,
     gameId,
+    mode,
+    startedAt: startedAtMs,
     seed,
     currency,
     stake,
@@ -433,7 +450,7 @@ export async function createMatch(
           stake,
           seed,
           status: "ACTIVE",
-          startedAt: new Date(),
+          startedAt: new Date(startedAtMs),
         })
         .onConflictDoNothing()
         .returning({ id: matchesHistory.id });
@@ -613,6 +630,20 @@ export function getActiveMatchesSummary() {
     currency: m.currency,
     stake: m.stake,
     status: "ACTIVE",
+  }));
+}
+
+export function getActiveMatchesLive(nowMs = Date.now()): LiveActiveMatchRecord[] {
+  return Array.from(matches.values()).map((m) => ({
+    matchId: m.id,
+    gameId: m.gameId,
+    mode: m.mode,
+    players: m.players.map((p) => ({
+      userId: p.userId,
+      username: p.username,
+    })),
+    startedAt: new Date(m.startedAt).toISOString(),
+    elapsedSeconds: Math.max(0, Math.floor((nowMs - m.startedAt) / 1000)),
   }));
 }
 

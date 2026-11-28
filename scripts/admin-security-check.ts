@@ -123,9 +123,101 @@ async function main() {
   check("Audit log records targetUserId", log.targetUserId === "usr_standard_123");
   check("Audit log records action type", log.action === "wallet_grant");
 
+  // ---------------------------------------------------------------------------
+  // Test 5: GET /api/admin/live Auth & Non-Admin Enforcement
+  // ---------------------------------------------------------------------------
+  console.log("\nTest 5: GET /api/admin/live Auth & Non-Admin Enforcement");
+
+  const express = (await import("express")).default;
+  const cookieParser = (await import("cookie-parser")).default;
+  const { createServer } = await import("node:http");
+  const { adminRouter } = await import("../packages/server/src/routes/admin.ts");
+  const { signSessionToken } = await import("../packages/server/src/auth/jwt.ts");
+  const { hasPermission, requirePermission } = await import("../packages/server/src/auth/permissions.ts");
+
+  const app = express();
+  app.use(cookieParser());
+  app.use("/api/admin", adminRouter);
+  const server = createServer(app);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+  const address = server.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const unauthRes = await fetch(`${baseUrl}/api/admin/live`);
+    const unauthText = await unauthRes.text();
+    check(
+      "Unauthenticated GET /api/admin/live is rejected with HTTP 401 and leaks no live data",
+      unauthRes.status === 401 && !unauthText.includes("onlineUsers") && !unauthText.includes("activeMatches"),
+      `status=${unauthRes.status}`,
+    );
+
+    const playerToken = signSessionToken({ sub: "usr_regular_player_1" });
+    const playerCookieRes = await fetch(`${baseUrl}/api/admin/live`, {
+      headers: { Cookie: `ac_session=${playerToken}` },
+    });
+    const playerCookieText = await playerCookieRes.text();
+    check(
+      "Player ac_session cookie cannot access GET /api/admin/live (HTTP 401)",
+      playerCookieRes.status === 401 && !playerCookieText.includes("onlineUsers"),
+      `status=${playerCookieRes.status}`,
+    );
+
+    const invalidAdminRes = await fetch(`${baseUrl}/api/admin/live`, {
+      headers: { Cookie: "ac_admin_session=invalid.forged.jwt" },
+    });
+    check(
+      "Forged ac_admin_session cookie on GET /api/admin/live is rejected (HTTP 401)",
+      invalidAdminRes.status === 401,
+      `status=${invalidAdminRes.status}`,
+    );
+
+    const playerPurposeInAdminCookieRes = await fetch(`${baseUrl}/api/admin/live`, {
+      headers: { Cookie: `ac_admin_session=${playerToken}` },
+    });
+    check(
+      "Non-admin-purpose JWT stuffed into ac_admin_session is rejected on GET /api/admin/live (HTTP 401)",
+      playerPurposeInAdminCookieRes.status === 401,
+      `status=${playerPurposeInAdminCookieRes.status}`,
+    );
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+
+  let permStatus = 0;
+  let permNextCalled = false;
+  const permRes = {
+    status: (code: number) => {
+      permStatus = code;
+      return permRes;
+    },
+    json: () => permRes,
+  };
+  await requirePermission("ADMIN_VIEW_AUDIT")(
+    {} as any,
+    permRes as any,
+    () => {
+      permNextCalled = true;
+    },
+  );
+  check(
+    "requirePermission('ADMIN_VIEW_AUDIT') rejects missing userId with HTTP 401",
+    permStatus === 401 && !permNextCalled,
+    `status=${permStatus}`,
+  );
+  check(
+    "Standard user role lacks ADMIN_VIEW_AUDIT while ADMIN/OWNER have access to /api/admin/live",
+    !hasPermission("user", "ADMIN_VIEW_AUDIT") &&
+      hasPermission("ADMIN", "ADMIN_VIEW_AUDIT") &&
+      hasPermission("OWNER", "ADMIN_VIEW_AUDIT"),
+  );
+
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`\nAll admin security checks passed.`);
 }
