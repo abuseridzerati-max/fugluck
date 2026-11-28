@@ -11,7 +11,6 @@ type FriendsPageProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
   onNavigatePolicy?: (path: string) => void
   onInviteFriend: (friendUserId: string, gameId: string, gameTitle: string) => void
 }
@@ -20,7 +19,6 @@ export default function FriendsPage({
   onNavigateHome,
   onNavigateProfile,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigatePolicy,
   onInviteFriend,
 }: FriendsPageProps) {
@@ -127,7 +125,6 @@ export default function FriendsPage({
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateFriends={() => {}}
       />
       <main className="ac-main ac-main--narrow">

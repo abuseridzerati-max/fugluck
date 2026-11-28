@@ -10,30 +10,24 @@ import TrendingArena from '../components/TrendingArena'
 import { CoinIcon } from '../components/icons'
 
 type HomePageProps = {
-  onPlayGame: (id: string, title: string) => void
   onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
-  onLaunchGuestInvite?: (id: string, title: string) => void
-  onOpenCompetitions?: (id: string, title: string) => void
+  onOpenCompetitions: (id: string, title: string) => void
   loadingGameId: string | null
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
   onNavigateLeaderboards?: () => void
   onNavigatePolicy?: (path: string) => void
   initialAuthModalMode?: 'login' | 'signup'
 }
 
 export default function HomePage({
-  onPlayGame,
   onFindOpponent,
-  onLaunchGuestInvite,
   onOpenCompetitions,
   loadingGameId,
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigateLeaderboards,
   onNavigatePolicy,
   initialAuthModalMode,
@@ -59,7 +53,6 @@ export default function HomePage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateLeaderboards={onNavigateLeaderboards}
       />
       <main className="ac-main">
@@ -88,11 +81,7 @@ export default function HomePage({
         <LiveQueueList onFindOpponent={onFindOpponent} />
         <RecentWinnersFeed limit={6} hideWhenEmpty />
         <TrendingArena
-          onPlayGame={onPlayGame}
-          onFindOpponent={onFindOpponent}
-          onLaunchGuestInvite={onLaunchGuestInvite}
           onOpenCompetitions={onOpenCompetitions}
-          onNavigateCompetitions={onNavigateCompetitions}
           loadingGameId={loadingGameId}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}

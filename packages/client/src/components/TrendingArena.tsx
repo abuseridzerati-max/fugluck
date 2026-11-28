@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { getAvailableGenres } from '@fugluck/shared'
-import { useAuth } from '../auth/AuthContext'
 import { CLIENT_GAME_PLUGIN_LIST } from '../games/registry'
 import { engineLabel } from '../lib/format'
 import { usePersonalBests } from '../lib/usePersonalBests'
@@ -8,11 +7,7 @@ import GameCard from './GameCard'
 import { GamepadIcon, SearchIcon, TrophyIcon } from './icons'
 
 type TrendingArenaProps = {
-  onPlayGame: (id: string, title: string) => void
-  onFindOpponent: (id: string, title: string, stake?: number, currency?: 'COINS') => void
-  onLaunchGuestInvite?: (id: string, title: string) => void
-  onOpenCompetitions?: (id: string, title: string) => void
-  onNavigateCompetitions?: () => void
+  onOpenCompetitions: (id: string, title: string) => void
   loadingGameId: string | null
   selectedCategory?: string
   onSelectCategory?: (category: string) => void
@@ -22,9 +17,6 @@ type TrendingArenaProps = {
 }
 
 export default function TrendingArena({
-  onPlayGame,
-  onFindOpponent,
-  onLaunchGuestInvite,
   onOpenCompetitions,
   loadingGameId,
   selectedCategory = 'all',
@@ -34,7 +26,6 @@ export default function TrendingArena({
   onClearSearch,
 }: TrendingArenaProps) {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const { bests } = usePersonalBests()
 
   const trimmedQuery = searchQuery.trim().toLowerCase()
@@ -176,16 +167,7 @@ export default function TrendingArena({
                     certified
                     personalBest={bests[manifest.id]}
                     loading={loadingGameId === manifest.id}
-                    onPlay={() => onPlayGame(manifest.id, manifest.title)}
-                    onFindOpponent={
-                      user
-                        ? (stake, currency) => onFindOpponent(manifest.id, manifest.title, stake, currency)
-                        : undefined
-                    }
-                    onLaunchGuestInvite={() => onLaunchGuestInvite?.(manifest.id, manifest.title)}
-                    onOpenCompetitions={
-                      onOpenCompetitions ? () => onOpenCompetitions(manifest.id, manifest.title) : undefined
-                    }
+                    onOpenCompetitions={() => onOpenCompetitions(manifest.id, manifest.title)}
                   />
                 ))}
               </div>
@@ -215,16 +197,7 @@ export default function TrendingArena({
                     thumbnailKey={manifest.thumbnail}
                     personalBest={bests[manifest.id]}
                     loading={loadingGameId === manifest.id}
-                    onPlay={() => onPlayGame(manifest.id, manifest.title)}
-                    onFindOpponent={
-                      user
-                        ? (stake, currency) => onFindOpponent(manifest.id, manifest.title, stake, currency)
-                        : undefined
-                    }
-                    onLaunchGuestInvite={() => onLaunchGuestInvite?.(manifest.id, manifest.title)}
-                    onOpenCompetitions={
-                      onOpenCompetitions ? () => onOpenCompetitions(manifest.id, manifest.title) : undefined
-                    }
+                    onOpenCompetitions={() => onOpenCompetitions(manifest.id, manifest.title)}
                   />
                 ))}
               </div>

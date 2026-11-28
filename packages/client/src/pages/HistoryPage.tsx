@@ -10,7 +10,6 @@ export default function HistoryPage({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigateLeaderboards,
   onNavigateHistory,
   onLaunchCompetition,
@@ -20,7 +19,6 @@ export default function HistoryPage({
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet: () => void
-  onNavigateCompetitions: () => void
   onNavigateLeaderboards?: () => void
   onNavigateHistory?: () => void
   onLaunchCompetition: (gameId: string, template: CompetitionTemplate) => void
@@ -36,7 +34,6 @@ export default function HistoryPage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateLeaderboards={onNavigateLeaderboards}
         onNavigateHistory={onNavigateHistory}
       />

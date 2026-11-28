@@ -26,7 +26,6 @@ type ProfilePageProps = {
   onNavigateHome: () => void
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
   onNavigateLeaderboards?: () => void
   onNavigatePolicy?: (path: string) => void
 }
@@ -35,7 +34,6 @@ export default function ProfilePage({
   onNavigateHome,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigateLeaderboards,
   onNavigatePolicy,
 }: ProfilePageProps) {
@@ -77,7 +75,6 @@ export default function ProfilePage({
           onNavigateProfile={() => {}}
           onNavigateFriends={onNavigateFriends}
           onNavigateWallet={onNavigateWallet}
-          onNavigateCompetitions={onNavigateCompetitions}
           onNavigateLeaderboards={onNavigateLeaderboards}
         />
         <main className="ac-main ac-main--narrow">
@@ -103,7 +100,6 @@ export default function ProfilePage({
         onNavigateProfile={() => {}}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateLeaderboards={onNavigateLeaderboards}
       />
       <main className="ac-main ac-main--narrow">
@@ -163,11 +159,6 @@ export default function ProfilePage({
           {onNavigateWallet && (
             <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateWallet} style={{ flex: '1 1 180px' }}>
               {t('profileUi.viewWallet')}
-            </button>
-          )}
-          {onNavigateCompetitions && (
-            <button type="button" className="ac-btn ac-btn--ghost" onClick={onNavigateCompetitions} style={{ flex: '1 1 180px' }}>
-              {t('profileUi.competitions')}
             </button>
           )}
           {onNavigateFriends && (

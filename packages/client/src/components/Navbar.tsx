@@ -5,14 +5,13 @@ import { canViewSandboxGelUi } from '../lib/sandboxVisibility'
 import AuthModal from './AuthModal'
 import Avatar from './Avatar'
 import LanguageSwitcher from './LanguageSwitcher'
-import { BrandMarkIcon, CoinIcon, GamepadIcon, HistoryIcon, TrophyIcon } from './icons'
+import { BrandMarkIcon, CoinIcon, GamepadIcon, HistoryIcon } from './icons'
 
 type NavbarProps = {
   onNavigateHome: () => void
   onNavigateProfile: () => void
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
   onNavigateLeaderboards?: () => void
   onNavigateHistory?: () => void
   activePage?: 'home' | 'competitions' | 'leaderboards' | 'wallet' | 'profile' | 'friends' | 'history'
@@ -23,7 +22,6 @@ export default function Navbar({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigateLeaderboards,
   onNavigateHistory,
   activePage,
@@ -75,17 +73,6 @@ export default function Navbar({
               <GamepadIcon size={15} />
               <span>{t('navigation.home')}</span>
             </button>
-
-            {onNavigateCompetitions && (
-              <button
-                type="button"
-                className={`ac-nav__link ac-nav__link--accent${activePage === 'competitions' ? ' ac-nav__link--active' : ''}`}
-                onClick={onNavigateCompetitions}
-              >
-                <TrophyIcon size={15} />
-                <span>{t('competition.title')}</span>
-              </button>
-            )}
 
             {onNavigateLeaderboards && (
               <button
@@ -172,15 +159,6 @@ export default function Navbar({
                       onClick={() => {
                         setMenuOpen(false)
                         onNavigateWallet()
-                      }}
-                    />
-                  )}
-                  {onNavigateCompetitions && (
-                    <MenuItem
-                      label={t('competition.title')}
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onNavigateCompetitions()
                       }}
                     />
                   )}

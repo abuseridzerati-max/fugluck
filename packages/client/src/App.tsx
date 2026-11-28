@@ -65,7 +65,7 @@ type PolicySlug = (typeof POLICY_SLUGS)[number]
 
 type View =
   | 'home'
-  | 'competitions'
+  | `game-competitions:${string}`
   | 'history'
   | 'leaderboards'
   | 'profile'
@@ -122,10 +122,40 @@ function parseInviteCode(pathname: string): string | null {
   return match?.[1] ?? null
 }
 
-function getViewFromPath(pathname: string): View {
-  const cleanPath = pathname.replace(/\/$/, '') || '/'
+function isLegacyGlobalCompetitionsPath(pathname: string): boolean {
+  const cleanPath = pathname.replace(/\/+$/, '') || '/'
+  return (
+    cleanPath === '/competitions' ||
+    cleanPath === '/tournaments' ||
+    cleanPath.startsWith('/competitions/') ||
+    cleanPath.startsWith('/tournaments/')
+  )
+}
+
+function getViewFromPath(pathname: string, search = ''): View {
+  const cleanPath = pathname.replace(/\/+$/, '') || '/'
   if (cleanPath === '/' || cleanPath === '/home') return 'home'
-  if (cleanPath === '/competitions') return 'competitions'
+
+  const gameCompMatch = cleanPath.match(/^\/games\/([^/]+)\/competitions$/)
+  if (gameCompMatch) {
+    const gameId = decodeURIComponent(gameCompMatch[1])
+    return getClientGamePlugin(gameId) ? `game-competitions:${gameId}` : 'not-found'
+  }
+
+  const altGameCompMatch = cleanPath.match(/^\/(?:competitions|tournaments)\/([^/]+)$/)
+  if (altGameCompMatch) {
+    const gameId = decodeURIComponent(altGameCompMatch[1])
+    return getClientGamePlugin(gameId) ? `game-competitions:${gameId}` : 'home'
+  }
+
+  if (cleanPath === '/competitions' || cleanPath === '/tournaments') {
+    const queryGame = new URLSearchParams(search).get('game')?.trim()
+    if (queryGame && getClientGamePlugin(queryGame)) {
+      return `game-competitions:${queryGame}`
+    }
+    return 'home'
+  }
+
   if (cleanPath === '/history') return 'history'
   if (cleanPath === '/leaderboards') return 'leaderboards'
   if (cleanPath === '/profile') return 'profile'
@@ -152,12 +182,14 @@ function getViewFromPath(pathname: string): View {
 }
 
 function getPathForView(view: View): string {
+  if (view.startsWith('game-competitions:')) {
+    const gameId = view.slice('game-competitions:'.length)
+    return `/games/${encodeURIComponent(gameId)}/competitions`
+  }
   if (view.startsWith('policy:')) {
     return `/${view.slice(7)}`
   }
   switch (view) {
-    case 'competitions':
-      return '/competitions'
     case 'history':
       return '/history'
     case 'leaderboards':
@@ -211,7 +243,7 @@ function updateSocialMetaTags(title: string, path: string) {
 function AppShell() {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
-  const [view, setViewState] = useState<View>(() => getViewFromPath(window.location.pathname))
+  const [view, setViewState] = useState<View>(() => getViewFromPath(window.location.pathname, window.location.search))
   const [activeGame, setActiveGame] = useState<ActiveGame | null>(null)
   const [loadingGameId, setLoadingGameId] = useState<string | null>(null)
   const [restoringActiveMatch, setRestoringActiveMatch] = useState(() => readStoredActiveMatch() !== null)
@@ -254,14 +286,16 @@ function AppShell() {
   }, [user, view])
 
   function getTitleForView(targetView: View): string {
+    if (targetView.startsWith('game-competitions:')) {
+      const gameId = targetView.slice('game-competitions:'.length)
+      return `${getGameTitle(gameId)} — ${t('competition.title')} | Fugluck`
+    }
     if (targetView.startsWith('policy:')) {
       const slug = targetView.slice(7)
       const formattedSlug = slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
       return `Fugluck — ${formattedSlug}`
     }
     switch (targetView) {
-      case 'competitions':
-        return 'Competitions | Fugluck'
       case 'history':
         return t('meta.titleHistory')
       case 'leaderboards':
@@ -299,14 +333,18 @@ function AppShell() {
     const path = getPathForView(view)
     document.title = title
     updateSocialMetaTags(title, path)
-    if (path !== window.location.pathname && view.startsWith('policy:')) {
+    if (
+      (path !== window.location.pathname && view.startsWith('policy:')) ||
+      (view === 'home' && isLegacyGlobalCompetitionsPath(window.location.pathname)) ||
+      (view.startsWith('game-competitions:') && (window.location.pathname !== path || window.location.search !== ''))
+    ) {
       window.history.replaceState(null, '', path)
     }
   }, [view, i18n.language, t])
 
   useEffect(() => {
     const handlePopState = () => {
-      const newView = getViewFromPath(window.location.pathname)
+      const newView = getViewFromPath(window.location.pathname, window.location.search)
       setViewState(newView)
       const title = getTitleForView(newView)
       const path = getPathForView(newView)
@@ -331,9 +369,12 @@ function AppShell() {
     updateSocialMetaTags(title, basePath)
   }
 
-  function navigateToCompetitions(gameId?: string) {
-    const query = gameId ? `?game=${encodeURIComponent(gameId)}` : ''
-    navigateTo('competitions', query)
+  function navigateToGameCompetitions(gameId: string) {
+    if (!getClientGamePlugin(gameId)) {
+      navigateTo('home')
+      return
+    }
+    navigateTo(`game-competitions:${gameId}`)
   }
 
   async function loadGame(
@@ -485,8 +526,12 @@ function AppShell() {
             if (view === 'invite') navigateTo('home')
           }}
         />
-      ) : view === 'competitions' ? (
+      ) : view.startsWith('game-competitions:') ? (
         <CompetitionsPage
+          gameId={view.slice('game-competitions:'.length)}
+          onPlayPractice={handlePlayGame}
+          onFindOpponent={handleFindOpponent}
+          onLaunchGuestInvite={handleLaunchGuestInvite}
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
@@ -501,7 +546,6 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateToCompetitions()}
           onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onNavigateHistory={() => navigateTo('history')}
           onLaunchCompetition={handleLaunchCompetition}
@@ -513,7 +557,6 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateToCompetitions()}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'profile' ? (
@@ -521,7 +564,6 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateTo('competitions')}
           onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
@@ -530,7 +572,6 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
-          onNavigateCompetitions={() => navigateTo('competitions')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
         />
       ) : view === 'admin' ? (
@@ -540,7 +581,6 @@ function AppShell() {
           onNavigateHome={() => navigateTo('home')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateTo('competitions')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           onInviteFriend={handleInviteFriend}
         />
@@ -586,7 +626,7 @@ function AppShell() {
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateTo('competitions')}
+          onOpenGameCompetitions={navigateToGameCompetitions}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
@@ -594,15 +634,12 @@ function AppShell() {
         />
       ) : (
         <HomePage
-          onPlayGame={handlePlayGame}
           onFindOpponent={handleFindOpponent}
-          onLaunchGuestInvite={handleLaunchGuestInvite}
-          onOpenCompetitions={(id) => navigateToCompetitions(id)}
+          onOpenCompetitions={(id) => navigateToGameCompetitions(id)}
           loadingGameId={loadingGameId}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateFriends={() => navigateTo('friends')}
           onNavigateWallet={() => navigateTo('wallet')}
-          onNavigateCompetitions={() => navigateToCompetitions()}
           onNavigateLeaderboards={() => navigateTo('leaderboards')}
           onNavigatePolicy={(path) => navigateTo(getViewFromPath(path))}
           initialAuthModalMode={view === 'login' ? 'login' : view === 'signup' ? 'signup' : undefined}

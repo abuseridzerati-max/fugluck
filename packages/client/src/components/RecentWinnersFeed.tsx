@@ -6,20 +6,24 @@ import { CoinIcon, TrophyIcon } from './icons'
 
 type RecentWinnersFeedProps = {
   limit?: number
+  gameId?: string
   hideWhenEmpty?: boolean
 }
 
-export default function RecentWinnersFeed({ limit = 8, hideWhenEmpty = false }: RecentWinnersFeedProps) {
+export default function RecentWinnersFeed({ limit = 8, gameId, hideWhenEmpty = false }: RecentWinnersFeedProps) {
   const { t, i18n } = useTranslation()
   const [winners, setWinners] = useState<RecentTournamentWinner[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
-    apiFetch<RecentWinnersResponse>(`/api/competitions/recent-winners?limit=${limit}`)
+    const fetchLimit = gameId ? Math.max(limit, 25) : limit
+    apiFetch<RecentWinnersResponse>(`/api/competitions/recent-winners?limit=${fetchLimit}`)
       .then((res) => {
         if (!active) return
-        setWinners(Array.isArray(res.winners) ? res.winners : [])
+        const list = Array.isArray(res.winners) ? res.winners : []
+        const scoped = gameId ? list.filter((w) => w.gameId === gameId).slice(0, limit) : list
+        setWinners(scoped)
       })
       .catch(() => {
         if (active) setWinners([])
@@ -30,7 +34,7 @@ export default function RecentWinnersFeed({ limit = 8, hideWhenEmpty = false }: 
     return () => {
       active = false
     }
-  }, [limit])
+  }, [limit, gameId])
 
   if (hideWhenEmpty && (!loaded || winners.length === 0)) {
     return null

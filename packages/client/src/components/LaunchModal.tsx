@@ -8,6 +8,7 @@ import { CoinIcon, GamepadIcon, TrophyIcon } from './icons'
 type LaunchModalProps = {
   gameId: string
   gameTitle: string
+  initialView?: 'menu' | 'coins'
   onClose: () => void
   onLaunchPractice: () => void
   onLaunchInviteLink: () => void
@@ -33,6 +34,7 @@ const DEFAULT_CONTROLS_HINT: Record<string, string> = {
 export default function LaunchModal({
   gameId,
   gameTitle,
+  initialView = 'menu',
   onClose,
   onLaunchPractice,
   onLaunchInviteLink,
@@ -41,7 +43,7 @@ export default function LaunchModal({
 }: LaunchModalProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const [showCoinsLobby, setShowCoinsLobby] = useState(false)
+  const [showCoinsLobby, setShowCoinsLobby] = useState(initialView === 'coins')
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [selectedCoinStake, setSelectedCoinStake] = useState<number>(user ? 100 : 0)
   const [customInput, setCustomInput] = useState<string>('')
@@ -248,6 +250,10 @@ export default function LaunchModal({
                   type="button"
                   className="ac-btn ac-btn--ghost"
                   onClick={() => {
+                    if (initialView === 'coins') {
+                      onClose()
+                      return
+                    }
                     setShowCoinsLobby(false)
                     setCustomInput('')
                   }}

@@ -32,8 +32,8 @@ function getTierFallback(capacity: number): string {
   return `${capacity}-Player Bracket`
 }
 
-export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, onShowAll }: {
-  gameId?: string; gameTitle?: string; currency?: 'COINS' | 'GEL'; onClose?: () => void; onShowAll?: () => void
+export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, onShowAll, hideGameHeader = false }: {
+  gameId?: string; gameTitle?: string; currency?: 'COINS' | 'GEL'; onClose?: () => void; onShowAll?: () => void; hideGameHeader?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const { user, loading: authLoading } = useAuth()
@@ -64,11 +64,14 @@ export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, 
     apiFetch<{ templates: CompetitionTemplate[]; rooms?: CatalogRoom[]; playerMode?: string; joiningAvailable?: boolean }>(path, { signal: controller.signal })
       .then(res => {
         if (activeCatalogRequest.current !== controller) return
-        setTemplates(res.templates.filter(template => template.enabled)); setRooms(res.rooms ?? [])
+        const filteredTemplates = res.templates.filter(template => template.enabled && (!gameId || template.gameId === gameId))
+        const filteredTemplateIds = new Set(filteredTemplates.map(template => template.id))
+        const filteredRooms = (res.rooms ?? []).filter(room => !gameId || filteredTemplateIds.has(room.templateId))
+        setTemplates(filteredTemplates); setRooms(filteredRooms)
         setRoomsKnown(Array.isArray(res.rooms))
         setAvailable((currency === 'COINS' ? res.playerMode === 'coins' : res.playerMode === 'sandbox') && res.joiningAvailable === true && Array.isArray(res.rooms))
-        const ownRoom = res.rooms?.find(room => room.viewerJoined && room.status === 'PENDING_ENTRANTS')
-        const ownTemplate = res.templates.find(template => template.id === ownRoom?.templateId)
+        const ownRoom = filteredRooms.find(room => room.viewerJoined && room.status === 'PENDING_ENTRANTS')
+        const ownTemplate = filteredTemplates.find(template => template.id === ownRoom?.templateId)
         if (ownRoom && ownTemplate && !activeTemplateRef.current) { sessionStorage.setItem(`authority:${ownTemplate.id}`, ownRoom.id); setActiveTemplate(ownTemplate) }
       }).catch(() => { if (activeCatalogRequest.current === controller) setError(controller.signal.aborted ? 'catalogTimeout' : 'catalogError') })
       .finally(() => { window.clearTimeout(timer); if (activeCatalogRequest.current === controller) { activeCatalogRequest.current = null; setLoading(false) } })
@@ -79,7 +82,7 @@ export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, 
     return () => { window.clearInterval(poll); activeCatalogRequest.current?.abort(); activeCatalogRequest.current = null }
   }, [gameId, currency, user?.id])
 
-  useEffect(() => { activeTemplateRef.current = null; setActiveTemplate(null); setJoinError(null) }, [user?.id, currency])
+  useEffect(() => { activeTemplateRef.current = null; setActiveTemplate(null); setJoinError(null) }, [user?.id, currency, gameId])
 
   function closePlay() { activeTemplateRef.current = null; setActiveTemplate(null); loadTemplates(true) }
 
@@ -101,9 +104,11 @@ export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, 
   }
 
   function catalog(lobby?: CompetitionLobbyState) {
-    const visibleTemplates = activeTemplate && !templates.some(template => template.id === activeTemplate.id)
-      ? [activeTemplate, ...templates]
-      : templates
+    const scopedTemplates = gameId ? templates.filter(template => template.gameId === gameId) : templates
+    const scopedActive = activeTemplate && (!gameId || activeTemplate.gameId === gameId) ? activeTemplate : null
+    const visibleTemplates = scopedActive && !scopedTemplates.some(template => template.id === scopedActive.id)
+      ? [scopedActive, ...scopedTemplates]
+      : scopedTemplates
 
     const groupsMap = new Map<string, CompetitionTemplate[]>()
     for (const template of visibleTemplates) {
@@ -139,22 +144,24 @@ export default function CompetitionCatalog({ gameId, currency = 'GEL', onClose, 
           {groupedGames.map(({ gameId: groupGameId, meta, templates: groupTemplates }) => {
             const groupTitle = meta?.title ?? getGameTitle(groupGameId)
             return (
-              <section key={groupGameId} className="competition-game-group" aria-label={groupTitle}>
-                <header className="competition-game-group__header">
-                  <div className="competition-game-group__thumb">
-                    <GameArtwork gameId={groupGameId} />
-                  </div>
-                  <div className="competition-game-group__meta">
-                    <div className="competition-game-group__title-row">
-                      <h2>{groupTitle}</h2>
-                      <span className="ac-certified-badge">
-                        <TrophyIcon size={11} />
-                        <span>{t('home.certifiedBadge')}</span>
-                      </span>
+              <section key={groupGameId} className={`competition-game-group${hideGameHeader ? ' is-single-game' : ''}`} aria-label={groupTitle}>
+                {!hideGameHeader && (
+                  <header className="competition-game-group__header">
+                    <div className="competition-game-group__thumb">
+                      <GameArtwork gameId={groupGameId} />
                     </div>
-                    {meta?.tagline && <p className="competition-game-group__tagline">{meta.tagline}</p>}
-                  </div>
-                </header>
+                    <div className="competition-game-group__meta">
+                      <div className="competition-game-group__title-row">
+                        <h2>{groupTitle}</h2>
+                        <span className="ac-certified-badge">
+                          <TrophyIcon size={11} />
+                          <span>{t('home.certifiedBadge')}</span>
+                        </span>
+                      </div>
+                      {meta?.tagline && <p className="competition-game-group__tagline">{meta.tagline}</p>}
+                    </div>
+                  </header>
+                )}
 
                 <div className="competition-tier-grid">
                   {groupTemplates.map(template => {

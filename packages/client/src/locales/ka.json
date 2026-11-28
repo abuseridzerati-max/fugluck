@@ -1122,5 +1122,15 @@
   "historyPage": {
     "title": "შეჯიბრებების ისტორია",
     "subtitle": "თვალი ადევნეთ აქტიურ რეგისტრაციებს, დასრულებულ ბადეებსა და შედეგებს."
+  },
+  "gameHub": {
+    "backToGames": "თამაშებზე დაბრუნება",
+    "practiceAi": "ვარჯიში AI-თან",
+    "practiceSolo": "სოლო ვარჯიში",
+    "pvpMatchmaking": "1v1 PvP მატჩი",
+    "friendMatch": "მეგობართან მატჩი",
+    "tournamentsHeading": "{{game}} — ტურნირები",
+    "tournamentsSub": "სერვერის მიერ დამოწმებული ნოკაუტ ტურნირები მხოლოდ {{game}}-სთვის.",
+    "quickPlayHeading": "სწრაფი თამაში"
   }
 }

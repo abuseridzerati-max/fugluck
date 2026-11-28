@@ -10,7 +10,7 @@ type NotFoundPageProps = {
   onNavigateProfile: () => void
   onNavigateFriends: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
+  onOpenGameCompetitions?: (gameId: string) => void
   onNavigatePolicy?: (path: string) => void
   onPlayGame?: (id: string, title: string) => void
   onFindOpponent?: (id: string, title: string, stake?: number, currency?: 'COINS') => void
@@ -22,7 +22,7 @@ export default function NotFoundPage({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
+  onOpenGameCompetitions,
   onNavigatePolicy,
   onPlayGame,
   onFindOpponent,
@@ -41,7 +41,6 @@ export default function NotFoundPage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
       />
 
       <main
@@ -250,8 +249,9 @@ export default function NotFoundPage({
             onFindOpponent?.(game.id, game.title, stake, 'COINS')
           }}
           onOpenCompetitions={() => {
+            const game = selectedGame
             setSelectedGame(null)
-            onNavigateCompetitions?.()
+            onOpenGameCompetitions?.(game.id)
           }}
         />
       )}

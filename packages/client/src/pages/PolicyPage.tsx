@@ -47,7 +47,6 @@ export default function PolicyPage({ policySlug, onNavigate }: PolicyPageProps) 
           onNavigateFriends={() => onNavigate('/friends')}
           onNavigateProfile={() => onNavigate('/profile')}
           onNavigateWallet={() => onNavigate('/wallet')}
-          onNavigateCompetitions={() => onNavigate('/competitions')}
         />
         <main className="public-page__main">
           <h1>{t('policyPage.notFoundTitle')}</h1>
@@ -79,7 +78,6 @@ export default function PolicyPage({ policySlug, onNavigate }: PolicyPageProps) 
         onNavigateFriends={() => onNavigate('/friends')}
         onNavigateProfile={() => onNavigate('/profile')}
         onNavigateWallet={() => onNavigate('/wallet')}
-        onNavigateCompetitions={() => onNavigate('/competitions')}
       />
       <main className="public-page__main">
         <nav className="public-breadcrumb" aria-label="Breadcrumb">

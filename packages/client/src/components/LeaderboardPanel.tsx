@@ -6,22 +6,29 @@ import { TrophyIcon } from './icons'
 
 type LeaderboardPanelProps = {
   initialGameId?: string
+  lockedGameId?: string
   limit?: number
 }
 
-export default function LeaderboardPanel({ initialGameId = 'all', limit = 10 }: LeaderboardPanelProps) {
+export default function LeaderboardPanel({ initialGameId = 'all', lockedGameId, limit = 10 }: LeaderboardPanelProps) {
   const { t, i18n } = useTranslation()
-  const [selectedGame, setSelectedGame] = useState<string>(initialGameId)
+  const [selectedGame, setSelectedGame] = useState<string>(lockedGameId ?? initialGameId)
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+
+  const effectiveGame = lockedGameId ?? selectedGame
+
+  useEffect(() => {
+    if (lockedGameId) setSelectedGame(lockedGameId)
+  }, [lockedGameId])
 
   useEffect(() => {
     let active = true
     setLoading(true)
     setError(false)
     const params = new URLSearchParams({ limit: String(limit) })
-    if (selectedGame !== 'all') params.set('gameId', selectedGame)
+    if (effectiveGame !== 'all') params.set('gameId', effectiveGame)
 
     apiFetch<LeaderboardResponse>(`/api/leaderboards?${params.toString()}`)
       .then((res) => {
@@ -38,7 +45,7 @@ export default function LeaderboardPanel({ initialGameId = 'all', limit = 10 }: 
     return () => {
       active = false
     }
-  }, [selectedGame, limit])
+  }, [effectiveGame, limit])
 
   const locale = i18n.resolvedLanguage || 'en'
 
@@ -56,27 +63,29 @@ export default function LeaderboardPanel({ initialGameId = 'all', limit = 10 }: 
         </div>
       </div>
 
-      <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>
-        <button
-          type="button"
-          aria-pressed={selectedGame === 'all'}
-          className={`ac-pill${selectedGame === 'all' ? ' ac-pill--active' : ''}`}
-          onClick={() => setSelectedGame('all')}
-        >
-          {t('leaderboards.allCertified', { defaultValue: 'All Certified' })}
-        </button>
-        {GAME_MANIFESTS.map((manifest) => (
+      {!lockedGameId && (
+        <div className="competition-filters" role="group" aria-label={t('competition.filterGames')}>
           <button
-            key={manifest.id}
             type="button"
-            aria-pressed={selectedGame === manifest.id}
-            className={`ac-pill${selectedGame === manifest.id ? ' ac-pill--active' : ''}`}
-            onClick={() => setSelectedGame(manifest.id)}
+            aria-pressed={selectedGame === 'all'}
+            className={`ac-pill${selectedGame === 'all' ? ' ac-pill--active' : ''}`}
+            onClick={() => setSelectedGame('all')}
           >
-            {manifest.title}
+            {t('leaderboards.allCertified', { defaultValue: 'All Certified' })}
           </button>
-        ))}
-      </div>
+          {GAME_MANIFESTS.map((manifest) => (
+            <button
+              key={manifest.id}
+              type="button"
+              aria-pressed={selectedGame === manifest.id}
+              className={`ac-pill${selectedGame === manifest.id ? ' ac-pill--active' : ''}`}
+              onClick={() => setSelectedGame(manifest.id)}
+            >
+              {manifest.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="ac-leaderboard__empty" role="status">

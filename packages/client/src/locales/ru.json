@@ -1130,5 +1130,15 @@
   "historyPage": {
     "title": "История соревнований",
     "subtitle": "Отслеживайте активные заявки, завершённые сетки и прошлые результаты соревнований."
+  },
+  "gameHub": {
+    "backToGames": "Назад к играм",
+    "practiceAi": "Тренировка с ИИ",
+    "practiceSolo": "Соло-тренировка",
+    "pvpMatchmaking": "1v1 PvP матч",
+    "friendMatch": "Матч с другом",
+    "tournamentsHeading": "Турниры {{game}}",
+    "tournamentsSub": "Проверенные сервером нокаут-сетки исключительно для {{game}}.",
+    "quickPlayHeading": "Быстрая игра"
   }
 }

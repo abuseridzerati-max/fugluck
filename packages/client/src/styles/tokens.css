@@ -1320,6 +1320,17 @@ h1, h2, h3, h4 {
   transform: translateY(-2px);
 }
 
+.ac-game-card--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ac-game-card--link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .ac-game-card--certified {
   border-color: rgba(16, 185, 129, 0.38);
   background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, var(--color-surface) 50%);

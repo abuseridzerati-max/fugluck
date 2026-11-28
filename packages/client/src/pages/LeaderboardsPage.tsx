@@ -9,7 +9,6 @@ type LeaderboardsPageProps = {
   onNavigateProfile: () => void
   onNavigateFriends?: () => void
   onNavigateWallet?: () => void
-  onNavigateCompetitions?: () => void
   onNavigatePolicy?: (path: string) => void
 }
 
@@ -18,7 +17,6 @@ export default function LeaderboardsPage({
   onNavigateProfile,
   onNavigateFriends,
   onNavigateWallet,
-  onNavigateCompetitions,
   onNavigatePolicy,
 }: LeaderboardsPageProps) {
   const { t } = useTranslation()
@@ -31,7 +29,6 @@ export default function LeaderboardsPage({
         onNavigateProfile={onNavigateProfile}
         onNavigateFriends={onNavigateFriends}
         onNavigateWallet={onNavigateWallet}
-        onNavigateCompetitions={onNavigateCompetitions}
         onNavigateLeaderboards={() => {}}
       />
       <main className="ac-main">

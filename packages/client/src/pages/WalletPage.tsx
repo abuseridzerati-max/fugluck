@@ -20,7 +20,6 @@ type WalletPageProps = {
   onNavigateHome: () => void
   onNavigateProfile?: () => void
   onNavigateFriends?: () => void
-  onNavigateCompetitions?: () => void
   onNavigatePolicy?: (path: string) => void
 }
 
@@ -28,7 +27,6 @@ export default function WalletPage({
   onNavigateHome,
   onNavigateProfile,
   onNavigateFriends,
-  onNavigateCompetitions,
   onNavigatePolicy,
 }: WalletPageProps) {
   const { t, i18n } = useTranslation()
@@ -107,7 +105,6 @@ export default function WalletPage({
         onNavigateHome={onNavigateHome}
         onNavigateProfile={onNavigateProfile ?? onNavigateHome}
         onNavigateFriends={onNavigateFriends}
-        onNavigateCompetitions={onNavigateCompetitions}
       />
       <main className="ac-main">
         <header style={{ marginBottom: 'var(--space-5)' }}>

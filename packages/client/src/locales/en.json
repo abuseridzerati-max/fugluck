@@ -1122,5 +1122,15 @@
   "historyPage": {
     "title": "Competition History",
     "subtitle": "Track your active entries, completed brackets, and past competition results."
+  },
+  "gameHub": {
+    "backToGames": "Back to Games",
+    "practiceAi": "Practice AI",
+    "practiceSolo": "Solo Practice",
+    "pvpMatchmaking": "1v1 PvP Match",
+    "friendMatch": "Friend Match",
+    "tournamentsHeading": "{{game}} Tournaments",
+    "tournamentsSub": "Server-verified knockout brackets exclusively for {{game}}.",
+    "quickPlayHeading": "Quick Play"
   }
 }
