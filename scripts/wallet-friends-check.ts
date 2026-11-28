@@ -5,7 +5,10 @@
 // Run: npx tsx scripts/wallet-friends-check.ts
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret-for-wallet-check";
+process.env.NODE_ENV = process.env.NODE_ENV || "test";
 
+import fs from "node:fs";
+import path from "node:path";
 import { SIGNUP_COIN_GRANT, type PublicUser } from "@fugluck/shared";
 import { getGameTitle } from "@fugluck/shared";
 import { activeGames, navFilters } from "../packages/client/src/mock/homeData";
@@ -214,6 +217,178 @@ async function run() {
   check("Game search 'blaster' filters to Space Blaster", searchGames("blaster").length === 1 && searchGames("blaster")[0].id === "space-blaster");
   check("Game search 'turn-based-board' filters to Blitz Chess, Connect 4, and Checkers", searchGames("turn-based-board").length === 3);
   check("Game search 'nonexistent' yields empty array", searchGames("nonexistent").length === 0);
+
+  // 12. Friend Invite & Guest Link Post-Accept Expiry Regression Suite
+  const {
+    clearPendingInvitesForMatchStart,
+    configureInviteTimersForTests,
+    getGuestLinkInfo,
+    handleCreateGuestLink,
+    handleInviteFriend,
+    handleJoinGuestLink,
+    handleRespondInvite,
+  } = await import("../packages/server/src/matchmaking/invites");
+  const { registerPresence, unregisterPresence } = await import("../packages/server/src/matchmaking/presence");
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  function makeMockSocket(userId: string, username: string) {
+    const emitted: Array<{ event: string; payload: any }> = [];
+    return {
+      id: `sock_${userId}_${Math.random().toString(36).slice(2, 8)}`,
+      connected: true,
+      data: { userId, username, isGuest: false, isEmailVerified: true },
+      emitted,
+      emit(event: string, payload: any) {
+        emitted.push({ event, payload });
+        return true;
+      },
+    } as any;
+  }
+
+  let releaseInFlightMatch: (() => void) | null = null;
+  const mockCreateMatch = async (gameId: string, a: any, b: any, seed: number) => {
+    if (releaseInFlightMatch) {
+      await new Promise<void>((resolve) => {
+        const prev = releaseInFlightMatch!;
+        releaseInFlightMatch = () => {
+          prev();
+          resolve();
+        };
+      });
+    }
+    const matchId = `mock_match_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
+    b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
+    return matchId;
+  };
+
+  configureInviteTimersForTests({
+    inviteTtlMs: 40,
+    guestLinkTtlMs: 40,
+    guestReconnectGraceMs: 40,
+    areFriends: async () => true,
+    createMatch: mockCreateMatch as any,
+  });
+
+  try {
+    // 12a. Accepted direct friend invite must NOT emit "Invite expired." after original expiresAt passes
+    const inviter = makeMockSocket("usr_inviter_1", "InviterOne");
+    const invitee = makeMockSocket("usr_invitee_1", "InviteeOne");
+    registerPresence(inviter);
+    registerPresence(invitee);
+
+    await handleInviteFriend(inviter, { friendUserId: invitee.data.userId, gameId: "checkers" });
+    const received = invitee.emitted.find((e: any) => e.event === "inviteReceived")?.payload;
+    check("Direct friend invite delivered to online invitee", Boolean(received?.inviteId));
+
+    // Hold createMatch in-flight briefly to also verify duplicate respondInvite during async creation
+    let resolveHold!: () => void;
+    const holdPromise = new Promise<void>((r) => { resolveHold = r; });
+    releaseInFlightMatch = () => { resolveHold(); };
+    configureInviteTimersForTests({
+      inviteTtlMs: 40,
+      guestLinkTtlMs: 40,
+      guestReconnectGraceMs: 40,
+      areFriends: async () => true,
+      createMatch: (async (gameId: string, a: any, b: any, seed: number) => {
+        await holdPromise;
+        const matchId = `mock_match_hold_${Date.now()}`;
+        a.socket.emit("matched", { matchId, gameId, seed, opponentUsername: b.username });
+        b.socket.emit("matched", { matchId, gameId, seed, opponentUsername: a.username });
+        return matchId;
+      }) as any,
+    });
+
+    handleRespondInvite(invitee, { inviteId: received.inviteId, accept: true });
+    // Duplicate accept while match creation is still in-flight must NOT emit "Invite not found or expired."
+    handleRespondInvite(invitee, { inviteId: received.inviteId, accept: true });
+    resolveHold();
+    await sleep(90); // Past the 40ms original expiresAt
+
+    check(
+      "Accepted friend invite starts match and emits zero inviteRejected/inviteError past original expiresAt",
+      inviter.emitted.some((e: any) => e.event === "matched") &&
+        invitee.emitted.some((e: any) => e.event === "matched") &&
+        !inviter.emitted.some((e: any) => e.event === "inviteRejected" || e.event === "inviteError") &&
+        !invitee.emitted.some((e: any) => e.event === "inviteRejected" || e.event === "inviteError"),
+    );
+
+    unregisterPresence(inviter);
+    unregisterPresence(invitee);
+
+    // 12b. Unaccepted PENDING friend invite still expires after TTL
+    configureInviteTimersForTests({
+      inviteTtlMs: 35,
+      guestLinkTtlMs: 40,
+      guestReconnectGraceMs: 40,
+      areFriends: async () => true,
+      createMatch: mockCreateMatch as any,
+    });
+    releaseInFlightMatch = null;
+    const inviterPending = makeMockSocket("usr_inviter_pending", "InviterPending");
+    const inviteePending = makeMockSocket("usr_invitee_pending", "InviteePending");
+    registerPresence(inviterPending);
+    registerPresence(inviteePending);
+
+    await handleInviteFriend(inviterPending, { friendUserId: inviteePending.data.userId, gameId: "connect-4" });
+    await sleep(80);
+    check(
+      "Unaccepted pending friend invite still expires cleanly after TTL",
+      inviterPending.emitted.some((e: any) => e.event === "inviteRejected" && e.payload?.reason === "Invite expired."),
+    );
+    unregisterPresence(inviterPending);
+    unregisterPresence(inviteePending);
+
+    // 12c. Accepted Guest Friend Match link cancels TTL timer and never fires inviteError mid-game
+    const host = makeMockSocket("usr_guest_host_1", "HostPlayer");
+    const joiner = makeMockSocket("usr_guest_joiner_1", "JoinerPlayer");
+    handleCreateGuestLink(host, { gameId: "blitz-chess" });
+    const createdCode = host.emitted.find((e: any) => e.event === "guestLinkCreated")?.payload?.code as string;
+    check("Guest friend link created for active match expiry test", Boolean(createdCode));
+
+    handleJoinGuestLink(joiner, { code: createdCode });
+    await sleep(90); // Past the 40ms guest link TTL
+
+    check(
+      "Accepted guest link starts match and emits zero inviteError past original expiresAt",
+      host.emitted.some((e: any) => e.event === "matched") &&
+        joiner.emitted.some((e: any) => e.event === "matched") &&
+        !host.emitted.some((e: any) => e.event === "inviteError" || e.event === "inviteRejected") &&
+        !joiner.emitted.some((e: any) => e.event === "inviteError" || e.event === "inviteRejected"),
+    );
+    check("Consumed guest link reports valid=false via getGuestLinkInfo", getGuestLinkInfo(createdCode).valid === false);
+
+    // 12d. Starting a match via clearPendingInvitesForMatchStart cancels lingering outbound invites
+    const pA = makeMockSocket("usr_lingering_a", "LingeringA");
+    const pB = makeMockSocket("usr_lingering_b", "LingeringB");
+    registerPresence(pA);
+    registerPresence(pB);
+    await handleInviteFriend(pA, { friendUserId: pB.data.userId, gameId: "space-blaster" });
+    clearPendingInvitesForMatchStart(pA, pB);
+    await sleep(80);
+    check(
+      "clearPendingInvitesForMatchStart suppresses stale invite expiry timers for active match players",
+      !pA.emitted.some((e: any) => e.event === "inviteRejected" || e.event === "inviteError") &&
+        !pB.emitted.some((e: any) => e.event === "inviteRejected" || e.event === "inviteError"),
+    );
+    unregisterPresence(pA);
+    unregisterPresence(pB);
+  } finally {
+    configureInviteTimersForTests({});
+  }
+
+  // 12e. Client socket guards: useMatchSocket unsubscribes & ignores late invite events once matched
+  const useMatchSocketSrc = fs.readFileSync(
+    path.resolve(process.cwd(), "packages/client/src/matchmaking/useMatchSocket.ts"),
+    "utf-8",
+  );
+  check(
+    "Client useMatchSocket unsubscribes invite listeners on matched and guards late inviteRejected/inviteError",
+    useMatchSocketSrc.includes("teardownInviteListeners()") &&
+      useMatchSocketSrc.includes("socket.off('inviteRejected', onInviteRejected)") &&
+      useMatchSocketSrc.includes("socket.off('inviteError', onInviteError)") &&
+      useMatchSocketSrc.includes("if (hasMatchRef.current || resolutionMatchIdRef.current) return"),
+  );
 
   if (failures > 0) {
     console.log(`\n${failures} failure(s)`);

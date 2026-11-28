@@ -7,13 +7,53 @@ import { getOnlineSocket } from "./presence";
 import { generateSeed, isValidGameId, removeFromQueue, type QueueEntry } from "./queue";
 import type { MatchmakingSocket } from "./socketAuth";
 
-const INVITE_TTL_MS = 60_000;
+export const INVITE_TTL_MS = 60_000;
+export const GUEST_LINK_TTL_MS = 600_000; // 10 minutes
+export const GUEST_LINK_RECONNECT_GRACE_MS = 45_000;
+
+let inviteTtlOverrideForTests: number | null = null;
+let guestLinkTtlOverrideForTests: number | null = null;
+let guestReconnectGraceOverrideForTests: number | null = null;
+let areFriendsOverrideForTests: ((a: string, b: string) => Promise<boolean>) | null = null;
+let createMatchOverrideForTests: typeof createMatch | null = null;
+
+export function configureInviteTimersForTests(options: {
+  inviteTtlMs?: number | null;
+  guestLinkTtlMs?: number | null;
+  guestReconnectGraceMs?: number | null;
+  areFriends?: ((a: string, b: string) => Promise<boolean>) | null;
+  createMatch?: typeof createMatch | null;
+}): void {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Invite timer test controls require NODE_ENV=test.");
+  }
+  inviteTtlOverrideForTests = options.inviteTtlMs ?? null;
+  guestLinkTtlOverrideForTests = options.guestLinkTtlMs ?? null;
+  guestReconnectGraceOverrideForTests = options.guestReconnectGraceMs ?? null;
+  areFriendsOverrideForTests = options.areFriends ?? null;
+  createMatchOverrideForTests = options.createMatch ?? null;
+}
+
+function effectiveInviteTtlMs(): number {
+  return inviteTtlOverrideForTests ?? INVITE_TTL_MS;
+}
+
+function effectiveGuestLinkTtlMs(): number {
+  return guestLinkTtlOverrideForTests ?? GUEST_LINK_TTL_MS;
+}
+
+function effectiveGuestReconnectGraceMs(): number {
+  return guestReconnectGraceOverrideForTests ?? GUEST_LINK_RECONNECT_GRACE_MS;
+}
+
+type InviteStatus = "PENDING" | "ACCEPTED" | "CANCELLED" | "EXPIRED";
 
 type PendingInvite = {
   id: string;
   from: MatchmakingSocket;
   toUserId: string;
   gameId: string;
+  status: InviteStatus;
   expiresAt: number;
   timer: ReturnType<typeof setTimeout>;
 };
@@ -21,8 +61,22 @@ type PendingInvite = {
 const pendingById = new Map<string, PendingInvite>();
 // At most one outbound invite per inviter socket.
 const pendingByFromSocket = new Map<MatchmakingSocket, string>();
+// Tracks users whose accepted invite is currently creating a match asynchronously.
+const inFlightMatchUsers = new Set<string>();
+
+function isSocketInOrEnteringMatch(socket: MatchmakingSocket | null | undefined): boolean {
+  if (!socket) return false;
+  return Boolean(getMatchIdForSocket(socket) || inFlightMatchUsers.has(socket.data.userId));
+}
+
+function unrefTimer(timer: ReturnType<typeof setTimeout>): void {
+  if (typeof timer === "object" && timer !== null && "unref" in timer) {
+    (timer as { unref: () => void }).unref();
+  }
+}
 
 async function areFriends(a: string, b: string): Promise<boolean> {
+  if (areFriendsOverrideForTests) return areFriendsOverrideForTests(a, b);
   const row = await db.query.friendships.findFirst({
     where: and(
       eq(friendships.status, "accepted"),
@@ -35,15 +89,59 @@ async function areFriends(a: string, b: string): Promise<boolean> {
   return Boolean(row);
 }
 
-function clearInvite(invite: PendingInvite, notifyFrom: boolean, reason?: string): void {
+function clearInvite(
+  invite: PendingInvite,
+  nextStatus: Exclude<InviteStatus, "PENDING">,
+  notifyFrom: boolean,
+  reason?: string,
+): void {
   clearTimeout(invite.timer);
+  const wasPending = invite.status === "PENDING";
+  if (wasPending) {
+    invite.status = nextStatus;
+  }
   pendingById.delete(invite.id);
   if (pendingByFromSocket.get(invite.from) === invite.id) {
     pendingByFromSocket.delete(invite.from);
   }
-  if (notifyFrom && invite.from.connected && reason) {
+  if (
+    wasPending &&
+    notifyFrom &&
+    nextStatus !== "ACCEPTED" &&
+    invite.from.connected &&
+    reason &&
+    !isSocketInOrEnteringMatch(invite.from)
+  ) {
     invite.from.emit("inviteRejected", { inviteId: invite.id, reason });
   }
+}
+
+function clearPendingInvitesForSocketSilently(socket: MatchmakingSocket): void {
+  const outboundId = pendingByFromSocket.get(socket);
+  if (outboundId) {
+    const invite = pendingById.get(outboundId);
+    if (invite) clearInvite(invite, "CANCELLED", false);
+  }
+  // Also clear any pending outbound invites owned by this userId on another socket.
+  for (const invite of [...pendingById.values()]) {
+    if (invite.from.data.userId === socket.data.userId) {
+      clearInvite(invite, "CANCELLED", false);
+    }
+  }
+  const guestCode = guestLinksByUserId.get(socket.data.userId);
+  if (guestCode) {
+    const link = guestLinksByCode.get(guestCode);
+    if (link) destroyGuestLink(link, "CANCELLED");
+  }
+}
+
+/**
+ * Cancels any lingering pending friend invites or guest links held by either
+ * match participant without emitting expiry/rejection errors to active players.
+ */
+export function clearPendingInvitesForMatchStart(a: MatchmakingSocket, b: MatchmakingSocket): void {
+  clearPendingInvitesForSocketSilently(a);
+  clearPendingInvitesForSocketSilently(b);
 }
 
 export function cancelInvitesForSocket(socket: MatchmakingSocket): void {
@@ -53,10 +151,12 @@ export function cancelInvitesForSocket(socket: MatchmakingSocket): void {
   const outboundId = pendingByFromSocket.get(socket);
   if (outboundId) {
     const invite = pendingById.get(outboundId);
-    if (invite) {
+    if (invite && invite.status === "PENDING") {
       const target = getOnlineSocket(invite.toUserId);
-      clearInvite(invite, false);
-      target?.emit("inviteRejected", { inviteId: invite.id, reason: "Inviter went offline." });
+      clearInvite(invite, "CANCELLED", false);
+      if (target && !isSocketInOrEnteringMatch(target)) {
+        target.emit("inviteRejected", { inviteId: invite.id, reason: "Inviter went offline." });
+      }
     }
   }
 
@@ -67,6 +167,7 @@ export async function handleInviteFriend(
   socket: MatchmakingSocket,
   payload: { friendUserId?: unknown; gameId?: unknown },
 ): Promise<void> {
+  if (isSocketInOrEnteringMatch(socket)) return;
   if (!payload || typeof payload.friendUserId !== "string" || typeof payload.gameId !== "string") {
     socket.emit("inviteError", { message: "Invalid invite." });
     return;
@@ -85,9 +186,14 @@ export async function handleInviteFriend(
     return;
   }
   if (!(await areFriends(socket.data.userId, payload.friendUserId))) {
-    socket.emit("inviteError", { message: "You can only invite accepted friends." });
+    if (socket.connected && !isSocketInOrEnteringMatch(socket)) {
+      socket.emit("inviteError", { message: "You can only invite accepted friends." });
+    }
     return;
   }
+
+  // Re-check after async DB query in case the inviter entered a match or disconnected.
+  if (!socket.connected || isSocketInOrEnteringMatch(socket)) return;
 
   const target = getOnlineSocket(payload.friendUserId);
   if (!target) {
@@ -99,21 +205,28 @@ export async function handleInviteFriend(
   const priorId = pendingByFromSocket.get(socket);
   if (priorId) {
     const prior = pendingById.get(priorId);
-    if (prior) clearInvite(prior, false);
+    if (prior) clearInvite(prior, "CANCELLED", false);
   }
 
   const inviteId = randomUUID();
+  const ttlMs = effectiveInviteTtlMs();
   const timer = setTimeout(() => {
     const invite = pendingById.get(inviteId);
-    if (invite) clearInvite(invite, true, "Invite expired.");
-  }, INVITE_TTL_MS);
+    if (invite && invite.status === "PENDING" && !isSocketInOrEnteringMatch(invite.from)) {
+      clearInvite(invite, "EXPIRED", true, "Invite expired.");
+    } else if (invite) {
+      clearInvite(invite, "CANCELLED", false);
+    }
+  }, ttlMs);
+  unrefTimer(timer);
 
   const invite: PendingInvite = {
     id: inviteId,
     from: socket,
     toUserId: payload.friendUserId,
     gameId: payload.gameId,
-    expiresAt: Date.now() + INVITE_TTL_MS,
+    status: "PENDING",
+    expiresAt: Date.now() + ttlMs,
     timer,
   };
   pendingById.set(inviteId, invite);
@@ -136,24 +249,25 @@ export function handleRespondInvite(
   socket: MatchmakingSocket,
   payload: { inviteId?: unknown; accept?: unknown },
 ): void {
+  if (isSocketInOrEnteringMatch(socket)) return;
   if (!payload || typeof payload.inviteId !== "string" || typeof payload.accept !== "boolean") {
     socket.emit("inviteError", { message: "Invalid invite response." });
     return;
   }
 
   const invite = pendingById.get(payload.inviteId);
-  if (!invite || invite.toUserId !== socket.data.userId) {
+  if (!invite || invite.status !== "PENDING" || invite.toUserId !== socket.data.userId) {
     socket.emit("inviteError", { message: "Invite not found or expired." });
     return;
   }
 
   if (!payload.accept) {
-    clearInvite(invite, true, "Invite declined.");
+    clearInvite(invite, "CANCELLED", true, "Invite declined.");
     return;
   }
 
   if (!invite.from.connected) {
-    clearInvite(invite, false);
+    clearInvite(invite, "CANCELLED", false);
     socket.emit("inviteError", { message: "Inviter went offline." });
     return;
   }
@@ -177,21 +291,30 @@ export function handleRespondInvite(
     stake: 0,
   };
 
-  clearInvite(invite, false);
-  void createMatch(invite.gameId, a, b, generateSeed());
+  // Mark ACCEPTED and clear its timer immediately before async match creation,
+  // and cancel any other pending invites/guest links held by either player.
+  clearInvite(invite, "ACCEPTED", false);
+  clearPendingInvitesForMatchStart(invite.from, socket);
+  inFlightMatchUsers.add(a.userId);
+  inFlightMatchUsers.add(b.userId);
+
+  const launchMatch = createMatchOverrideForTests ?? createMatch;
+  void launchMatch(invite.gameId, a, b, generateSeed()).finally(() => {
+    inFlightMatchUsers.delete(a.userId);
+    inFlightMatchUsers.delete(b.userId);
+  });
 }
 
 export function handleCancelInvite(socket: MatchmakingSocket, payload: { inviteId?: unknown }): void {
   if (!payload || typeof payload.inviteId !== "string") return;
   const invite = pendingById.get(payload.inviteId);
-  if (!invite || invite.from !== socket) return;
+  if (!invite || invite.status !== "PENDING" || invite.from !== socket) return;
   const target = getOnlineSocket(invite.toUserId);
-  clearInvite(invite, false);
-  target?.emit("inviteRejected", { inviteId: payload.inviteId, reason: "Invite cancelled." });
+  clearInvite(invite, "CANCELLED", false);
+  if (target && !isSocketInOrEnteringMatch(target)) {
+    target.emit("inviteRejected", { inviteId: payload.inviteId, reason: "Invite cancelled." });
+  }
 }
-
-export const GUEST_LINK_TTL_MS = 600_000; // 10 minutes
-export const GUEST_LINK_RECONNECT_GRACE_MS = 45_000;
 
 type GuestInviteLink = {
   code: string;
@@ -199,6 +322,7 @@ type GuestInviteLink = {
   hostUsername: string;
   hostSocket: MatchmakingSocket | null;
   gameId: string;
+  status: InviteStatus;
   createdAt: number;
   expiresAt: number;
   ttlTimer: ReturnType<typeof setTimeout>;
@@ -217,11 +341,19 @@ function generateGuestCode(): string {
   return randomUUID().replace(/-/g, "");
 }
 
-function destroyGuestLink(link: GuestInviteLink, pendingReason?: string): void {
+function destroyGuestLink(
+  link: GuestInviteLink,
+  nextStatus: Exclude<InviteStatus, "PENDING">,
+  pendingReason?: string,
+): void {
   clearTimeout(link.ttlTimer);
   if (link.reconnectTimer) {
     clearTimeout(link.reconnectTimer);
     link.reconnectTimer = null;
+  }
+  const wasPending = link.status === "PENDING";
+  if (wasPending) {
+    link.status = nextStatus;
   }
   guestLinksByCode.delete(link.code);
   if (guestLinksByUserId.get(link.hostUserId) === link.code) {
@@ -229,7 +361,13 @@ function destroyGuestLink(link: GuestInviteLink, pendingReason?: string): void {
   }
   const pending = link.pendingJoiner;
   link.pendingJoiner = null;
-  if (pendingReason && pending?.connected) {
+  if (
+    wasPending &&
+    nextStatus !== "ACCEPTED" &&
+    pendingReason &&
+    pending?.connected &&
+    !isSocketInOrEnteringMatch(pending)
+  ) {
     pending.emit("inviteError", { message: pendingReason });
   }
 }
@@ -248,6 +386,8 @@ function emitGuestLinkCreated(socket: MatchmakingSocket, link: GuestInviteLink):
 }
 
 function startGuestMatch(link: GuestInviteLink, guest: MatchmakingSocket): void {
+  if (link.status !== "PENDING") return;
+
   const host = link.hostSocket;
   if (!host || !host.connected) {
     if (link.pendingJoiner && link.pendingJoiner !== guest && link.pendingJoiner.connected) {
@@ -283,27 +423,33 @@ function startGuestMatch(link: GuestInviteLink, guest: MatchmakingSocket): void 
   };
 
   const gameId = link.gameId;
-  destroyGuestLink(link);
-  void createMatch(gameId, a, b, generateSeed());
+  destroyGuestLink(link, "ACCEPTED");
+  clearPendingInvitesForMatchStart(host, guest);
+  inFlightMatchUsers.add(a.userId);
+  inFlightMatchUsers.add(b.userId);
+
+  const launchMatch = createMatchOverrideForTests ?? createMatch;
+  void launchMatch(gameId, a, b, generateSeed()).finally(() => {
+    inFlightMatchUsers.delete(a.userId);
+    inFlightMatchUsers.delete(b.userId);
+  });
 }
 
 function parkGuestLinkForReconnect(socket: MatchmakingSocket): void {
   const code = guestLinksByUserId.get(socket.data.userId);
   if (!code) return;
   const link = guestLinksByCode.get(code);
-  if (!link || (link.hostSocket && link.hostSocket !== socket)) return;
+  if (!link || link.status !== "PENDING" || (link.hostSocket && link.hostSocket !== socket)) return;
 
   link.hostSocket = null;
   if (link.reconnectTimer) clearTimeout(link.reconnectTimer);
   link.reconnectTimer = setTimeout(() => {
     const active = guestLinksByCode.get(code);
-    if (active && !active.hostSocket?.connected) {
-      destroyGuestLink(active, "Guest invite link expired or host is offline.");
+    if (active && active.status === "PENDING" && !active.hostSocket?.connected) {
+      destroyGuestLink(active, "EXPIRED", "Guest invite link expired or host is offline.");
     }
-  }, GUEST_LINK_RECONNECT_GRACE_MS);
-  if (typeof link.reconnectTimer === "object" && link.reconnectTimer !== null && "unref" in link.reconnectTimer) {
-    (link.reconnectTimer as { unref: () => void }).unref();
-  }
+  }, effectiveGuestReconnectGraceMs());
+  unrefTimer(link.reconnectTimer);
 }
 
 export function getGuestLinkInfo(code: string): {
@@ -314,7 +460,7 @@ export function getGuestLinkInfo(code: string): {
   error?: string;
 } {
   const link = guestLinksByCode.get(code);
-  if (!link) {
+  if (!link || link.status !== "PENDING") {
     return { valid: false, error: "Guest invite link expired or host is offline." };
   }
   return {
@@ -329,12 +475,12 @@ export function handleCancelGuestLink(socket: MatchmakingSocket): void {
   const code = guestLinksByUserId.get(socket.data.userId);
   if (!code) return;
   const link = guestLinksByCode.get(code);
-  if (!link) return;
-  destroyGuestLink(link, "The host cancelled this invite.");
+  if (!link || link.status !== "PENDING") return;
+  destroyGuestLink(link, "CANCELLED", "The host cancelled this invite.");
 }
 
 export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { gameId?: unknown }): void {
-  if (getMatchIdForSocket(socket)) return;
+  if (isSocketInOrEnteringMatch(socket)) return;
   if (!payload || typeof payload.gameId !== "string" || !isValidGameId(payload.gameId)) {
     socket.emit("inviteError", { message: "Invalid game for guest link." });
     return;
@@ -343,7 +489,7 @@ export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { game
   const existingCode = guestLinksByUserId.get(socket.data.userId);
   if (existingCode) {
     const existing = guestLinksByCode.get(existingCode);
-    if (existing && existing.gameId === payload.gameId) {
+    if (existing && existing.status === "PENDING" && existing.gameId === payload.gameId) {
       existing.hostSocket = socket;
       existing.hostUsername = socket.data.username;
       if (existing.reconnectTimer) {
@@ -358,18 +504,19 @@ export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { game
       }
       return;
     }
-    if (existing) destroyGuestLink(existing, "The host started a new invite.");
+    if (existing) destroyGuestLink(existing, "CANCELLED", "The host started a new invite.");
   }
 
   const code = generateGuestCode();
-  const expiresAt = Date.now() + GUEST_LINK_TTL_MS;
+  const ttlMs = effectiveGuestLinkTtlMs();
+  const expiresAt = Date.now() + ttlMs;
   const ttlTimer = setTimeout(() => {
     const active = guestLinksByCode.get(code);
-    if (active) destroyGuestLink(active, "Guest invite link expired or host is offline.");
-  }, GUEST_LINK_TTL_MS);
-  if (typeof ttlTimer === "object" && ttlTimer !== null && "unref" in ttlTimer) {
-    (ttlTimer as { unref: () => void }).unref();
-  }
+    if (active && active.status === "PENDING") {
+      destroyGuestLink(active, "EXPIRED", "Guest invite link expired or host is offline.");
+    }
+  }, ttlMs);
+  unrefTimer(ttlTimer);
 
   const link: GuestInviteLink = {
     code,
@@ -377,6 +524,7 @@ export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { game
     hostUsername: socket.data.username,
     hostSocket: socket,
     gameId: payload.gameId,
+    status: "PENDING",
     createdAt: Date.now(),
     expiresAt,
     ttlTimer,
@@ -389,14 +537,14 @@ export function handleCreateGuestLink(socket: MatchmakingSocket, payload: { game
 }
 
 export function handleJoinGuestLink(socket: MatchmakingSocket, payload: { code?: unknown }): void {
-  if (getMatchIdForSocket(socket)) return;
+  if (isSocketInOrEnteringMatch(socket)) return;
   if (!payload || typeof payload.code !== "string") {
     socket.emit("inviteError", { message: "Invalid guest link code." });
     return;
   }
 
   const link = guestLinksByCode.get(payload.code);
-  if (!link) {
+  if (!link || link.status !== "PENDING") {
     socket.emit("inviteError", { message: "Guest invite link expired or host is offline." });
     return;
   }

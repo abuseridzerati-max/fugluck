@@ -152,8 +152,54 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       }
     })
 
+    const onGuestLinkCreated = (payload: { code: string }) => {
+      if (hasMatchRef.current || resolutionMatchIdRef.current) return
+      setGuestLinkCode(payload.code)
+      setWaitingLabel('Waiting for opponent to join via link…')
+    }
+
+    const onGuestLinkPending = (payload: { message: string }) => {
+      if (hasMatchRef.current || resolutionMatchIdRef.current) return
+      setWaitingLabel(payload.message)
+    }
+
+    const onInviteSent = (payload: { inviteId: string; toUsername: string }) => {
+      if (hasMatchRef.current || resolutionMatchIdRef.current) return
+      if (payload.toUsername === 'Guest Link') {
+        setGuestLinkCode(payload.inviteId)
+        setWaitingLabel('Waiting for opponent to join via link…')
+      } else {
+        setWaitingLabel(`Waiting for ${payload.toUsername} to accept…`)
+      }
+    }
+
+    const onInviteRejected = (payload: { reason?: string }) => {
+      // Ignore any late invite expiration/rejection once a match has started.
+      if (hasMatchRef.current || resolutionMatchIdRef.current) return
+      setError(payload.reason || 'Invite was declined.')
+      setConnectionState('closed')
+    }
+
+    const onInviteError = (payload: { message: string }) => {
+      // Ignore any late invite error once a match has started.
+      if (hasMatchRef.current || resolutionMatchIdRef.current) return
+      setError(payload.message)
+      setConnectionState('closed')
+    }
+
+    function teardownInviteListeners() {
+      socket.off('guestLinkCreated', onGuestLinkCreated)
+      socket.off('guestLinkPending', onGuestLinkPending)
+      socket.off('inviteSent', onInviteSent)
+      socket.off('inviteRejected', onInviteRejected)
+      socket.off('inviteError', onInviteError)
+    }
+
     socket.on('competition:matched', (payload) => {
       hasMatchRef.current = true
+      teardownInviteListeners()
+      setError(null)
+      setGuestLinkCode(null)
       setConnectionState('matched')
       setWaitingLabel(null)
       setRematchState({ kind: 'idle' })
@@ -189,36 +235,17 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
       setConnectionState('closed')
     })
 
-    socket.on('guestLinkCreated', (payload) => {
-      setGuestLinkCode(payload.code)
-      setWaitingLabel('Waiting for opponent to join via link…')
-    })
-
-    socket.on('guestLinkPending', (payload) => {
-      setWaitingLabel(payload.message)
-    })
-
-    socket.on('inviteSent', (payload) => {
-      if (payload.toUsername === 'Guest Link') {
-        setGuestLinkCode(payload.inviteId)
-        setWaitingLabel('Waiting for opponent to join via link…')
-      } else {
-        setWaitingLabel(`Waiting for ${payload.toUsername} to accept…`)
-      }
-    })
-
-    socket.on('inviteRejected', (payload) => {
-      setError(payload.reason || 'Invite was declined.')
-      setConnectionState('closed')
-    })
-
-    socket.on('inviteError', (payload) => {
-      setError(payload.message)
-      setConnectionState('closed')
-    })
+    socket.on('guestLinkCreated', onGuestLinkCreated)
+    socket.on('guestLinkPending', onGuestLinkPending)
+    socket.on('inviteSent', onInviteSent)
+    socket.on('inviteRejected', onInviteRejected)
+    socket.on('inviteError', onInviteError)
 
     socket.on('matched', (payload) => {
       hasMatchRef.current = true
+      teardownInviteListeners()
+      setError(null)
+      setGuestLinkCode(null)
       setConnectionState('matched')
       setWaitingLabel(null)
       setRematchState({ kind: 'idle' })
@@ -306,7 +333,8 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
 
     return () => {
       intentionalDisconnectRef.current = true
-      if (mode.kind === 'createGuest') {
+      teardownInviteListeners()
+      if (mode.kind === 'createGuest' && !hasMatchRef.current) {
         socket.emit('cancelGuestLink')
       }
       socket.disconnect()
@@ -360,7 +388,7 @@ export function useMatchSocket(gameId: string, mode: MatchSocketMode = { kind: '
     intentionalDisconnectRef.current = true
     const socket = socketRef.current
     if (!socket) return
-    if (mode.kind === 'createGuest') {
+    if (mode.kind === 'createGuest' && !hasMatchRef.current) {
       socket.emit('cancelGuestLink')
     }
     if (competitionWaiting?.instanceId && !competitionWaiting.isLocked) {

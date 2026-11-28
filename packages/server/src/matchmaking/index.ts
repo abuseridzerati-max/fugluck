@@ -11,6 +11,7 @@ import type { ClientToServerEvents, ServerToClientEvents } from "@fugluck/shared
 import { Server, type DefaultEventsMap } from "socket.io";
 import {
   cancelInvitesForSocket,
+  clearPendingInvitesForMatchStart,
   handleCancelGuestLink,
   handleCancelInvite,
   handleCreateGuestLink,
@@ -123,6 +124,7 @@ export function attachMatchmaking(httpServer: HttpServer, _opts?: { clientOrigin
       const pair = tryPair(payload.gameId, currency, stake);
       if (pair) {
         const [a, b] = pair;
+        clearPendingInvitesForMatchStart(a.socket, b.socket);
         await createMatch(payload.gameId, a, b, generateSeed());
       }
     });

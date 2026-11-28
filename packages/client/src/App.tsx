@@ -397,6 +397,7 @@ function AppShell() {
       if (inviteJoin) setInviteJoin(null)
       return
     }
+    if (restoringActiveMatch || activeGame?.mode === 'match') return
     const code = parseInviteCode(window.location.pathname)
     if (!code) {
       setInviteJoin({ status: 'error', code: '', message: 'This invite link is missing a code.' })
@@ -404,7 +405,7 @@ function AppShell() {
     }
     void joinInviteLink(code)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view])
+  }, [view, restoringActiveMatch, activeGame?.mode])
 
   async function joinInviteLink(code: string) {
     if (inviteJoinAttemptRef.current === code) return
@@ -423,6 +424,9 @@ function AppShell() {
       const title = getGameTitle(res.gameId)
       setInviteJoin({ status: 'joining', code, hostUsername: res.hostUsername, gameTitle: title })
       storeActiveMatch({ id: res.gameId, title })
+      // Normalize URL off /invite/:code so a mid-game reload restores the active
+      // match from sessionStorage instead of re-querying a consumed invite link.
+      window.history.replaceState(null, '', '/')
       await loadGame(res.gameId, title, 'match', { kind: 'joinGuest', code })
     } catch (err) {
       const message =

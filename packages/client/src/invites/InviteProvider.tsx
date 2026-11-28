@@ -30,7 +30,7 @@ export function InviteProvider({ children, onAcceptInvite, enabled = true }: Inv
     if (!userId || !enabled) {
       socketRef.current?.disconnect()
       socketRef.current = null
-      if (!userId) setIncoming(null)
+      setIncoming(null)
       return
     }
 
