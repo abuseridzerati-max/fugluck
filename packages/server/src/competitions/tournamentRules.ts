@@ -1,5 +1,5 @@
 import { createHmac, randomBytes } from 'node:crypto';
-import { isCertifiedGame, TOURNAMENT_CAPACITIES, type TournamentCapacity, type TournamentConfig, type TournamentTerms, type CompetitionProduct, type SpecialCycle } from '@fugluck/shared';
+import { DEFAULT_COIN_ENTRY, isCertifiedGame, TOURNAMENT_CAPACITIES, type TournamentCapacity, type TournamentConfig, type TournamentTerms, type CompetitionProduct, type SpecialCycle } from '@fugluck/shared';
 import { getServerGamePlugin } from '../games/registry';
 
 export function defaultTournamentConfig(gameId: string): TournamentConfig {
@@ -57,7 +57,8 @@ export function seedBracket(entrants:string[],seed=randomBytes(32).toString('hex
   }
   return {seed,order};
 }
-export const COIN_TOURNAMENT_ENTRY_COINS = 100;
+export const COIN_TOURNAMENT_ENTRY_COINS = DEFAULT_COIN_ENTRY;
+export const COIN_TOURNAMENT_CONFIG_REVISION = 2;
 
 export function defaultCoinTournamentConfig(): TournamentConfig {
   return {
@@ -81,7 +82,7 @@ export function defaultCoinTournamentConfig(): TournamentConfig {
 }
 
 /** Freeze Standard-only Coins knockout terms: 0% rake, 100% of pot to champion, no Promo/Gift. */
-export function freezeCoinTournamentTerms(capacity: TournamentCapacity, revision = 1, configInput?: Partial<TournamentConfig>): TournamentTerms {
+export function freezeCoinTournamentTerms(capacity: TournamentCapacity, revision = COIN_TOURNAMENT_CONFIG_REVISION, configInput?: Partial<TournamentConfig>): TournamentTerms {
   const config: TournamentConfig = { ...defaultCoinTournamentConfig(), ...configInput };
   if (!TOURNAMENT_CAPACITIES.includes(capacity) || !Number.isSafeInteger(revision) || revision < 1) {
     throw Error('INVALID_COIN_TOURNAMENT_TERMS');

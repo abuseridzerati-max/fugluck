@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getGameManifest } from '@fugluck/shared'
+import { COIN_STAKE_PRESETS, DEFAULT_COIN_ENTRY, getGameManifest } from '@fugluck/shared'
 import { useAuth } from '../auth/AuthContext'
 import AuthModal from './AuthModal'
 import { CoinIcon, GamepadIcon, TrophyIcon } from './icons'
@@ -16,7 +16,7 @@ type LaunchModalProps = {
   onOpenCompetitions?: () => void
 }
 
-const COIN_STAKE_OPTIONS = [0, 25, 50, 100, 250, 500]
+const COIN_STAKE_OPTIONS = [...COIN_STAKE_PRESETS]
 
 const DEFAULT_CONTROLS_HINT: Record<string, string> = {
   'space-blaster': 'WASD / Arrows to steer · Space to shoot · Survive & destroy waves (3 min cap)',
@@ -45,7 +45,7 @@ export default function LaunchModal({
   const { user } = useAuth()
   const [showCoinsLobby, setShowCoinsLobby] = useState(initialView === 'coins')
   const [showSignUpModal, setShowSignUpModal] = useState(false)
-  const [selectedCoinStake, setSelectedCoinStake] = useState<number>(user ? 100 : 0)
+  const [selectedCoinStake, setSelectedCoinStake] = useState<number>(user ? DEFAULT_COIN_ENTRY : 0)
   const [customInput, setCustomInput] = useState<string>('')
 
   useEffect(() => {

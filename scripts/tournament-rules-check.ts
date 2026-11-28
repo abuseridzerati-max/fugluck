@@ -1,5 +1,5 @@
-import { defaultTournamentConfig, freezeTournamentTerms, nextSpecialCycle, seedBracket, roundName, validateTournamentConfig } from '../packages/server/src/competitions/tournamentRules';
-import { TOURNAMENT_CAPACITIES } from '@fugluck/shared';
+import { COIN_TOURNAMENT_CONFIG_REVISION, COIN_TOURNAMENT_ENTRY_COINS, defaultTournamentConfig, freezeCoinTournamentTerms, freezeTournamentTerms, nextSpecialCycle, seedBracket, roundName, validateTournamentConfig } from '../packages/server/src/competitions/tournamentRules';
+import { COIN_STAKE_PRESETS, DEFAULT_COIN_ENTRY, MIN_COIN_WAGER, TOURNAMENT_CAPACITIES } from '@fugluck/shared';
 let passes=0,failures=0;
 function check(label:string,ok:unknown){console.log(`${ok?'PASS':'FAIL'} ${label}`);ok?passes++:failures++;}
 function rejects(label:string,fn:()=>unknown){try{fn();check(label,false)}catch{check(label,true)}}
@@ -37,4 +37,9 @@ check('UTC midnight independent of Tbilisi',nextSpecialCycle('space-blaster','GI
 rejects('duplicate entrant rejected',()=>seedBracket(['same','same']));
 rejects('unsupported entrant count rejected',()=>seedBracket(['a','b','c']));
 rejects('invalid seed rejected',()=>seedBracket(['a','b'],'client-seed'));
+check('coin entry default and wager minimum set to 1 Coin',MIN_COIN_WAGER===1&&DEFAULT_COIN_ENTRY===1&&COIN_TOURNAMENT_ENTRY_COINS===1&&COIN_TOURNAMENT_CONFIG_REVISION>=2&&COIN_STAKE_PRESETS.includes(1));
+for(const capacity of TOURNAMENT_CAPACITIES){
+  const coinTerms=freezeCoinTournamentTerms(capacity);
+  check(`coin tournament ${capacity}p terms freeze 1 Coin entry and ${capacity} Coin pot`,coinTerms.product==='STANDARD'&&coinTerms.currency==='COINS'&&coinTerms.entryMinor===1&&coinTerms.prizeMinor===capacity&&coinTerms.marginMinor===0&&coinTerms.subsidyMinor===0&&coinTerms.configRevision===COIN_TOURNAMENT_CONFIG_REVISION);
+}
 console.log(`Tournament rules: ${passes} PASS, ${failures} FAIL`);process.exitCode=failures?1:0;

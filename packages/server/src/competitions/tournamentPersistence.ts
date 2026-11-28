@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
 import { GAME_COMPETITION_CERTIFICATIONS, getCertifiedGameIds, isCertifiedGame, type TournamentConfig, type TournamentTerms, type SpecialCycle, type CompetitionProduct, type TournamentCapacity } from '@fugluck/shared';
 import { pool } from '../db/client';
-import { defaultTournamentConfig, freezeCoinTournamentTerms, freezeTournamentTerms, nextSpecialCycle, validateTournamentConfig } from './tournamentRules';
+import { COIN_TOURNAMENT_CONFIG_REVISION, defaultTournamentConfig, freezeCoinTournamentTerms, freezeTournamentTerms, nextSpecialCycle, validateTournamentConfig } from './tournamentRules';
 import { getAppEnvironment } from '../config/environment';
 import { COMMERCIAL_SWITCHES } from '../config/commercialSafety';
 
@@ -122,8 +122,8 @@ export async function ensureCoinTournamentCatalog() {
     const capacities: TournamentCapacity[] = [2, 4, 8, 16];
     const products = games.flatMap(game_id =>
       capacities.map(capacity => {
-        const terms = freezeCoinTournamentTerms(capacity, 1);
-        const id = `tmpl_coin_ko_${createHash('sha256').update(`${game_id}:COINS:STANDARD:${capacity}:1`).digest('hex').slice(0, 32)}`;
+        const terms = freezeCoinTournamentTerms(capacity, COIN_TOURNAMENT_CONFIG_REVISION);
+        const id = `tmpl_coin_ko_${createHash('sha256').update(`${game_id}:COINS:STANDARD:${capacity}:${COIN_TOURNAMENT_CONFIG_REVISION}`).digest('hex').slice(0, 32)}`;
         return { id, game_id, terms, version: GAME_COMPETITION_CERTIFICATIONS[game_id].authorityVersion };
       }),
     );

@@ -37,7 +37,7 @@ export type {
   VisibilityHiddenPayload,
 } from "./matchmaking";
 export type { Currency, WalletBalances } from "./wallet";
-export { SIGNUP_COIN_GRANT } from "./wallet";
+export { SIGNUP_COIN_GRANT, MIN_COIN_WAGER, DEFAULT_COIN_ENTRY, COIN_STAKE_PRESETS } from "./wallet";
 export type { FriendEntry, FriendshipStatus } from "./friends";
 export type { PolicyType, PolicyAcceptanceRecord, SignupAcceptedPolicies, PolicyNavItem } from "./policies";
 export { CURRENT_POLICY_VERSIONS, POLICY_NAV_ITEMS } from "./policies";

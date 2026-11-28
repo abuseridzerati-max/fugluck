@@ -14,7 +14,7 @@ import { TournamentService } from '../packages/server/src/competitions/tournamen
 import { AuthorityStore } from '../packages/server/src/competitions/authorityStore';
 import { CoinTournamentAccountingAdapter } from '../packages/server/src/accounting/coinTournamentAdapter';
 import { ensureCoinTournamentCatalog, ensureTournamentCatalog, tournamentTx } from '../packages/server/src/competitions/tournamentPersistence';
-import { freezeCoinTournamentTerms } from '../packages/server/src/competitions/tournamentRules';
+import { COIN_TOURNAMENT_ENTRY_COINS, freezeCoinTournamentTerms } from '../packages/server/src/competitions/tournamentRules';
 import { qualificationView } from '../packages/server/src/competitions/tournamentQualification';
 import { readPlayerInstance } from '../packages/server/src/competitions/playerReadModel';
 import { competitionsRouter } from '../packages/server/src/routes/competitions';
@@ -77,9 +77,9 @@ async function main() {
   // 1. Rules & 0% rake economics
   for (const cap of TOURNAMENT_CAPACITIES) {
     const t = freezeCoinTournamentTerms(cap);
-    check(`coin terms ${cap}p: 100 entry, ${cap * 100} prize, 0% rake, STANDARD`,
+    check(`coin terms ${cap}p: ${COIN_TOURNAMENT_ENTRY_COINS} entry, ${cap * COIN_TOURNAMENT_ENTRY_COINS} prize, 0% rake, STANDARD`,
       t.product === 'STANDARD' && t.currency === 'COINS' && t.rounding === 'WHOLE_COINS' &&
-      t.entryMinor === 100 && t.prizeMinor === cap * 100 && t.marginMinor === 0 && t.subsidyMinor === 0 && t.prizeRateBps === 10000);
+      t.entryMinor === COIN_TOURNAMENT_ENTRY_COINS && t.prizeMinor === cap * COIN_TOURNAMENT_ENTRY_COINS && t.marginMinor === 0 && t.subsidyMinor === 0 && t.prizeRateBps === 10000);
   }
 
   // 2. Catalog materialization & concurrency idempotency (strictly 8 Standard, 0 Promo/Gift/cycles)
@@ -112,13 +112,13 @@ async function main() {
 
   await grantCoins(users[17], 500, 'topup');
   const joinedWait = await service.join(sbTemplate(2), users[17]);
-  check('funded Coin join debits 100 Coins immediately', (await coinBalance(users[17])) === 400 && joinedWait.currency === 'COINS');
+  check(`funded Coin join debits ${COIN_TOURNAMENT_ENTRY_COINS} Coin(s) immediately`, (await coinBalance(users[17])) === 500 - COIN_TOURNAMENT_ENTRY_COINS && joinedWait.currency === 'COINS');
   check('coin join writes zero rows to sandbox or commercial GEL tables',
     (await pool.query('SELECT count(*)::int AS n FROM sandbox_entry_reservations')).rows[0].n === 0 &&
     (await pool.query('SELECT count(*)::int AS n FROM commercial_operations')).rows[0].n === 0);
 
   await service.cancel(joinedWait.instanceId, users[17]);
-  check('leaving waiting Coin room refunds 100 Coins exactly', (await coinBalance(users[17])) === 500);
+  check(`leaving waiting Coin room refunds ${COIN_TOURNAMENT_ENTRY_COINS} Coin(s) exactly`, (await coinBalance(users[17])) === 500);
   const cancelledView = await readPlayerInstance(joinedWait.instanceId, users[17]);
   check('cancelled Coin room reports entryReturned=true and currency=COINS',
     cancelledView?.status === 'CANCELLED' && cancelledView.currency === 'COINS' && cancelledView.participants[0].entryReturned === true);
@@ -154,7 +154,7 @@ async function main() {
     const premature = await coinAccounting.settleCompetition({
       competitionInstanceId: instId,
       winnerUserId: entrants[0],
-      prizeCoins: capacity * 100,
+      prizeCoins: capacity * COIN_TOURNAMENT_ENTRY_COINS,
       idempotencyKey: `premature:${instId}`,
     });
     check(`${capacity}p cannot settle Coin tournament before Final`, !premature.success);
